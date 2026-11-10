@@ -731,9 +731,9 @@ target = {
 lHip: sw * 0.58, rHip: -sw * 0.58,
 lKnee: lStep ? Math.max(0, -cw * 0.88) : 0.12,
 rKnee: !lStep ? Math.max(0, cw * 0.88) : 0.12,
-lShldX: -1.28 + cw * 0.08, rShldX: -1.28 - cw * 0.08,
-lShldZ: 0.42, rShldZ: -0.42,
-lElb: -1.38 + sw * 0.06, rElb: -1.38 - sw * 0.06,
+lShldX: -0.92 + cw * 0.05, rShldX: -0.92 - cw * 0.05,
+lShldZ: -0.2, rShldZ: 0.2,
+lElb: -0.62 + sw * 0.04, rElb: -0.62 - sw * 0.04,
 torsoTwist: -sw * 0.1, torsoLean: -0.16, torsoRoll: sw * 0.08, pelvisDrop: Math.abs(cw) * 0.09
 };
 } else if(isMoving){
@@ -752,9 +752,9 @@ const t = performance.now() * 0.0025;
 const breathe = Math.sin(t) * 0.035;
 target = {
 lHip:0.04, rHip:-0.04, lKnee:0.05, rKnee:0.05,
-lShldX:isHeld ? -1.25 : -0.08 + breathe, rShldX:isHeld ? -1.25 : -0.08 + breathe,
-lShldZ:isHeld ? 0.4 : 0.08, rShldZ:isHeld ? -0.4 : -0.08,
-lElb:isHeld ? -1.35 : -0.25, rElb:isHeld ? -1.35 : -0.25,
+lShldX:isHeld ? -0.92 + breathe*0.3 : -0.08 + breathe, rShldX:isHeld ? -0.92 + breathe*0.3 : -0.08 + breathe,
+lShldZ:isHeld ? -0.2 : 0.08, rShldZ:isHeld ? 0.2 : -0.08,
+lElb:isHeld ? -0.62 : -0.25, rElb:isHeld ? -0.62 : -0.25,
 torsoTwist:0, torsoLean:isHeld ? -0.12 : breathe * 0.5, torsoRoll:0, pelvisDrop:breathe * 0.02
 };
 }
@@ -1148,16 +1148,17 @@ g.traverse(o => { if(o.isMesh) o.castShadow = true; });
 g.scale.setScalar(1.4); g.visible = false; S.add(g);
 return { g, legs, arms, active:false, x:0, z:0, dir:1, t:0, cooldown:0 };
 })();
-function resetInspector(){ inspector.active = false; inspector.g.visible = false; inspector.cooldown = 6; inspector.done = false; $('inspector-badge').classList.remove('on'); }
+function resetInspector(){ inspector.active = false; inspector.g.visible = false; inspector.cooldown = 6; inspector.done = false; inspector.elapsed = 0; $('inspector-badge').classList.remove('on'); }
 function updateInspector(dt){
 const I_ = inspector;
 if(!I_.active){
 if(I_.done) return;
+I_.elapsed = (I_.elapsed||0) + dt;
 I_.cooldown -= dt;
 if(I_.cooldown > 0) return;
 const bad = items.filter(i => i.st === 'floor' && !i.fall && !i.fined && (i.floorT = (i.floorT||0) + dt) > 2.5);
-if(!bad.length) return;
-const tgt = bad[0];
+if(!bad.length && I_.elapsed < 30) return;
+const tgt = bad[0] || {m:{position:{z:px.z - 1.6}}};
 I_.dir = Math.random() < 0.5 ? 1 : -1;
 I_.x = -36 * I_.dir; I_.z = Math.max(-11, Math.min(9, tgt.m.position.z + 1.6));
 I_.active = true; I_.g.visible = true; I_.t = 0;
@@ -1287,6 +1288,7 @@ const score_ = d - Math.max(0, facing) * 0.6;
 if(d < 2.6 && score_ < bd){ bd = score_; best = it; }
 if(it.wob){ it.wob *= Math.exp(-dt*6); it.m.rotation.z = Math.sin(performance.now()*0.03)*0.06*it.wob; if(it.wob < 0.02){ it.wob = 0; it.m.rotation.z = 0; } }
 }
+{ const ts = (it.st === 'held' || it.st === 'lifting') ? 0.8 : 1; if(Math.abs(it.m.scale.x - ts) > 0.001) it.m.scale.setScalar(it.m.scale.x + (ts - it.m.scale.x) * Math.min(1, dt * 12)); }
 if(it.m.material.emissive) it.m.material.emissive.setHex(0);
 if(it.data.isMys && it.m.material.emissive){ it.m.material.emissive.setHex(0x4a3000); it.m.material.emissiveIntensity = 0.5 + Math.sin(now*0.006)*0.4; }
 }
