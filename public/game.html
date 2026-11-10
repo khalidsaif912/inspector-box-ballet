@@ -60,7 +60,7 @@ canvas{display:block;position:fixed;inset:0}
 #hold .hc{font-size:24px}
 #hold .emo{font-size:30px}
 
-:root{--hh:clamp(30px,8.5vmin,42px);--js:clamp(78px,34vmin,128px);--ab:clamp(66px,28vmin,104px)}
+:root{--hh:clamp(30px,8.5vmin,42px);--js:clamp(70px,26vmin,104px);--ab:clamp(56px,20vmin,80px)}
 #hud{padding:calc(env(safe-area-inset-top,0px) + 6px) max(10px,env(safe-area-inset-right,0px)) 0 max(10px,env(safe-area-inset-left,0px));justify-content:space-between;align-items:flex-start;gap:0}
 .hgrp{display:flex;gap:calc(var(--hh)*.35);align-items:center}
 .pill{position:relative;height:var(--hh);min-width:calc(var(--hh)*2.7);padding:0 calc(var(--hh)*.4) 0 calc(var(--hh)*1.05);display:flex;align-items:center;justify-content:flex-end;direction:ltr;border-radius:calc(var(--hh)*.5);background:linear-gradient(180deg,#1b4380,#0b1c3d);border:2px solid #3aa0ff;box-shadow:0 0 12px rgba(58,160,255,.55),inset 0 0 10px rgba(90,180,255,.3),0 4px 10px rgba(0,0,0,.5)}
@@ -111,6 +111,8 @@ canvas{display:block;position:fixed;inset:0}
 #snd.off{background:radial-gradient(circle at 35% 30%,#5a2a2a,#2a0b0b);border-color:#ff7070;color:#ffb3b3}
 .pill{border:1.5px solid rgba(124,196,255,.85);background:linear-gradient(180deg,rgba(32,78,150,.92),rgba(10,26,58,.92));backdrop-filter:blur(8px)}
 .cbadge.hot b{animation:pulse .5s infinite alternate}
+.top-btns{z-index:12}
+.top-btns .rbtn{width:calc(var(--hh)*1.15);height:calc(var(--hh)*1.15);background:radial-gradient(circle at 35% 30%,#ffd27a,#f39c12 60%,#c46f00);color:#1a0f00;border:2px solid #fff;box-shadow:0 0 12px rgba(243,156,18,.6),0 4px 10px rgba(0,0,0,.5)}
 #inspector-badge{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translate(-50%,-140%);z-index:8;background:linear-gradient(180deg,#ffd54a,#f39c12);color:#1a0f00;font-weight:900;font-size:clamp(13px,4vmin,17px);padding:8px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.5);transition:transform .3s;white-space:nowrap;pointer-events:none}
 #inspector-badge.on{transform:translate(-50%,calc(var(--hh) + 10px))}
 </style>
@@ -1145,10 +1147,11 @@ g.traverse(o => { if(o.isMesh) o.castShadow = true; });
 g.visible = false; S.add(g);
 return { g, legs, arms, active:false, x:0, z:0, dir:1, t:0, cooldown:0 };
 })();
-function resetInspector(){ inspector.active = false; inspector.g.visible = false; inspector.cooldown = 6; $('inspector-badge').classList.remove('on'); }
+function resetInspector(){ inspector.active = false; inspector.g.visible = false; inspector.cooldown = 6; inspector.done = false; $('inspector-badge').classList.remove('on'); }
 function updateInspector(dt){
 const I_ = inspector;
 if(!I_.active){
+if(I_.done) return;
 I_.cooldown -= dt;
 if(I_.cooldown > 0) return;
 const bad = items.filter(i => i.st === 'floor' && !i.fall && !i.fined && (i.floorT = (i.floorT||0) + dt) > 2.5);
@@ -1164,11 +1167,11 @@ return;
 }
 I_.t += dt;
 const prevX = I_.x;
-I_.x += I_.dir * 16 * dt;
-const sw = Math.sin(I_.t * 22) * 0.9;
+I_.x += I_.dir * 4.5 * dt;
+const sw = Math.sin(I_.t * 7) * 0.6;
 I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw;
 I_.arms[0].rotation.x = -sw * 0.8; I_.arms[1].rotation.x = sw * 0.4 - 0.5;
-I_.g.position.set(I_.x, Math.abs(Math.sin(I_.t * 22)) * 0.08, I_.z);
+I_.g.position.set(I_.x, Math.abs(Math.sin(I_.t * 7)) * 0.05, I_.z);
 for(const it of items){
 if(it.st !== 'floor' || it.fined) continue;
 const bx = it.m.position.x;
@@ -1182,7 +1185,7 @@ it.m.material.emissive && it.m.material.emissive.setHex(0x552200);
 hud();
 }
 }
-if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.cooldown = 8; $('inspector-badge').classList.remove('on'); }
+if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.done = true; $('inspector-badge').classList.remove('on'); }
 }
 let last = performance.now();
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.12, 40), new THREE.MeshBasicMaterial({color:0xffc94d, transparent:true, opacity:0.85, depthWrite:false}));
