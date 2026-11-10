@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مستودع الشحن الجوي 3D - نظام المواد الخطرة IATA DGR HD</title>
+<style>
+:root{--bg:#131d28;--fg:#f4f7fb;--ac:#f39c12;box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Tahoma,sans-serif;overflow:hidden;touch-action:none;user-select:none}
+canvas{display:block;position:fixed;inset:0}
+#hud{position:fixed;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 0;display:flex;gap:12px;justify-content:space-between;pointer-events:none;z-index:5}
+.chip{background:rgba(18,28,40,.92);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:9px 16px;font-weight:800;font-size:15px;white-space:nowrap;backdrop-filter:blur(12px);box-shadow:0 6px 18px rgba(0,0,0,.5)}
+#tm.urgent{background:rgba(220,38,38,.92);color:#fff;animation:pulse .7s infinite alternate}
+@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.08)}}
+#hold{position:fixed;top:calc(env(safe-area-inset-top,0px) + 64px);left:50%;transform:translateX(-50%);z-index:5;border-color:var(--ac);color:#fff;background:rgba(20,32,48,.95);font-size:16px}
+#inspect{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 145px);left:50%;transform:translateX(-50%);z-index:5;background:rgba(10,18,28,.88);color:#ffdb4d;font-size:14px;pointer-events:none;display:none;border:1px solid rgba(255,219,77,.4);padding:6px 14px;border-radius:10px}
+#toast{position:fixed;top:38%;left:50%;transform:translateX(-50%);font-size:24px;font-weight:900;opacity:0;transition:opacity .25s,transform .25s;z-index:6;text-shadow:0 2px 12px #000;pointer-events:none;text-align:center;max-width:90%}
+#floating-fx{position:fixed;inset:0;pointer-events:none;z-index:7}
+.float-tag{position:absolute;font-size:24px;font-weight:900;transform:translate(-50%,-50%);animation:floatUp .85s forwards}
+@keyframes floatUp{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-65px)}}
+#controls-ui{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);left:0;right:0;display:flex;justify-content:space-between;align-items:flex-end;padding:0 24px;pointer-events:none;z-index:5}
+#joy{width:135px;height:135px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.3);pointer-events:auto;position:relative;backdrop-filter:blur(6px)}
+#knob{position:absolute;width:58px;height:58px;border-radius:50%;background:rgba(243,156,18,.96);left:37px;top:37px;box-shadow:0 4px 14px rgba(0,0,0,.6)}
+#act{width:115px;height:115px;border-radius:50%;border:4px solid rgba(255,255,255,.35);background:var(--ac);color:#120a00;font-size:21px;font-weight:900;pointer-events:auto;cursor:pointer;box-shadow:0 8px 22px rgba(243,156,18,.4);transition:transform .1s}
+#act:active{transform:scale(.92)}
+.ov{position:fixed;inset:0;background:rgba(10,18,26,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:10;padding:24px;text-align:center;backdrop-filter:blur(10px);overflow-y:auto}
+.ov h1{margin:0;font-size:30px;color:var(--ac)}
+.ov p{margin:0;max-width:540px;line-height:1.8;font-size:15px;opacity:.95}
+.leg{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:560px}
+.leg span{padding:6px 12px;border-radius:10px;font-size:13px;font-weight:800;color:#111}
+.ov button{background:var(--ac);border:0;border-radius:16px;padding:15px 42px;font-size:20px;font-weight:900;color:#180e00;cursor:pointer;box-shadow:0 6px 20px rgba(243,156,18,.5);transition:transform .1s}
+.ov button:active{transform:scale(.95)}
+.top-btns{position:fixed;top:calc(env(safe-area-inset-top,0px) + 64px);right:18px;z-index:11;display:flex;gap:10px}
+.icon-btn{cursor:pointer;pointer-events:auto}
+.tbl{width:100%;max-width:540px;border-collapse:collapse;font-size:13px;text-align:right;margin:4px 0;background:rgba(255,255,255,.06);border-radius:12px;overflow:hidden}
+.tbl th,.tbl td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+.tbl th{background:rgba(243,156,18,.25);color:var(--ac)}
+#hold{display:flex;align-items:center;gap:12px;padding:10px 18px 10px 14px;border-radius:20px;border:2px solid var(--ac);font-size:20px;max-width:calc(100vw - 20px);text-align:right;line-height:1.25;top:calc(env(safe-area-inset-top,0px) + 112px)}
+.dgl{width:96px;height:96px;flex:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.65))}
+.hinfo{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.hname{font-size:23px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000}
+.hcode{display:flex;gap:8px;flex-wrap:wrap;font:900 19px ui-monospace,Menlo,Consolas,monospace;direction:ltr}
+.hcode span{background:rgba(255,255,255,.14);padding:2px 10px;border-radius:8px;color:#ffe082}
+.dgtag{font-size:13px;font-weight:900;color:#fff;background:#d32f2f;padding:2px 9px;border-radius:6px;letter-spacing:.6px;direction:ltr}
+.emo{font-size:50px;flex:none}
+#inspect{align-items:center;gap:10px;padding:8px 14px;border-radius:14px;text-align:right}
+#hold{padding:8px 16px 8px 12px;gap:10px;border-radius:16px;transition:opacity .5s}
+#hold.fade{opacity:0;pointer-events:none}
+#hold .dgl{width:64px;height:64px}
+.hc{font:900 30px ui-monospace,Menlo,Consolas,monospace;direction:ltr;color:#fff;letter-spacing:.5px;text-shadow:0 1px 3px #000;white-space:nowrap}
+.hc b{color:#ffd54a}
+#hold .emo{font-size:38px}
+#hold .dgtag{font-size:11px;padding:1px 7px}
+.top-btns{top:calc(env(safe-area-inset-top,0px) + 84px);right:12px;gap:8px}
+.top-btns .chip{padding:6px 12px;font-size:15px;border-radius:12px}
+#hold,#inspect{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 168px)}
+#hold{padding:6px 14px 6px 10px;gap:8px;border-radius:14px}
+#hold .dgl{width:44px;height:44px}
+#hold .hc{font-size:24px}
+#hold .emo{font-size:30px}
+
+:root{--hh:clamp(30px,8.5vmin,42px);--js:clamp(78px,34vmin,128px);--ab:clamp(66px,28vmin,104px)}
+#hud{padding:calc(env(safe-area-inset-top,0px) + 6px) max(10px,env(safe-area-inset-right,0px)) 0 max(10px,env(safe-area-inset-left,0px));justify-content:space-between;align-items:flex-start;gap:0}
+.hgrp{display:flex;gap:calc(var(--hh)*.35);align-items:center}
+.pill{position:relative;height:var(--hh);min-width:calc(var(--hh)*2.7);padding:0 calc(var(--hh)*.4) 0 calc(var(--hh)*1.05);display:flex;align-items:center;justify-content:flex-end;direction:ltr;border-radius:calc(var(--hh)*.5);background:linear-gradient(180deg,#1b4380,#0b1c3d);border:2px solid #3aa0ff;box-shadow:0 0 12px rgba(58,160,255,.55),inset 0 0 10px rgba(90,180,255,.3),0 4px 10px rgba(0,0,0,.5)}
+.pill svg{position:absolute;left:calc(var(--hh)*-.14);top:50%;width:calc(var(--hh)*1.2);height:calc(var(--hh)*1.2);transform:translateY(-50%);filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+.pill b{font-size:calc(var(--hh)*.62);font-weight:900;line-height:1;color:#ffd54a;text-shadow:0 2px 0 #7a4a00,0 0 8px rgba(255,190,0,.45);font-variant-numeric:tabular-nums;letter-spacing:.5px}
+#tmbox.urgent{background:linear-gradient(180deg,#e53935,#7f1111);border-color:#fff;animation:pulse .7s infinite alternate}
+#tmbox.urgent b{color:#fff;text-shadow:0 2px 0 #4a0000}
+.cbadge{position:relative;width:calc(var(--hh)*1.5);height:calc(var(--hh)*1.5);display:grid;place-items:center;filter:grayscale(.85) brightness(.75);transition:filter .2s,transform .2s}
+.cbadge.hot{filter:drop-shadow(0 0 8px rgba(255,170,0,.85));transform:scale(1.08)}
+.cbadge svg{position:absolute;inset:0;width:100%;height:100%}
+.cbadge b{position:relative;font-size:calc(var(--hh)*.5);font-weight:900;color:#fff;direction:ltr;text-shadow:0 2px 0 #7a2d00,0 0 4px #7a2d00}
+.top-btns{top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.5 + 12px);left:max(10px,env(safe-area-inset-left,0px));right:auto;gap:8px}
+.rbtn{width:calc(var(--hh)*.95);height:calc(var(--hh)*.95);padding:0;border-radius:50%;border:2px solid #3aa0ff;background:radial-gradient(circle at 35% 30%,#2d62ab,#0b1c3d);color:#cfe8ff;display:grid;place-items:center;box-shadow:0 0 8px rgba(58,160,255,.5),0 3px 8px rgba(0,0,0,.5)}
+.rbtn svg{width:58%;height:58%}
+#snd .x{display:none}
+#snd.off .w{display:none}
+#snd.off .x{display:block}
+#controls-ui{bottom:calc(env(safe-area-inset-bottom,0px) + 14px);padding:0 max(16px,env(safe-area-inset-left,0px))}
+#joy{width:var(--js);height:var(--js);background:radial-gradient(circle,#12305c 0,#0b1d3b 62%,#08142a 100%);border:3px solid #3aa0ff;box-shadow:0 0 14px rgba(58,160,255,.5),inset 0 0 14px rgba(58,160,255,.25)}
+#joy i{position:absolute;width:0;height:0;border:calc(var(--js)*.06) solid transparent;opacity:.9}
+#joy .u{top:5%;left:50%;margin-left:calc(var(--js)*-.06);border-top-width:0;border-bottom-color:#7cc4ff}
+#joy .d{bottom:5%;left:50%;margin-left:calc(var(--js)*-.06);border-bottom-width:0;border-top-color:#7cc4ff}
+#joy .l{left:5%;top:50%;margin-top:calc(var(--js)*-.06);border-left-width:0;border-right-color:#7cc4ff}
+#joy .r{right:5%;top:50%;margin-top:calc(var(--js)*-.06);border-right-width:0;border-left-color:#7cc4ff}
+#knob{width:44%;height:44%;left:28%;top:28%;background:radial-gradient(circle at 35% 30%,#9bd4ff,#2a7be8 60%,#164a9e);border:2px solid #cfe8ff;box-shadow:0 4px 12px rgba(0,0,0,.6),inset 0 -4px 8px rgba(0,30,90,.5)}
+#act{width:var(--ab);height:var(--ab);display:grid;place-items:center;padding:0;background:radial-gradient(circle at 35% 30%,#ffd27a,#f39c12 55%,#c46f00);border:3px solid rgba(255,255,255,.6);box-shadow:0 6px 16px rgba(0,0,0,.5),inset 0 -6px 10px rgba(120,60,0,.35)}
+#act svg{width:58%;height:58%;grid-area:1/1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
+#act .ic-drop{display:none}
+#act.held{background:radial-gradient(circle at 35% 30%,#a8f5c0,#2fbf6a 55%,#16803f);box-shadow:0 6px 16px rgba(0,0,0,.5),0 0 16px rgba(47,191,106,.6),inset 0 -6px 10px rgba(0,70,30,.35)}
+#act.held .ic-pick{display:none}
+#act.held .ic-drop{display:block}
+#toast{font-size:clamp(15px,5vmin,24px);top:30%}
+#hold,#inspect{bottom:calc(env(safe-area-inset-bottom,0px) + 14px + var(--js) + 10px)}
+#hold .dgl{width:clamp(32px,9vmin,44px);height:clamp(32px,9vmin,44px)}
+#hold .hc{font-size:clamp(17px,5vmin,24px)}
+@media (orientation:landscape){#hold,#inspect{bottom:calc(env(safe-area-inset-bottom,0px) + 14px)}}
+
+/* ===== v9 polish ===== */
+#controls-ui{flex-direction:row-reverse;padding:0 max(18px,env(safe-area-inset-right,0px)) 0 max(18px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 18px)}
+#joy{background:radial-gradient(circle at 50% 45%,rgba(40,90,160,.55),rgba(8,20,42,.75) 70%);border:2px solid rgba(124,196,255,.7);box-shadow:0 0 0 6px rgba(58,160,255,.12),0 10px 24px rgba(0,0,0,.55),inset 0 0 18px rgba(58,160,255,.3);backdrop-filter:blur(8px)}
+#joy::before{content:"";position:absolute;inset:18%;border-radius:50%;border:1px dashed rgba(124,196,255,.35)}
+#knob{transition:transform .08s ease-out}
+#act{box-shadow:0 0 0 6px rgba(243,156,18,.18),0 10px 24px rgba(0,0,0,.55),inset 0 -6px 10px rgba(120,60,0,.35)}
+#act.held{box-shadow:0 0 0 6px rgba(47,191,106,.2),0 10px 24px rgba(0,0,0,.55),inset 0 -6px 10px rgba(0,70,30,.35)}
+.top-btns{flex-direction:column;gap:10px;padding:6px;border-radius:999px;background:rgba(8,20,42,.55);border:1px solid rgba(124,196,255,.35);backdrop-filter:blur(10px);box-shadow:0 6px 16px rgba(0,0,0,.45)}
+.rbtn{width:calc(var(--hh)*1.05);height:calc(var(--hh)*1.05);border:1.5px solid rgba(124,196,255,.8);transition:transform .12s,background .2s}
+.rbtn:active{transform:scale(.88)}
+#snd.off{background:radial-gradient(circle at 35% 30%,#5a2a2a,#2a0b0b);border-color:#ff7070;color:#ffb3b3}
+.pill{border:1.5px solid rgba(124,196,255,.85);background:linear-gradient(180deg,rgba(32,78,150,.92),rgba(10,26,58,.92));backdrop-filter:blur(8px)}
+.cbadge.hot b{animation:pulse .5s infinite alternate}
+#inspector-badge{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translate(-50%,-140%);z-index:8;background:linear-gradient(180deg,#ffd54a,#f39c12);color:#1a0f00;font-weight:900;font-size:clamp(13px,4vmin,17px);padding:8px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.5);transition:transform .3s;white-space:nowrap;pointer-events:none}
+#inspector-badge.on{transform:translate(-50%,calc(var(--hh) + 10px))}
+</style>
+</head>
+<body>
+<div id="hud">
+<div class="hgrp">
+<div class="pill" id="scbox"><svg viewBox="0 0 48 48"><defs><linearGradient id="gT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset="1" stop-color="#f5a400"/></linearGradient></defs><path d="M14 6h20v10c0 8-4 13-10 13S14 24 14 16z" fill="url(#gT)" stroke="#8a5a00" stroke-width="2" stroke-linejoin="round"/><path d="M14 9H7c0 8 3 12 8 13M34 9h7c0 8-3 12-8 13" fill="none" stroke="#e0a000" stroke-width="3" stroke-linecap="round"/><rect x="21" y="29" width="6" height="7" fill="#e8a400"/><rect x="14" y="36" width="20" height="6" rx="2" fill="url(#gT)" stroke="#8a5a00" stroke-width="2"/><path d="M24 11l2.2 4.6 5 .6-3.7 3.4 1 5-4.5-2.5-4.5 2.5 1-5-3.7-3.4 5-.6z" fill="#fff6c8" opacity=".9"/></svg><b id="sc">0</b></div>
+<div class="pill" id="tmbox"><svg viewBox="0 0 48 48"><rect x="21" y="3" width="6" height="5" rx="1.5" fill="#f5b400"/><path d="M33 9l4-3M35 11l3 3" stroke="#f5b400" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="27" r="17" fill="#f5b400" stroke="#8a5a00" stroke-width="2"/><circle cx="24" cy="27" r="13" fill="#fffdf2" stroke="#c98500" stroke-width="1.5"/><path d="M24 27V17M24 27l7 4" stroke="#1a2b4d" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="27" r="2" fill="#1a2b4d"/><path d="M24 15v2M24 37v2M12 27h2M34 27h2" stroke="#1a2b4d" stroke-width="2"/></svg><b id="tm">01:40</b></div>
+</div>
+<div class="cbadge" id="cbbox"><svg viewBox="0 0 48 48"><defs><radialGradient id="gB" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#ffd54a"/><stop offset="1" stop-color="#ff8f00"/></radialGradient></defs><polygon points="24.0,1.0 28.2,5.5 34.0,3.3 35.8,9.1 42.0,9.7 41.1,15.8 46.4,18.9 43.0,24.0 46.4,29.1 41.1,32.2 42.0,38.3 35.8,38.9 34.0,44.7 28.2,42.5 24.0,47.0 19.8,42.5 14.0,44.7 12.2,38.9 6.0,38.3 6.9,32.2 1.6,29.1 5.0,24.0 1.6,18.9 6.9,15.8 6.0,9.7 12.2,9.1 14.0,3.3 19.8,5.5" fill="url(#gB)" stroke="#8a4a00" stroke-width="1.6" stroke-linejoin="round"/><circle cx="24" cy="24" r="15" fill="#d9480f" stroke="#ffe08a" stroke-width="1.6"/></svg><b id="cb">×1</b></div>
+</div>
+<div id="hold" class="chip" style="display:none"></div>
+<div id="inspect" class="chip"></div>
+<div id="toast"></div>
+<div id="inspector-badge">🦺 المفتش يتجول في المستودع!</div>
+<div id="floating-fx"></div>
+<div class="top-btns">
+<button id="snd" class="rbtn icon-btn" aria-label="sound"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 010 7M18 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M4 4l16 16" stroke="#ff5252" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+<button id="rb" class="rbtn icon-btn" aria-label="guide"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="9" y="2.5" width="6" height="3.5" rx="1" fill="currentColor"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+</div>
+<div id="controls-ui">
+<div id="joy"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><div id="knob"></div></div>
+<button id="act" aria-label="pick/place"><svg class="ic-pick" viewBox="0 0 48 48"><path d="M24 6l16 8v20l-16 8-16-8V14z" fill="#e8b36a" stroke="#5a3510" stroke-width="2.6" stroke-linejoin="round"/><path d="M8 14l16 8 16-8M24 22v20" stroke="#5a3510" stroke-width="2.6" fill="none" stroke-linejoin="round"/><path d="M17 10l15 7.5" stroke="#fff" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/></svg><svg class="ic-drop" viewBox="0 0 48 48"><path d="M24 3v15M16.5 11.5L24 19l7.5-7.5" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 26l13 6.5v13L24 52 11 45.5v-13z" transform="translate(0 -9)" fill="#e8b36a" stroke="#5a3510" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 32.5l13 6.5 13-6.5M24 39v13" transform="translate(0 -9)" stroke="#5a3510" stroke-width="2.4" fill="none"/></svg></button>
+</div>
+<div class="ov" id="ov">
+<h1>✈️ مستودع الشحن الجوي الدولي HD</h1>
+<p>تحقق من كود المناولة <b>(IMP Code)</b> ورقم الفئة <b>(Class)</b> عند التقاط أي شحنة خطرة. قسّم الشحنات بين <b>الحاوية ١ والحاوية ٢</b> لتفادي خلط فئات متعارضة طبقاً لجدول <b>IATA Table 9.3.A</b>. الفرز الصحيح يمنحك وقتاً ونقاطاً إضافية.</p>
+<div class="leg">
+<span style="background:#5291b5">❄️ تبريد</span>
+<span style="background:#62985c">🍓 قابلة للتلف</span>
+<span style="background:#c29d50">🥂 قابلة للكسر</span>
+<span style="background:#84929a">📦 عامة</span>
+<span style="background:#b85550;color:#fff">☣️ حاوية مواد خطرة ١</span>
+<span style="background:#8e6098;color:#fff">☣️ حاوية مواد خطرة ٢</span>
+<span style="background:#ffc107">🎁 صندوق مفاجآت</span>
+</div>
+<button id="go">بدء الوردية</button>
+</div>
+<div class="ov" id="rules" style="display:none">
+<h1>دليل الفصل الإلزامي للمواد الخطرة (IATA DGR)</h1>
+<p>الأكواد الدولية المعتمدة في المستودع وقواعد الفصل بين الحاويتين:</p>
+<table class="tbl">
+<tr><th>الكود / الفئة</th><th>الوصف والمحتوى</th><th>ممنوع وضعه مع:</th></tr>
+<tr><td><b>RFL . 3</b></td><td>سوائل مشتعلة (وقود، دهانات)</td><td>RSC 4.2, ROX 5.1, RCM 8</td></tr>
+<tr><td><b>RSC . 4.2</b></td><td>مواد تلقائية الاشتعال</td><td>RFL 3, ROX 5.1, RCM 8</td></tr>
+<tr><td><b>RWR . 4.3</b></td><td>تتفاعل مع الماء وتطلق غازاً</td><td>RCM 8 (السوائل)</td></tr>
+<tr><td><b>ROX . 5.1</b></td><td>مواد مؤكسدة تزيد الاشتعال</td><td>RFL 3, RSC 4.2, RCM 8</td></tr>
+<tr><td><b>RCM . 8</b></td><td>مواد أكّالة وأحماض وبطاريات</td><td>RFL 3, RSC 4.2, RWR 4.3, ROX 5.1</td></tr>
+<tr><td><b>RXS / RCX . 1</b></td><td>متفجرات وذخائر</td><td>كل الفئات الأخرى بلا استثناء</td></tr>
+<tr><td><b>RMD . 9</b></td><td>مواد خطرة متنوعة وثلج جاف</td><td>متوافقة مع باقي الفئات عدا فئة ١</td></tr>
+<tr><td><b>RNG . 2.2</b></td><td>غازات غير قابلة للاشتعال</td><td>متوافقة مع باقي الفئات عدا فئة ١</td></tr>
+</table>
+<button id="rc">إغلاق الدليل</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let actx = null, soundEnabled = true;
+function initAudio(){ if(!actx) actx = new AudioCtx(); }
+function snd(type){
+if(!soundEnabled || !actx) return;
+const now = actx.currentTime;
+const osc = actx.createOscillator();
+const gain = actx.createGain();
+osc.connect(gain); gain.connect(actx.destination);
+if(type === 'pick'){
+osc.type = 'sine'; osc.frequency.setValueAtTime(140, now);
+osc.frequency.exponentialRampToValueAtTime(320, now + 0.12);
+gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.14);
+osc.start(now); osc.stop(now + 0.14);
+} else if(type === 'place'){
+osc.type = 'triangle'; osc.frequency.setValueAtTime(180, now);
+osc.frequency.exponentialRampToValueAtTime(60, now + 0.15);
+gain.gain.setValueAtTime(0.25, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.16);
+osc.start(now); osc.stop(now + 0.16);
+} else if(type === 'ok'){
+osc.type = 'triangle'; osc.frequency.setValueAtTime(440, now);
+osc.frequency.setValueAtTime(659, now + 0.08);
+gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+osc.start(now); osc.stop(now + 0.25);
+} else if(type === 'error'){
+osc.type = 'sawtooth'; osc.frequency.setValueAtTime(120, now);
+osc.frequency.setValueAtTime(90, now + 0.1);
+gain.gain.setValueAtTime(0.25, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+osc.start(now); osc.stop(now + 0.35);
+} else if(type === 'ship'){
+osc.type = 'sine'; osc.frequency.setValueAtTime(260, now);
+osc.frequency.setValueAtTime(520, now + 0.15);
+osc.frequency.setValueAtTime(780, now + 0.3);
+gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+osc.start(now); osc.stop(now + 0.5);
+} else if(type === 'bump'){
+osc.type = 'sine'; osc.frequency.setValueAtTime(95, now);
+osc.frequency.exponentialRampToValueAtTime(45, now + 0.1);
+gain.gain.setValueAtTime(0.14, now); gain.gain.linearRampToValueAtTime(0.001, now + 0.12);
+osc.start(now); osc.stop(now + 0.12);
+} else if(type === 'whistle'){
+osc.type = 'square'; osc.frequency.setValueAtTime(2100, now);
+osc.frequency.setValueAtTime(2500, now + 0.12); osc.frequency.setValueAtTime(2100, now + 0.24);
+gain.gain.setValueAtTime(0.09, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+osc.start(now); osc.stop(now + 0.4);
+} else if(type === 'warn'){
+osc.type = 'square'; osc.frequency.setValueAtTime(800, now);
+gain.gain.setValueAtTime(0.12, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+osc.start(now); osc.stop(now + 0.08);
+}
+}
+document.getElementById('snd').onclick = () => {
+initAudio();
+soundEnabled = !soundEnabled;
+document.getElementById('snd').classList.toggle('off', !soundEnabled);
+};
+const Z = [
+{n:'تبريد',e:'❄️',c:0x5291b5,k:'cold',x:-20,w:5.8,cap:9,cols:3},
+{n:'قابلة للتلف',e:'🍓',c:0x62985c,k:'perish',x:-12,w:5.8,cap:9,cols:3},
+{n:'قابلة للكسر',e:'🥂',c:0xc29d50,k:'fragile',x:-4,w:5.8,cap:9,cols:3},
+{n:'شحن عام',e:'📦',c:0x84929a,k:'gen',x:4,w:5.8,cap:9,cols:3},
+{n:'حاوية خطرة ١',e:'☣️',c:0xb85550,k:'hz1',x:13.5,w:6.2,cap:6,cols:3,hz:1},
+{n:'حاوية خطرة ٢',e:'☣️',c:0x8e6098,k:'hz2',x:22,w:6.2,cap:6,cols:3,hz:1}
+];
+Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; z.hw = z.w / 2; });
+const HCOL = {
+'1.3':0xff8a1f, '1.4':0xff8a1f,
+'2.1':0xe53935, '2.2':0x2e7d32, '2.3':0xffffff,
+'3':0xe53935,
+'4.1':0xf44336, '4.2':0xffffff, '4.3':0x1976d2,
+'5.1':0xfbc02d, '5.2':0xfbc02d,
+'6.1':0xffffff, '6.2':0xffffff,
+'7':0xfff176,
+'8':0xffffff,
+'9':0xffffff
+};
+const I = [
+['cold','💉','لقاحات مبردة','COL','REF'],['cold','🐟','أسماك طازجة','PES','COL'],['cold','💊','أنسولين وأدوية','MED','COL'],
+['perish','🍓','فراولة طازجة','PER','EAT'],['perish','🌹','زهور مقطوفة','PEF','EAT'],['perish','🍞','مخبوزات طازجة','PEM','EAT'],
+['fragile','🏺','تحف زجاجية','FRG','FRG'],['fragile','💻','شاشات حاسوب','FRG','ELC'],['fragile','🎻','آلات موسيقية','FRG','INS'],
+['gen','👕','ملابس قطنية','GEN','GEN'],['gen','📚','كتب ومطبوعات','GEN','GEN'],['gen','🧸','ألعاب أطفال','GEN','GEN']
+];
+const HZ = [
+['h1','🧨','ذخائر خفيفة','RXS','1.4S'],
+['h1','🎆','ألعاب نارية','RCX','1.3G'],
+['h2','⛽','غاز البترول المسال','RFG','2.1'],
+['h2','🧯','غاز الهيليوم المضغوط','RNG','2.2'],
+['h2','☣️','غاز الكلور السام','RPG','2.3'],
+['h3','🛢️','وقود طائرات كيروسين','RFL','3'],
+['h3','🎨','دهانات ومذيبات نفطية','RFL','3'],
+['h4','🔥','أعواد فسفور وكبريت','RFS','4.1'],
+['h4','✨','فحم نباتي منشط','RSC','4.2'],
+['h4','⚡','كاربيد الكالسيوم','RWR','4.3'],
+['h5','🌱','نترات الأمونيوم المؤكسدة','ROX','5.1'],
+['h5','🧴','بيروكسيد عضوي مثبت','ROP','5.2'],
+['h6','☠️','مبيدات زرنيخية سامة','RPB','6.1'],
+['h6','🦠','عينات فيروسية معدية','RIS','6.2'],
+['h7','☢️','نظائر يود طبية مشعة','RRY','7'],
+['h8','🧪','حمض الكبريتيك المركز','RCM','8'],
+['h8','🚗','بطاريات أحماض سائلة','RCM','8'],
+['h9','🔋','بطاريات ليثيوم أيون','RLI','9'],
+['h9','🧊','ثلج جاف كربوني','RMD','9']
+];
+function checkIATAConflict(divA, divB){
+if(divA === divB) return false;
+const getMajor = d => d.split('.')[0];
+const majA = getMajor(divA), majB = getMajor(divB);
+if(majA === '1' || majB === '1') return true;
+const majPair = [majA, majB].sort().join('+');
+if(majPair === '3+4' && (divA==='4.2'||divB==='4.2')) return true;
+if(majPair === '3+5' && (divA==='5.1'||divB==='5.1')) return true;
+if(majPair === '3+8') return true;
+if((divA==='4.2'||divB==='4.2') && (divA==='5.1'||divB==='5.1')) return true;
+if((divA==='4.2'||divB==='4.2') && majPair.includes('8')) return true;
+if((divA==='4.3'||divB==='4.3') && majPair.includes('8')) return true;
+if((divA==='5.1'||divB==='5.1') && majPair.includes('8')) return true;
+return false;
+}
+const R = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance', alpha:false});
+R.setPixelRatio(Math.min(devicePixelRatio, 2));
+R.shadowMap.enabled = true;
+R.shadowMap.type = THREE.PCFSoftShadowMap;
+R.outputEncoding = THREE.sRGBEncoding;
+R.toneMapping = THREE.ACESFilmicToneMapping;
+R.toneMappingExposure = 1.05;
+R.physicallyCorrectLights = false;
+document.body.prepend(R.domElement);
+const S = new THREE.Scene();
+S.background = new THREE.Color(0x1a2430);
+S.fog = new THREE.Fog(0x1a2430, 34, 85);
+const C = new THREE.PerspectiveCamera(48, 1, 0.1, 140);
+function rs(){
+R.setSize(innerWidth, innerHeight);
+C.aspect = innerWidth / innerHeight;
+C.fov = innerWidth < innerHeight ? 62 : 48;
+C.updateProjectionMatrix();
+}
+addEventListener('resize', rs); rs();
+// ===== الإضاءة: ضوء سماوي بارد من النوافذ العلوية + مصابيح صناعية دافئة + إضاءة مركّزة على مناطق الفرز
+const hemiLight = new THREE.HemisphereLight(0xcfe2ff, 0x3a3226, 0.55);
+S.add(hemiLight);
+const amb = new THREE.AmbientLight(0x404a58, 0.25); S.add(amb);
+const sun = new THREE.DirectionalLight(0xdfeaff, 0.95);
+sun.position.set(-14, 34, 18);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.bias = -0.0004;
+sun.shadow.normalBias = 0.03;
+sun.shadow.radius = 3;
+Object.assign(sun.shadow.camera, {left:-38, right:38, top:26, bottom:-26, near:5, far:90});
+S.add(sun);
+const fill = new THREE.DirectionalLight(0xffd7a8, 0.35);
+fill.position.set(20, 14, 30); S.add(fill);
+const M = (g, c, r=0.55, m=0.15) => {
+const o = new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:c, roughness:r, metalness:m}));
+o.castShadow = true; o.receiveShadow = true;
+return o;
+};
+const B = (w, h, d, c, x, y, z, p=S, r=0.55, m=0.15) => {
+const o = M(new THREE.BoxGeometry(w, h, d), c, r, m);
+o.position.set(x, y, z); p.add(o); return o;
+};
+const CY = (rt, rb, h, c, x, y, z, p=S, r=0.5, m=0.2, seg=16) => {
+const o = M(new THREE.CylinderGeometry(rt, rb, h, seg), c, r, m);
+o.position.set(x, y, z); p.add(o); return o;
+};
+function canvasTex(w, h, draw, rx=1, ry=1){
+const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+draw(cv.getContext('2d'), w, h);
+const t = new THREE.CanvasTexture(cv);
+t.encoding = THREE.sRGBEncoding;
+t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry);
+t.anisotropy = R.capabilities.getMaxAnisotropy();
+return t;
+}
+// ===== أرضية خرسانية مصقولة: ألواح 5×5 بدرجات متفاوتة + فواصل غائرة + طبقة تآكل وبقع وآثار عجلات + بقع ضوء المصابيح
+const TONES=[[92,97,104],[84,89,96],[97,102,108],[88,93,100]];
+const floorTex = canvasTex(1024, 1024, (g, w, h) => {
+const s=w/2;
+for(let i=0;i<4;i++){
+const x0=(i%2)*s, y0=(i>>1)*s, t=TONES[i];
+g.fillStyle=`rgb(${t[0]},${t[1]},${t[2]})`; g.fillRect(x0,y0,s,s);
+const gr=g.createRadialGradient(x0+s*(.3+Math.random()*.4),y0+s*(.3+Math.random()*.4),10,x0+s/2,y0+s/2,s*.75);
+gr.addColorStop(0,'rgba(255,255,255,.07)'); gr.addColorStop(1,'rgba(0,0,0,.09)');
+g.fillStyle=gr; g.fillRect(x0,y0,s,s);
+}
+for(let i=0;i<22000;i++){ const v=Math.random()>.5?255:0; g.fillStyle=`rgba(${v},${v},${v},${Math.random()*.06})`; g.fillRect(Math.random()*w,Math.random()*h,Math.random()*2+1,Math.random()*2+1); }
+for(let i=0;i<60;i++){ g.strokeStyle=Math.random()>.5?'rgba(255,255,255,.05)':'rgba(0,0,0,.06)'; g.lineWidth=1; const x=Math.random()*w,y=Math.random()*h,a=Math.random()*6.28,l=20+Math.random()*60; g.beginPath(); g.moveTo(x,y); g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l); g.stroke(); }
+g.fillStyle='rgba(255,255,255,.07)'; g.fillRect(s+2,0,2,h); g.fillRect(0,s+2,w,2);
+g.fillStyle='rgba(12,14,17,.85)';
+g.fillRect(s-1.5,0,3,h); g.fillRect(0,s-1.5,w,3);
+g.fillRect(0,0,1.5,h); g.fillRect(w-1.5,0,1.5,h); g.fillRect(0,0,w,1.5); g.fillRect(0,h-1.5,w,1.5);
+}, 7, 4.4);
+const floorBump = canvasTex(512, 512, (g, w, h) => {
+g.fillStyle='#bbb'; g.fillRect(0,0,w,h);
+for(let i=0;i<9000;i++){ const v=150+Math.random()*80|0; g.fillStyle=`rgb(${v},${v},${v})`; g.fillRect(Math.random()*w,Math.random()*h,2,2); }
+g.fillStyle='#222'; g.fillRect(w/2-2,0,4,h); g.fillRect(0,h/2-2,w,4);
+g.fillRect(0,0,2,h); g.fillRect(w-2,0,2,h); g.fillRect(0,0,w,2); g.fillRect(0,h-2,w,2);
+}, 7, 4.4);
+const floorMat = new THREE.MeshStandardMaterial({map:floorTex, bumpMap:floorBump, bumpScale:1, roughness:0.5, metalness:0.12});
+const floor = new THREE.Mesh(new THREE.BoxGeometry(70, 0.2, 44), floorMat);
+floor.position.set(0, -0.1, 2); floor.receiveShadow = true; S.add(floor);
+// طبقة تآكل: ممر مصقول، آثار عجلات، بقع زيت، اتساخ عند الجدران (مرسومة مرة واحدة لكامل الأرضية)
+const wearTex = canvasTex(1024, 640, (g, w, h) => {
+const X = v => (v+35)/70*w, Zc = v => (v+20)/44*h;
+g.clearRect(0,0,w,h);
+const edge = g.createLinearGradient(0,0,0,h); edge.addColorStop(0,'rgba(0,0,0,.35)'); edge.addColorStop(.12,'rgba(0,0,0,0)'); edge.addColorStop(.9,'rgba(0,0,0,0)'); edge.addColorStop(1,'rgba(0,0,0,.2)');
+g.fillStyle=edge; g.fillRect(0,0,w,h);
+const sideL = g.createLinearGradient(0,0,w*.07,0); sideL.addColorStop(0,'rgba(0,0,0,.25)'); sideL.addColorStop(1,'rgba(0,0,0,0)');
+g.fillStyle=sideL; g.fillRect(0,0,w*.07,h);
+g.save(); g.translate(w,0); g.scale(-1,1); g.fillStyle=sideL; g.fillRect(0,0,w*.07,h); g.restore();
+g.fillStyle='rgba(255,255,255,.045)'; g.fillRect(0,Zc(-4.2),w,Zc(9.2)-Zc(-4.2));
+for(const zz of [0.3,1.4,3.6,5.2,7.1]){
+for(let k=0;k<3;k++){ g.strokeStyle=`rgba(0,0,0,${.05+Math.random()*.04})`; g.lineWidth=7+Math.random()*5; g.beginPath(); const y0=Zc(zz+(Math.random()-.5)*.3); g.moveTo(0,y0); g.bezierCurveTo(w*.3,y0+(Math.random()-.5)*30,w*.65,y0+(Math.random()-.5)*30,w,y0+(Math.random()-.5)*20); g.stroke(); }
+}
+for(let i=0;i<9;i++){ const x=Math.random()*w, y=Zc(-3+Math.random()*13), r=16+Math.random()*34; const gr=g.createRadialGradient(x,y,0,x,y,r); gr.addColorStop(0,'rgba(15,15,18,.32)'); gr.addColorStop(.6,'rgba(15,15,18,.14)'); gr.addColorStop(1,'rgba(15,15,18,0)'); g.fillStyle=gr; g.beginPath(); g.ellipse(x,y,r,r*(.6+Math.random()*.4),Math.random()*3,0,6.3); g.fill(); }
+for(const sx of [-1,1]) for(const zz of [-6,6]){ g.strokeStyle='rgba(0,0,0,.09)'; g.lineWidth=9; g.beginPath(); const x=X(sx*33.5), y=Zc(zz+2); g.moveTo(x,y-45); g.quadraticCurveTo(x-sx*70,y,x-sx*20,y+60); g.stroke(); }
+}, 1, 1);
+wearTex.wrapS = wearTex.wrapT = THREE.ClampToEdgeWrapping;
+const wear = new THREE.Mesh(new THREE.PlaneGeometry(70, 44), new THREE.MeshBasicMaterial({map:wearTex, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2}));
+wear.rotation.x = -Math.PI/2; wear.position.set(0, 0.004, 2); S.add(wear);
+const poolTex = canvasTex(128, 128, (g, w, h) => { const gr=g.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2); gr.addColorStop(0,'rgba(255,226,170,.55)'); gr.addColorStop(.5,'rgba(255,226,170,.16)'); gr.addColorStop(1,'rgba(255,226,170,0)'); g.fillStyle=gr; g.fillRect(0,0,w,h); });
+poolTex.wrapS = poolTex.wrapT = THREE.ClampToEdgeWrapping;
+const poolMat = new THREE.MeshBasicMaterial({map:poolTex, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, opacity:0.55, polygonOffset:true, polygonOffsetFactor:-3, polygonOffsetUnits:-3});
+[[-16,-8.6],[0,-8.6],[17.7,-8.6],[-12,11],[12,11]].forEach(([x,z]) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(11, 11), poolMat); p.rotation.x = -Math.PI/2; p.position.set(x, 0.006, z); S.add(p); });
+// ===== جدران معدنية مموجة مع شريط سفلي
+const wallTex = canvasTex(512, 512, (g, w, h) => {
+g.fillStyle = '#56687a'; g.fillRect(0,0,w,h);
+for(let x=0;x<w;x+=32){ const gr = g.createLinearGradient(x,0,x+32,0); gr.addColorStop(0,'#4a5b6c'); gr.addColorStop(.5,'#71859a'); gr.addColorStop(1,'#4a5b6c'); g.fillStyle = gr; g.fillRect(x,0,32,h); }
+g.fillStyle = 'rgba(0,0,0,.18)'; for(let y=0;y<h;y+=128) g.fillRect(0,y,w,3);
+}, 14, 2);
+const wallMat = new THREE.MeshStandardMaterial({map:wallTex, roughness:0.6, metalness:0.35});
+const mkWall = (w,h,d,x,y,z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wallMat); m.position.set(x,y,z); m.receiveShadow = true; S.add(m); return m; };
+mkWall(70, 11, 0.6, 0, 5.5, -17.5);
+mkWall(0.6, 11, 44, -35, 5.5, 2);
+mkWall(0.6, 11, 44, 35, 5.5, 2);
+B(70, 1.2, 0.7, 0x3a4048, 0, 0.6, -17.3, S, 0.8, 0.1);
+B(0.7, 1.2, 44, 0x3a4048, -34.8, 0.6, 2, S, 0.8, 0.1);
+B(0.7, 1.2, 44, 0x3a4048, 34.8, 0.6, 2, S, 0.8, 0.1);
+// شريط تحذير أصفر/أسود على قاعدة الجدار
+const hazTex = canvasTex(256, 32, (g,w,h)=>{ g.fillStyle='#f5c400'; g.fillRect(0,0,w,h); g.fillStyle='#151515'; for(let x=-32;x<w;x+=32){ g.beginPath(); g.moveTo(x,h); g.lineTo(x+16,h); g.lineTo(x+32,0); g.lineTo(x+16,0); g.fill(); } }, 30, 1);
+const hazMat = new THREE.MeshStandardMaterial({map:hazTex, roughness:0.5});
+const hz1 = new THREE.Mesh(new THREE.BoxGeometry(70, 0.3, 0.72), hazMat); hz1.position.set(0, 1.25, -17.3); S.add(hz1);
+// أبواب رصيف التحميل
+[-1,1].forEach(s => {
+[-6, 6].forEach(z => {
+B(0.3, 6.2, 5.4, 0x2b3138, s*34.6, 3.1, z, S, 0.6, 0.4);
+const door = new THREE.Mesh(new THREE.BoxGeometry(0.2, 5.6, 4.8), new THREE.MeshStandardMaterial({map:canvasTex(64,256,(g,w,h)=>{ g.fillStyle='#8c99a6'; g.fillRect(0,0,w,h); g.fillStyle='rgba(0,0,0,.25)'; for(let y=0;y<h;y+=12) g.fillRect(0,y,w,2); },1,1), roughness:0.5, metalness:0.5}));
+door.position.set(s*34.45, 2.8, z); door.receiveShadow = true; S.add(door);
+const dl = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.3, 0.3), new THREE.MeshStandardMaterial({color:0x111, emissive:z<0?0x22ff55:0xff3322, emissiveIntensity:1.6}));
+dl.position.set(s*34.3, 6.5, z + 2.0); S.add(dl);
+});
+});
+// ===== هيكل السقف: جمالونات + نوافذ ضوئية مضيئة
+// أعمدة + مصابيح صناعية معلقة
+const lampMat = new THREE.MeshStandardMaterial({color:0xfff3d6, emissive:0xffe2a8, emissiveIntensity:2.2});
+[-24, -8, 8, 24].forEach(x => {
+[-12.6, 15].forEach(z => {
+B(0.9, 4.6, 0.9, 0x3d4652, x, 2.3, z, S, 0.4, 0.5);
+B(1.05, 1.0, 1.05, 0xf5c400, x, 0.5, z, S, 0.5, 0.1);
+});
+});
+const spotTargets = [];
+[[-16,-8.6],[0,-8.6],[17.7,-8.6],[-12,11],[12,11]].forEach(([x,z],i) => {
+const sp = new THREE.SpotLight(i<3 ? 0xffe4b8 : 0xfff0d8, i<3 ? 1.25 : 0.9, 22, Math.PI*0.27, 0.55, 1.4);
+sp.position.set(x, 7.9, z); sp.target.position.set(x, 0, z); S.add(sp); S.add(sp.target);
+});
+// ===== رفوف تخزين عالية محمّلة بمنصات وطرود مغلفة
+const boxTex = canvasTex(128,128,(g,w,h)=>{ g.fillStyle='#a37a4f'; g.fillRect(0,0,w,h); g.fillStyle='#c9a676'; g.fillRect(56,0,16,h); g.strokeStyle='rgba(60,35,15,.5)'; g.lineWidth=4; g.strokeRect(2,2,w-4,h-4); g.fillStyle='#f2efe6'; g.fillRect(14,80,34,26); });
+const boxMat = new THREE.MeshStandardMaterial({map:boxTex, roughness:0.85});
+const wrapMat = new THREE.MeshStandardMaterial({color:0xcfe0ea, roughness:0.2, metalness:0.1, transparent:true, opacity:0.35});
+const palletMat = new THREE.MeshStandardMaterial({color:0x9a7a52, roughness:0.9});
+function pallet(x, y, z, par=S, n=3){
+const pg = new THREE.Group(); pg.position.set(x, y, z); par.add(pg);
+[-0.5,0,0.5].forEach(o => { const s = new THREE.Mesh(new THREE.BoxGeometry(1.5,0.12,0.18), palletMat); s.position.set(0,0.06,o*0.95); s.castShadow = s.receiveShadow = true; pg.add(s); });
+const top = new THREE.Mesh(new THREE.BoxGeometry(1.5,0.05,1.2), palletMat); top.position.y = 0.15; top.castShadow = top.receiveShadow = true; pg.add(top);
+for(let i=0;i<n;i++){ const b = new THREE.Mesh(new THREE.BoxGeometry(0.66,0.5,0.55), boxMat); b.position.set((i%2-.5)*0.7, 0.43 + Math.floor(i/2)*0.5, (i%3===2?0.28:-0.28)); b.rotation.y = (Math.random()-.5)*0.1; b.castShadow = b.receiveShadow = true; pg.add(b); }
+if(n>2){ const w = new THREE.Mesh(new THREE.BoxGeometry(1.48, 1.05, 1.18), wrapMat); w.position.y = 0.7; pg.add(w); }
+return pg;
+}
+[-28, -14, 2, 16].forEach(x => {
+[-5, 5].forEach(o => B(0.16, 8.0, 0.16, 0x1f5fa8, x+o, 4.0, -15.0, S, 0.4, 0.6));
+[-5, 5].forEach(o => B(0.16, 8.0, 0.16, 0x1f5fa8, x+o, 4.0, -16.7, S, 0.4, 0.6));
+for(let dy=0.2; dy<=7.4; dy+=2.4){
+B(10.2, 0.14, 0.12, 0xf08a00, x, dy, -15.0, S, 0.4, 0.5);
+B(10.2, 0.14, 0.12, 0xf08a00, x, dy, -16.7, S, 0.4, 0.5);
+B(10.0, 0.05, 1.6, 0x6d7a87, x, dy+0.07, -15.85, S, 0.5, 0.6);
+for(let bx=-3.4; bx<=3.4; bx+=2.25) pallet(x+bx, dy+0.1, -15.85, S, 2 + (Math.random()*3|0));
+}
+});
+// منصات وطرود متفرقة + حواجز أمان + رافعة شوكية متوقفة
+[[-32,-3],[-32,-1.2],[-32,0.6],[32,-3],[32,-1.2],[-32,6],[32,4.5]].forEach(([x,z]) => pallet(x, 0, z, S, 4));
+const BOLLARDS = [];
+[[-27.4,9.2],[27.4,9.2],[-27.4,14.6],[27.4,14.6],[-11,-4.6],[9.3,-4.6]].forEach(([x,z]) => {
+CY(0.18, 0.18, 1.1, 0xf5c400, x, 0.55, z, S, 0.45, 0.2);
+CY(0.185, 0.185, 0.16, 0x151515, x, 0.75, z, S, 0.6, 0.1);
+BOLLARDS.push({x, z, r:0.2});
+});
+const fk = new THREE.Group(); fk.position.set(-31, 0, 11.5); fk.rotation.y = Math.PI/2; S.add(fk);
+B(1.5, 0.9, 2.2, 0xf2a900, 0, 0.75, 0, fk, 0.45, 0.3);
+B(1.3, 0.5, 0.9, 0x222, 0, 1.4, -0.6, fk, 0.7, 0.2);
+[-0.6,0.6].forEach(s => B(0.08, 2.2, 0.08, 0x333, s, 1.8, 0.2, fk, 0.5, 0.6));
+B(1.3, 0.08, 0.08, 0x333, 0, 2.85, 0.2, fk, 0.5, 0.6); B(1.3, 0.08, 0.08, 0x333, 0, 2.85, -0.9, fk, 0.5, 0.6);
+[-0.6,0.6].forEach(s => B(0.08, 2.2, 0.08, 0x333, s, 1.8, -0.9, fk, 0.5, 0.6));
+B(0.12, 2.6, 0.2, 0x2a2a2a, 0, 1.3, 1.2, fk, 0.5, 0.6);
+[-0.45,0.45].forEach(s => B(0.15, 0.06, 1.3, 0x555, s, 0.15, 1.8, fk, 0.4, 0.8));
+[[-0.78,0.7],[0.78,0.7],[-0.78,-0.7],[0.78,-0.7]].forEach(([x,z]) => { const w = CY(0.32,0.32,0.3,0x161616,x,0.32,z,fk,0.9,0.1); w.rotation.z = Math.PI/2; });
+// لافتات حائطية
+function wallSign(txt, sub, bg, x, y, z, ry=0, w=4){
+const t = canvasTex(512, 256, (g)=>{ g.fillStyle=bg; g.fillRect(0,0,512,256); g.strokeStyle='#fff'; g.lineWidth=10; g.strokeRect(12,12,488,232); g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle'; g.font='bold 74px sans-serif'; g.fillText(txt,256,100); g.font='bold 38px sans-serif'; g.fillText(sub,256,185); });
+const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w/2), new THREE.MeshStandardMaterial({map:t, roughness:0.6})); m.position.set(x,y,z); m.rotation.y = ry; S.add(m);
+}
+wallSign('🚭 ممنوع التدخين','NO SMOKING • DGR AREA','#b3261e', 8.5, 8.6, -17.15);
+wallSign('⚠️ منطقة مواد خطرة','IATA DGR CLASS 1–9','#c77800', 26, 8.6, -17.15);
+wallSign('✈️ مخرج الطيران','AIRSIDE GATE B','#1b6b3a', -34.65, 7.5, -6, Math.PI/2, 3.4);
+wallSign('🚚 رصيف التحميل','LOADING DOCK 4','#204f8c', 34.65, 7.5, 6, -Math.PI/2, 3.4);
+// خطوط الأرضية: ممرات المشاة + حدود الحزام
+B(64, 0.02, 0.3, 0xffc107, 0, 0.012, -4.4, S, 0.4, 0.05).castShadow = false;
+B(64, 0.02, 0.3, 0xffc107, 0, 0.012, 9.4, S, 0.4, 0.05).castShadow = false;
+for(let x=-30; x<=30; x+=1.4){ const s = B(0.6, 0.02, 1.4, 0xeeeeee, x, 0.011, 2.5, S, 0.5, 0.05); s.castShadow = false; s.visible = Math.abs(x) > 3 && (Math.round(x/1.4) % 6 === 0 || Math.round(x/1.4) % 6 === 1); }
+// ===== حزام النقل: إطار معدني، بكرات، أرجل، أضواء تحذير
+B(50, 0.12, 2.7, 0x404b57, 0, 0.62, 12, S, 0.35, 0.8);
+[-1,1].forEach(s => B(50, 0.32, 0.12, 0xe0a100, 0, 0.88, 12+s*1.32, S, 0.4, 0.5));
+B(50, 0.06, 2.3, 0x14181d, 0, 0.69, 12, S, 0.95, 0.05);
+for(let x=-24; x<=24; x+=3){ [-1,1].forEach(s => B(0.14, 0.62, 0.14, 0x30383f, x, 0.31, 12+s*1.15, S, 0.4, 0.7)); }
+const stripes = [];
+for(let i=0; i<50; i++){
+const st = B(0.08, 0.02, 2.3, 0x2a323a, -24.5+i, 0.73, 12, S, 0.6, 0.3); st.castShadow = false;
+stripes.push(st);
+}
+B(2.6, 3.8, 3.6, 0x324454, -25.8, 1.9, 12, S, 0.4, 0.4);
+B(2.6, 3.8, 3.6, 0x324454, 25.8, 1.9, 12, S, 0.4, 0.4);
+[-1,1].forEach(s => {
+const flap = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), new THREE.MeshStandardMaterial({color:0x222a30, roughness:0.4, transparent:true, opacity:0.85, side:THREE.DoubleSide}));
+flap.rotation.y = Math.PI/2; flap.position.set(s*24.48, 1.6, 12); S.add(flap);
+});
+const beacons = [];
+[-25.8, 25.8].forEach(x => {
+const b = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.2,0.35,14), new THREE.MeshStandardMaterial({color:0xff8f00, emissive:0xff7a00, emissiveIntensity:1.5}));
+b.position.set(x, 4.0, 12); S.add(b); beacons.push(b);
+});
+function drawZoneSign(z){
+const cv = z.signCv, ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+ctx.clearRect(0,0,W,H);
+ctx.fillStyle = '#' + z.c.toString(16).padStart(6,'0');
+ctx.beginPath(); ctx.roundRect ? ctx.roundRect(8,8,W-16,H-16,32) : ctx.rect(8,8,W-16,H-16);
+ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 12; ctx.stroke();
+ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+if(z.hz){
+ctx.fillStyle = '#fff'; fit(ctx, z.n, 440, 70); ctx.fillText(z.n, 256, 56);
+ctx.fillStyle = 'rgba(0,0,0,.32)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(26,98,460,H-124,18) : ctx.rect(26,98,460,H-124); ctx.fill();
+if(!z.items.length){ ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = 'bold 30px sans-serif'; ctx.fillText('— فارغة —', 256, 98 + (H-124)/2); }
+z.items.forEach((it, i) => {
+if(!it) return;
+const y = 124 + i*44;
+ctx.textAlign = 'left'; ctx.fillStyle = '#ffd54a'; ctx.font = '900 28px monospace'; ctx.fillText(it.data.imp + ', ' + it.data.div, 40, y);
+ctx.textAlign = 'right'; ctx.fillStyle = '#fff'; fit(ctx, it.data.name, 250, 30); ctx.fillText(it.data.name, 474, y);
+});
+} else {
+ctx.fillStyle = '#111'; ctx.font = '96px sans-serif'; ctx.fillText(z.e, 256, 80);
+fit(ctx, z.n, 440, 75); ctx.fillText(z.n, 256, 185);
+}
+z.signTex.needsUpdate = true;
+}
+function makeZoneSign(z){
+const cv = document.createElement('canvas'); cv.width = 512; cv.height = z.hz ? 384 : 256;
+z.signCv = cv; z.signTex = new THREE.CanvasTexture(cv); z.signTex.encoding = THREE.sRGBEncoding;
+drawZoneSign(z);
+const spr = new THREE.Sprite(new THREE.SpriteMaterial({map:z.signTex, fog:false}));
+spr.scale.set(z.w*0.9, z.w*(z.hz ? 0.675 : 0.45), 1);
+return spr;
+}
+Z.forEach(z => {
+const pad = B(z.w+0.1, 0.06, 6.2, z.c, z.x, 0.03, -8.6, S, 0.55, 0.05);
+pad.material.emissive = new THREE.Color(z.c).multiplyScalar(0.12); pad.castShadow = false;
+// حدود المنطقة المرسومة على الأرض
+[-1,1].forEach(q => { const e = B(0.14, 0.03, 6.2, 0xffffff, z.x + q*(z.w/2), 0.07, -8.6, S, 0.5, 0.05); e.castShadow = false; });
+const fr = B(z.w, 0.03, 0.14, 0xffffff, z.x, 0.07, -5.5, S, 0.5, 0.05); fr.castShadow = false;
+B(z.w+0.1, 0.6, 0.25, z.c, z.x, 0.3, -11.8, S, 0.5, 0.1);
+// قائم اللافتة
+[-1,1].forEach(q => B(0.1, 4.4, 0.1, 0x2b333c, z.x + q*z.w*0.43, 2.2, -11.75, S, 0.4, 0.7));
+const sign = makeZoneSign(z); sign.position.set(z.x, z.hz ? 5.7 : 5.0, -11.7); S.add(sign);
+if(z.hz){
+// قفص شبكي معدني لحاويات المواد الخطرة
+const meshTex = canvasTex(128,128,(g,w,h)=>{ g.clearRect(0,0,w,h); g.strokeStyle='#b8c7d6'; g.lineWidth=5; for(let i=-w;i<w*2;i+=24){ g.beginPath(); g.moveTo(i,0); g.lineTo(i+h,h); g.stroke(); g.beginPath(); g.moveTo(i,h); g.lineTo(i+h,0); g.stroke(); } }, 6, 2);
+const meshMat = new THREE.MeshStandardMaterial({map:meshTex, transparent:true, alphaTest:0.4, side:THREE.DoubleSide, metalness:0.6, roughness:0.4});
+[-1, 1].forEach(q => {
+const p = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 1.8), meshMat); p.rotation.y = Math.PI/2; p.position.set(z.x + q*z.w/2, 1.0, -8.6); p.castShadow = true; S.add(p);
+[-11.6, -8.6, -5.6].forEach(zz => B(0.12, 2.0, 0.12, 0x5d7189, z.x + q*z.w/2, 1.0, zz, S, 0.4, 0.7));
+B(0.1, 0.1, 6.2, 0x5d7189, z.x + q*z.w/2, 1.95, -8.6, S, 0.4, 0.7);
+});
+const back = new THREE.Mesh(new THREE.PlaneGeometry(z.w, 1.8), meshMat); back.position.set(z.x, 1.0, -11.6); S.add(back);
+// علامة الخطر على الأرض
+const dz = new THREE.Mesh(new THREE.PlaneGeometry(1.4,1.4), new THREE.MeshStandardMaterial({color:0xf5c400, roughness:0.6})); dz.rotation.x = -Math.PI/2; dz.rotation.z = Math.PI/4; dz.position.set(z.x, 0.075, -4.9); S.add(dz);
+}
+});
+const pl = new THREE.Group(); S.add(pl);
+const rig = new THREE.Group(); pl.add(rig);
+const sh = new THREE.Mesh(new THREE.CircleGeometry(0.7, 32), new THREE.MeshBasicMaterial({color:0x000, transparent:true, opacity:0.28, depthWrite:false}));
+sh.rotation.x = -Math.PI/2; sh.position.y = 0.02; pl.add(sh);
+const G = (par,x,y,z) => { const g = new THREE.Group(); g.position.set(x,y,z); par.add(g); return g; };
+const C_SKIN = 0xe2b492, C_VEST = 0xd4ff00, C_VEST_SEC = 0xff6d00, C_PANTS = 0x243240, C_BOOTS = 0x1b1614, C_HELMET = 0xffb700, C_GLOVE = 0x37474f;
+const pelvis = G(rig, 0, 0.92, 0);
+B(0.64, 0.3, 0.4, C_PANTS, 0, -0.02, 0, pelvis);
+B(0.66, 0.08, 0.42, 0x111, 0, 0.08, 0, pelvis);
+B(0.14, 0.1, 0.08, 0xcfd8dc, 0, 0.08, 0.22, pelvis);
+const tor = G(pelvis, 0, 0.15, 0);
+B(0.68, 0.8, 0.42, 0x273645, 0, 0.42, 0, tor);
+B(0.72, 0.76, 0.46, C_VEST, 0, 0.42, 0, tor);
+B(0.74, 0.18, 0.47, C_VEST_SEC, 0, 0.15, 0, tor);
+B(0.75, 0.07, 0.48, 0xffffff, 0, 0.42, 0, tor);
+B(0.75, 0.07, 0.48, 0xffffff, 0, 0.26, 0, tor);
+[-0.2, 0.2].forEach(x => B(0.11, 0.5, 0.49, 0xffffff, x, 0.54, 0, tor));
+const hd = G(tor, 0, 0.86, 0);
+B(0.18, 0.16, 0.18, C_SKIN, 0, 0.04, 0, hd);
+const hs = M(new THREE.SphereGeometry(0.28, 20, 16), C_SKIN);
+hs.scale.set(0.9, 1.1, 0.95); hs.position.y = 0.27; hd.add(hs);
+const beard = M(new THREE.SphereGeometry(0.275, 16, 12, 0, Math.PI*2, Math.PI*0.45, Math.PI*0.5), 0x241a14);
+beard.position.set(0, 0.25, 0.01); beard.scale.set(0.94, 1.1, 0.96); hd.add(beard);
+[-1, 1].forEach(s => {
+const eye = M(new THREE.SphereGeometry(0.035, 8, 6), 0x111); eye.position.set(s*0.1, 0.29, 0.24); hd.add(eye);
+});
+const helmet = G(hd, 0, 0.36, 0);
+helmet.add(M(new THREE.SphereGeometry(0.32, 24, 16, 0, Math.PI*2, 0, Math.PI*0.55), C_HELMET));
+const hRim = M(new THREE.CylinderGeometry(0.35, 0.36, 0.04, 24), C_HELMET); hRim.position.y = 0.02; helmet.add(hRim);
+const legs = [-1, 1].map(s => {
+const hip = G(pelvis, s*0.19, 0, 0);
+const thigh = G(hip, 0, 0, 0);
+B(0.25, 0.46, 0.27, C_PANTS, 0, -0.2, 0, thigh);
+const knee = G(thigh, 0, -0.42, 0);
+B(0.23, 0.44, 0.25, C_PANTS, 0, -0.2, 0, knee);
+const ankle = G(knee, 0, -0.4, 0);
+B(0.25, 0.2, 0.44, C_BOOTS, 0, 0.08, 0.05, ankle);
+return {hip, thigh, knee, ankle};
+});
+const arms = [-1, 1].map(s => {
+const shld = G(tor, s*0.44, 0.74, 0);
+const uArm = G(shld, 0, 0, 0);
+B(0.22, 0.38, 0.24, C_VEST, 0, -0.16, 0, uArm);
+const elbow = G(uArm, 0, -0.34, 0);
+B(0.19, 0.36, 0.21, C_SKIN, 0, -0.16, 0, elbow);
+const hand = G(elbow, 0, -0.36, 0);
+B(0.21, 0.18, 0.22, C_GLOVE, 0, -0.04, 0, hand);
+return {shld, uArm, elbow, hand};
+});
+const PLAYER_RADIUS = 0.45;
+const STATIC_OBSTACLES = [
+{ minX: -26.0, maxX: 26.0, minZ: 10.6, maxZ: 13.6 },
+{ minX: -27.1, maxX: -24.5, minZ: 10.2, maxZ: 13.8 },
+{ minX: 24.5, maxX: 27.1, minZ: 10.2, maxZ: 13.8 },
+{ minX: -34.0, maxX: 34.0, minZ: -18.2, maxZ: -11.65 },
+{ minX: -32.2, maxX: -29.8, minZ: 10.2, maxZ: 12.8 },
+{ minX: -32.9, maxX: -31.1, minZ: -3.8, maxZ: 1.4 }, { minX: 31.1, maxX: 32.9, minZ: -3.8, maxZ: -0.4 },
+{ minX: -32.9, maxX: -31.1, minZ: 5.2, maxZ: 6.8 }, { minX: 31.1, maxX: 32.9, minZ: 3.7, maxZ: 5.3 }
+];
+[-24, -8, 8, 24].forEach(x => STATIC_OBSTACLES.push({minX:x-0.55, maxX:x+0.55, minZ:-13.15, maxZ:-12.05}));
+// جدران أقفاص المواد الخطرة (مفتوحة من الأمام)
+Z.filter(z => z.hz).forEach(z => [-1,1].forEach(q => STATIC_OBSTACLES.push({minX:z.x+q*z.w/2-0.1, maxX:z.x+q*z.w/2+0.1, minZ:-11.7, maxZ:-5.5})));
+Z.forEach(z => STATIC_OBSTACLES.push({minX:z.x-(z.w+0.1)/2, maxX:z.x+(z.w+0.1)/2, minZ:-11.925, maxZ:-11.675}));
+let bumpCD = 0, lastBump = 0;
+// دفع دائرة اللاعب خارج مستطيل مع انزلاق ناعم على الحواف بدل القفز للمحور الأقرب
+function pushOutAABB(p, minX, maxX, minZ, maxZ, r){
+const cx = Math.max(minX, Math.min(p.x, maxX));
+const cz = Math.max(minZ, Math.min(p.z, maxZ));
+let dx = p.x - cx, dz = p.z - cz;
+const d2 = dx*dx + dz*dz;
+if(d2 >= r*r) return false;
+if(d2 > 1e-8){
+const d = Math.sqrt(d2), push = r - d;
+p.x += dx/d * push; p.z += dz/d * push;
+} else {
+const l = p.x - minX, rr = maxX - p.x, t = p.z - minZ, b = maxZ - p.z;
+const m = Math.min(l, rr, t, b);
+if(m === l) p.x = minX - r; else if(m === rr) p.x = maxX + r; else if(m === t) p.z = minZ - r; else p.z = maxZ + r;
+}
+return true;
+}
+function resolvePlayerCollisions(targetX, targetZ, mvx=0, mvz=0, dt=0.016) {
+const p = { x: Math.max(-33.6, Math.min(33.6, targetX)), z: Math.max(-11.5, Math.min(10.1, targetZ)) };
+let hit = false;
+for(let iter=0; iter<3; iter++){
+for (const o of STATIC_OBSTACLES) if(pushOutAABB(p, o.minX, o.maxX, o.minZ, o.maxZ, PLAYER_RADIUS)) hit = true;
+for (const b of BOLLARDS){
+const dx = p.x - b.x, dz = p.z - b.z, d = Math.hypot(dx, dz), m = PLAYER_RADIUS + b.r;
+if(d < m && d > 1e-6){ p.x += dx/d*(m-d); p.z += dz/d*(m-d); hit = true; }
+}
+for (const it of items) {
+if (it.st === 'held' || it.st === 'lifting' || it.st === 'belt') continue;
+const h = 0.68, bx = it.m.position.x, bz = it.m.position.z;
+if(it.st === 'floor'){
+// الطرود على الأرض تُدفع بلطف عند ملامستها
+const cx = Math.max(bx-h, Math.min(p.x, bx+h)), cz = Math.max(bz-h, Math.min(p.z, bz+h));
+const dx = p.x - cx, dz = p.z - cz, d = Math.hypot(dx, dz);
+if(d < PLAYER_RADIUS){
+const pen = PLAYER_RADIUS - d, nx = d > 1e-6 ? dx/d : -mvx, nz = d > 1e-6 ? dz/d : -mvz;
+it.m.position.x -= nx * pen * 0.7; it.m.position.z -= nz * pen * 0.7;
+it.m.position.x = Math.max(-33, Math.min(33, it.m.position.x));
+it.m.position.z = Math.max(-11.9, Math.min(9.6, it.m.position.z));
+it.m.rotation.y += (nx*mvz - nz*mvx) * pen * 0.6;
+it.wob = 1;
+p.x += nx * pen * 0.3; p.z += nz * pen * 0.3;
+hit = true;
+}
+} else if(pushOutAABB(p, bx-h, bx+h, bz-h, bz+h, PLAYER_RADIUS)) hit = true;
+}
+}
+if(held && !liftAnim.active){
+const hh = boxHalf({m:{rotation:{y:curRotY}}}), fx = Math.sin(curRotY)*0.78, fz = Math.cos(curRotY)*0.78;
+for(let k=0;k<2;k++){
+const bp = {x:p.x+fx, z:p.z+fz};
+for(const o of STATIC_OBSTACLES){
+const v = overlapVec(bp, hh, (o.minX+o.maxX)/2, (o.minZ+o.maxZ)/2, (o.maxX-o.minX)/2, (o.maxZ-o.minZ)/2);
+if(v){ const m = Math.hypot(v[0], v[1]), f = m < 0.3 ? 1 : 0.3/m; p.x += v[0]*f; p.z += v[1]*f; hit = true; break; }
+}
+}
+}
+if(hit && (Math.abs(mvx)+Math.abs(mvz)) > 0.3 && performance.now() - lastBump > 380){ lastBump = performance.now(); snd('bump'); }
+return p;
+}
+let bob=0, walk=0, turnLean=0, curRotY=0;
+let liftAnim = {active:false, t:0, dur:0.32, fromPos:new THREE.Vector3(), toHold:null};
+const cargoSmoothPos = new THREE.Vector3();
+let cargoInertiaY = 0;
+const pose = {
+lHip:0, rHip:0, lKnee:0, rKnee:0,
+lShldX:0, rShldX:0, lShldZ:0, rShldZ:0,
+lElb:0, rElb:0,
+torsoTwist:0, torsoLean:0, torsoRoll:0, pelvisDrop:0
+};
+function anim(dt, spd, vx, vz){
+const isMoving = spd > 0.08;
+const isHeld = !!held;
+if(isMoving){
+walk += dt * (isHeld ? 9.2 : 13.5);
+const targetRot = Math.atan2(vx, vz);
+let diff = Math.atan2(Math.sin(targetRot - curRotY), Math.cos(targetRot - curRotY));
+curRotY += diff * Math.min(1, dt * 16);
+rig.rotation.y = curRotY;
+turnLean += (-diff * (isHeld ? 0.25 : 0.45) - turnLean) * Math.min(1, dt * 10);
+} else {
+turnLean += (0 - turnLean) * Math.min(1, dt * 8);
+}
+rig.rotation.z = turnLean;
+const sw = Math.sin(walk);
+const cw = Math.cos(walk);
+let target = {};
+if(liftAnim.active){
+const p = Math.sin(liftAnim.t * Math.PI);
+target = {
+lHip:0.75*p, rHip:0.75*p, lKnee:1.2*p, rKnee:1.2*p,
+lShldX:-1.38*p - (1-p)*0.9, rShldX:-1.38*p - (1-p)*0.9,
+lShldZ:0.15, rShldZ:-0.15,
+lElb:-0.6*p - (1-p)*1.35, rElb:-0.6*p - (1-p)*1.35,
+torsoTwist:0, torsoLean:0.58*p - (1-p)*0.12, torsoRoll:0, pelvisDrop:0.4*p
+};
+} else if(isHeld && isMoving){
+const lStep = sw > 0;
+target = {
+lHip: sw * 0.58, rHip: -sw * 0.58,
+lKnee: lStep ? Math.max(0, -cw * 0.88) : 0.12,
+rKnee: !lStep ? Math.max(0, cw * 0.88) : 0.12,
+lShldX: -1.28 + cw * 0.08, rShldX: -1.28 - cw * 0.08,
+lShldZ: 0.42, rShldZ: -0.42,
+lElb: -1.38 + sw * 0.06, rElb: -1.38 - sw * 0.06,
+torsoTwist: -sw * 0.1, torsoLean: -0.16, torsoRoll: sw * 0.08, pelvisDrop: Math.abs(cw) * 0.09
+};
+} else if(isMoving){
+const lForward = sw > 0;
+target = {
+lHip: sw * 0.74, rHip: -sw * 0.74,
+lKnee: lForward ? Math.max(0, -cw * 1.05) : 0.08,
+rKnee: !lForward ? Math.max(0, cw * 1.05) : 0.08,
+lShldX: -sw * 0.68, rShldX: sw * 0.68,
+lShldZ: 0.1, rShldZ: -0.1,
+lElb: -0.35 - Math.max(0, sw * 0.45), rElb: -0.35 - Math.max(0, -sw * 0.45),
+torsoTwist: -sw * 0.18, torsoLean: 0.18, torsoRoll: 0, pelvisDrop: Math.abs(cw) * 0.08
+};
+} else {
+const t = performance.now() * 0.0025;
+const breathe = Math.sin(t) * 0.035;
+target = {
+lHip:0.04, rHip:-0.04, lKnee:0.05, rKnee:0.05,
+lShldX:isHeld ? -1.25 : -0.08 + breathe, rShldX:isHeld ? -1.25 : -0.08 + breathe,
+lShldZ:isHeld ? 0.4 : 0.08, rShldZ:isHeld ? -0.4 : -0.08,
+lElb:isHeld ? -1.35 : -0.25, rElb:isHeld ? -1.35 : -0.25,
+torsoTwist:0, torsoLean:isHeld ? -0.12 : breathe * 0.5, torsoRoll:0, pelvisDrop:breathe * 0.02
+};
+}
+const q = Math.min(1, dt * 18);
+for(let k in target){ pose[k] += (target[k] - pose[k]) * q; }
+legs[0].thigh.rotation.x = pose.lHip; legs[1].thigh.rotation.x = pose.rHip;
+legs[0].knee.rotation.x = pose.lKnee; legs[1].knee.rotation.x = pose.rKnee;
+arms[0].shld.rotation.x = pose.lShldX; arms[1].shld.rotation.x = pose.rShldX;
+arms[0].shld.rotation.z = pose.lShldZ; arms[1].shld.rotation.z = pose.rShldZ;
+arms[0].elbow.rotation.x = pose.lElb; arms[1].elbow.rotation.x = pose.rElb;
+tor.rotation.y = pose.torsoTwist; tor.rotation.x = pose.torsoLean; tor.rotation.z = pose.torsoRoll;
+pelvis.position.y = 0.92 - pose.pelvisDrop;
+bob = isMoving ? Math.abs(cw) * 0.07 : 0;
+sh.scale.set(1 + bob*0.6, 1 + bob*0.6, 1);
+hd.rotation.y = isMoving ? sw * 0.06 : Math.sin(performance.now()*0.0015) * 0.12;
+}
+pl.position.set(0, 0, 3);
+let items=[], run=false, score=0, combo=1, time=100, spawnT=0, held=null, lvl=1, near=null;
+let sortedCount=0, totalProcessed=0;
+const px = pl.position, key = {}, joy = {x:0, y:0};
+const tc = {};
+function fit(g,t,w,px){ g.font='bold '+px+'px sans-serif'; while(g.measureText(t).width>w&&px>14){ px-=2; g.font='bold '+px+'px sans-serif'; } }
+const _dgc = {};
+function star(cx,cy,ro,ri,n){ let p=''; for(let i=0;i<n*2;i++){ const r=i%2?ri:ro, a=Math.PI*i/n-Math.PI/2; p+=(cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1)+' '; } return p; }
+function sector(cx,cy,r0,r1,a0,a1){
+const P=(r,a)=>[(cx+r*Math.cos(a*Math.PI/180)).toFixed(1),(cy-r*Math.sin(a*Math.PI/180)).toFixed(1)];
+const A=P(r1,a0),B=P(r1,a1),C=P(r0,a1),D=P(r0,a0);
+return `M${A} A${r1} ${r1} 0 0 0 ${B} L${C} A${r0} ${r0} 0 0 1 ${D} Z`;
+}
+// ملصقات IATA/UN للمواد الخطرة مرسومة بـ SVG (لا تحتاج إنترنت)
+function dgLabelSVG(div, imp){
+const H='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="240" height="240">';
+if(imp === 'RLI'){
+return H+'<defs><pattern id="h" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="6" fill="#e53935"/><rect x="3" width="3" height="6" fill="#fff"/></pattern></defs><rect x="4" y="20" width="92" height="60" fill="url(#h)"/><rect x="12" y="27" width="76" height="46" fill="#fff"/><rect x="26" y="34" width="36" height="18" rx="2" fill="none" stroke="#111" stroke-width="3"/><rect x="62" y="39" width="5" height="8" fill="#111"/><path d="M47 36 L40 45 H46 L43 51 L52 41 H46Z" fill="#111"/><text x="50" y="65" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="9" fill="#111">UN3480 • 9A</text></svg>';
+}
+const k = /^[2456]/.test(div) ? div.slice(0,3) : div[0];
+let fg='#111', tx='#111', num=k[0], bg='', sym='';
+const full=c=>`<rect width="100" height="100" fill="${c}"/>`;
+const half=(a,b)=>`<rect width="100" height="50" fill="${a}"/><rect y="50" width="100" height="50" fill="${b}"/>`;
+const flame=(t='')=>`<path ${t} d="M50 20 C52 30 64 36 63 50 C62 61 56 67 50 67 C43 67 37 61 37 51 C37 44 41 40 44 33 C45 38 47 40 49 38 C50 32 49 26 50 20Z" fill="${fg}"/>`;
+const ox=()=>`${flame('transform="translate(50,27) scale(.62) translate(-50,-20)"')}<circle cx="50" cy="61" r="8.5" fill="none" stroke="${fg}" stroke-width="3.2"/>`;
+switch(k){
+case '1': bg=full('#ff6a00'); num=div; sym=`<circle cx="46" cy="58" r="11" fill="${fg}"/><path d="M52 50 L60 41" stroke="${fg}" stroke-width="3" stroke-linecap="round"/><polygon points="${star(63,35,12,5,8)}" fill="${fg}"/>`; break;
+case '2.1': bg=full('#e53935'); sym=flame(); break;
+case '2.2': bg=full('#2e9b4e'); fg=tx='#fff'; sym=`<rect x="41" y="34" width="18" height="36" rx="8" fill="${fg}"/><rect x="46" y="26" width="8" height="10" fill="${fg}"/><rect x="42" y="23" width="16" height="4" rx="1" fill="${fg}"/>`; break;
+case '2.3': case '6.1': bg=full('#fff'); sym=`<circle cx="50" cy="35" r="12" fill="${fg}"/><rect x="44" y="43" width="12" height="9" rx="2" fill="${fg}"/><circle cx="45.5" cy="35" r="3.4" fill="#fff"/><circle cx="54.5" cy="35" r="3.4" fill="#fff"/><path d="M50 40 l-2 4 h4z" fill="#fff"/><path d="M36 52 L64 70 M64 52 L36 70" stroke="${fg}" stroke-width="4.5" stroke-linecap="round"/>`; break;
+case '3': bg=full('#e53935'); sym=flame(); break;
+case '4.1': bg=full('#fff'); for(let x=12;x<90;x+=10) bg+=`<rect x="${x}" width="5" height="100" fill="#e53935"/>`; sym=`<rect x="41" y="70" width="18" height="17" rx="3" fill="#fff"/>`+flame(); break;
+case '4.2': bg=half('#fff','#e53935'); tx='#fff'; sym=flame(); break;
+case '4.3': bg=full('#1976d2'); fg=tx='#fff'; sym=flame(); break;
+case '5.1': bg=full('#fbc02d'); sym=ox(); break;
+case '5.2': bg=half('#e53935','#fbc02d'); sym=ox(); break;
+case '6.2': bg=full('#fff'); [90,210,330].forEach(a=>{ const x=50+11*Math.cos(a*Math.PI/180), y=46-11*Math.sin(a*Math.PI/180); sym+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9.5" fill="none" stroke="${fg}" stroke-width="3.4"/>`; }); sym+=`<circle cx="50" cy="46" r="3.5" fill="${fg}"/>`; break;
+case '7': bg=half('#fbc02d','#fff'); sym=`<g fill="#111">${[90,210,330].map(a=>`<path d="${sector(50,42,6,22,a-30,a+30)}"/>`).join('')}<circle cx="50" cy="42" r="4.2"/></g><text x="50" y="68" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="6.6" fill="#111">RADIOACTIVE</text>`; break;
+case '8': bg=half('#fff','#111'); tx='#fff'; sym=`<rect x="35" y="20" width="8" height="18" rx="3" fill="#111" transform="rotate(25 39 29)"/><rect x="57" y="20" width="8" height="18" rx="3" fill="#111" transform="rotate(-25 61 29)"/><circle cx="40" cy="42" r="2.4" fill="#111"/><circle cx="60" cy="42" r="2.4" fill="#111"/><path d="M34 60 L40 64 L46 59 L52 65 L58 60 L66 63" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`; break;
+case '9': bg=full('#fff'); for(let x=19;x<85;x+=9.5) bg+=`<rect x="${x}" y="0" width="3.4" height="50" fill="#111"/>`; sym=`<line x1="40" x2="60" y1="90" y2="90" stroke="#111" stroke-width="2"/>`; break;
+default: bg=full('#fff');
+}
+const t=`<text x="50" y="${k==='1'?78:k==='9'?86:85}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="${k==='1'?12:17}" fill="${tx}">${num}</text>`;
+return H+'<defs><clipPath id="c"><polygon points="50,3 97,50 50,97 3,50"/></clipPath></defs><g clip-path="url(#c)">'+bg+'</g><polygon points="50,3 97,50 50,97 3,50" fill="none" stroke="#111" stroke-width="3.6" stroke-linejoin="round"/><polygon points="50,9 91,50 50,91 9,50" fill="none" stroke="#111" stroke-width="1.1" stroke-linejoin="round"/>'+sym+t+'</svg>';
+}
+function dgURL(div, imp){
+const k = div + '|' + imp;
+return _dgc[k] || (_dgc[k] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(dgLabelSVG(div, imp)));
+}
+let _holdK = null, _inspK = null, _holdT = 0;
+function tex(it){
+const k = it[2] + '_' + it[3];
+if(tc[k]) return tc[k];
+if(it === MYS) return tc[k] = mysTex();
+const cv = document.createElement('canvas'); cv.width = cv.height = 512;
+const ctx = cv.getContext('2d');
+ctx.fillStyle = '#a67c52'; ctx.fillRect(0,0,512,512);
+for(let i=0;i<1600;i++){
+const x=Math.random()*512, y=Math.random()*512;
+ctx.fillStyle = Math.random()>.5 ? 'rgba(50,30,15,.08)' : 'rgba(255,235,190,.09)';
+ctx.fillRect(x,y,Math.random()*28+3,1);
+}
+ctx.strokeStyle='#6c4e33'; ctx.lineWidth=10; ctx.strokeRect(8,8,496,496);
+ctx.fillStyle='#caa77b'; ctx.fillRect(238,0,36,512);
+ctx.fillStyle='rgba(65,43,26,.35)'; ctx.fillRect(238,0,4,512); ctx.fillRect(270,0,4,512);
+ctx.fillStyle='#f5f2e8'; ctx.fillRect(34,30,444,452);
+ctx.strokeStyle='#222'; ctx.lineWidth=8; ctx.strokeRect(34,30,444,452);
+ctx.textAlign='center'; ctx.textBaseline='middle';
+if(it[0][0] === 'h'){
+const div=it[4];
+const colHex=HCOL[div] || HCOL[div.slice(0,3)] || 0xffffff;
+ctx.fillStyle='#24292d'; ctx.fillRect(42,38,428,66);
+ctx.fillStyle='#fff'; ctx.font='bold 27px sans-serif'; ctx.fillText('DANGEROUS GOODS  •  IATA',256,72);
+const lbl = new Image();
+lbl.onload = () => { ctx.drawImage(lbl, 131, 108, 250, 250); if(tc[k]) tc[k].needsUpdate = true; };
+lbl.src = dgURL(div, it[3]);
+ctx.fillStyle='#20272c'; ctx.fillRect(42,366,428,54);
+ctx.fillStyle='#fff'; fit(ctx,it[2],400,31); ctx.fillText(it[2],256,393);
+ctx.fillStyle='#a82c28'; ctx.font='900 31px monospace'; ctx.fillText('CLASS  '+div,256,450);
+ctx.fillStyle='#20272c'; ctx.font='bold 22px monospace'; ctx.fillText('IMP CODE: '+it[3],256,478);
+} else {
+ctx.fillStyle='#26343b'; ctx.fillRect(42,38,428,60);
+ctx.fillStyle='#fff'; ctx.font='bold 29px sans-serif'; ctx.fillText('AIR CARGO  •  HANDLE WITH CARE',256,68);
+ctx.font='145px sans-serif'; ctx.fillText(it[1],256,238);
+ctx.fillStyle='#20272c'; ctx.font='bold 38px sans-serif'; fit(ctx,it[2],410,38); ctx.fillText(it[2],256,365);
+ctx.fillStyle='#9e6b3c'; ctx.font='900 34px monospace'; ctx.fillText(it[3]+' / '+it[4],256,430);
+ctx.fillStyle='#222'; ctx.font='bold 22px sans-serif'; ctx.fillText('KEEP THIS SIDE VISIBLE',256,470);
+}
+ctx.fillStyle='#171b1e';
+for(let i=0;i<30;i++){ const x=55+i*7.1; ctx.fillRect(x,486, i%4===0?4:2,18); }
+const t=new THREE.CanvasTexture(cv); t.encoding=THREE.sRGBEncoding; t.anisotropy=R.capabilities.getMaxAnisotropy();
+return tc[k]=t;
+}
+const BOXG = new THREE.BoxGeometry(1.35, 1.35, 1.35), EDGEG = new THREE.EdgesGeometry(BOXG);
+const EDGEM = new THREE.LineBasicMaterial({color:0x2b1a0d, transparent:true, opacity:0.5});
+const SHT = canvasTex(128, 128, (g, w, h) => { const gr=g.createRadialGradient(w/2,h/2,w*.2,w/2,h/2,w/2); gr.addColorStop(0,'rgba(0,0,0,.6)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.fillRect(0,0,w,h); });
+SHT.wrapS = SHT.wrapT = THREE.ClampToEdgeWrapping;
+const SHM = new THREE.MeshBasicMaterial({map:SHT, transparent:true, depthWrite:false});
+const BH = 0.675;
+const MYS = ['mys','🎁','صندوق مفاجآت','???','?'];
+function mysTex(){
+const cv = document.createElement('canvas'); cv.width = cv.height = 512; const g = cv.getContext('2d');
+const gr = g.createLinearGradient(0,0,512,512); gr.addColorStop(0,'#ffd54a'); gr.addColorStop(1,'#ff9800'); g.fillStyle = gr; g.fillRect(0,0,512,512);
+g.fillStyle = 'rgba(255,255,255,.2)'; for(let i=0;i<16;i++){ g.beginPath(); g.arc(Math.random()*512, Math.random()*512, 6+Math.random()*14, 0, 6.3); g.fill(); }
+g.fillStyle = '#7b1fa2'; g.fillRect(226,0,60,512); g.fillRect(0,226,512,60);
+g.fillStyle = '#ab47bc'; g.fillRect(236,0,12,512); g.fillRect(0,236,512,12);
+g.strokeStyle = '#4a148c'; g.lineWidth = 14; g.strokeRect(7,7,498,498);
+g.fillStyle = '#fff'; g.beginPath(); g.arc(256,256,120,0,6.3); g.fill(); g.lineWidth = 10; g.stroke();
+g.fillStyle = '#7b1fa2'; g.font = '900 190px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?',256,270);
+const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisotropy = R.capabilities.getMaxAnisotropy(); return t;
+}
+let slowT = 0;
+function mystery(it){
+rm(it); totalProcessed = Math.max(0, totalProcessed);
+const r = Math.random();
+if(r < 0.25){ time += 12; snd('ship'); spawnFloatTag('+12 ث ⏱','#64ffda'); toast('🎁 مفاجأة: +12 ثانية','#64ffda'); }
+else if(r < 0.5){ score += 60; snd('ship'); toast('🎁 مفاجأة: +60 نقطة','#ffd54a'); }
+else if(r < 0.7){ combo = 8; snd('ship'); toast('🎁 مفاجأة: كومبو ×8 🔥','#ff9800'); }
+else if(r < 0.85){ slowT = 8; snd('ship'); toast('🎁 مفاجأة: الحزام يبطؤ ٨ ثوانٍ 🐢','#80d8ff'); }
+else { time = Math.max(0, time - 6); snd('error'); spawnFloatTag('-6 ث','#ff5252'); toast('💥 مفاجأة سيئة: -6 ثوانٍ','#ff5252'); }
+hud();
+}
+function spawn(){
+const list = Math.random() < 0.5 ? HZ : I;
+const raw = (Math.random() < 0.13 && !items.some(i => i.data.isMys)) ? MYS : list[Math.random()*list.length | 0];
+const itObj = { t:raw[0], emoji:raw[1], name:raw[2], imp:raw[3], div:raw[4], isHz:raw[0][0]==='h', isMys:raw===MYS };
+const m = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({map:tex(raw), roughness:0.5, metalness:0.05}));
+m.castShadow = true; m.receiveShadow = true; m.position.set(-22.5, 0.74 + BH, 12);
+m.add(new THREE.LineSegments(EDGEG, EDGEM));
+const csh = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 2.1), SHM);
+csh.rotation.x = -Math.PI/2; csh.position.y = -BH + 0.015; m.add(csh);
+S.add(m); items.push({m, data:itObj, st:'belt', csh});
+}
+const $ = id => document.getElementById(id);
+let tt;
+function toast(t, col){
+const e = $('toast'); e.textContent = t; e.style.color = col; e.style.opacity = 1;
+e.style.transform = 'translateX(-50%) scale(1.05)';
+clearTimeout(tt);
+tt = setTimeout(() => { e.style.opacity = 0; e.style.transform = 'translateX(-50%) scale(1)'; }, 1300);
+}
+function spawnFloatTag(txt, col){
+const el = document.createElement('div');
+el.className = 'float-tag'; el.textContent = txt; el.style.color = col;
+el.style.left = '50%'; el.style.top = '44%';
+$('floating-fx').appendChild(el);
+setTimeout(() => el.remove(), 850);
+}
+function hud(){
+$('sc').textContent = score;
+$('cb').textContent = '×' + combo;
+$('cbbox').classList.toggle('hot', combo > 1);
+const tsec = Math.max(0, Math.ceil(time));
+$('tm').textContent = String(Math.floor(tsec/60)).padStart(2,'0') + ':' + String(tsec%60).padStart(2,'0');
+$('tmbox').classList.toggle('urgent', time <= 20);
+const h = $('hold');
+if(held){
+h.style.display = 'flex';
+if(_holdK !== held){
+_holdK = held; _holdT = performance.now(); h.classList.remove('fade');
+const d = held.data;
+h.style.borderColor = d.isHz ? '#ff5252' : d.isMys ? '#ffd54a' : 'var(--ac)';
+h.innerHTML = d.isHz
+? `<img class="dgl" alt="" src="${dgURL(d.div, d.imp)}"><div class="hc">${d.imp}, <b>${d.div}</b></div>`
+: d.isMys ? `<div class="emo">${d.emoji}</div><div class="hc"><b>???</b></div>`
+: `<div class="emo">${d.emoji}</div><div class="hc">${d.imp}, <b>${d.div}</b></div>`;
+}
+if(performance.now() - _holdT > 2800) h.classList.add('fade');
+} else { h.style.display = 'none'; _holdK = null; }
+const insp = $('inspect');
+if(near && !held && !liftAnim.active){
+insp.style.display = 'flex';
+if(_inspK !== near){
+_inspK = near; const nd = near.data;
+insp.innerHTML = nd.isHz
+? `<img class="dgl" style="width:46px;height:46px" alt="" src="${dgURL(nd.div, nd.imp)}"><div class="hc" style="font-size:22px">${nd.imp}, <b>${nd.div}</b></div>`
+: nd.isMys ? `<div class="emo" style="font-size:30px">${nd.emoji}</div><div class="hc" style="font-size:22px"><b>???</b></div>`
+: `<div class="emo" style="font-size:30px">${nd.emoji}</div><div class="hc" style="font-size:22px">${nd.imp}, <b>${nd.div}</b></div>`;
+}
+} else { insp.style.display = 'none'; _inspK = null; }
+$('act').classList.toggle('held', !!held);
+}
+function rm(it){ S.remove(it.m); items = items.filter(i => i !== it); }
+function ship(z){
+z.full = true;
+snd('ship');
+setTimeout(() => {
+if(!z.full) return;
+z.items.forEach(x => rm(x));
+z.items = []; z.full = false; if(z.hz) drawZoneSign(z);
+score += 40;
+time += 15;
+spawnFloatTag('+15 ثوانٍ ⏱', '#64ffda');
+toast('🚚 شُحنت ' + z.n + ' (+40 و +15 ث)', '#64ffda');
+hud();
+}, 900);
+}
+function resolvePlacement(z, it){
+const d = it.data;
+if(d.isMys){ mystery(it); return; }
+totalProcessed++;
+let ok = false;
+let conflictReason = '';
+if(z.hz){
+if(!d.isHz){
+conflictReason = 'هذه الحاوية مخصصة فقط للمواد الخطرة (DGR)!';
+} else {
+let hasConflict = false;
+for(const placed of z.items){
+if(checkIATAConflict(d.div, placed.data.div)){
+hasConflict = true;
+conflictReason = `تعارض IATA: لا يُخلط [${d.imp} . ${d.div}] مع [${placed.data.imp} . ${placed.data.div}] في حاوية واحدة!`;
+break;
+}
+}
+if(!hasConflict) ok = true;
+}
+} else {
+ok = (z.k === d.t);
+if(!ok && d.isHz){
+conflictReason = `ممنوع وضع مادة خطرة (${d.imp} . ${d.div}) في مناطق الشحن العادي! ضعها في حاوية المواد الخطرة.`;
+} else if(!ok){
+conflictReason = 'منطقة فرز غير مطابقة لنوع الشحنة!';
+}
+}
+if(ok){
+sortedCount++;
+const p = 10 * combo;
+score += p;
+combo = Math.min(combo + 1, 8);
+time += 3;
+snd('ok');
+spawnFloatTag('+3 ث ⏱', '#69f0ae');
+toast(`✔ فرز متوافق +${p}` + (d.isHz ? ` [${d.imp} . ${d.div}]` : ''), '#69f0ae');
+const i = z.hz ? z.items.length : z.n_++ % z.cap;
+if(z.items[i]) rm(z.items[i]);
+z.items[i] = it; it.st = 'placed'; if(z.hz) drawZoneSign(z);
+const P_ = 1.37, rows_ = z.cap / z.cols;
+it.m.position.set(z.x + (i%z.cols - (z.cols-1)/2)*P_, 0.74 + 0.5, -8.6 + (Math.floor(i/z.cols) - (rows_-1)/2)*P_);
+it.m.rotation.set(0,0,0); it.fall = true; it.vy = 0; it.ty = 0.06 + BH;
+if(z.hz && z.items.length >= z.cap) ship(z);
+} else {
+score = Math.max(0, score - 10);
+combo = 1;
+time = Math.max(0, time - 5);
+snd('error');
+spawnFloatTag('-5 ث', '#ff5252');
+toast(`✖ ${conflictReason} (-5 ث)`, '#ff5252');
+rm(it);
+}
+hud();
+}
+function act(){
+initAudio();
+if(!run || liftAnim.active) return;
+if(!held){
+if(!near) return;
+const targetItem = near;
+liftAnim.active = true; liftAnim.t = 0;
+liftAnim.fromPos.copy(targetItem.m.position);
+liftAnim.toHold = targetItem;
+targetItem.st = 'lifting';
+snd('pick');
+const d = targetItem.data;
+if(d.isHz){
+toast(`⚠️ تم التقاط مادة خطرة: ${d.imp} . ${d.div}`, '#ffb020');
+} else {
+toast(`تم الالتقاط: ${d.name}`, '#fff');
+}
+} else {
+const z = Z.find(z => Math.abs(px.x - z.x) < z.hw && px.z < -4.8 && !z.full);
+if(z){
+const it = held; held = null;
+resolvePlacement(z, it);
+} else {
+snd('place');
+held.st = 'floor';
+held.m.position.set(Math.max(-33, Math.min(33, px.x + Math.sin(rig.rotation.y)*1.25)), 1.05, Math.max(-11.9, Math.min(9.6, px.z + Math.cos(rig.rotation.y)*1.25)));
+held.m.rotation.set(0, rig.rotation.y, 0); held.fall = true; held.vy = 0; held.ty = 0.02 + BH;
+held = null;
+}
+hud();
+}
+}
+addEventListener('keydown', e => {
+key[e.code] = 1;
+if(['Space','KeyE','Enter'].includes(e.code)){ e.preventDefault(); if(!e.repeat) act(); }
+});
+addEventListener('keyup', e => key[e.code] = 0);
+$('act').addEventListener('pointerdown', e => { e.preventDefault(); act(); });
+const jy = $('joy'), kn = $('knob');
+let jid = null;
+function jm(e){
+const r = jy.getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.height/2;
+let dx = e.clientX - cx, dy = e.clientY - cy;
+const d = Math.hypot(dx, dy), m = r.width * 0.3;
+if(d > m){ dx *= m/d; dy *= m/d; }
+joy.x = dx / m; joy.y = dy / m;
+kn.style.transform = `translate(${dx}px,${dy}px)`;
+}
+jy.addEventListener('pointerdown', e => { initAudio(); jid = e.pointerId; jy.setPointerCapture(jid); jm(e); });
+jy.addEventListener('pointermove', e => { if(e.pointerId === jid) jm(e); });
+const je = () => { jid = null; joy.x = joy.y = 0; kn.style.transform = ''; };
+jy.addEventListener('pointerup', je); jy.addEventListener('pointercancel', je);
+function start(){
+initAudio();
+items.forEach(i => S.remove(i.m)); items = [];
+Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
+slowT = 0; score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1;
+sortedCount = 0; totalProcessed = 0;
+px.set(0, 0, 3); curRotY = 0; liftAnim.active = false; resetInspector();
+run = true; $('ov').style.display = 'none'; hud();
+}
+$('go').onclick = start;
+let pz = false;
+$('rb').onclick = () => {
+const r = $('rules'), o = r.style.display === 'none';
+r.style.display = o ? 'flex' : 'none';
+if(o){ pz = run; run = false; } else if(pz){ run = true; pz = false; }
+};
+$('rc').onclick = $('rb').onclick;
+function end(){
+run = false;
+const o = $('ov'); o.style.display = 'flex';
+const acc = totalProcessed > 0 ? Math.round((sortedCount / totalProcessed) * 100) : 100;
+o.innerHTML = `<h1>انتهت الوردية ⏱</h1> <p style="font-size:24px;color:var(--ac)">النقاط الإجمالية: <b>${score}</b></p> <div style="background:rgba(255,255,255,.08);padding:14px 26px;border-radius:14px;margin:6px 0;line-height:1.9"> 📦 إجمالي الطرود المصنفة: <b>${sortedCount}</b><br> 🎯 دقة الفرز وتطبيق IATA: <b>${acc}%</b><br> 🎖️ الرتبة: <b>${score>=450 ? 'كبير ضباط شحن المواد الخطرة 🌟' : score>=240 ? 'مشرف ساحة معتمد DGR 👏' : 'مساعد مستودع متدرب 📦'}</b> </div> <button id="go">بدء وردية جديدة</button>`;
+$('go').onclick = start;
+}
+function boxHalf(it){ return BH * (Math.abs(Math.cos(it.m.rotation.y)) + Math.abs(Math.sin(it.m.rotation.y))); }
+function overlapVec(pa, ha, cx, cz, hbx, hbz){
+const ox = ha + hbx - Math.abs(pa.x - cx), oz = ha + hbz - Math.abs(pa.z - cz);
+if(ox <= 0 || oz <= 0) return null;
+return ox < oz ? [(pa.x >= cx ? 1 : -1) * ox, 0] : [0, (pa.z >= cz ? 1 : -1) * oz];
+}
+// الطرود المتروكة على الأرض لا تتداخل مع بعضها ولا مع الطرود المفروزة ولا مع الحزام والجدران
+function separateBoxes(){
+const fl = items.filter(i => i.st === 'floor' && !i.fall), solid = items.filter(i => i.st === 'placed');
+for(let n = 0; n < 3; n++){
+for(let a = 0; a < fl.length; a++){
+const A = fl[a], pa = A.m.position, ha = boxHalf(A);
+for(const o of STATIC_OBSTACLES){
+const v = overlapVec(pa, ha, (o.minX+o.maxX)/2, (o.minZ+o.maxZ)/2, (o.maxX-o.minX)/2, (o.maxZ-o.minZ)/2);
+if(v){ pa.x += v[0]; pa.z += v[1]; }
+}
+for(const b of solid){ const pb = b.m.position, v = overlapVec(pa, ha, pb.x, pb.z, BH, BH); if(v){ pa.x += v[0]; pa.z += v[1]; } }
+for(let c = a + 1; c < fl.length; c++){
+const B_ = fl[c], pb = B_.m.position, v = overlapVec(pa, ha, pb.x, pb.z, boxHalf(B_), boxHalf(B_));
+if(v){ pa.x += v[0]/2; pa.z += v[1]/2; pb.x -= v[0]/2; pb.z -= v[1]/2; A.wob = Math.max(A.wob||0, 0.5); B_.wob = Math.max(B_.wob||0, 0.5); }
+}
+pa.x = Math.max(-33, Math.min(33, pa.x)); pa.z = Math.max(-11.9, Math.min(9.6, pa.z));
+}
+}
+}
+
+// ===== المفتش: يمر بسرعة مرة واحدة ويخالف الطرود المتروكة خارج المناطق =====
+const inspector = (() => {
+const g = new THREE.Group();
+const M = c => new THREE.MeshStandardMaterial({color:c, roughness:0.6});
+const vest = M(0xff9800), skin = M(0xe0b08a), pants = M(0x22324a), helm = M(0xffeb3b), stripe = new THREE.MeshStandardMaterial({color:0xeeeeee, emissive:0x777777});
+const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.72, 0.36), vest); torso.position.y = 1.25; g.add(torso);
+const st = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.07, 0.38), stripe); st.position.y = 1.12; g.add(st);
+const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), skin); head.position.y = 1.82; g.add(head);
+const hat = new THREE.Mesh(new THREE.SphereGeometry(0.23, 16, 8, 0, Math.PI*2, 0, Math.PI/2), helm); hat.position.y = 1.88; g.add(hat);
+const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.03, 16), helm); brim.position.y = 1.88; g.add(brim);
+const legs = [], arms = [];
+for(const sx of [-0.16, 0.16]){
+const lp = new THREE.Group(); lp.position.set(sx, 0.9, 0);
+const lg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.86, 0.22), pants); lg.position.y = -0.43; lp.add(lg); g.add(lp); legs.push(lp);
+const ap = new THREE.Group(); ap.position.set(sx*2.25, 1.55, 0);
+const am = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.62, 0.16), vest); am.position.y = -0.3; ap.add(am); g.add(ap); arms.push(ap);
+}
+const clip = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.34, 0.03), M(0x8d6e63)); clip.position.set(0, -0.55, 0.12); arms[1].add(clip);
+g.traverse(o => { if(o.isMesh) o.castShadow = true; });
+g.visible = false; S.add(g);
+return { g, legs, arms, active:false, x:0, z:0, dir:1, t:0, cooldown:0 };
+})();
+function resetInspector(){ inspector.active = false; inspector.g.visible = false; inspector.cooldown = 6; $('inspector-badge').classList.remove('on'); }
+function updateInspector(dt){
+const I_ = inspector;
+if(!I_.active){
+I_.cooldown -= dt;
+if(I_.cooldown > 0) return;
+const bad = items.filter(i => i.st === 'floor' && !i.fall && !i.fined && (i.floorT = (i.floorT||0) + dt) > 2.5);
+if(!bad.length) return;
+const tgt = bad[0];
+I_.dir = Math.random() < 0.5 ? 1 : -1;
+I_.x = -36 * I_.dir; I_.z = Math.max(-11, Math.min(9, tgt.m.position.z + 1.6));
+I_.active = true; I_.g.visible = true; I_.t = 0;
+I_.g.rotation.y = I_.dir > 0 ? Math.PI/2 : -Math.PI/2;
+$('inspector-badge').classList.add('on');
+snd('whistle');
+return;
+}
+I_.t += dt;
+const prevX = I_.x;
+I_.x += I_.dir * 16 * dt;
+const sw = Math.sin(I_.t * 22) * 0.9;
+I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw;
+I_.arms[0].rotation.x = -sw * 0.8; I_.arms[1].rotation.x = sw * 0.4 - 0.5;
+I_.g.position.set(I_.x, Math.abs(Math.sin(I_.t * 22)) * 0.08, I_.z);
+for(const it of items){
+if(it.st !== 'floor' || it.fined) continue;
+const bx = it.m.position.x;
+if(Math.abs(it.m.position.z - I_.z) < 3.2 && (prevX - bx) * (I_.x - bx) <= 0){
+it.fined = true;
+score = Math.max(0, score - 15); combo = 1; time = Math.max(0, time - 4);
+snd('whistle');
+spawnFloatTag('🦺 مخالفة -15', '#ffb020');
+toast('📋 المفتش: طرد متروك خارج المنطقة المخصصة! (-15 و -4 ث)', '#ffb020');
+it.m.material.emissive && it.m.material.emissive.setHex(0x552200);
+hud();
+}
+}
+if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.cooldown = 8; $('inspector-badge').classList.remove('on'); }
+}
+let last = performance.now();
+const ring = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.12, 40), new THREE.MeshBasicMaterial({color:0xffc94d, transparent:true, opacity:0.85, depthWrite:false}));
+ring.rotation.x = -Math.PI/2; ring.visible = false; S.add(ring);
+let warnTicker = 0;
+const camTarget = new THREE.Vector3(), camLook = new THREE.Vector3(0,0.9,0.8), camLookT = new THREE.Vector3();
+C.position.set(0, 13.2, 15.4);
+function loop(now){
+requestAnimationFrame(loop);
+const dt = Math.min((now - last) / 1000, 0.05); last = now;
+if(liftAnim.active){
+liftAnim.t += dt / liftAnim.dur;
+const progress = Math.min(1, liftAnim.t);
+const dx = liftAnim.fromPos.x - px.x;
+const dz = liftAnim.fromPos.z - px.z;
+const tr = Math.atan2(dx, dz); curRotY += Math.atan2(Math.sin(tr-curRotY), Math.cos(tr-curRotY)) * Math.min(1, dt*14);
+rig.rotation.y = curRotY;
+const arc = Math.sin(progress * Math.PI) * 0.45;
+const holdTargetX = px.x + Math.sin(curRotY) * 0.78;
+const holdTargetZ = px.z + Math.cos(curRotY) * 0.78;
+liftAnim.toHold.m.position.lerpVectors(liftAnim.fromPos, new THREE.Vector3(holdTargetX, 1.38, holdTargetZ), progress);
+liftAnim.toHold.m.position.y += arc;
+liftAnim.toHold.m.rotation.y = curRotY;
+if(progress >= 1){
+liftAnim.active = false;
+held = liftAnim.toHold; held.st = 'held';
+cargoSmoothPos.copy(held.m.position);
+hud();
+}
+}
+let vx = (key.KeyD || key.ArrowRight ? 1 : 0) - (key.KeyA || key.ArrowLeft ? 1 : 0) + joy.x;
+let vz = (key.KeyS || key.ArrowDown ? 1 : 0) - (key.KeyW || key.ArrowUp ? 1 : 0) + joy.y;
+const l = Math.hypot(vx, vz);
+if(l > 1){ vx /= l; vz /= l; }
+if(run){
+const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2);
+const targetX = px.x + vx * spd * dt;
+const targetZ = px.z + vz * spd * dt;
+const correctedPos = resolvePlayerCollisions(targetX, targetZ, vx, vz, dt);
+px.x = correctedPos.x;
+px.z = correctedPos.z;
+anim(dt, liftAnim.active ? 0 : l, vx, vz);
+time -= dt;
+if(time <= 20){
+warnTicker += dt;
+if(warnTicker > 1){ snd('warn'); warnTicker = 0; }
+}
+if(time <= 0){ time = 0; hud(); end(); }
+lvl = 1 + Math.floor(score / 120);
+spawnT -= dt;
+if(spawnT <= 0){
+spawn();
+spawnT = Math.max(1.4, 3.4 - lvl * 0.28);
+}
+for(const it of items.slice()){
+if(it.st !== 'floor' || it.fall) continue;
+const zz = Z.find(z => Math.abs(it.m.position.x - z.x) < z.hw && it.m.position.z < -5.6 && !z.full);
+if(zz){ it.st = 'sorting'; resolvePlacement(zz, it); }
+}
+separateBoxes();
+updateInspector(dt);
+slowT = Math.max(0, slowT - dt); const beltK = slowT > 0 ? 0.35 : 1;
+let best = null, bd = 2.8;
+for(const it of items.slice()){
+it.csh.visible = it.st !== 'held' && it.st !== 'lifting';
+if(it.fall){ it.vy -= 32 * dt; it.m.position.y += it.vy * dt; if(it.m.position.y <= it.ty){ it.m.position.y = it.ty; it.fall = false; if(it.st === 'floor') snd('bump'); } }
+if(it.st === 'belt'){
+it.m.position.x += (1.8 + lvl * 0.26) * beltK * dt;
+if(it.m.position.x > 23.5){
+if(it.data.isMys){ rm(it); continue; }
+rm(it); score = Math.max(0, score - 5); combo = 1;
+snd('error');
+toast('فاتك طرد! -5', '#ffb020'); hud(); continue;
+}
+}
+if(it.st === 'held'){
+const fX = Math.sin(rig.rotation.y), fZ = Math.cos(rig.rotation.y);
+const lX = Math.cos(rig.rotation.y), lZ = -Math.sin(rig.rotation.y);
+const sway = l > 0.08 ? Math.sin(walk) * 0.06 : 0;
+const bnc = l > 0.08 ? Math.sin(walk * 2) * 0.04 : 0;
+cargoInertiaY += (bnc - cargoInertiaY) * Math.min(1, dt * 14);
+const targetPos = new THREE.Vector3(
+px.x + fX * 0.78 + lX * sway,
+1.38 + bob * 0.55 + cargoInertiaY,
+px.z + fZ * 0.78 + lZ * sway
+);
+cargoSmoothPos.lerp(targetPos, Math.min(1, dt * 22));
+it.m.position.copy(cargoSmoothPos);
+it.m.rotation.y = rig.rotation.y;
+it.m.rotation.z = -rig.rotation.z * 0.7;
+it.m.rotation.x = -pose.torsoLean * 0.5;
+} else if(it.st !== 'placed' && it.st !== 'lifting'){
+const ox = it.m.position.x - px.x, oz = it.m.position.z - px.z;
+const d = Math.hypot(ox, oz);
+const facing = d > 0.01 ? (ox*Math.sin(curRotY) + oz*Math.cos(curRotY)) / d : 1;
+const score_ = d - Math.max(0, facing) * 0.6;
+if(d < 2.6 && score_ < bd){ bd = score_; best = it; }
+if(it.wob){ it.wob *= Math.exp(-dt*6); it.m.rotation.z = Math.sin(performance.now()*0.03)*0.06*it.wob; if(it.wob < 0.02){ it.wob = 0; it.m.rotation.z = 0; } }
+}
+if(it.m.material.emissive) it.m.material.emissive.setHex(0);
+if(it.data.isMys && it.m.material.emissive){ it.m.material.emissive.setHex(0x4a3000); it.m.material.emissiveIntensity = 0.5 + Math.sin(now*0.006)*0.4; }
+}
+near = held || liftAnim.active ? null : best;
+if(near && near.m.material.emissive){ near.m.material.emissive.setHex(0x3a2400); near.m.material.emissiveIntensity = 0.6 + Math.sin(now*0.008)*0.4; }
+if(near){ ring.visible = true; ring.position.set(near.m.position.x, near.st==='belt' ? 0.75 : 0.02, near.m.position.z); ring.rotation.z += dt*2; } else ring.visible = false;
+beacons.forEach((b,i) => b.material.emissiveIntensity = 0.4 + Math.max(0, Math.sin(now*0.006 + i*Math.PI))*2.2);
+stripes.forEach(s => {
+s.position.x += (1.8 + lvl * 0.26) * beltK * dt;
+if(s.position.x > 24) s.position.x -= 50;
+});
+hud();
+}
+C.position.lerp(camTarget.set(px.x * 0.75, 13.2, px.z + 12.4), 1 - Math.exp(-dt*5));
+camLook.lerp(camLookT.set(px.x * 0.8, 0.9, px.z - 2.2), 1 - Math.exp(-dt*7));
+C.lookAt(camLook);
+R.render(S, C);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
