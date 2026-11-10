@@ -1130,21 +1130,22 @@ const inspector = (() => {
 const g = new THREE.Group();
 const M = c => new THREE.MeshStandardMaterial({color:c, roughness:0.6});
 const vest = M(0xff9800), skin = M(0xe0b08a), pants = M(0x22324a), helm = M(0xffeb3b), stripe = new THREE.MeshStandardMaterial({color:0xeeeeee, emissive:0x777777});
-const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.72, 0.36), vest); torso.position.y = 1.25; g.add(torso);
-const st = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.07, 0.38), stripe); st.position.y = 1.12; g.add(st);
+const torso = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.75, 0.55), vest);
+const belly = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 14), vest); belly.scale.set(1.05, 0.95, 0.85); belly.position.set(0, 1.12, 0.12); g.add(belly); torso.position.y = 1.25; g.add(torso);
+const st = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.07, 0.6), stripe); st.position.y = 1.12; g.add(st);
 const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), skin); head.position.y = 1.82; g.add(head);
 const hat = new THREE.Mesh(new THREE.SphereGeometry(0.23, 16, 8, 0, Math.PI*2, 0, Math.PI/2), helm); hat.position.y = 1.88; g.add(hat);
 const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.03, 16), helm); brim.position.y = 1.88; g.add(brim);
 const legs = [], arms = [];
 for(const sx of [-0.16, 0.16]){
 const lp = new THREE.Group(); lp.position.set(sx, 0.9, 0);
-const lg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.86, 0.22), pants); lg.position.y = -0.43; lp.add(lg); g.add(lp); legs.push(lp);
-const ap = new THREE.Group(); ap.position.set(sx*2.25, 1.55, 0);
-const am = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.62, 0.16), vest); am.position.y = -0.3; ap.add(am); g.add(ap); arms.push(ap);
+const lg = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.86, 0.3), pants); lg.position.y = -0.43; lp.add(lg); g.add(lp); legs.push(lp);
+const ap = new THREE.Group(); ap.position.set(sx*3.1, 1.55, 0);
+const am = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.62, 0.22), vest); am.position.y = -0.3; ap.add(am); g.add(ap); arms.push(ap);
 }
 const clip = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.34, 0.03), M(0x8d6e63)); clip.position.set(0, -0.55, 0.12); arms[1].add(clip);
 g.traverse(o => { if(o.isMesh) o.castShadow = true; });
-g.visible = false; S.add(g);
+g.scale.setScalar(1.4); g.visible = false; S.add(g);
 return { g, legs, arms, active:false, x:0, z:0, dir:1, t:0, cooldown:0 };
 })();
 function resetInspector(){ inspector.active = false; inspector.g.visible = false; inspector.cooldown = 6; inspector.done = false; $('inspector-badge').classList.remove('on'); }
@@ -1167,11 +1168,12 @@ return;
 }
 I_.t += dt;
 const prevX = I_.x;
-I_.x += I_.dir * 4.5 * dt;
-const sw = Math.sin(I_.t * 7) * 0.6;
+I_.x += I_.dir * 3.6 * dt;
+const sw = Math.sin(I_.t * 5) * 0.4;
+I_.g.rotation.z = Math.sin(I_.t * 5) * 0.09;
 I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw;
 I_.arms[0].rotation.x = -sw * 0.8; I_.arms[1].rotation.x = sw * 0.4 - 0.5;
-I_.g.position.set(I_.x, Math.abs(Math.sin(I_.t * 7)) * 0.05, I_.z);
+I_.g.position.set(I_.x, Math.abs(Math.sin(I_.t * 5)) * 0.04, I_.z);
 for(const it of items){
 if(it.st !== 'floor' || it.fined) continue;
 const bx = it.m.position.x;
