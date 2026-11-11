@@ -558,42 +558,6 @@ const back = new THREE.Mesh(new THREE.PlaneGeometry(z.w, 1.8), meshMat); back.po
 const dz = new THREE.Mesh(new THREE.PlaneGeometry(1.4,1.4), new THREE.MeshStandardMaterial({color:0xf5c400, roughness:0.6})); dz.rotation.x = -Math.PI/2; dz.rotation.z = Math.PI/4; dz.position.set(z.x, 0.075, -4.9); S.add(dz);
 }
 });
-// Batch the immobile warehouse by material; animated objects stay independent.
-function batchWarehouse(){
-S.updateMatrixWorld(true);
-const moving = new Set([...stripes, ...beacons]);
-const batches = new Map();
-S.traverse(o => {
-if(!o.isMesh || moving.has(o) || !o.visible || Array.isArray(o.material) || o.material.transparent) return;
-const position = new THREE.Vector3().setFromMatrixPosition(o.matrixWorld);
-const key = o.material.uuid + ':' + o.castShadow + ':' + o.receiveShadow + ':' + Math.floor(position.x/12) + ':' + Math.floor(position.z/12);
-if(!batches.has(key)) batches.set(key, []);
-batches.get(key).push(o);
-});
-for(const meshes of batches.values()){
-if(meshes.length < 2) continue;
-const sources = meshes.map(o => {
-const geometry = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
-geometry.applyMatrix4(o.matrixWorld); return geometry;
-});
-const merged = new THREE.BufferGeometry();
-for(const attribute of ['position','normal','uv']){
-if(!sources.every(g => g.getAttribute(attribute))) continue;
-const size = sources[0].getAttribute(attribute).itemSize;
-const data = new Float32Array(sources.reduce((sum,g) => sum + g.getAttribute(attribute).array.length, 0));
-let offset = 0;
-for(const g of sources){ const values = g.getAttribute(attribute).array; data.set(values, offset); offset += values.length; }
-merged.setAttribute(attribute, new THREE.BufferAttribute(data, size));
-}
-merged.computeBoundingSphere();
-const first = meshes[0], mesh = new THREE.Mesh(merged, first.material);
-mesh.castShadow = first.castShadow; mesh.receiveShadow = first.receiveShadow;
-S.add(mesh);
-for(const original of meshes) original.parent.remove(original);
-for(const geometry of sources) geometry.dispose();
-}
-}
-batchWarehouse();
 const pl = new THREE.Group(); S.add(pl);
 const rig = new THREE.Group(); pl.add(rig);
 const sh = new THREE.Mesh(new THREE.CircleGeometry(0.7, 32), new THREE.MeshBasicMaterial({color:0x000, transparent:true, opacity:0.28, depthWrite:false}));
