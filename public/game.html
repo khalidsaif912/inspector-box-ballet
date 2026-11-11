@@ -169,7 +169,9 @@ canvas{display:block;position:fixed;inset:0}
 <button id="rc">إغلاق الدليل</button>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/game-rules.js"></script>
 <script>
+const gameRules = WarehouseRules;
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let actx = null, soundEnabled = true;
 function initAudio(){
@@ -185,6 +187,7 @@ error:[[330,.1],[311,.1],[294,.18]],
 ship:[[523,.07],[659,.07],[784,.07],[1047,.12],[784,.06],[1047,.2]],
 bump:[[110,.045],[55,.07]],
 whistle:[[1047,.08],[1397,.08],[1047,.1]],
+horn:[[196,.12],[247,.16],[196,.12]],
 warn:[[880,.06],[660,.045]]
 };
 function snd(type){
@@ -210,6 +213,7 @@ soundEnabled = !soundEnabled;
 document.getElementById('snd').classList.toggle('off', !soundEnabled);
 };
 const Z = [
+{n:'جمع FOD',e:'🔩',c:0x28b9aa,k:'fod',x:gameRules.fodZoneX,w:5.8,cap:6,cols:3},
 {n:'تبريد',e:'❄️',c:0x5291b5,k:'cold',x:-20,w:5.8,cap:9,cols:3},
 {n:'قابلة للتلف',e:'🍓',c:0x62985c,k:'perish',x:-12,w:5.8,cap:9,cols:3},
 {n:'قابلة للكسر',e:'🥂',c:0xc29d50,k:'fragile',x:-4,w:5.8,cap:9,cols:3},
@@ -465,6 +469,21 @@ B(1.3, 0.08, 0.08, 0x333, 0, 2.85, 0.2, fk, 0.5, 0.6); B(1.3, 0.08, 0.08, 0x333,
 B(0.12, 2.6, 0.2, 0x2a2a2a, 0, 1.3, 1.2, fk, 0.5, 0.6);
 [-0.45,0.45].forEach(s => B(0.15, 0.06, 1.3, 0x555, s, 0.15, 1.8, fk, 0.4, 0.8));
 [[-0.78,0.7],[0.78,0.7],[-0.78,-0.7],[0.78,-0.7]].forEach(([x,z]) => { const w = CY(0.32,0.32,0.3,0x161616,x,0.32,z,fk,0.9,0.1); w.rotation.z = Math.PI/2; });
+// Moving forklift reuses the parked vehicle, with a visible seated driver.
+const recklessTruck = fk.clone(); S.add(recklessTruck); recklessTruck.visible = false;
+const truckDriver = new THREE.Group(); recklessTruck.add(truckDriver);
+B(.65,.65,.4,0xf45d39,0,1.75,-.35,truckDriver);
+B(.55,.25,.65,0x243240,0,1.4,-.2,truckDriver);
+const driverHead = M(new THREE.SphereGeometry(.25,12,10),0xe2b492);
+driverHead.position.set(0,2.3,-.3); truckDriver.add(driverHead);
+CY(.28,.28,.16,0xffd54a,0,2.53,-.3,truckDriver);
+for(const side of [-1,1]){
+const arm = B(.16,.48,.16,0xe2b492,side*.34,1.87,-.02,truckDriver); arm.rotation.x=-.9;
+const boot = B(.22,.4,.24,0x243240,side*.2,1.23,.2,truckDriver); boot.rotation.x=-.5;
+}
+const steering = M(new THREE.TorusGeometry(.23,.035,6,16),0x181c20);
+steering.position.set(0,1.85,.2); steering.rotation.x=-.65; truckDriver.add(steering);
+let truckState = gameRules.reset(), fearT = 0;
 // لافتات حائطية
 function wallSign(txt, sub, bg, x, y, z, ry=0, w=4){
 const t = canvasTex(512, 256, (g)=>{ g.fillStyle=bg; g.fillRect(0,0,512,256); g.strokeStyle='#fff'; g.lineWidth=10; g.strokeRect(12,12,488,232); g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle'; g.font='bold 74px sans-serif'; g.fillText(txt,256,100); g.font='bold 38px sans-serif'; g.fillText(sub,256,185); });
@@ -691,7 +710,7 @@ function anim(dt, spd, vx, vz){
 const isMoving = spd > 0.08;
 const isHeld = !!held;
 if(isMoving){
-walk += dt * (isHeld ? 9.2 : 13.5);
+walk += dt * (isHeld ? 9.2 : 13.5) * gameRules.movementMultiplier(fearT);
 const targetRot = Math.atan2(vx, vz);
 let diff = Math.atan2(Math.sin(targetRot - curRotY), Math.cos(targetRot - curRotY));
 curRotY += diff * Math.min(1, dt * 16);
@@ -892,6 +911,34 @@ const csh = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 2.1), SHM);
 csh.rotation.x = -Math.PI/2; csh.position.y = -BH + 0.015; m.add(csh);
 S.add(m); items.push({m, data:itObj, st:'belt', csh});
 }
+function dropFod(x,z){
+const m = new THREE.Mesh(new THREE.BoxGeometry(.5,.3,.7), new THREE.MeshStandardMaterial({color:0x94aebc,metalness:.7,roughness:.35}));
+m.position.set(x,1.2,z); m.castShadow = true; m.receiveShadow = true;
+const nut = new THREE.Mesh(new THREE.TorusGeometry(.28,.09,6,6),m.material);
+nut.rotation.x=Math.PI/2; nut.position.set(.15,.15,0); m.add(nut);
+const marker = canvasTex(128,64,(g,w,h)=>{g.fillStyle='#ffd54a';g.fillRect(0,0,w,h);g.fillStyle='#17252b';g.font='900 40px monospace';g.textAlign='center';g.fillText('FOD',w/2,46);});
+const label = new THREE.Sprite(new THREE.SpriteMaterial({map:marker,depthTest:false}));label.position.y=.6;label.scale.set(.95,.48,1);m.add(label);
+const csh=new THREE.Mesh(new THREE.PlaneGeometry(1.2,1.2),SHM);csh.rotation.x=-Math.PI/2;csh.position.y=-.13;m.add(csh);
+S.add(m);items.push({m,csh,data:{t:'fod',emoji:'🔩',name:'جسم غريب',imp:'FOD',div:'',isFod:true,isHz:false,isMys:false},st:'floor',fall:true,vy:0,ty:.2});
+snd('place');toast('🔩 سقط جسم غريب FOD!', '#ffd54a');
+}
+function resetTruck(){ truckState=gameRules.reset();fearT=0;recklessTruck.visible=false; }
+function updateTruck(dt){
+fearT=Math.max(0,fearT-dt);
+const steps=Math.max(1,Math.ceil(dt/.016)), step=dt/steps;
+for(let i=0;i<steps;i++){
+const before=gameRules.position(truckState), event=gameRules.advance(truckState,step,px.z), after=gameRules.position(truckState);
+if(event.entered){snd('horn');toast('⚠️ رافعة متهورة تعبر المستودع!', '#ffd54a');}
+if(event.drop) dropFod(after.x,after.z);
+if(truckState.active && !truckState.hit && gameRules.touches(before.x,before.z,after.x,after.z,px.x,px.z)){
+truckState.hit=true;fearT=gameRules.fearDuration;snd('bump');toast('😨 اصطدام! حركة أبطأ مؤقتًا', '#ffd54a');
+}
+}
+const pos=gameRules.position(truckState);
+recklessTruck.visible=truckState.active;recklessTruck.position.set(pos.x,0,pos.z);recklessTruck.rotation.y=pos.yaw;
+recklessTruck.rotation.z=truckState.active && !truckState.turned && truckState.x===0 ? -.12 : 0;
+truckDriver.rotation.z=Math.sin(truckState.elapsed*18)*.04;
+}
 const $ = id => document.getElementById(id);
 let tt;
 function toast(t, col){
@@ -958,6 +1005,13 @@ hud();
 }
 function resolvePlacement(z, it){
 const d = it.data;
+if(d.isFod){
+const bonus=gameRules.reward(true,z.k);
+if(bonus){score+=bonus;rm(it);snd('ok');spawnFloatTag('+'+bonus+' FOD','#69f0ae');toast('✔ جمع الجسم الغريب +'+bonus+' نقطة','#69f0ae');}
+else {it.st='floor';it.fall=false;it.m.position.set(px.x, .2, Math.max(-4,px.z+1.5));snd('warn');toast('🔩 مكان FOD أقصى اليسار','#ffd54a');}
+hud();return;
+}
+if(z.k==='fod'){ it.st='floor';it.fall=false;it.m.position.set(z.x,.7,-4);snd('warn');toast('هذه المنطقة للأجسام الغريبة FOD فقط','#ffd54a');hud();return; }
 if(d.isMys){ mystery(it); return; }
 totalProcessed++;
 let ok = false;
@@ -1037,7 +1091,7 @@ resolvePlacement(z, it);
 snd('place');
 held.st = 'floor';
 held.m.position.set(Math.max(-33, Math.min(33, px.x + Math.sin(rig.rotation.y)*1.25)), 1.05, Math.max(-11.9, Math.min(9.6, px.z + Math.cos(rig.rotation.y)*1.25)));
-held.m.rotation.set(0, rig.rotation.y, 0); held.fall = true; held.vy = 0; held.ty = 0.02 + BH;
+held.m.rotation.set(0, rig.rotation.y, 0); held.fall = true; held.vy = 0; held.ty = held.data.isFod ? .2 : 0.02 + BH;
 held = null;
 }
 hud();
@@ -1075,7 +1129,7 @@ items.forEach(i => S.remove(i.m)); items = [];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
 slowT = 0; score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1;
 sortedCount = 0; totalProcessed = 0;
-px.set(0, 0, 3); curRotY = 0; liftAnim.active = false; resetInspector();
+px.set(0, 0, 3); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
 clearMovement(); last = performance.now();
 run = true; $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true}); hud();
 }
@@ -1151,7 +1205,7 @@ if(I_.done) return;
 I_.elapsed = (I_.elapsed||0) + dt;
 I_.cooldown -= dt;
 if(I_.cooldown > 0) return;
-const bad = items.filter(i => i.st === 'floor' && !i.fall && !i.fined && (i.floorT = (i.floorT||0) + dt) > 2.5);
+const bad = items.filter(i => i.st === 'floor' && !i.data.isFod && !i.fall && !i.fined && (i.floorT = (i.floorT||0) + dt) > 2.5);
 if(!bad.length && I_.elapsed < 30) return;
 const tgt = bad[0] || {m:{position:{z:px.z - 1.6}}};
 I_.dir = Math.random() < 0.5 ? 1 : -1;
@@ -1171,7 +1225,7 @@ I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw;
 I_.arms[0].rotation.x = -sw * 0.8; I_.arms[1].rotation.x = sw * 0.4 - 0.5;
 I_.g.position.set(I_.x, Math.abs(Math.sin(I_.t * 5)) * 0.04, I_.z);
 for(const it of items){
-if(it.st !== 'floor' || it.fined) continue;
+if(it.st !== 'floor' || it.data.isFod || it.fined) continue;
 const bx = it.m.position.x;
 if(Math.abs(it.m.position.z - I_.z) < 3.2 && (prevX - bx) * (I_.x - bx) <= 0){
 it.fined = true;
@@ -1229,7 +1283,8 @@ let vz = (key.KeyS || key.ArrowDown ? 1 : 0) - (key.KeyW || key.ArrowUp ? 1 : 0)
 const l = Math.hypot(vx, vz);
 if(l > 1){ vx /= l; vz /= l; }
 if(run){
-const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2);
+updateTruck(dt);
+const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultiplier(fearT);
 // Small collision steps preserve full travel time even when rendering slows down.
 const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
 if(l > .001){
@@ -1253,7 +1308,7 @@ spawnT = Math.max(1.4, 3.4 - lvl * 0.28);
 }
 for(const it of items.slice()){
 if(it.st !== 'floor' || it.fall) continue;
-const zz = Z.find(z => Math.abs(it.m.position.x - z.x) < z.hw && it.m.position.z < -5.6 && !z.full);
+const zz = Z.find(z => (it.data.isFod ? z.k==='fod' : z.k!=='fod') && Math.abs(it.m.position.x - z.x) < z.hw && it.m.position.z < -5.6 && !z.full);
 if(zz){ it.st = 'sorting'; resolvePlacement(zz, it); }
 }
 separateBoxes();
