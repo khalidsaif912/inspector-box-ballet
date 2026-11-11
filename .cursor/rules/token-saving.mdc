@@ -1,0 +1,26 @@
+---
+description: Keep responses and context usage minimal
+alwaysApply: true
+---
+
+# Token-Efficiency Rules
+
+## Response style
+- Be concise. No preambles, no recap of what I asked, no closing summaries.
+- Don't explain code unless I ask. Show only the changed lines/diff, not whole files.
+- Answer in the shortest form that is correct. No filler or pleasantries.
+- Reply in the language I write in.
+
+## Reading & context
+- Don't read files unless needed for the task. Prefer targeted search (grep) over opening whole files.
+- Never re-read a file you've already seen in this conversation.
+- Don't scan the whole repo for small, local changes.
+
+## Editing
+- Make minimal edits. Don't refactor, rename, reformat, or "improve" code I didn't mention.
+- Don't add comments, docs, or tests unless I ask.
+- If the request is ambiguous, ask one short question instead of guessing and producing long output.
+
+## Tools & agents
+- Don't run commands, builds, or tests unless needed to verify the change.
+- Avoid repeating failed attempts. If something fails twice, stop and tell me why.

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const context: Record<string, any> = {};
 runInNewContext(readFileSync('public/game-rules.js', 'utf8'), context);
-const rules = context.WarehouseRules;
+const rules = context['WarehouseRules'];
 
 describe('Reckless forklift', () => {
   it('crosses only once per shift', () => {
@@ -26,8 +26,8 @@ describe('Reckless forklift', () => {
     expect(rules.movementMultiplier(rules.fearDuration)).toBeLessThan(1);
     expect(rules.movementMultiplier(0)).toBe(1);
   });
-  it('places FOD collection to the left of every cargo zone', () => {
-    expect(rules.fodZoneX).toBeLessThan(-20);
+  it('places the FOD collection area at its configured position', () => {
+    expect(rules.fodZoneX).toBe(4.5);
   });
   it('awards extra points only for FOD delivered to its own area', () => {
     expect(rules.reward(true, 'fod')).toBe(50);

@@ -1,30 +1,24 @@
-# Inspector Box Ballet
+# مستودع الشحن الجوي الدولي (Inspector Box Ballet)
 
-أجعل ادوات التحكم افضل في التنسيق وفي الشكل التحريك يكون على اليمين 
+لعبة ثلاثية الأبعاد بالعربية لفرز الشحنات الجوية والمواد الخطرة وفق قواعد IATA DGR.
+اللعبة نفسها في `public/game.html` (Three.js)، وقواعد الرافعة الشوكية في `public/game-rules.js`،
+وتُعرض داخل تطبيق TanStack Start + React.
 
-الاصوات، و العناصر التي في الاعلى رائعا بشكل أفضل.
+## المتطلبات
 
-واريد مرور شخصية في متينه تمثل شخصية المقاس تمر مره واحده تخالف إذا كان هناك صندوق في غير الاماكن المخصصة، ومرورها يكون سريع
+Node.js 22 أو أحدث (أو Bun).
 
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://inspector-box-ballet.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/5339f9c9-ea60-46b8-b7b4-e3323bd1bfd7).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## الأوامر
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+npm install        # تثبيت الحزم
+npm run dev        # تشغيل محلي على http://localhost:8080
+npm run build      # بناء نسخة الإنتاج في .output/
+npm run preview    # معاينة نسخة البناء
+npm test           # تشغيل الاختبارات (Vitest)
 ```
+
+## ملاحظات
+
+- البناء الافتراضي يستهدف Cloudflare Workers. للنشر على منصة أخرى غيّر الهدف بمتغير البيئة
+  `NITRO_PRESET`، مثل `NITRO_PRESET=netlify npm run build`.

@@ -1,7 +1,7 @@
 (function (root) {
   const rules = {
     startAt: 12, speed: 14, turnDuration: 1.5, turnRadius: 2,
-    fodZoneX: -28, fodReward: 50, fearDuration: 4, fearSpeed: 0.6,
+    fodZoneX: 4.5, fodReward: 50, fearDuration: 4, fearSpeed: 0.6,
     reset() { return { elapsed: 0, active: false, done: false, x: -36, lane: 3, turn: 0, turned: false, dropped: false, hit: false }; },
     advance(state, dt, playerZ) {
       const result = { drop: false, entered: false };
