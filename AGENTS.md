@@ -29,6 +29,5 @@ use the editor.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
 
-- Batch only static warehouse meshes by material; keep gameplay and animated meshes separate to reduce draw calls without freezing motion.
 - Use capped render resolution and small movement collision steps so slow rendering does not shorten keyboard travel.
 - Generate original retro sound cues with Web Audio and disconnect finished nodes to avoid audio resource accumulation.
