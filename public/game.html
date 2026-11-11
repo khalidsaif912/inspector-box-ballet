@@ -273,7 +273,7 @@ return false;
 }
 const R = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance', alpha:false});
 function renderPixelRatio(width, height, dpr){
-return Math.min(dpr, 1.25, Math.sqrt(2000000 / Math.max(1, width * height)));
+return Math.min(dpr, 1.25, Math.sqrt(1500000 / Math.max(1, width * height)));
 }
 let renderScale = 1;
 R.setPixelRatio(renderPixelRatio(innerWidth, innerHeight, devicePixelRatio));
@@ -311,11 +311,8 @@ Object.assign(sun.shadow.camera, {left:-38, right:38, top:26, bottom:-26, near:5
 S.add(sun);
 const fill = new THREE.DirectionalLight(0xffd7a8, 0.35);
 fill.position.set(20, 14, 30); S.add(fill);
-const materialCache = new Map();
 const M = (g, c, r=0.55, m=0.15) => {
-const key = c + ':' + r + ':' + m;
-if(!materialCache.has(key)) materialCache.set(key, new THREE.MeshStandardMaterial({color:c, roughness:r, metalness:m}));
-const o = new THREE.Mesh(g, materialCache.get(key));
+const o = new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:c, roughness:r, metalness:m}));
 o.castShadow = true; o.receiveShadow = true;
 return o;
 };
@@ -535,7 +532,6 @@ return spr;
 }
 Z.forEach(z => {
 const pad = B(z.w+0.1, 0.06, 6.2, z.c, z.x, 0.03, -8.6, S, 0.55, 0.05);
-pad.material = pad.material.clone();
 pad.material.emissive = new THREE.Color(z.c).multiplyScalar(0.12); pad.castShadow = false;
 // حدود المنطقة المرسومة على الأرض
 [-1,1].forEach(q => { const e = B(0.14, 0.03, 6.2, 0xffffff, z.x + q*(z.w/2), 0.07, -8.6, S, 0.5, 0.05); e.castShadow = false; });
@@ -1200,11 +1196,11 @@ C.position.set(0, 13.2, 15.4);
 function loop(now){
 requestAnimationFrame(loop);
 const rawDt = (now - last) / 1000;
-const dt = Math.min(rawDt, 0.1); last = now;
-if(run && rawDt < .15){
+const dt = document.hidden || rawDt > 1 ? 0 : Math.min(rawDt, .5); last = now;
+if(run && rawDt > 0 && rawDt < 1){
 frameTotal += rawDt; frameCount++;
 if(frameCount >= 90){
-if(frameTotal / frameCount > .025 && renderScale > .7){ renderScale = Math.max(.7, renderScale - .1); rs(); }
+if(frameTotal / frameCount > .025 && renderScale > .6){ renderScale = Math.max(.6, renderScale - .1); rs(); }
 frameTotal = 0; frameCount = 0;
 }
 }
