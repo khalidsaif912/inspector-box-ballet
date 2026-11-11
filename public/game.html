@@ -564,8 +564,9 @@ S.updateMatrixWorld(true);
 const moving = new Set([...stripes, ...beacons]);
 const batches = new Map();
 S.traverse(o => {
-if(!o.isMesh || moving.has(o) || !o.visible || Array.isArray(o.material)) return;
-const key = o.material.uuid + ':' + o.castShadow + ':' + o.receiveShadow;
+if(!o.isMesh || moving.has(o) || !o.visible || Array.isArray(o.material) || o.material.transparent) return;
+const position = new THREE.Vector3().setFromMatrixPosition(o.matrixWorld);
+const key = o.material.uuid + ':' + o.castShadow + ':' + o.receiveShadow + ':' + Math.floor(position.x/12) + ':' + Math.floor(position.z/12);
 if(!batches.has(key)) batches.set(key, []);
 batches.get(key).push(o);
 });
