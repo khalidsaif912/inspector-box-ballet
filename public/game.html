@@ -113,8 +113,17 @@ canvas{display:block;position:fixed;inset:0}
 .cbadge.hot b{animation:pulse .5s infinite alternate}
 .top-btns{z-index:12}
 .top-btns .rbtn{width:calc(var(--hh)*1.15);height:calc(var(--hh)*1.15);background:radial-gradient(circle at 35% 30%,#ffd27a,#f39c12 60%,#c46f00);color:#1a0f00;border:2px solid #fff;box-shadow:0 0 12px rgba(243,156,18,.6),0 4px 10px rgba(0,0,0,.5)}
+#intro{position:fixed;z-index:9;left:50%;top:clamp(120px,22%,200px);transform:translate(-50%,-20px);opacity:0;transition:opacity .35s,transform .35s;max-width:min(92vw,460px);padding:12px 16px;border-radius:16px;background:rgba(10,18,28,.94);border:2px solid #ffd54a;color:#fff;text-align:right;line-height:1.7;font-size:clamp(13px,3.6vmin,16px);pointer-events:none;box-shadow:0 10px 28px rgba(0,0,0,.6)}
+#intro.on{opacity:1;transform:translate(-50%,0)}
+#intro b.t{display:block;color:#ffd54a;font-size:1.15em}
+#intro small{display:block;color:#69f0ae;margin-top:4px}
+#stg{position:fixed;z-index:6;right:10px;top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.2 + 14px);padding:5px 12px;font-size:clamp(11px,3.2vmin,14px);border-radius:999px;pointer-events:none;color:#ffe082}
 #inspector-badge{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translate(-50%,-140%);z-index:8;background:linear-gradient(180deg,#ffd54a,#f39c12);color:#1a0f00;font-weight:900;font-size:clamp(13px,4vmin,17px);padding:8px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.5);transition:transform .3s;white-space:nowrap;pointer-events:none}
 #inspector-badge.on{transform:translate(-50%,calc(var(--hh) + 10px))}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse at center,transparent 55%,rgba(4,10,18,.55) 100%)}
+.ov{background:radial-gradient(circle at 50% 30%,rgba(30,56,92,.97),rgba(6,12,20,.98))}
+.ov h1{text-shadow:0 0 18px rgba(243,156,18,.45)}
+.leg span{box-shadow:0 3px 8px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.25)}
 </style>
 </head>
 <body>
@@ -128,6 +137,8 @@ canvas{display:block;position:fixed;inset:0}
 <div id="hold" class="chip" style="display:none"></div>
 <div id="inspect" class="chip"></div>
 <div id="toast"></div>
+<div id="intro"></div>
+<div id="stg" class="chip">🎓 المرحلة 1</div>
 <div id="inspector-badge">🦺 المفتش يتجول في المستودع!</div>
 <div id="floating-fx"></div>
 <div class="top-btns">
@@ -141,11 +152,12 @@ canvas{display:block;position:fixed;inset:0}
 <div class="ov" id="ov">
 <h1>✈️ مستودع الشحن الجوي الدولي HD</h1>
 <p>تحقق من كود المناولة <b>(IMP Code)</b> ورقم الفئة <b>(Class)</b> عند التقاط أي شحنة خطرة. قسّم الشحنات بين <b>الحاوية ١ والحاوية ٢</b> لتفادي خلط فئات متعارضة طبقاً لجدول <b>IATA Table 9.3.A</b>. الفرز الصحيح يمنحك وقتاً ونقاطاً إضافية.</p>
+<p style="font-size:14px;opacity:.85">🎓 المرحلة ١ تعليمية: شحن عام وتبريد وقابلة للتلف. ثم المواد الخطرة والمفتش، وأخيراً الرافعة الشوكية.</p>
 <div class="leg">
 <span style="background:#5291b5">❄️ تبريد</span>
 <span style="background:#62985c">🍓 قابلة للتلف</span>
-<span style="background:#c29d50">🥂 قابلة للكسر</span>
 <span style="background:#84929a">📦 عامة</span>
+<span style="background:#d32f2f;color:#fff">🔩 صندوق FOD</span>
 <span style="background:#b85550;color:#fff">☣️ حاوية مواد خطرة ١</span>
 <span style="background:#8e6098;color:#fff">☣️ حاوية مواد خطرة ٢</span>
 <span style="background:#ffc107">🎁 صندوق مفاجآت</span>
@@ -169,7 +181,48 @@ canvas{display:block;position:fixed;inset:0}
 <button id="rc">إغلاق الدليل</button>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="/game-rules.js"></script>
+<script>
+(function (root) {
+  const rules = {
+    startAt: 12, speed: 14, turnDuration: 1.5, turnRadius: 2,
+    fodZoneX: 4.5, fodReward: 50, fearDuration: 4, fearSpeed: 0.6,
+    reset() { return { elapsed: 0, active: false, done: false, x: -36, lane: 3, turn: 0, turned: false, dropped: false, hit: false }; },
+    advance(state, dt, playerZ) {
+      const result = { drop: false, entered: false };
+      if (state.done) return result;
+      state.elapsed += dt;
+      if (!state.active) {
+        if (state.elapsed < rules.startAt) return result;
+        state.active = true;
+        state.lane = Math.max(-2, Math.min(6, playerZ));
+        result.entered = true;
+      }
+      if (state.x < 0) state.x = Math.min(0, state.x + rules.speed * dt);
+      else if (!state.turned) {
+        state.turn = Math.min(rules.turnDuration, state.turn + dt);
+        if (!state.dropped && state.turn >= rules.turnDuration / 2) { state.dropped = true; result.drop = true; }
+        if (state.turn >= rules.turnDuration) state.turned = true;
+      } else state.x += rules.speed * dt;
+      if (state.x > 37) { state.done = true; state.active = false; }
+      return result;
+    },
+    position(state) {
+      const angle = state.turn / rules.turnDuration * Math.PI * 2;
+      return { x: state.x + (state.x === 0 && !state.turned ? Math.sin(angle) * rules.turnRadius : 0),
+        z: state.lane + (state.x === 0 && !state.turned ? (1 - Math.cos(angle)) * rules.turnRadius : 0),
+        yaw: Math.PI / 2 + (state.x === 0 && !state.turned ? angle : 0) };
+    },
+    touches(ax, az, bx, bz, px, pz) {
+      const dx = bx - ax, dz = bz - az, length = dx * dx + dz * dz;
+      const t = length ? Math.max(0, Math.min(1, ((px-ax)*dx+(pz-az)*dz)/length)) : 0;
+      return Math.hypot(px-ax-dx*t, pz-az-dz*t) < 1.65;
+    },
+    reward(isFod, zone) { return isFod && zone === 'fod' ? rules.fodReward : 0; },
+    movementMultiplier(remaining) { return remaining > 0 ? rules.fearSpeed : 1; }
+  };
+  root.WarehouseRules = rules;
+})(globalThis);
+</script>
 <script>
 const gameRules = WarehouseRules;
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -213,11 +266,10 @@ soundEnabled = !soundEnabled;
 document.getElementById('snd').classList.toggle('off', !soundEnabled);
 };
 const Z = [
-{n:'جمع FOD',e:'🔩',c:0x28b9aa,k:'fod',x:gameRules.fodZoneX,w:5.8,cap:6,cols:3},
+{n:'FOD',e:'🔩',c:0xd32f2f,k:'fod',x:gameRules.fodZoneX,w:2.6,cap:1,cols:1},
 {n:'تبريد',e:'❄️',c:0x5291b5,k:'cold',x:-20,w:5.8,cap:9,cols:3},
 {n:'قابلة للتلف',e:'🍓',c:0x62985c,k:'perish',x:-12,w:5.8,cap:9,cols:3},
-{n:'قابلة للكسر',e:'🥂',c:0xc29d50,k:'fragile',x:-4,w:5.8,cap:9,cols:3},
-{n:'شحن عام',e:'📦',c:0x84929a,k:'gen',x:4,w:5.8,cap:9,cols:3},
+{n:'شحن عام',e:'📦',c:0x84929a,k:'gen',x:-4,w:5.8,cap:9,cols:3},
 {n:'حاوية خطرة ١',e:'☣️',c:0xb85550,k:'hz1',x:13.5,w:6.2,cap:6,cols:3,hz:1},
 {n:'حاوية خطرة ٢',e:'☣️',c:0x8e6098,k:'hz2',x:22,w:6.2,cap:6,cols:3,hz:1}
 ];
@@ -236,7 +288,6 @@ const HCOL = {
 const I = [
 ['cold','💉','لقاحات مبردة','COL','REF'],['cold','🐟','أسماك طازجة','PES','COL'],['cold','💊','أنسولين وأدوية','MED','COL'],
 ['perish','🍓','فراولة طازجة','PER','EAT'],['perish','🌹','زهور مقطوفة','PEF','EAT'],['perish','🍞','مخبوزات طازجة','PEM','EAT'],
-['fragile','🏺','تحف زجاجية','FRG','FRG'],['fragile','💻','شاشات حاسوب','FRG','ELC'],['fragile','🎻','آلات موسيقية','FRG','INS'],
 ['gen','👕','ملابس قطنية','GEN','GEN'],['gen','📚','كتب ومطبوعات','GEN','GEN'],['gen','🧸','ألعاب أطفال','GEN','GEN']
 ];
 const HZ = [
@@ -277,7 +328,7 @@ return false;
 }
 const R = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance', alpha:false});
 function renderPixelRatio(width, height, dpr){
-return Math.min(dpr, 1.25, Math.sqrt(1500000 / Math.max(1, width * height)));
+return Math.min(dpr, 2, Math.sqrt(2600000 / Math.max(1, width * height)));
 }
 let renderScale = 1;
 R.setPixelRatio(renderPixelRatio(innerWidth, innerHeight, devicePixelRatio));
@@ -285,7 +336,7 @@ R.shadowMap.enabled = true;
 R.shadowMap.type = THREE.PCFSoftShadowMap;
 R.outputEncoding = THREE.sRGBEncoding;
 R.toneMapping = THREE.ACESFilmicToneMapping;
-R.toneMappingExposure = 1.05;
+R.toneMappingExposure = 1.15;
 R.physicallyCorrectLights = false;
 document.body.prepend(R.domElement);
 const S = new THREE.Scene();
@@ -307,12 +358,13 @@ const amb = new THREE.AmbientLight(0x404a58, 0.25); S.add(amb);
 const sun = new THREE.DirectionalLight(0xdfeaff, 0.95);
 sun.position.set(-14, 34, 18);
 sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.03;
 sun.shadow.radius = 3;
 Object.assign(sun.shadow.camera, {left:-38, right:38, top:26, bottom:-26, near:5, far:90});
 S.add(sun);
+Z.forEach(z=>{ if(z.k==='fod') return; const sp=new THREE.SpotLight(z.hz?0xffe0b0:0xfff4e0,0.9,22,0.85,0.7,1.2); sp.position.set(z.x,9,-4); sp.target.position.set(z.x,0,-8.6); S.add(sp); S.add(sp.target); });
 const fill = new THREE.DirectionalLight(0xffd7a8, 0.35);
 fill.position.set(20, 14, 30); S.add(fill);
 const M = (g, c, r=0.55, m=0.15) => {
@@ -549,7 +601,23 @@ const spr = new THREE.Sprite(new THREE.SpriteMaterial({map:z.signTex, fog:false}
 spr.scale.set(z.w*0.9, z.w*(z.hz ? 0.675 : 0.45), 1);
 return spr;
 }
+function buildFodBox(z){
+const x=z.x, zz=-8.6;
+const pad=B(2.8,0.06,2.8,0x7a1010,x,0.03,zz,S,0.55,0.05); pad.material.emissive=new THREE.Color(0xd32f2f).multiplyScalar(0.25); pad.castShadow=false;
+for(let i=0;i<6;i++){const st=B(0.34,0.035,2.8,i%2?0xffd54a:0x1a1a1a,x-1.15+i*0.46,0.075,zz,S,0.6,0.05);st.castShadow=false;}
+B(1.8,1.15,1.6,0xd32f2f,x,0.64,zz,S,0.42,0.25);
+B(1.92,0.14,1.72,0x8e1b1b,x,1.28,zz,S,0.4,0.3);
+B(1.1,0.05,0.28,0x180000,x,1.36,zz,S,0.8,0.1);
+[-1,1].forEach(q=>[-1,1].forEach(r=>B(0.12,1.15,0.12,0xffd54a,x+q*0.9,0.64,zz+r*0.8,S,0.4,0.5)));
+const tx=canvasTex(256,128,(g,w,h)=>{g.fillStyle='#d32f2f';g.fillRect(0,0,w,h);g.strokeStyle='#fff';g.lineWidth=8;g.strokeRect(6,6,w-12,h-12);g.fillStyle='#fff';g.font='900 74px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('FOD',w/2,h/2+4);});
+const mat=new THREE.MeshStandardMaterial({map:tx,roughness:0.5,emissive:0xffffff,emissiveMap:tx,emissiveIntensity:0.35});
+const f=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.75),mat); f.position.set(x,0.66,zz+0.81); S.add(f);
+const t=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.75),mat); t.rotation.x=-Math.PI/2; t.position.set(x,1.355,zz+0.5); S.add(t);
+const L=new THREE.PointLight(0xff3b30,1,8); L.position.set(x,2.4,zz+1.2); S.add(L);
+(function pulse(ms){L.intensity=0.8+0.5*Math.sin(ms/260);requestAnimationFrame(pulse);})(0);
+}
 Z.forEach(z => {
+if(z.k==='fod'){ buildFodBox(z); return; }
 const pad = B(z.w+0.1, 0.06, 6.2, z.c, z.x, 0.03, -8.6, S, 0.55, 0.05);
 pad.material.emissive = new THREE.Color(z.c).multiplyScalar(0.12); pad.castShadow = false;
 // حدود المنطقة المرسومة على الأرض
@@ -635,7 +703,8 @@ const STATIC_OBSTACLES = [
 [-24, -8, 8, 24].forEach(x => STATIC_OBSTACLES.push({minX:x-0.55, maxX:x+0.55, minZ:-13.15, maxZ:-12.05}));
 // جدران أقفاص المواد الخطرة (مفتوحة من الأمام)
 Z.filter(z => z.hz).forEach(z => [-1,1].forEach(q => STATIC_OBSTACLES.push({minX:z.x+q*z.w/2-0.1, maxX:z.x+q*z.w/2+0.1, minZ:-11.7, maxZ:-5.5})));
-Z.forEach(z => STATIC_OBSTACLES.push({minX:z.x-(z.w+0.1)/2, maxX:z.x+(z.w+0.1)/2, minZ:-11.925, maxZ:-11.675}));
+Z.filter(z=>z.k!=='fod').forEach(z => STATIC_OBSTACLES.push({minX:z.x-(z.w+0.1)/2, maxX:z.x+(z.w+0.1)/2, minZ:-11.925, maxZ:-11.675}));
+STATIC_OBSTACLES.push({minX:gameRules.fodZoneX-1.0,maxX:gameRules.fodZoneX+1.0,minZ:-9.6,maxZ:-7.6});
 let bumpCD = 0, lastBump = 0;
 // دفع دائرة اللاعب خارج مستطيل مع انزلاق ناعم على الحواف بدل القفز للمحور الأقرب
 function pushOutAABB(p, minX, maxX, minZ, maxZ, r){
@@ -779,7 +848,22 @@ sh.scale.set(1 + bob*0.6, 1 + bob*0.6, 1);
 hd.rotation.y = isMoving ? sw * 0.06 : Math.sin(performance.now()*0.0015) * 0.12;
 }
 pl.position.set(0, 0, 3);
-let items=[], run=false, score=0, combo=1, time=100, spawnT=0, held=null, lvl=1, near=null;
+let items=[], run=false, score=0, combo=1, time=100, spawnT=0, held=null, lvl=1, near=null, stage=1;
+const STAGE_AT=[0,0,100,200], STAGE_BELT=[0,1.5,1.9,2.4];
+let demo={insp:false,truck:false,inspDone:false,truckDone:false}, introT=null;
+function showIntro(html,ms=7000){const e=document.getElementById('intro');e.innerHTML=html;e.classList.add('on');clearTimeout(introT);introT=setTimeout(()=>e.classList.remove('on'),ms);}
+function hideIntro(){const e=document.getElementById('intro');if(e)e.classList.remove('on');clearTimeout(introT);}
+function startInspDemo(){
+const I_=inspector;demo.insp=true;I_.demo=true;I_.dir=Math.random()<.5?1:-1;I_.x=-36*I_.dir;I_.z=4;I_.active=true;I_.g.visible=true;I_.t=0;
+I_.g.rotation.y=I_.dir>0?Math.PI/2:-Math.PI/2;
+document.getElementById('inspector-badge').classList.add('on');snd('whistle');
+showIntro('<b class="t">🦺 المفتش — مراقب السلامة</b>يمرّ على المستودع ويغرّم أي طرد متروك على الأرض خارج مناطق الفرز.<small>جولة تعريفية: لا غرامة الآن</small>');
+}
+function startTruckDemo(){
+demo.truck=true;truckState=gameRules.reset();truckState.elapsed=gameRules.startAt;snd('horn');
+showIntro('<b class="t">🚜 الرافعة الشوكية المتهورة</b>تعبر المستودع وتُسقط أجساماً غريبة FOD؛ اجمعها وضعها في الصندوق الأحمر. وإن اصطدمت بك تبطّئ حركتك.<small>جولة تعريفية: لن تصطدم بك الآن</small>');
+}
+const beltSpeed=()=>STAGE_BELT[stage]+(lvl-1)*(stage===1?0.06:0.12);
 let sortedCount=0, totalProcessed=0;
 const px = pl.position, key = {}, joy = {x:0, y:0};
 const tc = {};
@@ -901,8 +985,8 @@ else { time = Math.max(0, time - 6); snd('error'); spawnFloatTag('-6 ث','#ff525
 hud();
 }
 function spawn(){
-const list = Math.random() < 0.5 ? HZ : I;
-const raw = (Math.random() < 0.13 && !items.some(i => i.data.isMys)) ? MYS : list[Math.random()*list.length | 0];
+const list = (stage>=2 && Math.random() < (stage===3?0.6:0.45)) ? HZ : I;
+const raw = (stage>=2 && Math.random() < 0.13 && !items.some(i => i.data.isMys)) ? MYS : list[Math.random()*list.length | 0];
 const itObj = { t:raw[0], emoji:raw[1], name:raw[2], imp:raw[3], div:raw[4], isHz:raw[0][0]==='h', isMys:raw===MYS };
 const m = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({map:tex(raw), roughness:0.5, metalness:0.05}));
 m.castShadow = true; m.receiveShadow = true; m.position.set(-22.5, 0.74 + BH, 12);
@@ -930,10 +1014,11 @@ for(let i=0;i<steps;i++){
 const before=gameRules.position(truckState), event=gameRules.advance(truckState,step,px.z), after=gameRules.position(truckState);
 if(event.entered){snd('horn');toast('⚠️ رافعة متهورة تعبر المستودع!', '#ffd54a');}
 if(event.drop) dropFod(after.x,after.z);
-if(truckState.active && !truckState.hit && gameRules.touches(before.x,before.z,after.x,after.z,px.x,px.z)){
+if(!demo.truck && truckState.active && !truckState.hit && gameRules.touches(before.x,before.z,after.x,after.z,px.x,px.z)){
 truckState.hit=true;fearT=gameRules.fearDuration;snd('bump');toast('😨 اصطدام! حركة أبطأ مؤقتًا', '#ffd54a');
 }
 }
+if(demo.truck && truckState.done){ demo.truck=false; demo.truckDone=true; hideIntro(); }
 const pos=gameRules.position(truckState);
 recklessTruck.visible=truckState.active;recklessTruck.position.set(pos.x,0,pos.z);recklessTruck.rotation.y=pos.yaw;
 recklessTruck.rotation.z=truckState.active && !truckState.turned && truckState.x===0 ? -.12 : 0;
@@ -956,6 +1041,7 @@ setTimeout(() => el.remove(), 850);
 }
 function hud(){
 $('sc').textContent = score;
+$('stg').textContent = stage<3 ? `🎓 المرحلة ${stage} • ${Math.min(score,STAGE_AT[stage+1])}/${STAGE_AT[stage+1]}` : '🏁 المرحلة ٣ • الأخيرة';
 $('cb').textContent = '×' + combo;
 $('cbbox').classList.toggle('hot', combo > 1);
 const tsec = Math.max(0, Math.ceil(time));
@@ -1008,10 +1094,10 @@ const d = it.data;
 if(d.isFod){
 const bonus=gameRules.reward(true,z.k);
 if(bonus){score+=bonus;rm(it);snd('ok');spawnFloatTag('+'+bonus+' FOD','#69f0ae');toast('✔ جمع الجسم الغريب +'+bonus+' نقطة','#69f0ae');}
-else {it.st='floor';it.fall=false;it.m.position.set(px.x, .2, Math.max(-4,px.z+1.5));snd('warn');toast('🔩 مكان FOD أقصى اليسار','#ffd54a');}
+else {it.st='floor';it.fall=false;it.m.position.set(px.x, .2, Math.max(-4,px.z+1.5));snd('warn');toast('🔩 ضعه في صندوق FOD الأحمر','#ffd54a');}
 hud();return;
 }
-if(z.k==='fod'){ it.st='floor';it.fall=false;it.m.position.set(z.x,.7,-4);snd('warn');toast('هذه المنطقة للأجسام الغريبة FOD فقط','#ffd54a');hud();return; }
+if(z.k==='fod'){ it.st='floor';it.fall=false;it.m.position.set(z.x,.7,-4);snd('warn');toast('هذا الصندوق للأجسام الغريبة FOD فقط','#ffd54a');hud();return; }
 if(d.isMys){ mystery(it); return; }
 totalProcessed++;
 let ok = false;
@@ -1040,7 +1126,7 @@ conflictReason = 'منطقة فرز غير مطابقة لنوع الشحنة!';
 }
 if(ok){
 sortedCount++;
-const p = 10 * combo;
+const p = 10 * combo * (d.isHz ? 2 : 1);
 score += p;
 combo = Math.min(combo + 1, 8);
 time += 3;
@@ -1057,10 +1143,11 @@ if(z.hz && z.items.length >= z.cap) ship(z);
 } else {
 score = Math.max(0, score - 10);
 combo = 1;
-time = Math.max(0, time - 5);
+const tp = stage===1 ? 2 : 5;
+time = Math.max(0, time - tp);
 snd('error');
-spawnFloatTag('-5 ث', '#ff5252');
-toast(`✖ ${conflictReason} (-5 ث)`, '#ff5252');
+spawnFloatTag('-'+tp+' ث', '#ff5252');
+toast(`✖ ${conflictReason} (-${tp} ث)`, '#ff5252');
 rm(it);
 }
 hud();
@@ -1123,11 +1210,24 @@ jy.addEventListener('pointerdown', e => { initAudio(); jid = e.pointerId; jy.set
 jy.addEventListener('pointermove', e => { if(e.pointerId === jid) jm(e); });
 const je = () => { jid = null; joy.x = joy.y = 0; kn.style.transform = ''; };
 jy.addEventListener('pointerup', je); jy.addEventListener('pointercancel', je);
+function setStage(n,silent){
+stage=n;
+inspector.demo=false; demo.insp=false; demo.truck=false; hideIntro();
+if(n>=2) resetInspector();
+if(n>=3) resetTruck();
+if(!silent){
+snd('ship'); time += 10;
+spawnFloatTag('+10 ث ⏱','#64ffda');
+toast(n===2?'🚀 المرحلة ٢: المواد الخطرة والمفتش! السير أسرع':'🏁 المرحلة ٣ الأخيرة: الرافعة الشوكية تعبر المستودع!','#64ffda');
+}
+hud();
+}
 function start(){
 initAudio();
 items.forEach(i => S.remove(i.m)); items = [];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
-slowT = 0; score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1;
+slowT = 0; score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1; stage = 1;
+demo = {insp:false,truck:false,inspDone:false,truckDone:false}; inspector.demo = false; hideIntro();
 sortedCount = 0; totalProcessed = 0;
 px.set(0, 0, 3); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
 clearMovement(); last = performance.now();
@@ -1207,7 +1307,9 @@ I_.cooldown -= dt;
 if(I_.cooldown > 0) return;
 const bad = items.filter(i => i.st === 'floor' && !i.data.isFod && !i.fall && !i.fined && (i.floorT = (i.floorT||0) + dt) > 2.5);
 if(!bad.length && I_.elapsed < 30) return;
-const tgt = bad[0] || {m:{position:{z:px.z - 1.6}}};
+const cand = bad.length ? bad : items.filter(i => i.st === 'floor' && !i.data.isFod && !i.fall && !i.fined);
+let tgt = {m:{position:{z:px.z - 1.6}}}, bn = -1;
+for(const c of cand){ const n = cand.filter(o => Math.abs(o.m.position.z - c.m.position.z) < 5.5).length; if(n > bn){ bn = n; tgt = c; } }
 I_.dir = Math.random() < 0.5 ? 1 : -1;
 I_.x = -36 * I_.dir; I_.z = Math.max(-11, Math.min(9, tgt.m.position.z + 1.6));
 I_.active = true; I_.g.visible = true; I_.t = 0;
@@ -1218,16 +1320,16 @@ return;
 }
 I_.t += dt;
 const prevX = I_.x;
-I_.x += I_.dir * 3.6 * dt;
+I_.x += I_.dir * (I_.demo ? 6 : 3.6) * dt;
 const sw = Math.sin(I_.t * 5) * 0.4;
 I_.g.rotation.z = Math.sin(I_.t * 5) * 0.09;
 I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw;
 I_.arms[0].rotation.x = -sw * 0.8; I_.arms[1].rotation.x = sw * 0.4 - 0.5;
 I_.g.position.set(I_.x, Math.abs(Math.sin(I_.t * 5)) * 0.04, I_.z);
 for(const it of items){
-if(it.st !== 'floor' || it.data.isFod || it.fined) continue;
+if(I_.demo || it.st !== 'floor' || it.data.isFod || it.fined) continue;
 const bx = it.m.position.x;
-if(Math.abs(it.m.position.z - I_.z) < 3.2 && (prevX - bx) * (I_.x - bx) <= 0){
+if(Math.abs(it.m.position.z - I_.z) < 5.5 && (prevX - bx) * (I_.x - bx) <= 0){
 it.fined = true;
 score = Math.max(0, score - 15); combo = 1; time = Math.max(0, time - 4);
 snd('whistle');
@@ -1237,7 +1339,7 @@ it.m.material.emissive && it.m.material.emissive.setHex(0x552200);
 hud();
 }
 }
-if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.done = true; $('inspector-badge').classList.remove('on'); }
+if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.cooldown = 14; I_.elapsed = 0; if(I_.demo){ I_.demo = false; demo.insp = false; demo.inspDone = true; hideIntro(); } $('inspector-badge').classList.remove('on'); }
 }
 let last = performance.now();
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.12, 40), new THREE.MeshBasicMaterial({color:0xffc94d, transparent:true, opacity:0.85, depthWrite:false}));
@@ -1283,7 +1385,7 @@ let vz = (key.KeyS || key.ArrowDown ? 1 : 0) - (key.KeyW || key.ArrowUp ? 1 : 0)
 const l = Math.hypot(vx, vz);
 if(l > 1){ vx /= l; vz /= l; }
 if(run){
-updateTruck(dt);
+if(stage>=3 || demo.truck) updateTruck(dt);
 const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultiplier(fearT);
 // Small collision steps preserve full travel time even when rendering slows down.
 const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
@@ -1301,10 +1403,15 @@ if(warnTicker > 1){ snd('warn'); warnTicker = 0; }
 }
 if(time <= 0){ time = 0; hud(); end(); }
 lvl = 1 + Math.floor(score / 120);
+if(stage===1){
+if(!demo.inspDone && !demo.insp && score >= 30) startInspDemo();
+else if(demo.inspDone && !demo.truckDone && !demo.truck && score >= 60) startTruckDemo();
+}
+if(stage<3 && score >= STAGE_AT[stage+1] && (stage!==1 || (demo.inspDone && demo.truckDone))) setStage(stage+1);
 spawnT -= dt;
 if(spawnT <= 0){
 spawn();
-spawnT = Math.max(1.4, 3.4 - lvl * 0.28);
+spawnT = stage===1 ? 5.4 : stage===2 ? Math.max(1.8, 3.4 - lvl * 0.22) : Math.max(1.4, 2.8 - lvl * 0.2);
 }
 for(const it of items.slice()){
 if(it.st !== 'floor' || it.fall) continue;
@@ -1312,19 +1419,23 @@ const zz = Z.find(z => (it.data.isFod ? z.k==='fod' : z.k!=='fod') && Math.abs(i
 if(zz){ it.st = 'sorting'; resolvePlacement(zz, it); }
 }
 separateBoxes();
-updateInspector(dt);
+if(stage>=2 || demo.insp) updateInspector(dt);
 slowT = Math.max(0, slowT - dt); const beltK = slowT > 0 ? 0.35 : 1;
 let best = null, bd = 2.8;
 for(const it of items.slice()){
 it.csh.visible = it.st !== 'held' && it.st !== 'lifting';
 if(it.fall){ it.vy -= 32 * dt; it.m.position.y += it.vy * dt; if(it.m.position.y <= it.ty){ it.m.position.y = it.ty; it.fall = false; if(it.st === 'floor') snd('bump'); } }
 if(it.st === 'belt'){
-it.m.position.x += (1.8 + lvl * 0.26) * beltK * dt;
+it.m.position.x += beltSpeed() * beltK * dt;
 if(it.m.position.x > 23.5){
 if(it.data.isMys){ rm(it); continue; }
-rm(it); score = Math.max(0, score - 5); combo = 1;
+const miss = it.data.isHz ? 10 : 5;
+rm(it);
+score = Math.max(0, score - miss);
+if(stage >= 2) combo = 1;
 snd('error');
-toast('فاتك طرد! -5', '#ffb020'); hud(); continue;
+spawnFloatTag('-' + miss, '#ff5252');
+toast((it.data.isHz ? '⚠️ فاتتك مادة خطرة! -' : 'فاتك طرد! -') + miss, '#ffb020'); hud(); continue;
 }
 }
 if(it.st === 'held'){
@@ -1360,7 +1471,7 @@ if(near && near.m.material.emissive){ near.m.material.emissive.setHex(0x3a2400);
 if(near){ ring.visible = true; ring.position.set(near.m.position.x, near.st==='belt' ? 0.75 : 0.02, near.m.position.z); ring.rotation.z += dt*2; } else ring.visible = false;
 beacons.forEach((b,i) => b.material.emissiveIntensity = 0.4 + Math.max(0, Math.sin(now*0.006 + i*Math.PI))*2.2);
 stripes.forEach(s => {
-s.position.x += (1.8 + lvl * 0.26) * beltK * dt;
+s.position.x += beltSpeed() * beltK * dt;
 if(s.position.x > 24) s.position.x -= 50;
 });
 hudTicker += dt;
