@@ -137,6 +137,87 @@ canvas{display:block;position:absolute;inset:0}
 .tbl{font-size:11px}
 .tbl th,.tbl td{padding:6px 7px}
 }
+/* ===== واجهة القوائم بأسلوب الألعاب ===== */
+.cbwrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+#streak{width:calc(var(--hh)*1.9);height:5px;border-radius:4px;background:rgba(255,255,255,.16);overflow:hidden;opacity:0;transition:opacity .2s;box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
+#streak.on{opacity:1}
+#streak i{display:block;height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,#ffd54a,#ff7a00);box-shadow:0 0 8px rgba(255,170,0,.85)}
+#stage.flash::before{content:"";position:absolute;inset:0;z-index:8;pointer-events:none;background:radial-gradient(circle at 50% 46%,rgba(255,213,74,.35),transparent 62%);animation:flashfade .5s ease-out forwards}
+@keyframes flashfade{to{opacity:0}}
+.hero{display:flex;align-items:center;gap:14px;text-align:right;justify-content:center}
+.hero .logo{font-size:clamp(34px,9vmin,52px);line-height:1;filter:drop-shadow(0 6px 16px rgba(243,156,18,.5));animation:floaty 3.2s ease-in-out infinite}
+@keyframes floaty{50%{transform:translateY(-6px)}}
+.kicker{font:900 10px/1.5 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.26em;color:#7cc4ff;direction:ltr}
+.hero h1{margin:0;font-size:clamp(23px,6.2vmin,38px);line-height:1.15;background:linear-gradient(180deg,#fff8d6,#ffc107 55%,#ff8a00);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;letter-spacing:.3px}
+.tagline{font-size:clamp(11px,3.4vmin,14px);color:#bfe0ff;opacity:.95;font-weight:700}
+.stagebar{display:flex;gap:8px;width:100%;max-width:560px;justify-content:center}
+.scard{flex:1;max-width:180px;background:linear-gradient(180deg,rgba(38,76,134,.45),rgba(8,20,38,.6));border:1px solid rgba(124,196,255,.3);border-radius:14px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:800;font-size:12px;color:#cfe6ff;line-height:1.3}
+.scard b{width:24px;height:24px;border-radius:50%;background:#0d1f38;border:2px solid #3aa0ff;display:grid;place-items:center;font-size:13px;color:#9bd4ff}
+.scard small{font-size:10px;opacity:.7;font-weight:700}
+.scard.on{background:linear-gradient(180deg,rgba(243,156,18,.3),rgba(70,36,0,.4));border-color:#f39c12;box-shadow:0 0 16px rgba(243,156,18,.28)}
+.scard.on b{background:#f39c12;border-color:#ffd27a;color:#241200}
+.menu-grid{display:flex;gap:8px;width:100%;max-width:560px;justify-content:center;flex-wrap:wrap}
+.mcard{flex:1 1 148px;min-width:128px;max-width:180px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:9px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;line-height:1.45}
+.mcard .ic{font-size:22px;line-height:1}
+.mcard b{color:#ffe082;font-size:13px}
+.mcard small{opacity:.78;font-weight:600;font-size:11px}
+.cta-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center}
+.ov button.ghost{background:rgba(255,255,255,.07);border:2px solid rgba(124,196,255,.55);color:#cfe8ff;box-shadow:0 0 14px rgba(58,160,255,.18);font-size:16px;padding:13px 24px}
+.ov #go{background:linear-gradient(180deg,#ffd27a,#f39c12 58%,#d97f00);border:2px solid #fff;box-shadow:0 0 26px rgba(243,156,18,.55),0 10px 26px rgba(0,0,0,.45);animation:ctaGlow 2.2s ease-in-out infinite}
+@keyframes ctaGlow{50%{box-shadow:0 0 38px rgba(255,193,7,.75),0 10px 26px rgba(0,0,0,.45)}}
+.best{font-weight:800;color:#ffd54a;font-size:13px;background:rgba(243,156,18,.12);border:1px solid rgba(243,156,18,.35);padding:6px 16px;border-radius:999px}
+p.fine{font-size:11px!important;opacity:.6;max-width:520px;line-height:1.6!important;margin:0}
+.hero.small h1{font-size:clamp(20px,5.4vmin,30px)}
+.steps{display:flex;gap:8px;width:100%;max-width:600px;justify-content:center;flex-wrap:wrap}
+.step{flex:1 1 160px;max-width:190px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:9px 10px;text-align:center;font-size:12px;line-height:1.5}
+.step b{display:block;color:#9bd4ff;font-size:13px}
+.step .ic{font-size:20px}
+.golden{display:grid;gap:6px;width:100%;max-width:600px;text-align:right}
+.grow{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-right-width:4px;border-radius:12px;padding:8px 12px;font-size:12.5px;line-height:1.55}
+.grow>span{font-size:17px;line-height:1.3}
+.grow b{display:block;color:#ffe082;font-size:13px;margin-bottom:1px}
+.grow small{opacity:.88}
+.grow.ok{border-right-color:#2fbf6a}
+.grow.no{border-right-color:#e53935}
+.grow.tip{border-right-color:#3aa0ff}
+details.full{width:100%;max-width:600px;text-align:right}
+details.full summary{cursor:pointer;font-weight:800;color:#9bd4ff;font-size:13px;padding:7px 2px;list-style:none}
+details.full summary::-webkit-details-marker{display:none}
+details.full summary::before{content:"▸ "}
+details.full[open] summary::before{content:"▾ "}
+details.full .tbl{max-width:100%}
+.res{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:560px}.rank{width:clamp(70px,19vmin,100px);height:clamp(70px,19vmin,100px);border-radius:50%;display:grid;place-items:center;font:900 clamp(36px,10.5vmin,54px)/1 system-ui,Tahoma,sans-serif;color:#1a0f00;background:radial-gradient(circle at 35% 30%,#fff3b0,#ffc107 55%,#e08a00);border:4px solid #fff;box-shadow:0 0 32px rgba(255,193,7,.5),0 10px 26px rgba(0,0,0,.5);animation:pop .55s cubic-bezier(.2,1.6,.4,1)}
+.rank.s{background:radial-gradient(circle at 35% 30%,#eafff2,#2fbf6a 58%,#0c6b35);color:#fff}
+.rank.a{background:radial-gradient(circle at 35% 30%,#e6f4ff,#3aa0ff 58%,#114f8d);color:#fff}
+.rank.b{background:radial-gradient(circle at 35% 30%,#fff3b0,#ffc107 58%,#b26a00)}
+.rank.c{background:radial-gradient(circle at 35% 30%,#e8edf2,#84929a 58%,#48525c);color:#fff}
+@keyframes pop{from{transform:scale(.35);opacity:0}}
+.stars{font-size:clamp(17px,4.8vmin,24px);letter-spacing:5px;color:#ffd54a;text-shadow:0 0 12px rgba(255,193,7,.55)}
+.stars .off{color:rgba(255,255,255,.18);text-shadow:none}
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:540px}
+.statgrid>div{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:8px 4px;display:flex;flex-direction:column;gap:2px;text-align:center}
+.statgrid b{font-size:clamp(17px,4.8vmin,23px);color:#fff;font-variant-numeric:tabular-nums}
+.statgrid span{font-size:11px;opacity:.75}
+.rec{font-weight:800;font-size:13px;color:#69f0ae;background:rgba(47,191,106,.12);border:1px solid rgba(47,191,106,.4);padding:6px 16px;border-radius:999px}
+.rec.best{color:#ffd54a;background:rgba(243,156,18,.12);border-color:rgba(243,156,18,.4)}
+#ov{gap:11px;padding:16px}
+#ov .hero .logo{font-size:clamp(30px,8vmin,44px)}
+#ov .scard{padding:6px 4px;font-size:11px}
+#ov .mcard{padding:7px 6px;font-size:11px}
+#ov .mcard b{font-size:12px}
+#ov .mcard small{font-size:10px}
+#ov>.fine{display:none}
+.ov{scrollbar-width:none}
+.ov::-webkit-scrollbar{display:none}
+@media (max-width:560px){
+.hero{gap:10px}
+.mcard{flex-basis:104px;min-width:100px;padding:7px 6px}
+.mcard small{font-size:10px}
+.step{flex-basis:150px}
+.grow{font-size:12px;padding:7px 10px}
+.statgrid{grid-template-columns:repeat(2,1fr)}
+.kicker{letter-spacing:.18em;font-size:9px}
+}
 </style>
 </head>
 <body>
@@ -146,7 +227,10 @@ canvas{display:block;position:absolute;inset:0}
 <div class="pill" id="scbox"><svg viewBox="0 0 48 48"><defs><linearGradient id="gT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset="1" stop-color="#f5a400"/></linearGradient></defs><path d="M14 6h20v10c0 8-4 13-10 13S14 24 14 16z" fill="url(#gT)" stroke="#8a5a00" stroke-width="2" stroke-linejoin="round"/><path d="M14 9H7c0 8 3 12 8 13M34 9h7c0 8-3 12-8 13" fill="none" stroke="#e0a000" stroke-width="3" stroke-linecap="round"/><rect x="21" y="29" width="6" height="7" fill="#e8a400"/><rect x="14" y="36" width="20" height="6" rx="2" fill="url(#gT)" stroke="#8a5a00" stroke-width="2"/><path d="M24 11l2.2 4.6 5 .6-3.7 3.4 1 5-4.5-2.5-4.5 2.5 1-5-3.7-3.4 5-.6z" fill="#fff6c8" opacity=".9"/></svg><b id="sc">0</b></div>
 <div class="pill" id="tmbox"><svg viewBox="0 0 48 48"><rect x="21" y="3" width="6" height="5" rx="1.5" fill="#f5b400"/><path d="M33 9l4-3M35 11l3 3" stroke="#f5b400" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="27" r="17" fill="#f5b400" stroke="#8a5a00" stroke-width="2"/><circle cx="24" cy="27" r="13" fill="#fffdf2" stroke="#c98500" stroke-width="1.5"/><path d="M24 27V17M24 27l7 4" stroke="#1a2b4d" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="27" r="2" fill="#1a2b4d"/><path d="M24 15v2M24 37v2M12 27h2M34 27h2" stroke="#1a2b4d" stroke-width="2"/></svg><b id="tm">01:40</b></div>
 </div>
+<div class="cbwrap">
 <div class="cbadge" id="cbbox"><svg viewBox="0 0 48 48"><defs><radialGradient id="gB" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#ffd54a"/><stop offset="1" stop-color="#ff8f00"/></radialGradient></defs><polygon points="24.0,1.0 28.2,5.5 34.0,3.3 35.8,9.1 42.0,9.7 41.1,15.8 46.4,18.9 43.0,24.0 46.4,29.1 41.1,32.2 42.0,38.3 35.8,38.9 34.0,44.7 28.2,42.5 24.0,47.0 19.8,42.5 14.0,44.7 12.2,38.9 6.0,38.3 6.9,32.2 1.6,29.1 5.0,24.0 1.6,18.9 6.9,15.8 6.0,9.7 12.2,9.1 14.0,3.3 19.8,5.5" fill="url(#gB)" stroke="#8a4a00" stroke-width="1.6" stroke-linejoin="round"/><circle cx="24" cy="24" r="15" fill="#d9480f" stroke="#ffe08a" stroke-width="1.6"/></svg><b id="cb">×1</b></div>
+<div id="streak"><i id="stkbar"></i></div>
+</div>
 </div>
 <div id="hold" class="chip" style="display:none"></div>
 <div id="inspect" class="chip"></div>
@@ -164,10 +248,24 @@ canvas{display:block;position:absolute;inset:0}
 <button id="act" aria-label="pick/place"><svg class="ic-pick" viewBox="0 0 48 48"><path d="M24 6l16 8v20l-16 8-16-8V14z" fill="#e8b36a" stroke="#5a3510" stroke-width="2.6" stroke-linejoin="round"/><path d="M8 14l16 8 16-8M24 22v20" stroke="#5a3510" stroke-width="2.6" fill="none" stroke-linejoin="round"/><path d="M17 10l15 7.5" stroke="#fff" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/></svg><svg class="ic-drop" viewBox="0 0 48 48"><path d="M24 3v15M16.5 11.5L24 19l7.5-7.5" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 26l13 6.5v13L24 52 11 45.5v-13z" transform="translate(0 -9)" fill="#e8b36a" stroke="#5a3510" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 32.5l13 6.5 13-6.5M24 39v13" transform="translate(0 -9)" stroke="#5a3510" stroke-width="2.4" fill="none"/></svg></button>
 </div>
 <div class="ov" id="ov">
-<h1>✈️ مستودع الشحن الجوي الدولي HD</h1>
-<p>تحقق من كود المناولة <b>(IMP Code)</b> ورقم الفئة <b>(Class)</b> عند التقاط أي شحنة خطرة. قسّم الشحنات بين <b>الحاوية ١ والحاوية ٢</b> لتفادي خلط فئات متعارضة وفق <b>IATA Table 9.3.A</b>. الفرز الصحيح يمنحك وقتاً ونقاطاً إضافية.</p>
-<p style="font-size:12px;opacity:.75">لعبة تعليمية مبسطة؛ المرجع التشغيلي هو نسخة IATA DGR الرسمية ودليل مشغّل الطائرة.</p>
-<p style="font-size:14px;opacity:.85">🎓 المرحلة ١ تعليمية: شحن عام وتبريد وقابلة للتلف. ثم المواد الخطرة والمفتش، وأخيراً الرافعة الشوكية.</p>
+<div class="hero">
+<div class="logo">✈️</div>
+<div>
+<div class="kicker">AIR CARGO HUB • DGR</div>
+<h1>مستودع الشحن الجوي</h1>
+<div class="tagline">التقط • افحص • افرز — قبل أن يفوت الحزام</div>
+</div>
+</div>
+<div class="stagebar">
+<div class="scard on"><b>١</b><span>التدريب</span><small>شحن عام</small></div>
+<div class="scard"><b>٢</b><span>المواد الخطرة</span><small>IATA</small></div>
+<div class="scard"><b>٣</b><span>الرافعة</span><small>FOD</small></div>
+</div>
+<div class="menu-grid">
+<div class="mcard"><span class="ic">🎯</span><b>افحص الكود</b><small>IMP + Class على الملصق</small></div>
+<div class="mcard"><span class="ic">🧩</span><b>افرز بذكاء</b><small>منطقة لكل نوع شحنة</small></div>
+<div class="mcard"><span class="ic">🔥</span><b>سلسلة مثالية</b><small>فرز متتابع = نقاط أعلى</small></div>
+</div>
 <div class="leg">
 <span style="background:#5291b5">❄️ تبريد</span>
 <span style="background:#62985c">🍓 قابلة للتلف</span>
@@ -177,11 +275,37 @@ canvas{display:block;position:absolute;inset:0}
 <span style="background:#8e6098;color:#fff">☣️ حاوية مواد خطرة ٢</span>
 <span style="background:#ffc107">🎁 صندوق مفاجآت</span>
 </div>
-<button id="go">بدء الوردية</button>
+<div class="cta-row">
+<button id="go">▶ ابدأ الوردية</button>
+<button id="how" class="ghost">📖 دليل سريع</button>
+</div>
+<div id="best" class="best">🏆 لا توجد نتيجة بعد — كن أول الأبطال</div>
+<p class="fine">لعبة تعليمية مبسطة؛ المرجع التشغيلي هو نسخة IATA DGR الرسمية ودليل مشغّل الطائرة.</p>
 </div>
 <div class="ov" id="rules" style="display:none">
-<h1>دليل الفصل المبسّط للمواد الخطرة (IATA DGR)</h1>
-<p>الأكواد الدولية المعتمدة في المستودع وقواعد الفصل بين الحاويتين:</p>
+<div class="hero small">
+<div class="logo">📖</div>
+<div>
+<div class="kicker">QUICK SORT GUIDE</div>
+<h1>دليل الفرز السريع</h1>
+</div>
+</div>
+<div class="steps">
+<div class="step"><span class="ic">🔍</span><b>١. اقرأ الملصق</b>كود المناولة <b style="display:inline;color:#fff">IMP</b> ورقم الفئة <b style="display:inline;color:#fff">Class</b>.</div>
+<div class="step"><span class="ic">🚚</span><b>٢. اختر المنطقة</b>لكل شحنة منطقة واحدة فقط حسب نوعها.</div>
+<div class="step"><span class="ic">⛔</span><b>٣. لا تخلط</b>الفئات المتعارضة تُفصل في حاويتين مختلفتين.</div>
+</div>
+<div class="golden">
+<div class="grow ok"><span>✅</span><div><b>الشحن العادي</b><small>تبريد ❄️ • قابل للتلف 🍓 • عام 📦 → منطقتها الملوّنة فقط</small></div></div>
+<div class="grow no"><span>☣️</span><div><b>أي مادة خطرة</b><small>الحاوية ١ أو الحاوية ٢ فقط — لا تُوضع في مناطق الشحن العادي.</small></div></div>
+<div class="grow no"><span>⛔</span><div><b>مؤكسد 5.1 لا يلتقي بمشتعل</b><small>لا تجمع ROX 5.1 مع RFL 3 أو RFS 4.1 أو RSC 4.2 في حاوية واحدة.</small></div></div>
+<div class="grow no"><span>⛔</span><div><b>الأكّالة 8 والفئة 3</b><small>RCM 8 تُفصل عن المشتعلات RFL 3 و RWR 4.3 و ROX 5.1.</small></div></div>
+<div class="grow no"><span>🔋</span><div><b>الليثيوم 9 يُفصل</b><small>RLI 9 لا تُخلط مع 3 • 4.1 • 5.1 • 2.1.</small></div></div>
+<div class="grow tip"><span>⚠️</span><div><b>1.4S و 6 و 7</b><small>1.4S لا تُفصل عن غير المتفجرات؛ الفئتان 6 و7 لا تتطلبان فصلًا.</small></div></div>
+<div class="grow tip"><span>🎁</span><div><b>صناديق المفاجآت</b><small>افرزها في أي منطقة آمنة لتُفتح تلقائيًا وتكشف مكافأتها.</small></div></div>
+</div>
+<details class="full">
+<summary>عرض جدول IATA الكامل (Table 9.3.A)</summary>
 <table class="tbl">
 <tr><th>الكود / الفئة</th><th>الوصف والمحتوى</th><th>ممنوع وضعه مع:</th></tr>
 <tr><td><b>RFL . 3</b></td><td>سوائل مشتعلة (وقود، دهانات)</td><td>ROX 5.1، RCM 8، RLI 9، فئة 1 (عدا 1.4S)</td></tr>
@@ -200,7 +324,8 @@ canvas{display:block;position:absolute;inset:0}
 <tr><td><b>RPB / RIS . 6</b></td><td>مواد سامة ومعدية</td><td>لا تتطلب فصلًا وفق الجدول</td></tr>
 <tr><td><b>RRY . 7</b></td><td>مواد مشعة</td><td>لا تتطلب فصلًا وفق الجدول</td></tr>
 </table>
-<p style="font-size:12px;opacity:.8">مأخوذ من IATA DGR Table 9.3.A (2023). الجدول يستثني 1.4S والفئتين 6 و7 من الفصل، ويطبّق تعارضات الفئة 9 على بطاريات الليثيوم فقط. هذا تبسيط تعليمي لا يغني عن النسخة الرسمية.</p>
+</details>
+<p class="fine">مأخوذ من IATA DGR Table 9.3.A (2023). الجدول يستثني 1.4S والفئتين 6 و7 من الفصل، ويطبّق تعارضات الفئة 9 على بطاريات الليثيوم فقط. هذا تبسيط تعليمي لا يغني عن النسخة الرسمية.</p>
 <button id="rc">إغلاق الدليل</button>
 </div>
 </div>
@@ -226,13 +351,13 @@ whistle:[[1047,.08],[1397,.08],[1047,.1]],
 horn:[[196,.12],[247,.16],[196,.12]],
 warn:[[880,.06],[660,.045]]
 };
-function snd(type){
+function snd(type, pitch=1){
 if(!soundEnabled || !actx || !retroCues[type]) return;
 let at = actx.currentTime;
 for(const [frequency,duration] of retroCues[type]){
 const osc = actx.createOscillator(), gain = actx.createGain();
 osc.type = type === 'bump' || type === 'place' ? 'triangle' : 'square';
-osc.frequency.setValueAtTime(frequency, at);
+osc.frequency.setValueAtTime(frequency * pitch, at);
 osc.connect(gain); gain.connect(actx.destination);
 gain.gain.setValueAtTime(0, at);
 gain.gain.linearRampToValueAtTime(type === 'warn' ? .035 : .065, at + .003);
@@ -867,6 +992,12 @@ hd.rotation.y = isMoving ? sw * 0.06 : Math.sin(performance.now()*0.0015) * 0.12
 }
 pl.position.set(0, 0, 3);
 let items=[], run=false, score=0, combo=1, time=100, spawnT=0, held=null, lvl=1, near=null, stage=1;
+let streak=0, streakT=0, maxStreak=0, rushT=30, rushN=0, rushDelay=0;
+const STREAK_MAX = 8;
+const streakWindow = () => stage === 1 ? 7 : 5.5;
+const bestScore = () => { try { return +(localStorage.getItem('acg_best') || 0) || 0; } catch(e){ return 0; } };
+const saveBest = v => { try { localStorage.setItem('acg_best', v); } catch(e){} };
+function syncMenu(){ const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? `🏆 أفضل نتيجة: ${b}` : '🏆 لا توجد نتيجة بعد — كن أول الأبطال'; }
 const STAGE_AT=[0,0,100,200], STAGE_BELT=[0,1.5,1.9,2.4];
 let demo={insp:false,truck:false,inspDone:false,truckDone:false}, introT=null;
 function showIntro(html,ms=7000){const e=document.getElementById('intro');e.innerHTML=html;e.classList.add('on');clearTimeout(introT);introT=setTimeout(()=>e.classList.remove('on'),ms);}
@@ -1062,6 +1193,9 @@ $('sc').textContent = score;
 $('stg').textContent = stage<3 ? `🎓 المرحلة ${stage} • ${Math.min(score,STAGE_AT[stage+1])}/${STAGE_AT[stage+1]}` : '🏁 المرحلة ٣ • الأخيرة';
 $('cb').textContent = '×' + combo;
 $('cbbox').classList.toggle('hot', combo > 1);
+const stkOn = streak >= 2 && streakT > 0;
+$('streak').classList.toggle('on', stkOn);
+if(stkOn) $('stkbar').style.width = Math.max(0, Math.min(100, (streakT / streakWindow()) * 100)) + '%';
 const tsec = Math.max(0, Math.ceil(time));
 $('tm').textContent = String(Math.floor(tsec/60)).padStart(2,'0') + ':' + String(tsec%60).padStart(2,'0');
 $('tmbox').classList.toggle('urgent', time <= 20);
@@ -1147,10 +1281,19 @@ sortedCount++;
 const p = 10 * combo * (d.isHz ? 2 : 1);
 score += p;
 combo = Math.min(combo + 1, 8);
+streak++; streakT = streakWindow(); maxStreak = Math.max(maxStreak, streak);
 time += 3;
-snd('ok');
+snd('ok', 1 + Math.min(streak, STREAK_MAX) * .05);
 spawnFloatTag('+3 ث ⏱', '#69f0ae');
-toast(`✔ فرز متوافق +${p}` + (d.isHz ? ` [${d.imp} . ${d.div}]` : ''), '#69f0ae');
+let chainMsg = '';
+if(streak % 4 === 0){
+const b = Math.min(30, streak * 2.5);
+score += b; chainMsg = ` • سلسلة +${b} 🔥`;
+stageEl.classList.remove('flash'); void stageEl.offsetWidth; stageEl.classList.add('flash');
+setTimeout(() => stageEl.classList.remove('flash'), 550);
+snd('ship', 1 + Math.min(streak, 8) * .04);
+}
+toast(`✔ فرز متوافق +${p}${chainMsg}` + (d.isHz ? ` [${d.imp} . ${d.div}]` : ''), '#69f0ae');
 const i = z.hz ? z.items.length : z.n_++ % z.cap;
 if(z.items[i]) rm(z.items[i]);
 z.items[i] = it; it.st = 'placed'; if(z.hz) drawZoneSign(z);
@@ -1160,7 +1303,7 @@ it.m.rotation.set(0,0,0); it.fall = true; it.vy = 0; it.ty = 0.06 + BH;
 if(z.hz && z.items.length >= z.cap) ship(z);
 } else {
 score = Math.max(0, score - 10);
-combo = 1;
+combo = 1; streak = 0; streakT = 0;
 const tp = stage===1 ? 2 : 5;
 time = Math.max(0, time - tp);
 snd('error');
@@ -1176,6 +1319,7 @@ if(!run || liftAnim.active) return;
 if(!held){
 if(!near) return;
 const targetItem = near;
+const lastSecond = targetItem.st === 'belt' && targetItem.m.position.x > 18.5;
 liftAnim.active = true; liftAnim.t = 0;
 liftAnim.fromPos.copy(targetItem.m.position);
 liftAnim.toHold = targetItem;
@@ -1186,6 +1330,13 @@ if(d.isHz){
 toast(`⚠️ تم التقاط مادة خطرة: ${d.imp} . ${d.div}`, '#ffb020');
 } else {
 toast(`تم الالتقاط: ${d.name}`, '#fff');
+}
+if(lastSecond){
+score += 25;
+snd('ok', 1.4);
+spawnFloatTag('⚡ إنقاذ +25', '#ffd54a');
+toast('⚡ التقاط في اللحظة الأخيرة +25', '#ffd54a');
+hud();
 }
 } else {
 const z = Z.find(z => Math.abs(px.x - z.x) < z.hw && px.z < -4.8 && !z.full);
@@ -1249,6 +1400,8 @@ initAudio();
 items.forEach(i => S.remove(i.m)); items = [];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
 slowT = 0; score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1; stage = 1;
+streak = 0; streakT = 0; maxStreak = 0; rushT = 30; rushN = 0; rushDelay = 0;
+$('streak').classList.remove('on');
 demo = {insp:false,truck:false,inspDone:false,truckDone:false}; inspector.demo = false; hideIntro();
 sortedCount = 0; totalProcessed = 0;
 px.set(0, 0, 3); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
@@ -1263,12 +1416,36 @@ r.style.display = o ? 'flex' : 'none';
 if(o){ pz = run; run = false; } else if(pz){ run = true; pz = false; }
 };
 $('rc').onclick = $('rb').onclick;
+$('how').onclick = $('rb').onclick;
 function end(){
 run = false;
 const o = $('ov'); o.style.display = 'flex';
 const acc = totalProcessed > 0 ? Math.round((sortedCount / totalProcessed) * 100) : 0;
-o.innerHTML = `<h1>انتهت الوردية ⏱</h1> <p style="font-size:24px;color:var(--ac)">النقاط الإجمالية: <b>${score}</b></p> <div style="background:rgba(255,255,255,.08);padding:14px 26px;border-radius:14px;margin:6px 0;line-height:1.9"> 📦 إجمالي الطرود المصنفة: <b>${sortedCount}</b><br> 🎯 دقة الفرز وتطبيق IATA: <b>${acc}%</b><br> 🎖️ الرتبة: <b>${score>=450 ? 'كبير ضباط شحن المواد الخطرة 🌟' : score>=240 ? 'مشرف ساحة معتمد DGR 👏' : 'مساعد مستودع متدرب 📦'}</b> </div> <button id="go">بدء وردية جديدة</button>`;
+const best = bestScore();
+const record = score > best && score > 0;
+if(record) saveBest(score);
+const grade = (score >= 500 && acc >= 90) ? 's' : (score >= 350 && acc >= 80) ? 'a' : score >= 200 ? 'b' : 'c';
+const titles = { s:'خبير DGR معتمد 🌟', a:'مشرف فرز متمكن 👏', b:'فني مستودع واعد 📦', c:'متدرب قيد التأهيل 🎓' };
+const stars = { s:5, a:4, b:3, c:2 }[grade];
+const starHTML = '★'.repeat(stars) + '<span class="off">' + '★'.repeat(5 - stars) + '</span>';
+const recLine = record ? '🏆 رقم قياسي جديد!' : `🏆 أفضل نتيجة: ${Math.max(best, score)}`;
+o.innerHTML = `<div class="res">
+<div class="rank ${grade}">${grade.toUpperCase()}</div>
+<div class="stars">${starHTML}</div>
+<h1>انتهت الوردية</h1>
+<p style="font-size:17px">الرتبة: <b style="color:var(--ac)">${titles[grade]}</b></p>
+<div class="statgrid">
+<div><b>${score}</b><span>النقاط</span></div>
+<div><b>${sortedCount}</b><span>طرود مصنّفة</span></div>
+<div><b>${acc}%</b><span>دقة IATA</span></div>
+<div><b>${maxStreak}</b><span>أطول سلسلة</span></div>
+</div>
+<div class="rec ${record ? '' : 'best'}">${recLine}</div>
+<p class="fine">${totalProcessed === 0 ? 'لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!' : acc >= 80 ? 'أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.' : 'راجع دليل الفرز السريع ثم عُد لكسر رقمك.'}</p>
+<div class="cta-row"><button id="go">🔁 وردية جديدة</button><button id="rb2" class="ghost">📖 الدليل</button></div>
+</div>`;
 $('go').onclick = start;
+$('rb2').onclick = $('rb').onclick;
 }
 function boxHalf(it){ return BH * (Math.abs(Math.cos(it.m.rotation.y)) + Math.abs(Math.sin(it.m.rotation.y))); }
 function overlapVec(pa, ha, cx, cz, hbx, hbz){
@@ -1442,6 +1619,19 @@ if(spawnT <= 0){
 spawn();
 spawnT = stage===1 ? 5.4 : stage===2 ? Math.max(1.8, 3.4 - lvl * 0.22) : Math.max(1.4, 2.8 - lvl * 0.2);
 }
+if(stage >= 2){
+rushT -= dt;
+if(rushT <= 0){
+rushT = 24 + Math.random() * 12; rushN = 3; rushDelay = 0;
+snd('horn');
+showIntro('<b class="t">⚡ تدفق سريع!</b>ثلاث شحنات متتابعة على الحزام — ركّز وسرّع الفرز.', 2600);
+}
+if(rushN > 0){
+rushDelay -= dt;
+if(rushDelay <= 0 && items.length < 14){ spawn(); rushN--; rushDelay = .5; }
+}
+}
+if(streakT > 0){ streakT -= dt; if(streakT <= 0){ streakT = 0; streak = 0; } }
 for(const it of items.slice()){
 if(it.st !== 'floor' || it.fall) continue;
 const zz = Z.find(z => (it.data.isFod ? z.k==='fod' : z.k!=='fod') && Math.abs(it.m.position.x - z.x) < z.hw && it.m.position.z < -5.6 && !z.full);
@@ -1462,6 +1652,7 @@ const miss = it.data.isHz ? 10 : 5;
 totalProcessed++;
 rm(it);
 score = Math.max(0, score - miss);
+streak = 0; streakT = 0;
 if(stage >= 2) combo = 1;
 snd('error');
 spawnFloatTag('-' + miss, '#ff5252');
@@ -1512,6 +1703,7 @@ camLook.lerp(camLookT.set(px.x * 0.8, 0.9, px.z - 2.2), 1 - Math.exp(-dt*12));
 C.lookAt(camLook);
 R.render(S, C);
 }
+syncMenu();
 requestAnimationFrame(loop);
 </script>
 </body>
