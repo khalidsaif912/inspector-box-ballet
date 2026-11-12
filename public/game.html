@@ -9,7 +9,8 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Tahoma,sans-serif;overflow:hidden;touch-action:none;user-select:none}
 body{display:grid;place-items:center;background:radial-gradient(circle at 50% 26%,#20334b 0,#111b27 48%,#070d14 100%)}
-#stage{position:relative;width:min(94vw,calc(94vh / 1.08),920px);aspect-ratio:1 / 1.08;border-radius:22px;overflow:hidden;background:#0a121c;border:1px solid rgba(124,196,255,.28);box-shadow:0 30px 90px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.5),0 0 44px rgba(58,160,255,.12);isolation:isolate}
+#stage{position:relative;width:min(94vw,calc(94vh * 4 / 3),1120px);aspect-ratio:4 / 3;border-radius:22px;overflow:hidden;background:#0a121c;border:1px solid rgba(124,196,255,.28);box-shadow:0 30px 90px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.5),0 0 44px rgba(58,160,255,.12);isolation:isolate}
+@media (max-width:720px) and (orientation:portrait){#stage{width:min(94vw,calc(88vh * 3 / 4),560px);aspect-ratio:3 / 4}}
 canvas{display:block;position:absolute;inset:0}
 #hud{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 0;display:flex;gap:12px;justify-content:space-between;pointer-events:none;z-index:5}
 .chip{background:rgba(18,28,40,.92);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:9px 16px;font-weight:800;font-size:15px;white-space:nowrap;backdrop-filter:blur(12px);box-shadow:0 6px 18px rgba(0,0,0,.5)}
@@ -63,7 +64,7 @@ canvas{display:block;position:absolute;inset:0}
 #hold .hc{font-size:24px}
 #hold .emo{font-size:30px}
 
-:root{--hh:clamp(30px,8.5vmin,42px);--js:clamp(100px,28vmin,164px);--ab:clamp(72px,24vmin,112px)}
+:root{--hh:clamp(30px,8.5vmin,42px);--js:clamp(76px,20vmin,116px);--ab:clamp(58px,16vmin,86px)}
 #hud{padding:calc(env(safe-area-inset-top,0px) + 6px) max(10px,env(safe-area-inset-right,0px)) 0 max(10px,env(safe-area-inset-left,0px));justify-content:space-between;align-items:flex-start;gap:0}
 .hgrp{display:flex;gap:calc(var(--hh)*.35);align-items:center}
 .pill{position:relative;height:var(--hh);min-width:calc(var(--hh)*2.7);padding:0 calc(var(--hh)*.4) 0 calc(var(--hh)*1.05);display:flex;align-items:center;justify-content:flex-end;direction:ltr;border-radius:calc(var(--hh)*.5);background:linear-gradient(180deg,#1b4380,#0b1c3d);border:2px solid #3aa0ff;box-shadow:0 0 12px rgba(58,160,255,.55),inset 0 0 10px rgba(90,180,255,.3),0 4px 10px rgba(0,0,0,.5)}
@@ -734,7 +735,7 @@ if(v){ const m = Math.hypot(v[0], v[1]), f = m < 0.3 ? 1 : 0.3/m; p.x += v[0]*f;
 if(hit && (Math.abs(mvx)+Math.abs(mvz)) > 0.3 && performance.now() - lastBump > 380){ lastBump = performance.now(); snd('bump'); }
 return p;
 }
-let bob=0, walk=0, turnLean=0, curRotY=0;
+let bob=0, walk=0, turnLean=0, curRotY=0, inX=0, inZ=0;
 let liftAnim = {active:false, t:0, dur:0.32, fromPos:new THREE.Vector3(), toHold:null};
 const cargoSmoothPos = new THREE.Vector3();
 let cargoInertiaY = 0;
@@ -1159,7 +1160,7 @@ key[e.code] = 1;
 if(['Space','KeyE','Enter'].includes(e.code)){ e.preventDefault(); if(!e.repeat) act(); }
 });
 addEventListener('keyup', e => key[e.code] = 0);
-function clearMovement(){ for(const code in key) key[code] = 0; je(); }
+function clearMovement(){ for(const code in key) key[code] = 0; je(); inX = inZ = 0; }
 addEventListener('blur', clearMovement);
 document.addEventListener('visibilitychange', () => { if(document.hidden) clearMovement(); });
 R.domElement.tabIndex = 0;
@@ -1172,7 +1173,11 @@ const r = jy.getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.he
 let dx = e.clientX - cx, dy = e.clientY - cy;
 const d = Math.hypot(dx, dy), m = r.width * 0.3;
 if(d > m){ dx *= m/d; dy *= m/d; }
-joy.x = dx / m; joy.y = dy / m;
+let jx = dx / m, jv = dy / m;
+const mag = Math.hypot(jx, jv), dead = .12;
+if(mag < dead){ jx = jv = 0; }
+else { const s = (mag - dead) / (1 - dead) / mag; jx = Math.max(-1, Math.min(1, jx * s)); jv = Math.max(-1, Math.min(1, jv * s)); }
+joy.x = jx; joy.y = jv;
 kn.style.transform = `translate(${dx}px,${dy}px)`;
 }
 jy.addEventListener('pointerdown', e => { initAudio(); jid = e.pointerId; jy.setPointerCapture(jid); jm(e); });
@@ -1349,10 +1354,16 @@ cargoSmoothPos.copy(held.m.position);
 hud();
 }
 }
-let vx = (key.KeyD || key.ArrowRight ? 1 : 0) - (key.KeyA || key.ArrowLeft ? 1 : 0) + joy.x;
-let vz = (key.KeyS || key.ArrowDown ? 1 : 0) - (key.KeyW || key.ArrowUp ? 1 : 0) + joy.y;
-const l = Math.hypot(vx, vz);
-if(l > 1){ vx /= l; vz /= l; }
+let tx = (key.KeyD || key.ArrowRight ? 1 : 0) - (key.KeyA || key.ArrowLeft ? 1 : 0) + joy.x;
+let tz = (key.KeyS || key.ArrowDown ? 1 : 0) - (key.KeyW || key.ArrowUp ? 1 : 0) + joy.y;
+const tl = Math.hypot(tx, tz);
+if(tl > 1){ tx /= tl; tz /= tl; }
+const inputK = 1 - Math.exp(-dt * 16);
+inX += (tx - inX) * inputK; inZ += (tz - inZ) * inputK;
+let vx = inX, vz = inZ;
+let l = Math.hypot(vx, vz);
+if(l < .015){ vx = vz = 0; l = 0; }
+if(l > 1){ vx /= l; vz /= l; l = 1; }
 if(run){
 if(stage>=3 || demo.truck) updateTruck(dt);
 const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultiplier(fearT);
