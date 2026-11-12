@@ -10,7 +10,7 @@
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Tahoma,sans-serif;overflow:hidden;touch-action:none;user-select:none}
 body{display:grid;place-items:center;background:radial-gradient(circle at 50% 26%,#20334b 0,#111b27 48%,#070d14 100%)}
 #stage{position:relative;width:min(94vw,calc(94vh * 4 / 3),1120px);aspect-ratio:4 / 3;border-radius:22px;overflow:hidden;background:#0a121c;border:1px solid rgba(124,196,255,.28);box-shadow:0 30px 90px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.5),0 0 44px rgba(58,160,255,.12);isolation:isolate}
-@media (max-width:720px) and (orientation:portrait){#stage{width:min(94vw,calc(88vh * 3 / 4),560px);aspect-ratio:3 / 4}}
+@media (max-width:720px) and (orientation:portrait){#stage{width:min(94vw,560px);height:min(94vh,calc(94vw * 1.75),780px);height:min(94svh,calc(94vw * 1.75),780px);aspect-ratio:auto}}
 canvas{display:block;position:absolute;inset:0}
 #hud{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 0;display:flex;gap:12px;justify-content:space-between;pointer-events:none;z-index:5}
 .chip{background:rgba(18,28,40,.92);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:9px 16px;font-weight:800;font-size:15px;white-space:nowrap;backdrop-filter:blur(12px);box-shadow:0 6px 18px rgba(0,0,0,.5)}
@@ -117,11 +117,17 @@ canvas{display:block;position:absolute;inset:0}
 .cbadge.hot b{animation:pulse .5s infinite alternate}
 .top-btns{z-index:9}
 .top-btns .rbtn{width:calc(var(--hh)*1.15);height:calc(var(--hh)*1.15);background:radial-gradient(circle at 35% 30%,#ffd27a,#f39c12 60%,#c46f00);color:#1a0f00;border:2px solid #fff;box-shadow:0 0 12px rgba(243,156,18,.6),0 4px 10px rgba(0,0,0,.5)}
-#intro{position:absolute;z-index:9;left:50%;top:clamp(120px,22%,200px);transform:translate(-50%,-20px);opacity:0;transition:opacity .35s,transform .35s;max-width:min(92%,460px);padding:12px 16px;border-radius:16px;background:rgba(10,18,28,.94);border:2px solid #ffd54a;color:#fff;text-align:right;line-height:1.7;font-size:clamp(13px,3.6vmin,16px);pointer-events:none;box-shadow:0 10px 28px rgba(0,0,0,.6)}
+#intro{position:absolute;z-index:9;left:50%;top:clamp(120px,22%,200px);transform:translate(-50%,-20px);opacity:0;transition:opacity .35s,transform .35s;max-width:min(92%,420px);padding:14px 18px 12px;border-radius:20px 20px 20px 8px;background:#fff;border:2px solid rgba(15,23,42,.1);color:#0f172a;text-align:right;line-height:1.6;font-size:clamp(13px,3.6vmin,16px);pointer-events:none;box-shadow:0 16px 36px rgba(0,0,0,.5)}
+#intro::after{content:"";position:absolute;bottom:-11px;right:26px;width:22px;height:22px;background:#fff;border-radius:4px;transform:rotate(45deg);box-shadow:6px 6px 14px rgba(0,0,0,.18)}
 #intro.on{opacity:1;transform:translate(-50%,0)}
-#intro b.t{display:block;color:#ffd54a;font-size:1.15em}
-#intro small{display:block;color:#69f0ae;margin-top:4px}
-#stg{position:absolute;z-index:6;right:10px;top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.2 + 14px);padding:5px 12px;font-size:clamp(11px,3.2vmin,14px);border-radius:999px;pointer-events:none;color:#ffe082}
+#intro b.t{display:block;color:#0f172a;font-size:1.12em;margin-bottom:4px}
+#intro small{display:block;color:#15803d;margin-top:5px;font-weight:700}
+#intro .hint{display:block;margin-top:8px;color:#64748b;font-size:.84em}
+#intro.wait{pointer-events:auto;cursor:pointer;border-color:#f39c12}
+#intro.wait .hint{color:#b45309;font-weight:900;animation:hintPulse 1.1s infinite alternate}
+@keyframes hintPulse{from{opacity:.55}to{opacity:1}}
+#stg{position:absolute;z-index:6;right:10px;top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.2 + 14px);padding:5px 12px;font-size:clamp(11px,3.2vmin,14px);border-radius:999px;pointer-events:none;color:#ffe082;transition:opacity .25s}
+#stg:has(+ #inspector-badge.on){opacity:0}
 #inspector-badge{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translate(-50%,-140%);z-index:8;background:linear-gradient(180deg,#ffd54a,#f39c12);color:#1a0f00;font-weight:900;font-size:clamp(13px,4vmin,17px);padding:8px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.5);transition:transform .3s;white-space:nowrap;pointer-events:none}
 #inspector-badge.on{transform:translate(-50%,calc(var(--hh) + 10px))}
 #stage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse at center,transparent 55%,rgba(4,10,18,.55) 100%)}
@@ -218,6 +224,30 @@ details.full .tbl{max-width:100%}
 .statgrid{grid-template-columns:repeat(2,1fr)}
 .kicker{letter-spacing:.18em;font-size:9px}
 }
+@media (max-width:390px){
+#ov{gap:9px;padding:12px}
+#ov .hero .logo{font-size:28px}
+.hero h1{font-size:clamp(19px,5.4vmin,24px)}
+.tagline{font-size:10px}
+.stagebar{gap:6px}
+.scard{font-size:10px;padding:5px 3px}
+#ov .mcard{flex:1 1 0;min-width:0;padding:6px 4px}
+.mcard b{font-size:11px}
+.mcard small{font-size:9px}
+.mcard .ic{font-size:18px}
+.leg{gap:6px}
+.leg span{font-size:10px;padding:3px 7px}
+.ov button{padding:11px 22px;font-size:16px}
+.ov button.ghost{padding:9px 18px;font-size:14px}
+.best{font-size:12px;padding:5px 12px}
+.res{gap:8px}
+.rank{width:64px;height:64px;font-size:32px;border-width:3px}
+.statgrid{gap:6px}
+.statgrid>div{padding:6px 2px}
+.statgrid b{font-size:16px}
+.statgrid span{font-size:10px}
+.stars{font-size:16px;letter-spacing:3px}
+}
 </style>
 </head>
 <body>
@@ -237,7 +267,7 @@ details.full .tbl{max-width:100%}
 <div id="toast"></div>
 <div id="intro"></div>
 <div id="stg" class="chip">🎓 المرحلة 1</div>
-<div id="inspector-badge">🦺 المفتش يتجول في المستودع!</div>
+<div id="inspector-badge">🦺 المفتش</div>
 <div id="floating-fx"></div>
 <div class="top-btns">
 <button id="snd" class="rbtn icon-btn" aria-label="sound"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 010 7M18 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M4 4l16 16" stroke="#ff5252" stroke-width="2.6" stroke-linecap="round"/></svg></button>
@@ -999,18 +1029,29 @@ const bestScore = () => { try { return +(localStorage.getItem('acg_best') || 0) 
 const saveBest = v => { try { localStorage.setItem('acg_best', v); } catch(e){} };
 function syncMenu(){ const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? `🏆 أفضل نتيجة: ${b}` : '🏆 لا توجد نتيجة بعد — كن أول الأبطال'; }
 const STAGE_AT=[0,0,100,200], STAGE_BELT=[0,1.5,1.9,2.4];
-let demo={insp:false,truck:false,inspDone:false,truckDone:false}, introT=null;
-function showIntro(html,ms=7000){const e=document.getElementById('intro');e.innerHTML=html;e.classList.add('on');clearTimeout(introT);introT=setTimeout(()=>e.classList.remove('on'),ms);}
-function hideIntro(){const e=document.getElementById('intro');if(e)e.classList.remove('on');clearTimeout(introT);}
+let demo={insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}, introT=null, introHold=false;
+function showIntro(html,ms=7000,hold=false){
+const e=document.getElementById('intro');
+e.innerHTML=html;e.classList.add('on');e.classList.toggle('wait',hold);
+clearTimeout(introT);
+if(hold){ introHold=true; e.onclick=resumeFromIntro; run=false; clearMovement(); introT=setTimeout(resumeFromIntro,20000); }
+else { introHold=false; e.onclick=null; introT=setTimeout(()=>e.classList.remove('on'),ms); }
+}
+function hideIntro(){const e=document.getElementById('intro');if(e){e.classList.remove('on','wait');e.onclick=null;}introHold=false;clearTimeout(introT);}
+function resumeFromIntro(){
+if(!introHold) return;
+if($('rules').style.display !== 'none') return;
+hideIntro(); run=true; pz=false; last=performance.now(); clearMovement();
+}
 function startInspDemo(){
 const I_=inspector;demo.insp=true;I_.demo=true;I_.dir=Math.random()<.5?1:-1;I_.x=-36*I_.dir;I_.z=4;I_.active=true;I_.g.visible=true;I_.t=0;
 I_.g.rotation.y=I_.dir>0?Math.PI/2:-Math.PI/2;
 document.getElementById('inspector-badge').classList.add('on');snd('whistle');
-showIntro('<b class="t">🦺 المفتش — مراقب السلامة</b>يمرّ على المستودع ويغرّم أي طرد متروك على الأرض خارج مناطق الفرز.<small>جولة تعريفية: لا غرامة الآن</small>');
+showIntro('<b class="t">🦺 المفتش</b>يغرّم كل طرد متروك خارج مناطق الفرز.<small>جولة تعريفية — بلا غرامات</small><span class="hint">⏸ اللعبة متوقفة — اضغط للمتابعة</span>',0,true);
 }
 function startTruckDemo(){
 demo.truck=true;truckState=gameRules.reset();truckState.elapsed=gameRules.startAt;snd('horn');
-showIntro('<b class="t">🚜 الرافعة الشوكية المتهورة</b>تعبر المستودع وتُسقط أجساماً غريبة FOD؛ اجمعها وضعها في الصندوق الأحمر. وإن اصطدمت بك تبطّئ حركتك.<small>جولة تعريفية: لن تصطدم بك الآن</small>');
+showIntro('<b class="t">🚜 الرافعة الشوكية</b>تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.<small>جولة تعريفية — لن تصطدم بك</small><span class="hint">⏸ اللعبة متوقفة — اضغط للمتابعة</span>',0,true);
 }
 const beltSpeed=()=>STAGE_BELT[stage]+(lvl-1)*(stage===1?0.06:0.12);
 let sortedCount=0, totalProcessed=0;
@@ -1355,6 +1396,7 @@ hud();
 }
 addEventListener('keydown', e => {
 if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+if(introHold){ if(['Space','KeyE','Enter','Escape'].includes(e.code)){ e.preventDefault(); if(!e.repeat) resumeFromIntro(); } return; }
 key[e.code] = 1;
 if(['Space','KeyE','Enter'].includes(e.code)){ e.preventDefault(); if(!e.repeat) act(); }
 });
@@ -1402,11 +1444,13 @@ Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) dr
 slowT = 0; score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1; stage = 1;
 streak = 0; streakT = 0; maxStreak = 0; rushT = 30; rushN = 0; rushDelay = 0;
 $('streak').classList.remove('on');
-demo = {insp:false,truck:false,inspDone:false,truckDone:false}; inspector.demo = false; hideIntro();
-sortedCount = 0; totalProcessed = 0;
+demo = {insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}; inspector.demo = false; hideIntro();
+sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false;
+$('rules').style.display = 'none';
 px.set(0, 0, 3); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
 clearMovement(); last = performance.now();
 run = true; $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true}); hud();
+toast('🎓 المرحلة ١: التدريب — التقط وافرز', '#64ffda');
 }
 $('go').onclick = start;
 let pz = false;
@@ -1538,7 +1582,7 @@ it.m.material.emissive && it.m.material.emissive.setHex(0x552200);
 hud();
 }
 }
-if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.done = true; I_.cooldown = 14; I_.elapsed = 0; if(I_.demo){ I_.demo = false; demo.insp = false; demo.inspDone = true; hideIntro(); } $('inspector-badge').classList.remove('on'); }
+if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.done = true; I_.cooldown = 14; I_.elapsed = 0; if(I_.demo){ I_.demo = false; demo.insp = false; demo.inspDone = true; demo.truckIn = 6; hideIntro(); } $('inspector-badge').classList.remove('on'); }
 }
 let last = performance.now();
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.12, 40), new THREE.MeshBasicMaterial({color:0xffc94d, transparent:true, opacity:0.85, depthWrite:false}));
@@ -1610,8 +1654,11 @@ if(warnTicker > 1){ snd('warn'); warnTicker = 0; }
 if(time <= 0){ time = 0; hud(); end(); }
 lvl = 1 + Math.floor(score / 120);
 if(stage===1){
-if(!demo.inspDone && !demo.insp && score >= 30) startInspDemo();
-else if(demo.inspDone && !demo.truckDone && !demo.truck && score >= 60) startTruckDemo();
+if(!demo.inspDone){ if(!demo.insp && (score >= 20 || time <= 90)) startInspDemo(); }
+else if(!demo.truckDone && !demo.truck){
+demo.truckIn = Math.max(0, demo.truckIn - dt);
+if(demo.truckIn <= 0) startTruckDemo();
+}
 }
 if(stage<3 && score >= STAGE_AT[stage+1] && (stage!==1 || (demo.inspDone && demo.truckDone))) setStage(stage+1);
 spawnT -= dt;
