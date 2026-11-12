@@ -1,3 +1,4 @@
 - Use capped render resolution and small movement collision steps so slow rendering does not shorten keyboard travel.
 - Generate original retro sound cues with Web Audio and disconnect finished nodes to avoid audio resource accumulation.
-- Keep forklift event rules in a browser-safe shared script with isolated rule tests; render its vehicle and FOD through the existing game scene and pickup flow.
+- Keep forklift and IATA segregation rules in `public/game-rules.js` with isolated Vitest coverage; render the vehicle and FOD through the existing game scene and pickup flow.
+- Load Three.js from `public/vendor/`; never reintroduce a CDN dependency for the game.

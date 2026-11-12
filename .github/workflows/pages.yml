@@ -25,7 +25,7 @@ jobs:
       - name: Prepare site
         run: |
           mkdir _site
-          cp public/game.html public/game-rules.js public/favicon.ico public/robots.txt _site/
+          cp -R public/. _site/
           cp public/game.html _site/index.html
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5

@@ -8,35 +8,38 @@
 :root{--bg:#131d28;--fg:#f4f7fb;--ac:#f39c12;box-sizing:border-box}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Tahoma,sans-serif;overflow:hidden;touch-action:none;user-select:none}
-canvas{display:block;position:fixed;inset:0}
-#hud{position:fixed;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 0;display:flex;gap:12px;justify-content:space-between;pointer-events:none;z-index:5}
+body{display:grid;place-items:center;background:radial-gradient(circle at 50% 26%,#20334b 0,#111b27 48%,#070d14 100%)}
+#stage{position:relative;width:min(94vw,calc(94vh / 1.08),920px);aspect-ratio:1 / 1.08;border-radius:22px;overflow:hidden;background:#0a121c;border:1px solid rgba(124,196,255,.28);box-shadow:0 30px 90px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.5),0 0 44px rgba(58,160,255,.12);isolation:isolate}
+canvas{display:block;position:absolute;inset:0}
+#hud{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 0;display:flex;gap:12px;justify-content:space-between;pointer-events:none;z-index:5}
 .chip{background:rgba(18,28,40,.92);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:9px 16px;font-weight:800;font-size:15px;white-space:nowrap;backdrop-filter:blur(12px);box-shadow:0 6px 18px rgba(0,0,0,.5)}
 #tm.urgent{background:rgba(220,38,38,.92);color:#fff;animation:pulse .7s infinite alternate}
 @keyframes pulse{from{transform:scale(1)}to{transform:scale(1.08)}}
-#hold{position:fixed;top:calc(env(safe-area-inset-top,0px) + 64px);left:50%;transform:translateX(-50%);z-index:5;border-color:var(--ac);color:#fff;background:rgba(20,32,48,.95);font-size:16px}
-#inspect{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 145px);left:50%;transform:translateX(-50%);z-index:5;background:rgba(10,18,28,.88);color:#ffdb4d;font-size:14px;pointer-events:none;display:none;border:1px solid rgba(255,219,77,.4);padding:6px 14px;border-radius:10px}
-#toast{position:fixed;top:38%;left:50%;transform:translateX(-50%);font-size:24px;font-weight:900;opacity:0;transition:opacity .25s,transform .25s;z-index:6;text-shadow:0 2px 12px #000;pointer-events:none;text-align:center;max-width:90%}
-#floating-fx{position:fixed;inset:0;pointer-events:none;z-index:7}
+#hold{position:absolute;top:calc(env(safe-area-inset-top,0px) + 64px);left:50%;transform:translateX(-50%);z-index:5;border-color:var(--ac);color:#fff;background:rgba(20,32,48,.95);font-size:16px}
+#inspect{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 145px);left:50%;transform:translateX(-50%);z-index:5;background:rgba(10,18,28,.88);color:#ffdb4d;font-size:14px;pointer-events:none;display:none;border:1px solid rgba(255,219,77,.4);padding:6px 14px;border-radius:10px}
+#toast{position:absolute;top:38%;left:50%;transform:translateX(-50%);font-size:24px;font-weight:900;opacity:0;transition:opacity .25s,transform .25s;z-index:6;text-shadow:0 2px 12px #000;pointer-events:none;text-align:center;max-width:90%}
+#floating-fx{position:absolute;inset:0;pointer-events:none;z-index:7}
 .float-tag{position:absolute;font-size:24px;font-weight:900;transform:translate(-50%,-50%);animation:floatUp .85s forwards}
 @keyframes floatUp{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-65px)}}
-#controls-ui{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);left:0;right:0;display:flex;justify-content:space-between;align-items:flex-end;padding:0 24px;pointer-events:none;z-index:5}
+#controls-ui{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);left:0;right:0;display:flex;justify-content:space-between;align-items:flex-end;padding:0 24px;pointer-events:none;z-index:5}
 #joy{width:135px;height:135px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.3);pointer-events:auto;position:relative;backdrop-filter:blur(6px)}
 #knob{position:absolute;width:58px;height:58px;border-radius:50%;background:rgba(243,156,18,.96);left:37px;top:37px;box-shadow:0 4px 14px rgba(0,0,0,.6)}
 #act{width:115px;height:115px;border-radius:50%;border:4px solid rgba(255,255,255,.35);background:var(--ac);color:#120a00;font-size:21px;font-weight:900;pointer-events:auto;cursor:pointer;box-shadow:0 8px 22px rgba(243,156,18,.4);transition:transform .1s}
 #act:active{transform:scale(.92)}
-.ov{position:fixed;inset:0;background:rgba(10,18,26,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:10;padding:24px;text-align:center;backdrop-filter:blur(10px);overflow-y:auto}
-.ov h1{margin:0;font-size:30px;color:var(--ac)}
-.ov p{margin:0;max-width:540px;line-height:1.8;font-size:15px;opacity:.95}
-.leg{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:560px}
+.ov{position:absolute;inset:0;background:rgba(10,18,26,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;justify-content:safe center;gap:16px;z-index:10;padding:24px;text-align:center;backdrop-filter:blur(10px);overflow-y:auto}
+.ov>*{max-width:100%}
+.ov h1{margin:0;font-size:clamp(22px,6vmin,30px);color:var(--ac);line-height:1.3}
+.ov p{margin:0;max-width:min(540px,100%);line-height:1.8;font-size:15px;opacity:.95}
+.leg{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:min(560px,100%)}
 .leg span{padding:6px 12px;border-radius:10px;font-size:13px;font-weight:800;color:#111}
 .ov button{background:var(--ac);border:0;border-radius:16px;padding:15px 42px;font-size:20px;font-weight:900;color:#180e00;cursor:pointer;box-shadow:0 6px 20px rgba(243,156,18,.5);transition:transform .1s}
 .ov button:active{transform:scale(.95)}
-.top-btns{position:fixed;top:calc(env(safe-area-inset-top,0px) + 64px);right:18px;z-index:11;display:flex;gap:10px}
+.top-btns{position:absolute;top:calc(env(safe-area-inset-top,0px) + 64px);right:18px;z-index:11;display:flex;gap:10px}
 .icon-btn{cursor:pointer;pointer-events:auto}
 .tbl{width:100%;max-width:540px;border-collapse:collapse;font-size:13px;text-align:right;margin:4px 0;background:rgba(255,255,255,.06);border-radius:12px;overflow:hidden}
 .tbl th,.tbl td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
 .tbl th{background:rgba(243,156,18,.25);color:var(--ac)}
-#hold{display:flex;align-items:center;gap:12px;padding:10px 18px 10px 14px;border-radius:20px;border:2px solid var(--ac);font-size:20px;max-width:calc(100vw - 20px);text-align:right;line-height:1.25;top:calc(env(safe-area-inset-top,0px) + 112px)}
+#hold{display:flex;align-items:center;gap:12px;padding:10px 18px 10px 14px;border-radius:20px;border:2px solid var(--ac);font-size:20px;max-width:calc(100% - 20px);text-align:right;line-height:1.25;top:calc(env(safe-area-inset-top,0px) + 112px)}
 .dgl{width:96px;height:96px;flex:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.65))}
 .hinfo{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
 .hname{font-size:23px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000}
@@ -60,7 +63,7 @@ canvas{display:block;position:fixed;inset:0}
 #hold .hc{font-size:24px}
 #hold .emo{font-size:30px}
 
-:root{--hh:clamp(30px,8.5vmin,42px);--js:clamp(70px,26vmin,104px);--ab:clamp(56px,20vmin,80px)}
+:root{--hh:clamp(30px,8.5vmin,42px);--js:clamp(100px,28vmin,164px);--ab:clamp(72px,24vmin,112px)}
 #hud{padding:calc(env(safe-area-inset-top,0px) + 6px) max(10px,env(safe-area-inset-right,0px)) 0 max(10px,env(safe-area-inset-left,0px));justify-content:space-between;align-items:flex-start;gap:0}
 .hgrp{display:flex;gap:calc(var(--hh)*.35);align-items:center}
 .pill{position:relative;height:var(--hh);min-width:calc(var(--hh)*2.7);padding:0 calc(var(--hh)*.4) 0 calc(var(--hh)*1.05);display:flex;align-items:center;justify-content:flex-end;direction:ltr;border-radius:calc(var(--hh)*.5);background:linear-gradient(180deg,#1b4380,#0b1c3d);border:2px solid #3aa0ff;box-shadow:0 0 12px rgba(58,160,255,.55),inset 0 0 10px rgba(90,180,255,.3),0 4px 10px rgba(0,0,0,.5)}
@@ -111,22 +114,32 @@ canvas{display:block;position:fixed;inset:0}
 #snd.off{background:radial-gradient(circle at 35% 30%,#5a2a2a,#2a0b0b);border-color:#ff7070;color:#ffb3b3}
 .pill{border:1.5px solid rgba(124,196,255,.85);background:linear-gradient(180deg,rgba(32,78,150,.92),rgba(10,26,58,.92));backdrop-filter:blur(8px)}
 .cbadge.hot b{animation:pulse .5s infinite alternate}
-.top-btns{z-index:12}
+.top-btns{z-index:9}
 .top-btns .rbtn{width:calc(var(--hh)*1.15);height:calc(var(--hh)*1.15);background:radial-gradient(circle at 35% 30%,#ffd27a,#f39c12 60%,#c46f00);color:#1a0f00;border:2px solid #fff;box-shadow:0 0 12px rgba(243,156,18,.6),0 4px 10px rgba(0,0,0,.5)}
-#intro{position:fixed;z-index:9;left:50%;top:clamp(120px,22%,200px);transform:translate(-50%,-20px);opacity:0;transition:opacity .35s,transform .35s;max-width:min(92vw,460px);padding:12px 16px;border-radius:16px;background:rgba(10,18,28,.94);border:2px solid #ffd54a;color:#fff;text-align:right;line-height:1.7;font-size:clamp(13px,3.6vmin,16px);pointer-events:none;box-shadow:0 10px 28px rgba(0,0,0,.6)}
+#intro{position:absolute;z-index:9;left:50%;top:clamp(120px,22%,200px);transform:translate(-50%,-20px);opacity:0;transition:opacity .35s,transform .35s;max-width:min(92%,460px);padding:12px 16px;border-radius:16px;background:rgba(10,18,28,.94);border:2px solid #ffd54a;color:#fff;text-align:right;line-height:1.7;font-size:clamp(13px,3.6vmin,16px);pointer-events:none;box-shadow:0 10px 28px rgba(0,0,0,.6)}
 #intro.on{opacity:1;transform:translate(-50%,0)}
 #intro b.t{display:block;color:#ffd54a;font-size:1.15em}
 #intro small{display:block;color:#69f0ae;margin-top:4px}
-#stg{position:fixed;z-index:6;right:10px;top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.2 + 14px);padding:5px 12px;font-size:clamp(11px,3.2vmin,14px);border-radius:999px;pointer-events:none;color:#ffe082}
-#inspector-badge{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translate(-50%,-140%);z-index:8;background:linear-gradient(180deg,#ffd54a,#f39c12);color:#1a0f00;font-weight:900;font-size:clamp(13px,4vmin,17px);padding:8px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.5);transition:transform .3s;white-space:nowrap;pointer-events:none}
+#stg{position:absolute;z-index:6;right:10px;top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.2 + 14px);padding:5px 12px;font-size:clamp(11px,3.2vmin,14px);border-radius:999px;pointer-events:none;color:#ffe082}
+#inspector-badge{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translate(-50%,-140%);z-index:8;background:linear-gradient(180deg,#ffd54a,#f39c12);color:#1a0f00;font-weight:900;font-size:clamp(13px,4vmin,17px);padding:8px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.5);transition:transform .3s;white-space:nowrap;pointer-events:none}
 #inspector-badge.on{transform:translate(-50%,calc(var(--hh) + 10px))}
-body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse at center,transparent 55%,rgba(4,10,18,.55) 100%)}
+#stage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse at center,transparent 55%,rgba(4,10,18,.55) 100%)}
 .ov{background:radial-gradient(circle at 50% 30%,rgba(30,56,92,.97),rgba(6,12,20,.98))}
 .ov h1{text-shadow:0 0 18px rgba(243,156,18,.45)}
 .leg span{box-shadow:0 3px 8px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.25)}
+@media (max-width:560px){
+.ov{gap:10px;padding:16px}
+.ov h1{font-size:clamp(20px,5.2vmin,26px)}
+.ov p{font-size:13px;line-height:1.55}
+.ov button{padding:12px 30px;font-size:17px}
+.leg span{font-size:11px;padding:4px 8px}
+.tbl{font-size:11px}
+.tbl th,.tbl td{padding:6px 7px}
+}
 </style>
 </head>
 <body>
+<div id="stage">
 <div id="hud">
 <div class="hgrp">
 <div class="pill" id="scbox"><svg viewBox="0 0 48 48"><defs><linearGradient id="gT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset="1" stop-color="#f5a400"/></linearGradient></defs><path d="M14 6h20v10c0 8-4 13-10 13S14 24 14 16z" fill="url(#gT)" stroke="#8a5a00" stroke-width="2" stroke-linejoin="round"/><path d="M14 9H7c0 8 3 12 8 13M34 9h7c0 8-3 12-8 13" fill="none" stroke="#e0a000" stroke-width="3" stroke-linecap="round"/><rect x="21" y="29" width="6" height="7" fill="#e8a400"/><rect x="14" y="36" width="20" height="6" rx="2" fill="url(#gT)" stroke="#8a5a00" stroke-width="2"/><path d="M24 11l2.2 4.6 5 .6-3.7 3.4 1 5-4.5-2.5-4.5 2.5 1-5-3.7-3.4 5-.6z" fill="#fff6c8" opacity=".9"/></svg><b id="sc">0</b></div>
@@ -151,7 +164,8 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:4;back
 </div>
 <div class="ov" id="ov">
 <h1>✈️ مستودع الشحن الجوي الدولي HD</h1>
-<p>تحقق من كود المناولة <b>(IMP Code)</b> ورقم الفئة <b>(Class)</b> عند التقاط أي شحنة خطرة. قسّم الشحنات بين <b>الحاوية ١ والحاوية ٢</b> لتفادي خلط فئات متعارضة طبقاً لجدول <b>IATA Table 9.3.A</b>. الفرز الصحيح يمنحك وقتاً ونقاطاً إضافية.</p>
+<p>تحقق من كود المناولة <b>(IMP Code)</b> ورقم الفئة <b>(Class)</b> عند التقاط أي شحنة خطرة. قسّم الشحنات بين <b>الحاوية ١ والحاوية ٢</b> لتفادي خلط فئات متعارضة وفق <b>IATA Table 9.3.A</b>. الفرز الصحيح يمنحك وقتاً ونقاطاً إضافية.</p>
+<p style="font-size:12px;opacity:.75">لعبة تعليمية مبسطة؛ المرجع التشغيلي هو نسخة IATA DGR الرسمية ودليل مشغّل الطائرة.</p>
 <p style="font-size:14px;opacity:.85">🎓 المرحلة ١ تعليمية: شحن عام وتبريد وقابلة للتلف. ثم المواد الخطرة والمفتش، وأخيراً الرافعة الشوكية.</p>
 <div class="leg">
 <span style="background:#5291b5">❄️ تبريد</span>
@@ -165,22 +179,31 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:4;back
 <button id="go">بدء الوردية</button>
 </div>
 <div class="ov" id="rules" style="display:none">
-<h1>دليل الفصل الإلزامي للمواد الخطرة (IATA DGR)</h1>
+<h1>دليل الفصل المبسّط للمواد الخطرة (IATA DGR)</h1>
 <p>الأكواد الدولية المعتمدة في المستودع وقواعد الفصل بين الحاويتين:</p>
 <table class="tbl">
 <tr><th>الكود / الفئة</th><th>الوصف والمحتوى</th><th>ممنوع وضعه مع:</th></tr>
-<tr><td><b>RFL . 3</b></td><td>سوائل مشتعلة (وقود، دهانات)</td><td>RSC 4.2, ROX 5.1, RCM 8</td></tr>
-<tr><td><b>RSC . 4.2</b></td><td>مواد تلقائية الاشتعال</td><td>RFL 3, ROX 5.1, RCM 8</td></tr>
-<tr><td><b>RWR . 4.3</b></td><td>تتفاعل مع الماء وتطلق غازاً</td><td>RCM 8 (السوائل)</td></tr>
-<tr><td><b>ROX . 5.1</b></td><td>مواد مؤكسدة تزيد الاشتعال</td><td>RFL 3, RSC 4.2, RCM 8</td></tr>
-<tr><td><b>RCM . 8</b></td><td>مواد أكّالة وأحماض وبطاريات</td><td>RFL 3, RSC 4.2, RWR 4.3, ROX 5.1</td></tr>
-<tr><td><b>RXS / RCX . 1</b></td><td>متفجرات وذخائر</td><td>كل الفئات الأخرى بلا استثناء</td></tr>
-<tr><td><b>RMD . 9</b></td><td>مواد خطرة متنوعة وثلج جاف</td><td>متوافقة مع باقي الفئات عدا فئة ١</td></tr>
-<tr><td><b>RNG . 2.2</b></td><td>غازات غير قابلة للاشتعال</td><td>متوافقة مع باقي الفئات عدا فئة ١</td></tr>
+<tr><td><b>RFL . 3</b></td><td>سوائل مشتعلة (وقود، دهانات)</td><td>ROX 5.1، RCM 8، RLI 9، فئة 1 (عدا 1.4S)</td></tr>
+<tr><td><b>RFS . 4.1</b></td><td>مواد صلبة مشتعلة</td><td>ROX 5.1، RLI 9، فئة 1</td></tr>
+<tr><td><b>RSC . 4.2</b></td><td>مواد تلقائية الاشتعال</td><td>ROX 5.1، فئة 1</td></tr>
+<tr><td><b>RWR . 4.3</b></td><td>تتفاعل مع الماء وتطلق غازاً</td><td>RCM 8، فئة 1</td></tr>
+<tr><td><b>ROX . 5.1</b></td><td>مواد مؤكسدة تزيد الاشتعال</td><td>RFL 3، RFS 4.1، RSC 4.2، RCM 8، RLI 9، فئة 1</td></tr>
+<tr><td><b>ROP . 5.2</b></td><td>بيروكسيدات عضوية</td><td>RLI 9، فئة 1</td></tr>
+<tr><td><b>RCM . 8</b></td><td>مواد أكّالة وأحماض وبطاريات</td><td>RFL 3، RWR 4.3، ROX 5.1، فئة 1</td></tr>
+<tr><td><b>RFG . 2.1</b></td><td>غازات مشتعلة</td><td>RLI 9، فئة 1</td></tr>
+<tr><td><b>RNG / RPG . 2.2 / 2.3</b></td><td>غازات غير مشتعلة أو سامة</td><td>فئة 1</td></tr>
+<tr><td><b>RLI . 9</b></td><td>بطاريات ليثيوم أيون</td><td>فئة 1، RFG 2.1، RFL 3، RFS 4.1، ROX 5.1</td></tr>
+<tr><td><b>RMD . 9</b></td><td>ثلج جاف ومواد متنوعة</td><td>لا يتطلب فصلًا</td></tr>
+<tr><td><b>RXS . 1.4S</b></td><td>ذخائر أمان</td><td>لا يُخلط مع متفجرات أخرى؛ ولا يُفصل عن غير المتفجرات</td></tr>
+<tr><td><b>RCX . 1.3G</b></td><td>ألعاب نارية ومتفجرات</td><td>كل الفئات عدا 6 و7 (وبطاريات الليثيوم 9 تُفصل)</td></tr>
+<tr><td><b>RPB / RIS . 6</b></td><td>مواد سامة ومعدية</td><td>لا تتطلب فصلًا وفق الجدول</td></tr>
+<tr><td><b>RRY . 7</b></td><td>مواد مشعة</td><td>لا تتطلب فصلًا وفق الجدول</td></tr>
 </table>
+<p style="font-size:12px;opacity:.8">مأخوذ من IATA DGR Table 9.3.A (2023). الجدول يستثني 1.4S والفئتين 6 و7 من الفصل، ويطبّق تعارضات الفئة 9 على بطاريات الليثيوم فقط. هذا تبسيط تعليمي لا يغني عن النسخة الرسمية.</p>
 <button id="rc">إغلاق الدليل</button>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</div>
+<script src="vendor/three.min.js"></script>
 <script src="game-rules.js"></script>
 <script>
 const gameRules = WarehouseRules;
@@ -270,43 +293,30 @@ const HZ = [
 ['h9','🔋','بطاريات ليثيوم أيون','RLI','9'],
 ['h9','🧊','ثلج جاف كربوني','RMD','9']
 ];
-function checkIATAConflict(divA, divB){
-if(divA === divB) return false;
-const getMajor = d => d.split('.')[0];
-const majA = getMajor(divA), majB = getMajor(divB);
-if(majA === '1' || majB === '1') return true;
-const majPair = [majA, majB].sort().join('+');
-if(majPair === '3+4' && (divA==='4.2'||divB==='4.2')) return true;
-if(majPair === '3+5' && (divA==='5.1'||divB==='5.1')) return true;
-if(majPair === '3+8') return true;
-if((divA==='4.2'||divB==='4.2') && (divA==='5.1'||divB==='5.1')) return true;
-if((divA==='4.2'||divB==='4.2') && majPair.includes('8')) return true;
-if((divA==='4.3'||divB==='4.3') && majPair.includes('8')) return true;
-if((divA==='5.1'||divB==='5.1') && majPair.includes('8')) return true;
-return false;
-}
 const R = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance', alpha:false});
 function renderPixelRatio(width, height, dpr){
 return Math.min(dpr, 2, Math.sqrt(2600000 / Math.max(1, width * height)));
 }
 let renderScale = 1;
-R.setPixelRatio(renderPixelRatio(innerWidth, innerHeight, devicePixelRatio));
+const stageEl = document.getElementById('stage');
+R.setPixelRatio(renderPixelRatio(stageEl.clientWidth, stageEl.clientHeight, devicePixelRatio));
 R.shadowMap.enabled = true;
 R.shadowMap.type = THREE.PCFSoftShadowMap;
 R.outputEncoding = THREE.sRGBEncoding;
 R.toneMapping = THREE.ACESFilmicToneMapping;
 R.toneMappingExposure = 1.15;
 R.physicallyCorrectLights = false;
-document.body.prepend(R.domElement);
+stageEl.prepend(R.domElement);
 const S = new THREE.Scene();
 S.background = new THREE.Color(0x1a2430);
 S.fog = new THREE.Fog(0x1a2430, 34, 85);
 const C = new THREE.PerspectiveCamera(48, 1, 0.1, 140);
 function rs(){
-R.setPixelRatio(renderPixelRatio(innerWidth, innerHeight, devicePixelRatio) * renderScale);
-R.setSize(innerWidth, innerHeight);
-C.aspect = innerWidth / innerHeight;
-C.fov = innerWidth < innerHeight ? 62 : 48;
+const w = stageEl.clientWidth || innerWidth, h = stageEl.clientHeight || innerHeight;
+R.setPixelRatio(renderPixelRatio(w, h, devicePixelRatio) * renderScale);
+R.setSize(w, h);
+C.aspect = w / h;
+C.fov = w < h ? 62 : 48;
 C.updateProjectionMatrix();
 }
 addEventListener('resize', rs); rs();
@@ -1067,7 +1077,7 @@ conflictReason = 'هذه الحاوية مخصصة فقط للمواد الخط�
 } else {
 let hasConflict = false;
 for(const placed of z.items){
-if(checkIATAConflict(d.div, placed.data.div)){
+if(gameRules.conflict(d, placed.data)){
 hasConflict = true;
 conflictReason = `تعارض IATA: لا يُخلط [${d.imp} . ${d.div}] مع [${placed.data.imp} . ${placed.data.div}] في حاوية واحدة!`;
 break;
@@ -1172,7 +1182,7 @@ jy.addEventListener('pointerup', je); jy.addEventListener('pointercancel', je);
 function setStage(n,silent){
 stage=n;
 inspector.demo=false; demo.insp=false; demo.truck=false; hideIntro();
-if(n>=2) resetInspector();
+if(n===2) resetInspector();
 if(n>=3) resetTruck();
 if(!silent){
 snd('ship'); time += 10;
@@ -1203,7 +1213,7 @@ $('rc').onclick = $('rb').onclick;
 function end(){
 run = false;
 const o = $('ov'); o.style.display = 'flex';
-const acc = totalProcessed > 0 ? Math.round((sortedCount / totalProcessed) * 100) : 100;
+const acc = totalProcessed > 0 ? Math.round((sortedCount / totalProcessed) * 100) : 0;
 o.innerHTML = `<h1>انتهت الوردية ⏱</h1> <p style="font-size:24px;color:var(--ac)">النقاط الإجمالية: <b>${score}</b></p> <div style="background:rgba(255,255,255,.08);padding:14px 26px;border-radius:14px;margin:6px 0;line-height:1.9"> 📦 إجمالي الطرود المصنفة: <b>${sortedCount}</b><br> 🎯 دقة الفرز وتطبيق IATA: <b>${acc}%</b><br> 🎖️ الرتبة: <b>${score>=450 ? 'كبير ضباط شحن المواد الخطرة 🌟' : score>=240 ? 'مشرف ساحة معتمد DGR 👏' : 'مساعد مستودع متدرب 📦'}</b> </div> <button id="go">بدء وردية جديدة</button>`;
 $('go').onclick = start;
 }
@@ -1298,7 +1308,7 @@ it.m.material.emissive && it.m.material.emissive.setHex(0x552200);
 hud();
 }
 }
-if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.cooldown = 14; I_.elapsed = 0; if(I_.demo){ I_.demo = false; demo.insp = false; demo.inspDone = true; hideIntro(); } $('inspector-badge').classList.remove('on'); }
+if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.done = true; I_.cooldown = 14; I_.elapsed = 0; if(I_.demo){ I_.demo = false; demo.insp = false; demo.inspDone = true; hideIntro(); } $('inspector-badge').classList.remove('on'); }
 }
 let last = performance.now();
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.12, 40), new THREE.MeshBasicMaterial({color:0xffc94d, transparent:true, opacity:0.85, depthWrite:false}));
@@ -1389,6 +1399,7 @@ it.m.position.x += beltSpeed() * beltK * dt;
 if(it.m.position.x > 23.5){
 if(it.data.isMys){ rm(it); continue; }
 const miss = it.data.isHz ? 10 : 5;
+totalProcessed++;
 rm(it);
 score = Math.max(0, score - miss);
 if(stage >= 2) combo = 1;
