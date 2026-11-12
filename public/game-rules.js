@@ -122,5 +122,24 @@
       return true;
     },
   };
+  const emergency = {
+    code: "24351234",
+    musterX: -31.2,
+    musterZ: 3.2,
+    musterHX: 2.4,
+    musterHZ: 2,
+    codePoints: 50,
+    positionPoints: 10,
+    correct(value) {
+      return String(value) === emergency.code;
+    },
+    inMuster(x, z) {
+      return (
+        Math.abs(x - emergency.musterX) <= emergency.musterHX &&
+        Math.abs(z - emergency.musterZ) <= emergency.musterHZ
+      );
+    },
+  };
+  rules.emergency = emergency;
   root.WarehouseRules = rules;
 })(globalThis);
