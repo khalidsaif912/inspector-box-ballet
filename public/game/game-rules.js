@@ -123,7 +123,7 @@
     },
   };
   const emergency = {
-    code: "35242888",
+    code: "24352888",
     musterX: 31,
     musterZ: 3.2,
     musterHX: 2.4,

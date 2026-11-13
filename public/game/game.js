@@ -1476,7 +1476,7 @@ if(!fire.keypad) return;
 snd('warn');
 closeCodePad();
 awardPosition();
-finishFire('⚠️ معرفة رقم الطوارئ إلزامية — راجع لوحة الطوارئ في المستودع');
+finishFire('⚠️ معرفة رقم الطوارئ إلزامية لكل موظف — راجع لوحة الطوارئ في المستودع');
 }
 $('cp-cancel').onclick = cancelCodePad;
 function finishFire(msg){

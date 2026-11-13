@@ -23,7 +23,7 @@ const emergency = rules.emergency;
 
 describe("Emergency evacuation", () => {
   it("accepts only the configured emergency code", () => {
-    expect(emergency.correct("35242888")).toBe(true);
+    expect(emergency.correct("24352888")).toBe(true);
     expect(emergency.correct("2435123")).toBe(false);
     expect(emergency.correct("24351235")).toBe(false);
     expect(emergency.correct("")).toBe(false);

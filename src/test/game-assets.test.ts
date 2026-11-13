@@ -53,7 +53,7 @@ describe("Game assets and shared rules", () => {
 
   it("lets players cancel the emergency code pad with a mandatory reminder", () => {
     expect(html).toContain('id="cp-cancel"');
-    expect(html).toContain("معرفة رقم الطوارئ إلزامية");
+    expect(html).toContain("معرفة رقم الطوارئ إلزامية لكل موظف");
     expect(game).toContain("function cancelCodePad");
     expect(game).toContain("$('cp-cancel').onclick = cancelCodePad");
   });
