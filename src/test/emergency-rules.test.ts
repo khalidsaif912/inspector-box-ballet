@@ -17,13 +17,13 @@ type Emergency = {
 type Rules = { emergency: Emergency };
 
 const context: Record<string, unknown> = {};
-runInNewContext(readFileSync("public/game-rules.js", "utf8"), context);
+runInNewContext(readFileSync("public/game/game-rules.js", "utf8"), context);
 const rules = context["WarehouseRules"] as Rules;
 const emergency = rules.emergency;
 
 describe("Emergency evacuation", () => {
   it("accepts only the configured emergency code", () => {
-    expect(emergency.correct("24351234")).toBe(true);
+    expect(emergency.correct("35242888")).toBe(true);
     expect(emergency.correct("2435123")).toBe(false);
     expect(emergency.correct("24351235")).toBe(false);
     expect(emergency.correct("")).toBe(false);
@@ -43,9 +43,9 @@ describe("Emergency evacuation", () => {
       emergency.inMuster(emergency.musterX, emergency.musterZ + emergency.musterHZ + 0.1),
     ).toBe(false);
   });
-  it("sits against the left warehouse wall", () => {
-    expect(emergency.musterX).toBeLessThan(-30);
-    expect(emergency.musterX - emergency.musterHX).toBeGreaterThan(-34);
+  it("sits against the right warehouse wall", () => {
+    expect(emergency.musterX).toBeGreaterThan(30);
+    expect(emergency.musterX + emergency.musterHX).toBeLessThan(34);
   });
   it("awards the configured code and position points", () => {
     expect(emergency.codePoints).toBe(50);

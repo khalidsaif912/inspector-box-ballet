@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const game = readFileSync("public/game.html", "utf8");
+const game = readFileSync("public/game/game.js", "utf8");
 const ratioSource = game.match(
   /function renderPixelRatio\(width, height, dpr\)\{([\s\S]*?)\n\}/,
 )?.[1];

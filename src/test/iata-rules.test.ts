@@ -8,7 +8,7 @@ type Rules = {
 };
 
 const context: Record<string, unknown> = {};
-runInNewContext(readFileSync("public/game-rules.js", "utf8"), context);
+runInNewContext(readFileSync("public/game/game-rules.js", "utf8"), context);
 const rules = context["WarehouseRules"] as Rules;
 
 const dg = (div: string, imp = "") => ({ div, imp });

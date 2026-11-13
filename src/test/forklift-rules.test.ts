@@ -17,10 +17,18 @@ type Rules = {
   turnDuration: number;
   fodZoneX: number;
   reward(isFod: boolean, zone: string): number;
+  forklift: {
+    reach: number;
+    forkOffset: number;
+    carryY: number;
+    nearest(list: { x: number; z: number }[], x: number, z: number): { x: number; z: number } | null;
+    forkX(x: number, yaw: number): number;
+    forkZ(z: number, yaw: number): number;
+  };
 };
 
 const context: Record<string, unknown> = {};
-runInNewContext(readFileSync("public/game-rules.js", "utf8"), context);
+runInNewContext(readFileSync("public/game/game-rules.js", "utf8"), context);
 const rules = context["WarehouseRules"] as Rules;
 
 describe("Reckless forklift", () => {
@@ -55,5 +63,18 @@ describe("Reckless forklift", () => {
     expect(rules.reward(true, "fod")).toBe(50);
     expect(rules.reward(true, "cold")).toBe(0);
     expect(rules.reward(false, "fod")).toBe(0);
+  });
+  it("picks the nearest parcel within the fork reach", () => {
+    const near = { x: 1, z: 1 };
+    const far = { x: 12, z: 12 };
+    expect(rules.forklift.nearest([far, near], 0, 0)).toBe(near);
+    expect(rules.forklift.nearest([{ x: 20, z: 20 }], 0, 0)).toBe(null);
+    expect(rules.forklift.reach).toBeGreaterThan(2);
+  });
+  it("keeps the carried parcel in front of the forks for any heading", () => {
+    expect(rules.forklift.forkX(0, Math.PI / 2)).toBeCloseTo(rules.forklift.forkOffset);
+    expect(rules.forklift.forkZ(0, 0)).toBeCloseTo(rules.forklift.forkOffset);
+    expect(rules.forklift.forkX(0, Math.PI)).toBeCloseTo(0);
+    expect(rules.forklift.carryY).toBeLessThan(1.2);
   });
 });

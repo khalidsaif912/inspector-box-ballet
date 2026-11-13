@@ -4,6 +4,7 @@ dist
 .vinxi
 public/vendor
 public/game.html
+public/game
 pnpm-lock.yaml
 package-lock.json
 bun.lock

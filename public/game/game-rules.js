@@ -123,8 +123,8 @@
     },
   };
   const emergency = {
-    code: "24351234",
-    musterX: -31.2,
+    code: "35242888",
+    musterX: 31,
     musterZ: 3.2,
     musterHX: 2.4,
     musterHZ: 2,
@@ -141,5 +141,30 @@
     },
   };
   rules.emergency = emergency;
+  // أسرار اللعبة: الرافعة تحمل الطرود — قواعد مشتركة صرفة بلا واجهة
+  const forklift = {
+    reach: 3.3,
+    forkOffset: 1.95,
+    carryY: 0.88,
+    nearest(list, x, z) {
+      let best = null,
+        bd = forklift.reach;
+      for (const it of list) {
+        const d = Math.hypot(it.x - x, it.z - z);
+        if (d < bd) {
+          bd = d;
+          best = it;
+        }
+      }
+      return best;
+    },
+    forkX(x, yaw) {
+      return x + Math.sin(yaw) * forklift.forkOffset;
+    },
+    forkZ(z, yaw) {
+      return z + Math.cos(yaw) * forklift.forkOffset;
+    },
+  };
+  rules.forklift = forklift;
   root.WarehouseRules = rules;
 })(globalThis);
