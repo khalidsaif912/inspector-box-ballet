@@ -1052,6 +1052,32 @@ el.style.left = '50%'; el.style.top = '44%';
 $('floating-fx').appendChild(el);
 setTimeout(() => el.remove(), 850);
 }
+/* خصم النقاط: شارة −N تحت عدّاد النقاط + وميض أحمر واضح */
+function penaltyFx(n, hz){
+const fx = $('floating-fx'), box = $('scbox'), stage = $('stage');
+if(!fx) return;
+const tag = document.createElement('div');
+tag.className = 'penalty-tag' + (hz ? ' hz' : '');
+tag.innerHTML = '<b>−' + n + '</b><i>' + (hz ? 'مادة خطرة فاتت' : 'طرد فات') + '</i>';
+if(box && stage){
+const r = box.getBoundingClientRect(), s = stage.getBoundingClientRect();
+tag.style.left = (r.left - s.left + r.width / 2) + 'px';
+tag.style.top = (r.bottom - s.top + 8) + 'px';
+}
+fx.appendChild(tag);
+setTimeout(() => tag.remove(), 1400);
+if(box){
+box.classList.remove('hit'); void box.offsetWidth; box.classList.add('hit');
+clearTimeout(penaltyFx.t);
+penaltyFx.t = setTimeout(() => box.classList.remove('hit'), 1000);
+}
+const st = $('stage');
+if(st){
+st.classList.remove('penalty'); void st.offsetWidth; st.classList.add('penalty');
+clearTimeout(penaltyFx.v);
+penaltyFx.v = setTimeout(() => st.classList.remove('penalty'), 900);
+}
+}
 function hud(){
 $('sc').textContent = score;
 $('stg').textContent = stage<4 ? `🎓 المرحلة ${stage} • ${Math.min(score,STAGE_AT[stage+1])}/${STAGE_AT[stage+1]}` : '🏁 المرحلة ٤ • الأخيرة — مواد خطرة فقط';
@@ -1777,12 +1803,13 @@ if(it.data.isMys){ rm(it); continue; }
 const miss = it.data.isHz ? 3 : 2;
 totalProcessed++;
 rm(it);
+const lost = Math.min(score, miss);
 score = Math.max(0, score - miss);
 streak = 0; streakT = 0;
 if(stage >= 2) combo = 1;
 snd('error');
-spawnFloatTag('-' + miss, '#ff5252');
-toast((it.data.isHz ? '⚠️ فاتتك مادة خطرة! -' : 'فاتك طرد! -') + miss, '#ffb020'); hud(); continue;
+penaltyFx(lost, it.data.isHz);
+toast((it.data.isHz ? '⚠️ فاتتك مادة خطرة! ' : 'فاتك طرد! ') + (lost ? '−' + lost + ' نقاط' : 'بدون خصم'), '#ff8a5c'); hud(); continue;
 }
 }
 if(it.st === 'held'){
