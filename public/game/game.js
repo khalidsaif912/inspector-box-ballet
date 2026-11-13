@@ -901,8 +901,8 @@ const bestScore = () => { try { return +(localStorage.getItem('acg_best') || 0) 
 const saveBest = v => { try { localStorage.setItem('acg_best', v); } catch(e){} };
 const getTop = () => { try { return JSON.parse(localStorage.getItem('acg_top') || '[]'); } catch(e){ return []; } };
 const pushTop = v => { const t = getTop(); t.push({s:v, d:new Date().toLocaleDateString('ar')}); t.sort((a,b)=>b.s-a.s); const r = t.slice(0,5); try { localStorage.setItem('acg_top', JSON.stringify(r)); } catch(e){} return r; };
-const topHTML = t => t.length ? '<b>🏅 لوحة المتصدرين</b><ol>' + t.map(e => `<li>${e.s} نقطة <small style="opacity:.6">${e.d}</small></li>`).join('') + '</ol>' : '<b>🏅 لوحة المتصدرين</b><small style="opacity:.7">العب لتسجّل أول نتيجة</small>';
-function syncMenu(){ const tp = $('top5'); const list = getTop(); if(tp){ tp.innerHTML = topHTML(list); tp.style.display = list.length ? '' : 'none'; } const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? `🏆 أفضل نتيجة: ${b}` : '🏆 كن أول الأبطال'; }
+const topHTML = t => t.length ? t.slice(0,4).map((e,i) => `<span class="score-chip"><i class="rank-dot r${i+1}"></i> ${e.s} نقطة</span>`).join('') : '<span class="lb-empty">العب لتسجّل أول نتيجة</span>';
+function syncMenu(){ const tp = $('top5'); const list = getTop(); if(tp){ tp.innerHTML = topHTML(list); tp.style.display = ''; } const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? `أفضل نتيجة: ${b}` : 'كن أول الأبطال'; }
 const STAGE_AT=[0,0,100,200,320], STAGE_BELT=[0,1.5,1.9,2.4,2.7];
 let demo={insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}, introT=null, introHold=false;
 function showIntro(html,ms=7000,hold=false){
@@ -1486,25 +1486,68 @@ const record = score > best && score > 0;
 if(record) saveBest(score);
 const topList = score > 0 ? pushTop(score) : getTop();
 const grade = (score >= 500 && acc >= 90) ? 's' : (score >= 350 && acc >= 80) ? 'a' : score >= 200 ? 'b' : 'c';
-const titles = { s:'خبير DGR معتمد 🌟', a:'مشرف فرز متمكن 👏', b:'فني مستودع واعد 📦', c:'متدرب قيد التأهيل 🎓' };
+const titles = { s:'خبير DGR معتمد', a:'مشرف فرز متمكن', b:'فني مستودع واعد', c:'متدرب قيد التأهيل' };
 const stars = { s:5, a:4, b:3, c:2 }[grade];
-const starHTML = '★'.repeat(stars) + '<span class="off">' + '★'.repeat(5 - stars) + '</span>';
-const recLine = record ? '🏆 رقم قياسي جديد!' : `🏆 أفضل نتيجة: ${Math.max(best, score)}`;
-o.innerHTML = `<div class="res">
-<div class="rank ${grade}">${grade.toUpperCase()}</div>
-<div class="stars">${starHTML}</div>
-<h1>انتهت الوردية</h1>
-<p style="font-size:17px">الرتبة: <b style="color:var(--ac)">${titles[grade]}</b></p>
-<div class="statgrid">
-<div><b>${score}</b><span>النقاط</span></div>
-<div><b>${sortedCount}</b><span>طرود مصنّفة</span></div>
-<div><b>${acc}%</b><span>دقة IATA</span></div>
-<div><b>${maxStreak}</b><span>أطول سلسلة</span></div>
+const p = stars / 5;
+const dash = (351.86 * (1 - p)).toFixed(2);
+const deg = p * 360;
+const rad = deg * Math.PI / 180;
+const planeX = (70 + 56 * Math.sin(rad)).toFixed(2);
+const planeY = (70 - 56 * Math.cos(rad)).toFixed(2);
+const starPath = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
+const starsHTML = Array.from({ length: 5 }, (_, i) => `<svg class="star${i < stars ? ' lit' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="${starPath}"/></svg>`).join('');
+const recLine = record ? '<span class="new-record"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg>رقم قياسي جديد!</span>' : '';
+o.innerHTML = `<div class="shift-panel">
+<section class="hero-section">
+<div class="flight-dial">
+<svg class="dial-svg" viewBox="0 0 140 140" aria-hidden="true">
+<defs><linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#fbbf24"/></linearGradient></defs>
+<circle cx="70" cy="70" r="64" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="2 6"/>
+<circle cx="70" cy="70" r="56" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="6"/>
+<circle cx="70" cy="70" r="56" fill="none" stroke="url(#arcGrad)" stroke-width="6" stroke-linecap="round" stroke-dasharray="351.86" stroke-dashoffset="${dash}" transform="rotate(-90 70 70)"/>
+<g transform="translate(${planeX}, ${planeY}) rotate(${deg})"><path d="M 8 0 L -2 -7 L -4 -7 L -1 -1 L -6 -1 L -8 -4 L -9 -4 L -8 0 L -9 4 L -8 4 L -6 1 L -1 1 L -4 7 L -2 7 Z" fill="#fbbf24"/></g>
+</svg>
+<div class="grade-core g-${grade}">${grade.toUpperCase()}</div>
 </div>
-<div class="rec ${record ? '' : 'best'}">${recLine}</div>
-<div class="top5">${topHTML(topList)}</div>
-<p class="fine">${totalProcessed === 0 ? 'لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!' : acc >= 80 ? 'أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.' : 'راجع دليل الفرز السريع ثم عُد لكسر رقمك.'}</p>
-<div class="cta-row"><button id="go">🔁 وردية جديدة</button><button id="rb2" class="ghost">📖 الدليل</button></div>
+<div class="stars-row">${starsHTML}</div>
+<h1 class="main-title">انتهت الوردية</h1>
+<div class="rank-chip">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+<span>الرتبة:</span><strong>${titles[grade]}</strong>
+</div>
+</section>
+<section class="stats-grid">
+<div class="stat-card c-amber">
+<svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+<strong class="stat-num">${score}</strong><span class="stat-lbl">النقاط</span>
+</div>
+<div class="stat-card c-cyan">
+<svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/></svg>
+<strong class="stat-num">${sortedCount}</strong><span class="stat-lbl">طرود مصنّفة</span>
+</div>
+<div class="stat-card c-emerald">
+<svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+<strong class="stat-num">${acc}%</strong><span class="stat-lbl">دقة IATA</span>
+<div class="mini-bar"><span style="width:${acc}%"></span></div>
+</div>
+<div class="stat-card c-orange">
+<svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+<strong class="stat-num">${maxStreak}</strong><span class="stat-lbl">أطول سلسلة</span>
+</div>
+</section>
+<div class="records-panel">
+<div class="best-badge">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg>
+<span>أفضل نتيجة: ${Math.max(best, score)}</span>
+</div>
+${recLine}
+<div class="leaderboard-wrap"><span>لوحة المتصدرين:</span><div class="lb-chips">${topHTML(topList)}</div></div>
+</div>
+<p class="tip-msg">${totalProcessed === 0 ? 'لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!' : acc >= 80 ? 'أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.' : 'راجع دليل الفرز السريع ثم عُد لكسر رقمك.'}</p>
+<div class="actions-row">
+<button id="go" class="btn btn-primary" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg><span>وردية جديدة</span></button>
+<button id="rb2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg><span>الدليل</span></button>
+</div>
 </div>`;
 $('go').onclick = start;
 $('rb2').onclick = openRules;

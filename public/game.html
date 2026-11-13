@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>مستودع الشحن الجوي 3D - نظام المواد الخطرة IATA DGR HD</title>
 <link rel="stylesheet" href="game/game.css">
+<link rel="stylesheet" href="game/ui.css">
 </head>
 <body>
 <div id="stage">
@@ -62,24 +63,48 @@
 <canvas id="dust" aria-hidden="true"></canvas>
 <div class="bloom b1" aria-hidden="true"></div>
 <div class="bloom b2" aria-hidden="true"></div>
-<div class="start-inner">
-<header class="hero">
-<span class="logo">✈️</span>
-<h1>مستودع الشحن الجوي</h1>
-<p class="tagline">التقط • افحص • افرز — قبل أن يفوت الحزام</p>
-</header>
-<button id="go" class="play"><span class="play-ico">▶</span>العب الآن</button>
-<p id="best" class="best">🏆 كن أول الأبطال</p>
-<div id="top5" class="top5"></div>
+<main class="start-card">
+<div class="emblem-wrap">
+<div class="emblem-ring"></div>
+<svg class="emblem-plane" width="36" height="36" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
 </div>
-<div class="corner-opts" id="corner-opts">
-<div class="pill-group"><span class="ol">🦺 لون سترتك</span><div class="skins" id="skins"></div></div>
-<button class="opt" data-audio="amb" title="صوت المستودع" aria-label="صوت المستودع"><span class="ol">صوت المستودع</span><i class="dot"></i></button>
-<button class="opt" data-audio="snd" title="المؤثرات الصوتية" aria-label="المؤثرات الصوتية"><span class="ol">المؤثرات</span><i class="dot"></i></button>
-<button class="opt" data-tips-toggle title="الرسائل التعليمة" aria-label="الرسائل التعليمة"><span class="ol">التعليمات</span><i class="dot"></i></button>
+<h1 class="game-title">مستودع الشحن الجوي</h1>
+<p class="tagline-pill">التقط · افحص · افرز — قبل أن يفوت الحزام</p>
+<button id="go" class="btn-play" type="button">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+<span>العب الآن</span>
+</button>
+<section class="records-box">
+<div class="best-row">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg>
+<span id="best">كن أول الأبطال</span>
 </div>
-<button class="opt guide" id="how" title="دليل سريع" aria-label="دليل سريع"><span class="ol">دليل سريع</span>📖</button>
-<p class="fine">لعبة تعليمية مبسطة؛ المرجع التشغيلي هو نسخة IATA DGR الرسمية.</p>
+<div class="lb-title">لوحة المتصدرين</div>
+<div id="top5" class="lb-chips"></div>
+</section>
+</main>
+<aside class="settings-dock" id="corner-opts">
+<div class="setting-item vest-item">
+<span class="setting-label"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>لون سترتك</span>
+<div class="vest-colors" id="skins"></div>
+</div>
+<button class="setting-item" type="button" data-audio="amb" title="صوت المستودع" aria-label="صوت المستودع">
+<span class="setting-label"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>صوت المستودع</span>
+<i class="toggle" aria-hidden="true"></i>
+</button>
+<button class="setting-item" type="button" data-audio="snd" title="المؤثرات الصوتية" aria-label="المؤثرات الصوتية">
+<span class="setting-label"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>المؤثرات</span>
+<i class="toggle" aria-hidden="true"></i>
+</button>
+<button class="setting-item" type="button" data-tips-toggle title="الرسائل التعليمة" aria-label="الرسائل التعليمة">
+<span class="setting-label"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>التعليمات</span>
+<i class="toggle" aria-hidden="true"></i>
+</button>
+</aside>
+<button class="guide-btn" id="how" type="button" title="دليل سريع" aria-label="دليل سريع">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+<span>دليل سريع</span>
+</button>
 </div>
 <div class="ov" id="rules" style="display:none">
 <div class="hero small">
