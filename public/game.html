@@ -61,46 +61,45 @@
 </div>
 <div class="ov start" id="ov">
 <canvas id="dust" aria-hidden="true"></canvas>
-<div class="hero">
+<div class="start-inner">
+<header class="hero">
 <div class="logo">✈️</div>
-<div>
 <div class="kicker">AIR CARGO HUB • DGR</div>
 <h1>مستودع الشحن الجوي</h1>
 <div class="tagline">التقط • افحص • افرز — قبل أن يفوت الحزام</div>
+</header>
+<section class="board">
+<div class="board-head"><span>اختر المرحلة</span><i id="stage-hint">تبدأ من التدريب</i></div>
+<div class="stagebar" id="stagebar">
+<button type="button" class="scard on" data-stage="1" aria-pressed="true"><b class="badge">١</b><span class="nm">التدريب</span><small class="ds">شحن عام</small></button>
+<button type="button" class="scard" data-stage="2" aria-pressed="false"><b class="badge">٢</b><span class="nm">المواد الخطرة</span><small class="ds">IATA</small></button>
+<button type="button" class="scard" data-stage="3" aria-pressed="false"><b class="badge">٣</b><span class="nm">الرافعة</span><small class="ds">FOD</small></button>
+<button type="button" class="scard" data-stage="4" aria-pressed="false"><b class="badge">٤</b><span class="nm">خطرة فقط</span><small class="ds">٣ حاويات</small></button>
 </div>
-</div>
-<div class="stagebar">
-<div class="scard on"><b>١</b><span>التدريب</span><small>شحن عام</small></div>
-<div class="scard"><b>٢</b><span>المواد الخطرة</span><small>IATA</small></div>
-<div class="scard"><b>٣</b><span>الرافعة</span><small>FOD</small></div>
-<div class="scard"><b>٤</b><span>خطرة فقط</span><small>٣ حاويات</small></div>
-</div>
+</section>
 <div class="menu-grid">
-<div class="mcard"><span class="ic">🎯</span><b>افحص الكود</b><small>IMP + Class على الملصق</small></div>
-<div class="mcard"><span class="ic">🧩</span><b>افرز بذكاء</b><small>منطقة لكل نوع شحنة</small></div>
-<div class="mcard"><span class="ic">🔥</span><b>سلسلة مثالية</b><small>فرز متتابع = نقاط أعلى</small></div>
-</div>
-<div class="leg">
-<span style="background:#5291b5">❄️ تبريد</span>
-<span style="background:#62985c">🍓 قابلة للتلف</span>
-<span style="background:#84929a">📦 عامة</span>
-<span style="background:#d32f2f;color:#fff">🔩 صندوق FOD</span>
-<span style="background:#b85550;color:#fff">☣️ حاوية مواد خطرة ١</span>
-<span style="background:#8e6098;color:#fff">☣️ حاوية مواد خطرة ٢</span>
-<span style="background:#ffc107">🎁 صندوق مفاجآت</span>
+<div class="mcard"><span class="ic">🎯</span><div><b>افحص الكود</b><small>IMP + Class على الملصق</small></div></div>
+<div class="mcard"><span class="ic">🧩</span><div><b>افرز بذكاء</b><small>منطقة لكل نوع شحنة</small></div></div>
+<div class="mcard"><span class="ic">🔥</span><div><b>سلسلة مثالية</b><small>فرز متتابع = نقاط أعلى</small></div></div>
 </div>
 <div class="cta-row">
-<button id="go" class="play">▶ العب الآن</button>
+<button id="go" class="play"><span class="play-ico">▶</span><span>العب الآن</span></button>
 <button id="how" class="ghost">📖 دليل سريع</button>
 </div>
+<div class="toolbar">
 <div class="skin-row"><span class="skin-label">🦺 لون سترتك</span><div class="skins" id="skins"></div></div>
+<span class="tb-div"></span>
 <div class="settings-row" id="settings">
 <button data-audio="snd" data-label="المؤثرات">🔊 المؤثرات</button>
-<button data-audio="amb" data-label="المستودع">🏭 صوت المستودع</button>
-<button data-tips-toggle data-label="التعليمة">💡 الرسائل التعليمة</button>
+<button data-audio="amb" data-label="المستودع">🏭 المستودع</button>
+<button data-tips-toggle data-label="التعليمة">💡 التعليمات</button>
 </div>
+</div>
+<div class="footer-row">
 <div id="top5" class="top5"></div>
 <div id="best" class="best">🏆 لا توجد نتيجة بعد — كن أول الأبطال</div>
+</div>
+</div>
 <p class="fine">لعبة تعليمية مبسطة؛ المرجع التشغيلي هو نسخة IATA DGR الرسمية ودليل مشغّل الطائرة.</p>
 </div>
 <div class="ov" id="rules" style="display:none">
