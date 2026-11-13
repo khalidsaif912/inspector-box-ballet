@@ -1852,7 +1852,7 @@ requestAnimationFrame(loop);
 // ===== تخصيص لون سترة العامل =====
 (() => {
 const vestMats = []; rig.traverse(o => { if(o.isMesh && o.material && o.material.color && o.material.color.getHex() === C_VEST) vestMats.push(o.material); });
-const COLORS = [[0xd4ff00,'أصفر فوسفوري'],[0xff6d00,'برتقالي سلامة'],[0x00e676,'أخضر نيون'],[0x00b0ff,'أزرق عمليات']];
+const COLORS = [[0xd4ff00,'أصفر فوسفوري'],[0xff6d00,'برتقالي سلامة'],[0x00e676,'أخضر نيون']];
 const apply = c => { vestMats.forEach(m => m.color.setHex(c)); try { localStorage.setItem('acg_vest', c); } catch(e){} document.querySelectorAll('#skins button').forEach(b => b.classList.toggle('on', +b.dataset.c === c)); };
 const row = document.getElementById('skins'); if(!row) return;
 COLORS.forEach(([c,n]) => { const b = document.createElement('button'); b.dataset.c = c; b.style.background = '#' + c.toString(16).padStart(6,'0'); b.setAttribute('aria-label', n); b.title = n; b.onclick = e => { e.stopPropagation(); apply(c); }; row.appendChild(b); });
