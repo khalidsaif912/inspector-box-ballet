@@ -264,19 +264,19 @@ details.full .tbl{max-width:100%}
 }
 
 /* ===== شاشة البداية بأسلوب الألعاب ===== */
-#ov.start{background:linear-gradient(180deg,rgba(4,10,20,.25) 0%,rgba(4,10,20,.55) 45%,rgba(4,10,20,.92) 100%),url(images/start-bg.jpg) center/cover no-repeat;justify-content:flex-end;gap:12px;padding-bottom:22px}
+#ov.start{background:linear-gradient(180deg,rgba(4,10,20,.25) 0%,rgba(4,10,20,.55) 45%,rgba(4,10,20,.92) 100%),url(images/start-bg.jpg) center/cover no-repeat;justify-content:flex-end;gap:9px;padding-bottom:16px}
 #ov.start::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 18%,rgba(255,180,60,.18),transparent 60%);pointer-events:none;animation:bgPulse 5s ease-in-out infinite}
 @keyframes bgPulse{50%{opacity:.45}}
 #ov.start>*{position:relative}
-#ov.start .hero{flex-direction:column;gap:2px;text-align:center;margin-bottom:auto;margin-top:2vmin}
-#ov.start .hero .logo{font-size:clamp(40px,10vmin,64px)}
-#ov.start .kicker{background:rgba(0,0,0,.55);border:1px solid rgba(124,196,255,.5);padding:3px 12px;border-radius:999px;display:inline-block}
-#ov.start .hero h1{font-size:clamp(34px,9.5vmin,64px);font-weight:900;line-height:1.05;margin:6px 0 4px;background:linear-gradient(180deg,#fffbe6 0%,#ffd54a 45%,#ff8a00 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 #7a3500) drop-shadow(0 6px 0 #3d1a00) drop-shadow(0 12px 18px rgba(0,0,0,.75));animation:titleIn .9s cubic-bezier(.2,1.6,.4,1) both}
+#ov.start .hero{flex-direction:column;gap:1px;text-align:center;margin-bottom:0;margin-top:0}
+#ov.start .hero .logo{font-size:clamp(26px,6.4vmin,40px)}
+#ov.start .kicker{background:rgba(0,0,0,.55);border:1px solid rgba(124,196,255,.5);padding:2px 10px;border-radius:999px;display:inline-block;font-size:9px;letter-spacing:.2em}
+#ov.start .hero h1{font-size:clamp(24px,6.6vmin,44px);font-weight:900;line-height:1.12;margin:2px 0 0;background:linear-gradient(180deg,#fffbe6 0%,#ffd54a 45%,#ff8a00 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #7a3500) drop-shadow(0 4px 0 #3d1a00) drop-shadow(0 8px 14px rgba(0,0,0,.7));animation:titleIn .9s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes titleIn{from{transform:scale(.4) translateY(-30px);opacity:0}}
-#ov.start .tagline{background:rgba(0,0,0,.55);padding:4px 14px;border-radius:8px;color:#fff;text-shadow:0 2px 4px #000}
+#ov.start .tagline{background:rgba(0,0,0,.55);padding:2px 11px;border-radius:7px;color:#fff;text-shadow:0 2px 4px #000;margin-top:8px;font-size:clamp(10px,2.9vmin,12.5px)}
 #ov.start .scard,#ov.start .mcard{background:rgba(8,16,30,.72);backdrop-filter:blur(6px)}
 #ov.start .leg{display:none}
-#ov #go.play{position:relative;overflow:hidden;font-size:clamp(22px,5.4vmin,32px);padding:16px 64px 18px;border-radius:22px;color:#3a1600;letter-spacing:.5px;text-shadow:0 1px 0 rgba(255,255,255,.6);background:linear-gradient(180deg,#fff2a8 0%,#ffcf33 40%,#ff9800 100%);border:3px solid #fff7d1;box-shadow:0 7px 0 #b35a00,0 9px 0 #5c2b00,0 16px 30px rgba(0,0,0,.6),inset 0 -6px 0 rgba(180,80,0,.35),inset 0 4px 0 rgba(255,255,255,.7);animation:playBob 1.6s ease-in-out infinite;transition:transform .08s,box-shadow .08s}
+#ov #go.play{position:relative;overflow:hidden;font-size:clamp(18px,4.4vmin,26px);padding:12px 46px 14px;border-radius:20px;color:#3a1600;letter-spacing:.5px;text-shadow:0 1px 0 rgba(255,255,255,.6);background:linear-gradient(180deg,#fff2a8 0%,#ffcf33 40%,#ff9800 100%);border:3px solid #fff7d1;box-shadow:0 6px 0 #b35a00,0 8px 0 #5c2b00,0 14px 26px rgba(0,0,0,.6),inset 0 -5px 0 rgba(180,80,0,.35),inset 0 3px 0 rgba(255,255,255,.7);animation:playBob 1.6s ease-in-out infinite;transition:transform .08s,box-shadow .08s}
 #ov #go.play::after{content:"";position:absolute;top:-20%;left:-60%;width:40%;height:140%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);transform:skewX(-20deg);animation:shine 2.4s ease-in-out infinite}
 @keyframes shine{0%,55%{left:-60%}100%{left:130%}}
 @keyframes playBob{50%{transform:translateY(-4px) scale(1.04)}}
@@ -328,41 +328,42 @@ details.full .tbl{max-width:100%}
     radial-gradient(95% 70% at 50% 102%,rgba(243,156,18,.16),transparent 66%),
     linear-gradient(180deg,rgba(4,10,20,.25) 0%,rgba(4,10,20,.55) 45%,rgba(4,10,20,.92) 100%),
     url(images/start-bg.jpg) center/cover no-repeat;
-  justify-content:flex-start;
-  padding-bottom:14px;
+  justify-content:safe center;
+  gap:8px;
+  padding-bottom:12px;
 }
 #ov.start>#dust{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
 #ov.start>*:not(#dust){position:relative;z-index:1}
 
 /* --- بطاقات المراحل: زجاج + تمييز ذهبي للبطاقة النشطة --- */
-#ov.start .stagebar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;width:100%;max-width:620px}
+#ov.start .stagebar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:100%;max-width:540px}
 #ov.start .scard{
-  position:relative;overflow:hidden;max-width:none;padding:10px 6px 11px;border-radius:18px;
+  position:relative;overflow:hidden;max-width:none;padding:7px 5px 8px;border-radius:15px;
   background:linear-gradient(165deg,rgba(255,255,255,.16),rgba(10,24,44,.52) 55%,rgba(6,14,26,.68));
   border:1px solid rgba(255,255,255,.24);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.42),inset 0 -14px 24px rgba(0,0,0,.28),0 10px 22px rgba(0,0,0,.45);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.42),inset 0 -12px 20px rgba(0,0,0,.28),0 8px 18px rgba(0,0,0,.45);
   backdrop-filter:blur(14px) saturate(140%);
   -webkit-backdrop-filter:blur(14px) saturate(140%);
-  color:var(--ink);font-weight:900;font-size:12.5px;
+  color:var(--ink);font-weight:900;font-size:11.5px;
   transition:transform .25s cubic-bezier(.2,1.4,.4,1),box-shadow .25s,border-color .25s;
 }
 #ov.start .scard::before{
   content:"";position:absolute;inset:0 0 auto 0;height:55%;
   background:linear-gradient(180deg,rgba(255,255,255,.22),transparent);pointer-events:none;
 }
-#ov.start .scard span{font-size:12.5px;letter-spacing:.2px;text-shadow:0 1px 3px rgba(0,0,0,.9)}
-#ov.start .scard small{font-size:10.5px;font-weight:900;color:#d3e6ff;opacity:1;letter-spacing:.3px;text-shadow:0 1px 3px rgba(0,0,0,.95)}
+#ov.start .scard span{font-size:11.5px;letter-spacing:.2px;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+#ov.start .scard small{font-size:10px;font-weight:900;color:#d3e6ff;opacity:1;letter-spacing:.3px;text-shadow:0 1px 3px rgba(0,0,0,.95)}
 #ov.start .scard b{
-  width:30px;height:30px;font-size:15px;font-weight:900;color:#8fd0ff;
+  width:26px;height:26px;font-size:13px;font-weight:900;color:#8fd0ff;
   background:radial-gradient(circle at 35% 30%,rgba(58,160,255,.38),rgba(6,18,34,.92));
   border:2px solid rgba(124,196,255,.85);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 8px rgba(0,0,0,.45);
 }
 #ov.start .scard.on{
-  transform:translateY(-6px) scale(1.04);
+  transform:translateY(-4px) scale(1.035);
   border-color:var(--g1);
   background:linear-gradient(165deg,rgba(255,213,74,.42),rgba(140,74,0,.46) 60%,rgba(58,25,0,.62));
-  box-shadow:0 0 0 2px rgba(255,213,74,.5),0 0 26px rgba(243,156,18,.6),0 16px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.7);
+  box-shadow:0 0 0 2px rgba(255,213,74,.5),0 0 22px rgba(243,156,18,.6),0 12px 24px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.7);
   animation:cardFloat 2.6s ease-in-out infinite;
 }
 #ov.start .scard.on b{
@@ -373,20 +374,20 @@ details.full .tbl{max-width:100%}
 #ov.start .scard.on small{color:#ffe9b8}
 
 /* --- بطاقات التعليمات: زجاج خفيف وتباين أعلى --- */
-#ov.start .menu-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;max-width:620px}
+#ov.start .menu-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;max-width:540px}
 #ov.start .mcard{
-  position:relative;overflow:hidden;max-width:none;min-width:0;padding:11px 8px 12px;border-radius:18px;
+  position:relative;overflow:hidden;max-width:none;min-width:0;padding:8px 6px 9px;border-radius:15px;
   background:linear-gradient(165deg,rgba(255,255,255,.13),rgba(9,22,40,.50) 60%,rgba(5,12,22,.66));
   border:1px solid rgba(255,255,255,.20);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -12px 22px rgba(0,0,0,.25),0 8px 20px rgba(0,0,0,.4);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -10px 18px rgba(0,0,0,.25),0 6px 16px rgba(0,0,0,.4);
   backdrop-filter:blur(12px) saturate(140%);
   -webkit-backdrop-filter:blur(12px) saturate(140%);
   transition:transform .2s,border-color .2s,box-shadow .2s;
 }
-#ov.start .mcard:hover{transform:translateY(-3px);border-color:rgba(255,213,74,.55);box-shadow:0 0 0 1px rgba(255,213,74,.25),0 14px 26px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.4)}
-#ov.start .mcard .ic{font-size:24px;line-height:1;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
-#ov.start .mcard b{color:#ffe08a;font-size:13.5px;font-weight:900;text-shadow:0 1px 3px rgba(0,0,0,.85)}
-#ov.start .mcard small{color:#d7e8fb;font-weight:800;font-size:10.8px;opacity:1;line-height:1.5;text-shadow:0 1px 2px rgba(0,0,0,.85)}
+#ov.start .mcard:hover{transform:translateY(-3px);border-color:rgba(255,213,74,.55);box-shadow:0 0 0 1px rgba(255,213,74,.25),0 12px 22px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.4)}
+#ov.start .mcard .ic{font-size:19px;line-height:1;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+#ov.start .mcard b{color:#ffe08a;font-size:12px;font-weight:900;text-shadow:0 1px 3px rgba(0,0,0,.85)}
+#ov.start .mcard small{color:#d7e8fb;font-weight:800;font-size:10px;opacity:1;line-height:1.45;text-shadow:0 1px 2px rgba(0,0,0,.85)}
 
 /* --- زر "العب الآن": 3D + نبض وهالة --- */
 #ov #go.play{
@@ -398,21 +399,21 @@ details.full .tbl{max-width:100%}
   border:2px solid rgba(255,213,74,.6);pointer-events:none;
   animation:pulseRing 2.4s ease-out infinite;
 }
-#ov #go.play:hover{transform:translateY(-2px);box-shadow:0 9px 0 #b35a00,0 11px 0 #5c2b00,0 20px 34px rgba(0,0,0,.62),0 0 34px rgba(255,196,64,.6),inset 0 -6px 0 rgba(180,80,0,.35),inset 0 4px 0 rgba(255,255,255,.7)}
+#ov #go.play:hover{transform:translateY(-2px);box-shadow:0 8px 0 #b35a00,0 10px 0 #5c2b00,0 18px 30px rgba(0,0,0,.62),0 0 30px rgba(255,196,64,.6),inset 0 -5px 0 rgba(180,80,0,.35),inset 0 3px 0 rgba(255,255,255,.7)}
 #ov #go.play:active{transform:translateY(6px) scale(.985);animation:none}
 
 /* --- شريط لون السترة: أزرار دائرية متوهجة --- */
 #ov.start .skin-row{
-  gap:10px;padding:7px 12px;border-radius:999px;
+  gap:8px;padding:5px 10px;border-radius:999px;
   background:linear-gradient(165deg,rgba(255,255,255,.14),rgba(8,18,32,.62));
   border:1px solid rgba(255,255,255,.24);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 18px rgba(0,0,0,.42);
   backdrop-filter:blur(12px) saturate(140%);
   -webkit-backdrop-filter:blur(12px) saturate(140%);
 }
-#ov.start .skin-label{font-size:12px;font-weight:900;color:var(--ink);white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.8)}
-#ov.start .skins{display:flex;align-items:center;gap:9px}
-#ov.start .skin-row button{width:30px;height:30px;border:2px solid rgba(255,255,255,.3);box-shadow:inset 0 -3px 6px rgba(0,0,0,.35),inset 0 2px 3px rgba(255,255,255,.55),0 2px 6px rgba(0,0,0,.45);transition:transform .18s,box-shadow .18s,border-color .18s;cursor:pointer}
+#ov.start .skin-label{font-size:11px;font-weight:900;color:var(--ink);white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+#ov.start .skins{display:flex;align-items:center;gap:8px}
+#ov.start .skin-row button{width:26px;height:26px;border:2px solid rgba(255,255,255,.3);box-shadow:inset 0 -3px 6px rgba(0,0,0,.35),inset 0 2px 3px rgba(255,255,255,.55),0 2px 6px rgba(0,0,0,.45);transition:transform .18s,box-shadow .18s,border-color .18s;cursor:pointer}
 #ov.start .skin-row button:hover{transform:scale(1.1)}
 #ov.start .skin-row button.on{border-color:#fff;transform:scale(1.16);box-shadow:0 0 0 3px #fff,0 0 18px 5px rgba(255,255,255,.55),inset 0 -3px 6px rgba(0,0,0,.3)}
 
@@ -430,26 +431,37 @@ details.full .tbl{max-width:100%}
   box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 4px 12px rgba(0,0,0,.35);
 }
 #ov.start .top5,#ov.start .best{backdrop-filter:blur(10px) saturate(135%);-webkit-backdrop-filter:blur(10px) saturate(135%)}
+#ov.start .cta-row{gap:8px}
+#ov.start .cta-row .ghost{font-size:13px!important;padding:9px 16px!important;border-radius:14px!important;border-width:2px!important}
+#ov.start .settings-row{gap:6px}
+#ov.start .settings-row button{font-size:11px;padding:5px 11px;gap:5px}
+#ov.start .top5{font-size:10.5px;padding:4px 11px;min-width:170px;border-radius:10px}
+#ov.start .top5 li:nth-child(n+4){display:none}
+#ov.start .top5 ol{line-height:1.45}
+#ov.start .best{font-size:11px;padding:4px 12px}
 
 /* --- حركات --- */
-@keyframes cardFloat{0%,100%{transform:translateY(-6px) scale(1.04)}50%{transform:translateY(-9px) scale(1.045)}}
+@keyframes cardFloat{0%,100%{transform:translateY(-4px) scale(1.035)}50%{transform:translateY(-7px) scale(1.04)}}
 @keyframes playPulse{0%,100%{filter:drop-shadow(0 0 0 rgba(255,190,60,0)) drop-shadow(0 10px 22px rgba(0,0,0,.55))}50%{filter:drop-shadow(0 0 18px rgba(255,196,64,.8)) drop-shadow(0 10px 22px rgba(0,0,0,.55))}}
 @keyframes pulseRing{0%{transform:scale(.97);opacity:.75}70%{transform:scale(1.09);opacity:0}100%{transform:scale(1.09);opacity:0}}
 
 /* --- استجابة الشاشات --- */
 @media (max-width:760px){
-  #ov.start .stagebar{gap:8px}
-  #ov.start .scard{padding:8px 4px 9px;border-radius:15px;font-size:11.5px}
-  #ov.start .scard b{width:26px;height:26px;font-size:13px}
-  #ov.start .scard small{font-size:9.8px}
-  #ov.start .menu-grid{gap:8px}
-  #ov.start .mcard{padding:9px 6px 10px;border-radius:15px}
-  #ov.start .mcard b{font-size:12.5px}
-  #ov.start .mcard small{font-size:10px}
-  #ov.start .mcard .ic{font-size:21px}
-  #ov.start .skin-row{gap:8px;padding:6px 10px}
-  #ov.start .skin-label{font-size:11px}
-  #ov.start .skin-row button{width:27px;height:27px}
+  #ov.start{gap:7px}
+  #ov.start .stagebar{gap:6px}
+  #ov.start .scard{padding:6px 4px 7px;border-radius:13px;font-size:10.5px}
+  #ov.start .scard span{font-size:10.5px}
+  #ov.start .scard small{font-size:9.2px}
+  #ov.start .scard b{width:23px;height:23px;font-size:11.5px}
+  #ov.start .menu-grid{gap:6px}
+  #ov.start .mcard{padding:7px 5px 8px;border-radius:13px}
+  #ov.start .mcard b{font-size:11px}
+  #ov.start .mcard small{font-size:9.4px}
+  #ov.start .mcard .ic{font-size:17px}
+  #ov.start .skin-row{gap:7px;padding:4px 9px}
+  #ov.start .skin-label{font-size:10.5px}
+  #ov.start .skin-row button{width:24px;height:24px}
+  #ov.start .cta-row .ghost{font-size:12px!important;padding:8px 13px!important}
 }
 @media (max-width:430px){
   #ov.start{gap:7px;padding:10px;justify-content:safe center}
