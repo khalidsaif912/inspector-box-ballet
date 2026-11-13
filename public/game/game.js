@@ -422,36 +422,52 @@ stripes.push(st);
 }
 B(2.6, 3.8, 3.6, 0x324454, -25.8, 1.9, 12, S, 0.4, 0.4);
 B(2.6, 3.8, 3.6, 0x324454, 25.8, 1.9, 12, S, 0.4, 0.4);
-// زر إبطاء الحزام: كونسول فيزيائي على الجانب القريب من الحزام، في متناول الموظف (بلا أي نص)
+// زر إبطاء الحزام: لوحة تحكم قائمة على أرض الممر بجوار بداية الحزام (بلا أي نص)
 const beltBtnGroup = new THREE.Group();
-beltBtnGroup.position.set(-25.2, 1.15, 10.28);
+beltBtnGroup.position.set(-22.6, 0, 9.4);
 S.add(beltBtnGroup);
-const beltBtnPlate = new THREE.Mesh(
-  new THREE.BoxGeometry(0.86, 0.66, 0.1),
-  new THREE.MeshStandardMaterial({color:0x222b33, roughness:.6, metalness:.45})
+const beltBtnBase = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.34, 0.42, 0.1, 20),
+  new THREE.MeshStandardMaterial({color:0x222b33, roughness:.7, metalness:.4})
 );
-beltBtnPlate.position.z = -0.07; beltBtnGroup.add(beltBtnPlate);
+beltBtnBase.position.y = 0.05; beltBtnGroup.add(beltBtnBase);
+const beltBtnPole = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.07, 0.09, 1.2, 14),
+  new THREE.MeshStandardMaterial({color:0x39434d, roughness:.5, metalness:.7})
+);
+beltBtnPole.position.y = 0.64; beltBtnGroup.add(beltBtnPole);
+const beltBtnPlate = new THREE.Mesh(
+  new THREE.BoxGeometry(0.74, 0.62, 0.18),
+  new THREE.MeshStandardMaterial({color:0x2b3742, roughness:.6, metalness:.5})
+);
+beltBtnPlate.position.set(0, 1.52, 0); beltBtnGroup.add(beltBtnPlate);
 const beltBtnBezel = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.34, 0.36, 0.1, 28),
-  new THREE.MeshStandardMaterial({color:0x1c242b, roughness:.55, metalness:.65})
+  new THREE.CylinderGeometry(0.26, 0.28, 0.1, 26),
+  new THREE.MeshStandardMaterial({color:0x161d24, roughness:.5, metalness:.7})
 );
 beltBtnBezel.rotation.x = Math.PI / 2;
-beltBtnBezel.position.z = -0.13; beltBtnGroup.add(beltBtnBezel);
+beltBtnBezel.position.set(0, 1.52, 0.13); beltBtnGroup.add(beltBtnBezel);
 const beltBtnMat = new THREE.MeshStandardMaterial({color:0x14e0b0, emissive:0x00ffc4, emissiveIntensity:1.5, roughness:.28, metalness:.15});
-const beltBtnCap = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.26, 0.12, 28), beltBtnMat);
+const beltBtnCap = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.2, 0.15, 26), beltBtnMat);
 beltBtnCap.rotation.x = Math.PI / 2;
-beltBtnCap.position.z = -0.19; beltBtnGroup.add(beltBtnCap);
+beltBtnCap.position.set(0, 1.52, 0.22); beltBtnGroup.add(beltBtnCap);
 const beltBtnRing = new THREE.Mesh(
-  new THREE.TorusGeometry(0.3, 0.028, 12, 32),
-  new THREE.MeshStandardMaterial({color:0x8affd8, emissive:0x2bffd0, emissiveIntensity:1.1, roughness:.3})
+  new THREE.TorusGeometry(0.235, 0.026, 12, 30),
+  new THREE.MeshStandardMaterial({color:0x9dffe4, emissive:0x2bffd0, emissiveIntensity:1.4, roughness:.3})
 );
-beltBtnRing.position.z = -0.25; beltBtnGroup.add(beltBtnRing);
+beltBtnRing.position.set(0, 1.52, 0.3); beltBtnGroup.add(beltBtnRing);
+// هالة خفيفة تُلفت النظر إلى الزر
+const beltBtnHalo = new THREE.Mesh(
+  new THREE.RingGeometry(0.3, 0.46, 30),
+  new THREE.MeshBasicMaterial({color:0x54ffd8, transparent:true, opacity:.24, side:THREE.DoubleSide, depthWrite:false})
+);
+beltBtnHalo.position.set(0, 1.52, 0.1); beltBtnGroup.add(beltBtnHalo);
 // هدف لمس أكبر من الحجم المرئي لسهولة الضغط على الهاتف
 const beltBtnHit = new THREE.Mesh(
-  new THREE.SphereGeometry(0.95, 8, 6),
+  new THREE.SphereGeometry(0.85, 8, 6),
   new THREE.MeshBasicMaterial({transparent:true, opacity:0, depthWrite:false})
 );
-beltBtnHit.position.z = -0.2; beltBtnGroup.add(beltBtnHit);
+beltBtnHit.position.set(0, 1.52, 0.2); beltBtnGroup.add(beltBtnHit);
 beltBtnGroup.traverse(o => { if(o.isMesh) o.castShadow = false; });
 [-1,1].forEach(s => {
 const flap = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), new THREE.MeshStandardMaterial({color:0x222a30, roughness:0.4, transparent:true, opacity:0.85, side:THREE.DoubleSide}));
@@ -1158,7 +1174,6 @@ $('act').classList.toggle('held', !!held);
 const dv = $('drv');
 if(dv){
 if(FD.on){ dv.textContent = '🚜 القيادة: ' + Math.ceil(FD.left) + ' ث • اضغط هنا للنزول'; dv.style.display = 'block'; }
-else if(FD.near && FD.left > 0){ dv.textContent = '🚜 اضغط ✋ لقيادة الرافعة (' + Math.ceil(FD.left) + ' ث)'; dv.style.display = 'block'; }
 else dv.style.display = 'none';
 dv.classList.toggle('drive', FD.on);
 }
@@ -1409,7 +1424,7 @@ initAudio();
 stopVib();
 items.forEach(i => S.remove(i.m)); items = [];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
-slowT = 0; beltSlowT = 0; beltSlowUsed = false; beltBtnMat.color.setHex(0x14e0b0); beltBtnMat.emissiveIntensity = 1.5;
+slowT = 0; beltSlowT = 0; beltSlowUsed = false; beltBtnMat.color.setHex(0x14e0b0); beltBtnMat.emissiveIntensity = 1.5; beltBtnHalo.scale.setScalar(1);
 score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1; stage = 1;
 streak = 0; streakT = 0; maxStreak = 0; rushT = 30; rushN = 0; rushDelay = 0;
 $('streak').classList.remove('on');
@@ -1936,9 +1951,13 @@ if(beltSlowUsed){
   beltBtnMat.emissiveIntensity = on ? 1.0 + Math.max(0, Math.sin(now*0.009))*0.8 : 0.04;
   beltBtnMat.color.setHex(on ? 0x14e0b0 : 0x3b4a4a);
   beltBtnRing.material.emissiveIntensity = on ? 0.8 : 0.04;
+  beltBtnHalo.material.opacity = on ? 0.12 + Math.max(0, Math.sin(now*0.005))*0.12 : 0;
 } else {
   beltBtnMat.emissiveIntensity = 1.1 + Math.max(0, Math.sin(now*0.0035))*1.4;
   beltBtnRing.material.emissiveIntensity = 0.6 + Math.max(0, Math.sin(now*0.0035))*1.0;
+  const hp = (Math.sin(now*0.0022) + 1) / 2;
+  beltBtnHalo.material.opacity = 0.14 + hp*0.26;
+  beltBtnHalo.scale.setScalar(1 + hp*0.14);
 }
 hudTicker += dt;
 if(hudTicker >= .1){ hudTicker = 0; hud(); }
