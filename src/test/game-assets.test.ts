@@ -34,7 +34,7 @@ describe("Game assets and shared rules", () => {
     expect(html).toMatch(/data-audio="snd"/);
     expect(html).toMatch(/data-audio="amb"/);
     expect(html).toContain("data-tips-toggle");
-    expect(html).toContain('id="tips"');
+    expect(html).not.toContain('id="tips"');
     expect(game).toContain("function syncAudioUI");
     expect(game).toContain("function setTips");
   });

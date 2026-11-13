@@ -116,7 +116,7 @@ at += duration;
 }
 document.getElementById('snd').onclick = () => { initAudio(); setSnd(!soundEnabled); };
 document.getElementById('amb').onclick = () => { initAudio(); setAmb(!ambEnabled); };
-document.getElementById('tips').onclick = () => { setTips(!tipsEnabled); };
+const tipsBtn = document.getElementById('tips'); if(tipsBtn) tipsBtn.onclick = () => { setTips(!tipsEnabled); };
 function syncAudioUI(){
 const s = document.getElementById('snd'), a = document.getElementById('amb');
 if(s) s.classList.toggle('off', !soundEnabled);
@@ -1376,13 +1376,14 @@ tip('stage1', '🎓 المرحلة ١: التدريب — التقط وافرز'
 }
 $('go').onclick = start;
 let pz = false;
-$('rb').onclick = () => {
+const openRules = () => {
 const r = $('rules'), o = r.style.display === 'none';
 r.style.display = o ? 'flex' : 'none';
 if(o){ pz = run; run = false; } else if(pz){ run = true; pz = false; }
 };
-$('rc').onclick = $('rb').onclick;
-$('how').onclick = $('rb').onclick;
+const rbBtn = $('rb'); if(rbBtn) rbBtn.onclick = openRules;
+$('rc').onclick = openRules;
+$('how').onclick = openRules;
 function end(){
 run = false;
 document.body.classList.remove('ingame');
@@ -1416,7 +1417,7 @@ o.innerHTML = `<div class="res">
 <div class="cta-row"><button id="go">🔁 وردية جديدة</button><button id="rb2" class="ghost">📖 الدليل</button></div>
 </div>`;
 $('go').onclick = start;
-$('rb2').onclick = $('rb').onclick;
+$('rb2').onclick = openRules;
 }
 // ===== إنذار الحريق: إيقاف الحزام، إخلاء إلى منطقة التجمع، ورقم الطوارئ =====
 function speakFireAlert(){
