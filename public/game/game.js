@@ -422,52 +422,57 @@ stripes.push(st);
 }
 B(2.6, 3.8, 3.6, 0x324454, -25.8, 1.9, 12, S, 0.4, 0.4);
 B(2.6, 3.8, 3.6, 0x324454, 25.8, 1.9, 12, S, 0.4, 0.4);
-// زر إبطاء الحزام: لوحة تحكم قائمة على أرض الممر بجوار بداية الحزام (بلا أي نص)
+// زر إبطاء الحزام: لوحة صغيرة مثبّتة على حاجز الحزام الجانبي في متناول الموظف (بلا أي نص)
 const beltBtnGroup = new THREE.Group();
-beltBtnGroup.position.set(-22.6, 0, 9.4);
+beltBtnGroup.position.set(-20.5, 1.92, 10.3);
 S.add(beltBtnGroup);
-const beltBtnBase = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.34, 0.42, 0.1, 20),
-  new THREE.MeshStandardMaterial({color:0x222b33, roughness:.7, metalness:.4})
-);
-beltBtnBase.position.y = 0.05; beltBtnGroup.add(beltBtnBase);
-const beltBtnPole = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.07, 0.09, 1.2, 14),
+const beltBtnPost = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.055, 0.075, 1.92, 12),
   new THREE.MeshStandardMaterial({color:0x39434d, roughness:.5, metalness:.7})
 );
-beltBtnPole.position.y = 0.64; beltBtnGroup.add(beltBtnPole);
+beltBtnPost.position.y = -0.96; beltBtnGroup.add(beltBtnPost);
+const beltBtnFoot = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.2, 0.24, 0.07, 18),
+  new THREE.MeshStandardMaterial({color:0x222b33, roughness:.7, metalness:.4})
+);
+beltBtnFoot.position.y = -1.88; beltBtnGroup.add(beltBtnFoot);
 const beltBtnPlate = new THREE.Mesh(
-  new THREE.BoxGeometry(0.74, 0.62, 0.18),
+  new THREE.BoxGeometry(0.86, 0.72, 0.14),
   new THREE.MeshStandardMaterial({color:0x2b3742, roughness:.6, metalness:.5})
 );
-beltBtnPlate.position.set(0, 1.52, 0); beltBtnGroup.add(beltBtnPlate);
+beltBtnGroup.add(beltBtnPlate);
+const beltBtnArm = new THREE.Mesh(
+  new THREE.BoxGeometry(0.14, 0.44, 0.14),
+  new THREE.MeshStandardMaterial({color:0x39434d, roughness:.55, metalness:.7})
+);
+beltBtnArm.position.set(0, -0.34, -0.04); beltBtnGroup.add(beltBtnArm);
 const beltBtnBezel = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.26, 0.28, 0.1, 26),
+  new THREE.CylinderGeometry(0.3, 0.31, 0.09, 28),
   new THREE.MeshStandardMaterial({color:0x161d24, roughness:.5, metalness:.7})
 );
 beltBtnBezel.rotation.x = Math.PI / 2;
-beltBtnBezel.position.set(0, 1.52, 0.13); beltBtnGroup.add(beltBtnBezel);
+beltBtnBezel.position.z = 0.09; beltBtnGroup.add(beltBtnBezel);
 const beltBtnMat = new THREE.MeshStandardMaterial({color:0x14e0b0, emissive:0x00ffc4, emissiveIntensity:1.5, roughness:.28, metalness:.15});
-const beltBtnCap = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.2, 0.15, 26), beltBtnMat);
+const beltBtnCap = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.24, 0.16, 28), beltBtnMat);
 beltBtnCap.rotation.x = Math.PI / 2;
-beltBtnCap.position.set(0, 1.52, 0.22); beltBtnGroup.add(beltBtnCap);
+beltBtnCap.position.z = 0.17; beltBtnGroup.add(beltBtnCap);
 const beltBtnRing = new THREE.Mesh(
-  new THREE.TorusGeometry(0.235, 0.026, 12, 30),
+  new THREE.TorusGeometry(0.26, 0.028, 12, 32),
   new THREE.MeshStandardMaterial({color:0x9dffe4, emissive:0x2bffd0, emissiveIntensity:1.4, roughness:.3})
 );
-beltBtnRing.position.set(0, 1.52, 0.3); beltBtnGroup.add(beltBtnRing);
+beltBtnRing.position.z = 0.25; beltBtnGroup.add(beltBtnRing);
 // هالة خفيفة تُلفت النظر إلى الزر
 const beltBtnHalo = new THREE.Mesh(
-  new THREE.RingGeometry(0.3, 0.46, 30),
+  new THREE.RingGeometry(0.34, 0.5, 30),
   new THREE.MeshBasicMaterial({color:0x54ffd8, transparent:true, opacity:.24, side:THREE.DoubleSide, depthWrite:false})
 );
-beltBtnHalo.position.set(0, 1.52, 0.1); beltBtnGroup.add(beltBtnHalo);
+beltBtnHalo.position.z = 0.09; beltBtnGroup.add(beltBtnHalo);
 // هدف لمس أكبر من الحجم المرئي لسهولة الضغط على الهاتف
 const beltBtnHit = new THREE.Mesh(
-  new THREE.SphereGeometry(0.85, 8, 6),
+  new THREE.SphereGeometry(0.8, 8, 6),
   new THREE.MeshBasicMaterial({transparent:true, opacity:0, depthWrite:false})
 );
-beltBtnHit.position.set(0, 1.52, 0.2); beltBtnGroup.add(beltBtnHit);
+beltBtnHit.position.z = 0.14; beltBtnGroup.add(beltBtnHit);
 beltBtnGroup.traverse(o => { if(o.isMesh) o.castShadow = false; });
 [-1,1].forEach(s => {
 const flap = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), new THREE.MeshStandardMaterial({color:0x222a30, roughness:0.4, transparent:true, opacity:0.85, side:THREE.DoubleSide}));
@@ -1034,7 +1039,8 @@ g.fillStyle = '#7b1fa2'; g.font = '900 190px sans-serif'; g.textAlign = 'center'
 const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisotropy = R.capabilities.getMaxAnisotropy(); return t;
 }
 let slowT = 0;
-/* إبطاء الحزام: زر فيزيائي على محرّك الحزام، يُستخدم مرّة واحدة، يبطئ ٣٠ ثانية */
+/* إبطاء الحزام: زر فيزيائي بجوار الحزام، يُستخدم مرّة واحدة، يبطئ ٣٠ ثانية */
+const BELT_BTN_XZ = { x: -20.5, z: 10.3 };
 let beltSlowT = 0, beltSlowUsed = false;
 function useBeltSlow(){
   if(beltSlowUsed || !run || fire.active) return;
@@ -1050,6 +1056,23 @@ R.domElement.addEventListener('pointerdown', e => {
   beltRay.setFromCamera(beltNdc, C);
   if(beltRay.intersectObjects(beltBtnGroup.children, false).length) useBeltSlow();
 });
+// منطقة لمس شفافة تتبع الزر في الشاشة: تضمن إمكانية ضغطه على أي جهاز
+const beltHitEl = document.getElementById('belt-hit');
+const beltProj = new THREE.Vector3();
+if(beltHitEl){
+  beltHitEl.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); useBeltSlow(); });
+}
+function positionBeltHit(){
+  if(!beltHitEl) return;
+  if(!run || fire.active || beltSlowUsed){ beltHitEl.classList.remove('i'); return; }
+  if(Math.hypot(px.x - BELT_BTN_XZ.x, px.z - BELT_BTN_XZ.z) > 7){ beltHitEl.classList.remove('i'); return; }
+  beltProj.set(0, 0, 0.16).applyMatrix4(beltBtnGroup.matrixWorld).project(C);
+  if(beltProj.z > 1 || Math.abs(beltProj.x) > 1.15 || Math.abs(beltProj.y) > 1.15){ beltHitEl.classList.remove('i'); return; }
+  const w = stageEl.clientWidth, h = stageEl.clientHeight;
+  beltHitEl.style.left = ((beltProj.x * .5 + .5) * w) + 'px';
+  beltHitEl.style.top = ((-beltProj.y * .5 + .5) * h) + 'px';
+  beltHitEl.classList.add('i');
+}
 function mystery(it){
 rm(it); totalProcessed = Math.max(0, totalProcessed);
 const r = Math.random();
@@ -1327,6 +1350,8 @@ else { const it = forkCargo(); if(it) forkLoad(it); else stopDrive(); }
 return;
 }
 if(!held && FD.near && FD.left > 0){ mountDrive(); return; }
+// تشغيل زر إبطاء الحزام بالوقوف بجانبه والضغط على ✋
+if(!held && !near && !beltSlowUsed && Math.hypot(px.x - BELT_BTN_XZ.x, px.z - BELT_BTN_XZ.z) < 3.2){ useBeltSlow(); return; }
 if(!held){
 if(!near) return;
 const targetItem = near;
@@ -1966,6 +1991,7 @@ const evacView = fire.active && fire.phase !== 'done' ? -Math.max(0, -px.x) * 0.
 C.position.lerp(camTarget.set(px.x * 0.75 + evacView, 13.2, px.z + 12.4), 1 - Math.exp(-dt*9));
 camLook.lerp(camLookT.set(px.x * 0.8 + evacView, 0.9, px.z - 2.2), 1 - Math.exp(-dt*12));
 C.lookAt(camLook);
+positionBeltHit();
 R.render(S, C);
 }
 syncMenu();
