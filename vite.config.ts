@@ -52,6 +52,12 @@ export default defineConfig(({ command }) => {
         "react/jsx-dev-runtime",
       ],
     },
-    server: { host: "::", port: 8080 },
+    server: {
+      host: "::",
+      port: 8080,
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    },
   };
 });
