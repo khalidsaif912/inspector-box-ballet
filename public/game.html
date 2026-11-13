@@ -63,44 +63,26 @@
 <canvas id="dust" aria-hidden="true"></canvas>
 <div class="start-inner">
 <header class="hero">
-<div class="logo">✈️</div>
-<div class="kicker">AIR CARGO HUB • DGR</div>
+<span class="logo">✈️</span>
 <h1>مستودع الشحن الجوي</h1>
-<div class="tagline">التقط • افحص • افرز — قبل أن يفوت الحزام</div>
+<p class="tagline">التقط • افحص • افرز — قبل أن يفوت الحزام</p>
 </header>
-<section class="board" aria-label="مسار اللعبة">
-<div class="board-head"><span>مسار واحد متسلسل</span><i>ابدأ التدريب وانتقل تلقائيًا</i></div>
-<div class="path">
-<span class="step"><b class="dot">١</b><em>التدريب</em></span>
-<span class="step"><b class="dot">٢</b><em>المواد الخطرة</em></span>
-<span class="step"><b class="dot">٣</b><em>الرافعة</em></span>
-<span class="step"><b class="dot">٤</b><em>خطرة فقط</em></span>
-</div>
-</section>
-<div class="menu-grid">
-<div class="mcard"><span class="ic">🎯</span><div><b>افحص الكود</b><small>IMP + Class على الملصق</small></div></div>
-<div class="mcard"><span class="ic">🧩</span><div><b>افرز بذكاء</b><small>منطقة لكل نوع شحنة</small></div></div>
-<div class="mcard"><span class="ic">🔥</span><div><b>سلسلة مثالية</b><small>فرز متتابع = نقاط أعلى</small></div></div>
-</div>
-<div class="cta-row">
-<button id="go" class="play"><span class="play-ico">▶</span><span>العب الآن</span></button>
-<button id="how" class="ghost">📖 دليل سريع</button>
-</div>
-<div class="toolbar">
-<div class="skin-row"><span class="skin-label">🦺 لون سترتك</span><div class="skins" id="skins"></div></div>
-<span class="tb-div"></span>
-<div class="settings-row" id="settings">
-<button data-audio="snd" data-label="المؤثرات">🔊 المؤثرات</button>
-<button data-audio="amb" data-label="المستودع">🏭 المستودع</button>
-<button data-tips-toggle data-label="التعليمة">💡 التعليمات</button>
+<button id="go" class="play"><span class="play-ico">▶</span>العب الآن</button>
+<div class="quick">
+<span class="vest" aria-hidden="true">🦺</span>
+<div class="skins" id="skins"></div>
+<span class="qsep" aria-hidden="true"></span>
+<div class="qtoggles" id="settings">
+<button data-audio="snd" title="المؤثرات الصوتية" aria-label="المؤثرات الصوتية">🔊</button>
+<button data-audio="amb" title="صوت المستودع" aria-label="صوت المستودع">🏭</button>
+<button data-tips-toggle title="الرسائل التعليمة" aria-label="الرسائل التعليمة">💡</button>
+<button id="how" title="دليل سريع" aria-label="دليل سريع">📖</button>
 </div>
 </div>
-<div class="footer-row">
+<p id="best" class="best">🏆 كن أول الأبطال</p>
 <div id="top5" class="top5"></div>
-<div id="best" class="best">🏆 لا توجد نتيجة بعد — كن أول الأبطال</div>
 </div>
-</div>
-<p class="fine">لعبة تعليمية مبسطة؛ المرجع التشغيلي هو نسخة IATA DGR الرسمية ودليل مشغّل الطائرة.</p>
+<p class="fine">لعبة تعليمية مبسطة؛ المرجع التشغيلي هو نسخة IATA DGR الرسمية.</p>
 </div>
 <div class="ov" id="rules" style="display:none">
 <div class="hero small">

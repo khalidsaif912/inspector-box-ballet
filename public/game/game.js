@@ -850,7 +850,7 @@ const saveBest = v => { try { localStorage.setItem('acg_best', v); } catch(e){} 
 const getTop = () => { try { return JSON.parse(localStorage.getItem('acg_top') || '[]'); } catch(e){ return []; } };
 const pushTop = v => { const t = getTop(); t.push({s:v, d:new Date().toLocaleDateString('ar')}); t.sort((a,b)=>b.s-a.s); const r = t.slice(0,5); try { localStorage.setItem('acg_top', JSON.stringify(r)); } catch(e){} return r; };
 const topHTML = t => t.length ? '<b>🏅 لوحة المتصدرين</b><ol>' + t.map(e => `<li>${e.s} نقطة <small style="opacity:.6">${e.d}</small></li>`).join('') + '</ol>' : '<b>🏅 لوحة المتصدرين</b><small style="opacity:.7">العب لتسجّل أول نتيجة</small>';
-function syncMenu(){ const tp = $('top5'); if(tp) tp.innerHTML = topHTML(getTop()); const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? `🏆 أفضل نتيجة: ${b}` : '🏆 لا توجد نتيجة بعد — كن أول الأبطال'; }
+function syncMenu(){ const tp = $('top5'); const list = getTop(); if(tp){ tp.innerHTML = topHTML(list); tp.style.display = list.length ? '' : 'none'; } const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? `🏆 أفضل نتيجة: ${b}` : '🏆 كن أول الأبطال'; }
 const STAGE_AT=[0,0,100,200,320], STAGE_BELT=[0,1.5,1.9,2.4,2.7];
 let demo={insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}, introT=null, introHold=false;
 function showIntro(html,ms=7000,hold=false){
@@ -1345,7 +1345,7 @@ resetFire();
 px.set(0, 0, 3); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
 FD.on = false; FD.left = 60; FD.near = false; rig.visible = true; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = Math.PI/2;
 clearMovement(); last = performance.now();
-run = true; $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true}); hud();
+run = true; document.body.classList.add('ingame'); $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true}); hud();
 tip('stage1', '🎓 المرحلة ١: التدريب — التقط وافرز', '#64ffda');
 }
 $('go').onclick = start;

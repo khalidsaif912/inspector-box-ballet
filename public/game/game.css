@@ -316,311 +316,140 @@ details.full .tbl{max-width:100%}
 
 #drv.drive{pointer-events:auto;cursor:pointer;border-color:rgba(255,213,74,.9);box-shadow:0 0 14px rgba(255,213,74,.35)}
 
+
 /* ================================================================
-   شاشة البداية — Modern Casual Game UI
-   Glass • 3D CTA • Ambient dust • RTL
+   شاشة البداية — بسيطة: عنوان، زر لعب، أدوات مصغّرة
    ================================================================ */
 #ov.start{
-  --gold-1:#fff5c0; --gold-2:#ffd24a; --gold-3:#f7a41b; --gold-4:#c26a00;
-  --line:rgba(150,195,245,.18); --line-2:rgba(150,195,245,.34);
-  --ink:#eaf4ff; --ink-2:#b9d4ef;
+  --gold-2:#ffd044; --gold-3:#f5961a;
   isolation:isolate;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:clamp(8px,1.8vmin,18px);
-  gap:0;
+  display:flex;align-items:center;justify-content:center;
+  padding:14px;gap:0;
   background:
-    radial-gradient(64% 44% at 50% 4%,rgba(255,186,72,.20),transparent 70%),
-    linear-gradient(180deg,rgba(4,10,20,.30) 0%,rgba(4,10,20,.62) 46%,rgba(2,6,12,.95) 100%),
+    radial-gradient(62% 46% at 50% 32%,rgba(2,7,14,.62),rgba(2,7,14,0) 76%),
+    linear-gradient(180deg,rgba(4,10,20,.40) 0%,rgba(3,8,16,.80) 58%,rgba(1,4,9,.96) 100%),
     url(images/start-bg.jpg) center/cover no-repeat;
-}
-#ov.start::before{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(54% 48% at 50% 44%,rgba(3,8,16,.62),rgba(3,8,16,0) 74%);
 }
 #ov.start>#dust{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
 #ov.start>.fine{display:none}
 #ov.start .start-inner{
-  position:relative;z-index:2;
+  position:relative;z-index:2;margin:auto;
   display:flex;flex-direction:column;align-items:center;
-  gap:clamp(6px,1.3vmin,11px);
-  width:100%;max-width:min(660px,100%);
-  margin:auto;
+  gap:clamp(11px,2.3vmin,18px);
+  width:100%;max-width:min(430px,100%);
 }
 
-/* ---------- الشعار والعنوان ---------- */
-#ov.start .hero{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;margin:0}
-#ov.start .hero::before{
-  content:"";position:absolute;inset:-18% -16% -14%;z-index:-1;pointer-events:none;
-  background:radial-gradient(58% 58% at 50% 52%,rgba(2,6,12,.62),rgba(2,6,12,0) 74%);
-}
-#ov.start .hero .logo{
-  width:clamp(42px,8.4vmin,54px);height:clamp(42px,8.4vmin,54px);
-  display:grid;place-items:center;border-radius:50%;
-  font-size:clamp(20px,4.2vmin,26px);line-height:1;
-  background:radial-gradient(circle at 50% 26%,rgba(255,214,110,.28),rgba(8,18,32,.92) 74%);
-  border:1px solid rgba(255,210,120,.5);
-  box-shadow:0 0 0 5px rgba(255,210,120,.07),0 14px 26px -12px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.28);
-  animation:logoFloat 4.4s ease-in-out infinite;
-}
-#ov.start .kicker{
-  margin-top:4px;padding:2px 10px;border-radius:999px;
-  font:900 9px/1.5 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.26em;direction:ltr;
-  color:#8fc4ff;background:rgba(6,16,30,.62);border:1px solid rgba(124,196,255,.3);
+/* --- العنوان --- */
+#ov.start .hero{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center}
+#ov.start .logo{
+  font-size:clamp(30px,6.6vmin,42px);line-height:1;
+  filter:drop-shadow(0 8px 16px rgba(0,0,0,.85)) drop-shadow(0 0 16px rgba(255,190,70,.30));
+  animation:logoFloat 4.2s ease-in-out infinite;
 }
 #ov.start .hero h1{
-  margin:1px 0 0;padding:0 .1em .14em;
-  font-size:clamp(25px,6.2vmin,42px);line-height:1.34;font-weight:900;
-  background:linear-gradient(180deg,#fffdf2 0%,#ffe27a 34%,#ffb028 70%,#ff8a00 100%);
+  margin:0;padding:0 .08em .12em;
+  font-size:clamp(26px,6.2vmin,42px);line-height:1.32;font-weight:900;
+  background:linear-gradient(180deg,#fffdf2 0%,#ffe27a 36%,#ffb028 72%,#ff8a00 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 2px 0 #7d3c00) drop-shadow(0 7px 16px rgba(0,0,0,.78));
+  filter:drop-shadow(0 2px 0 #7d3c00) drop-shadow(0 8px 18px rgba(0,0,0,.8));
 }
 #ov.start .tagline{
-  padding:3px 12px;border-radius:999px;
-  font-size:clamp(10px,2.6vmin,12.5px);font-weight:800;letter-spacing:.01em;color:#dbeaff;
-  background:linear-gradient(180deg,rgba(12,26,44,.82),rgba(6,14,26,.92));
-  border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+  margin:0;font-size:clamp(10.5px,2.6vmin,13px);font-weight:800;
+  color:#dbeaff;opacity:.92;letter-spacing:.01em;
+  text-shadow:0 2px 8px rgba(0,0,0,.95);
 }
 
-/* ---------- اختيار المرحلة ---------- */
-#ov.start .board{
-  position:relative;overflow:hidden;
-  width:100%;padding:clamp(6px,1.3vmin,10px);border-radius:18px;
-  background:linear-gradient(180deg,rgba(24,46,78,.55),rgba(6,13,24,.82));
-  border:1px solid var(--line);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 18px 34px -22px rgba(0,0,0,1);
-  backdrop-filter:blur(14px) saturate(125%);
-  -webkit-backdrop-filter:blur(14px) saturate(125%);
-}
-#ov.start .board-head{
-  display:flex;align-items:center;gap:8px;
-  margin:0 2px 7px;padding:0 4px;
-  font-size:10px;font-weight:900;letter-spacing:.04em;color:#9cc2e6;
-}
-#ov.start .board-head span{flex:0 0 auto;position:relative;z-index:1}
-#ov.start .board::after{
-  content:"";position:absolute;inset:0 0 auto 0;height:46%;pointer-events:none;
-  background:linear-gradient(180deg,rgba(255,255,255,.07),transparent);
-}
-#ov.start .board-head i{
-  margin-inline-start:auto;font-style:normal;flex:0 0 auto;
-  font-size:9.5px;font-weight:800;color:#ffd76e;
-  padding:2px 8px;border-radius:999px;
-  background:rgba(255,190,60,.12);border:1px solid rgba(255,190,60,.28);
-}
-/* --- مسار اللعبة: عرض فقط، لعبة واحدة متسلسلة --- */
-#ov.start .path{
-  display:flex;align-items:flex-start;justify-content:space-between;gap:2px;
-  position:relative;padding:2px 4px 0;
-}
-#ov.start .path::before{
-  content:"";position:absolute;top:15px;left:11%;right:11%;height:2px;border-radius:2px;
-  background:linear-gradient(90deg,rgba(124,196,255,.45),rgba(255,206,92,.75),rgba(255,206,92,.45));
-  opacity:.55;
-}
-#ov.start .step{
-  position:relative;z-index:1;flex:1 1 0;min-width:0;
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-}
-#ov.start .step .dot{
-  width:28px;height:28px;display:grid;place-items:center;border-radius:50%;
-  font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;
-  color:#bfe2ff;background:radial-gradient(circle at 50% 32%,#2f659e,#0a1b31 74%);
-  border:1.5px solid rgba(124,196,255,.75);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 10px rgba(58,160,255,.28),0 4px 10px -6px #000;
-}
-#ov.start .step em{
-  font-style:normal;font-size:10px;font-weight:900;line-height:1.2;color:#b6d2ea;
-  text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.9);
-}
-#ov.start .step:nth-child(2) .dot{color:#ffcfc2;border-color:rgba(255,140,110,.75);background:radial-gradient(circle at 50% 32%,#8f3a2c,#260d09 74%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 10px rgba(255,110,60,.3),0 4px 10px -6px #000}
-#ov.start .step:nth-child(3) .dot{color:#ffe2a8;border-color:rgba(255,196,90,.75);background:radial-gradient(circle at 50% 32%,#8a6418,#25190a 74%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 10px rgba(255,186,60,.3),0 4px 10px -6px #000}
-#ov.start .step:nth-child(4) .dot{color:#e3c6ff;border-color:rgba(196,140,255,.75);background:radial-gradient(circle at 50% 32%,#6a3a98,#1d112c 74%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 10px rgba(180,110,255,.3),0 4px 10px -6px #000}
-#ov.start .step:first-child .dot{
-  color:#432003;border-color:#fff3c0;
-  background:linear-gradient(180deg,#fff5bd,var(--gold-3));
-  box-shadow:0 0 14px rgba(255,196,60,.75),inset 0 -2px 0 rgba(150,70,0,.3),inset 0 1px 0 rgba(255,255,255,.8);
-}
-#ov.start .step:first-child em{color:#ffe9b3}
-
-/* ---------- بطاقات التعليمات ---------- */
-#ov.start .menu-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%}
-#ov.start .mcard{
-  display:flex;align-items:center;gap:7px;text-align:right;
-  padding:7px 8px;border-radius:13px;
-  background:linear-gradient(180deg,rgba(20,38,62,.55),rgba(6,13,24,.84));
-  border:1px solid rgba(150,195,245,.14);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 16px -14px rgba(0,0,0,1);
-  backdrop-filter:blur(10px) saturate(120%);
-  -webkit-backdrop-filter:blur(10px) saturate(120%);
-  transition:border-color .2s,transform .2s;
-}
-#ov.start .mcard:hover{transform:translateY(-2px);border-color:rgba(255,206,92,.45)}
-#ov.start .mcard .ic{
-  flex:0 0 auto;width:28px;height:28px;display:grid;place-items:center;border-radius:9px;font-size:15px;
-  background:linear-gradient(180deg,rgba(255,196,80,.20),rgba(255,140,20,.05));
-  border:1px solid rgba(255,196,80,.30);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.18);
-}
-#ov.start .mcard b{display:block;font-size:11px;font-weight:900;color:#ffe1a0;line-height:1.3;text-shadow:0 1px 2px rgba(0,0,0,.85)}
-#ov.start .mcard small{display:block;margin-top:1px;font-size:9.3px;font-weight:800;color:#a9c4dd;line-height:1.35}
-
-/* ---------- زر اللعب 3D ---------- */
-#ov.start .cta-row{display:flex;align-items:center;justify-content:center;gap:9px;width:100%}
+/* --- زر اللعب --- */
 #ov.start #go.play{
   position:relative;overflow:hidden;cursor:pointer;
-  display:inline-flex;align-items:center;gap:9px;
-  padding:13px 44px 16px;border-radius:17px;
-  font:900 clamp(19px,3.9vmin,26px)/1 system-ui,Tahoma,sans-serif;color:#3d1a00;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-width:clamp(196px,44vmin,250px);
+  padding:14px 32px 16px;border-radius:16px;
+  font:900 clamp(18px,3.4vmin,23px)/1 system-ui,Tahoma,sans-serif;color:#3d1a00;
   border:2px solid #fff6c8;
   background:linear-gradient(180deg,#fff8cb 0%,#ffd449 40%,#ffa51f 72%,#ee8b00 100%);
   text-shadow:0 1px 0 rgba(255,255,255,.7);
-  box-shadow:0 5px 0 #b25d00,0 7px 0 #572700,0 16px 26px -10px rgba(0,0,0,.95),inset 0 -5px 12px rgba(178,80,0,.32),inset 0 3px 0 rgba(255,255,255,.6);
+  box-shadow:0 5px 0 #b25d00,0 7px 0 #572700,0 18px 28px -12px rgba(0,0,0,.95),inset 0 -5px 12px rgba(178,80,0,.32),inset 0 3px 0 rgba(255,255,255,.6);
   transition:transform .09s,box-shadow .09s,filter .15s;
-  animation:none;
 }
-#ov.start #go.play .play-ico{font-size:.82em;line-height:1;filter:drop-shadow(0 1px 0 rgba(255,255,255,.65))}
-#ov.start #go.play::before{
-  content:"";position:absolute;inset:-6px;border-radius:20px;pointer-events:none;
-  border:2px solid rgba(255,214,110,.55);
-  animation:ringPulse 2.6s ease-out infinite;
-}
+#ov.start #go.play .play-ico{font-size:.8em;line-height:1;filter:drop-shadow(0 1px 0 rgba(255,255,255,.65))}
 #ov.start #go.play::after{
   content:"";position:absolute;top:-30%;bottom:-30%;left:-70%;width:36%;pointer-events:none;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);
-  transform:skewX(-18deg);animation:sheen 3.6s ease-in-out infinite;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);
+  transform:skewX(-18deg);animation:sheen 4s ease-in-out infinite;
 }
-#ov.start #go.play:hover{
-  transform:translateY(-2px);filter:brightness(1.05);
-  box-shadow:0 7px 0 #b25d00,0 9px 0 #572700,0 20px 30px -10px rgba(0,0,0,.95),0 0 28px rgba(255,190,60,.5),inset 0 -5px 12px rgba(178,80,0,.32),inset 0 3px 0 rgba(255,255,255,.6);
-}
-#ov.start #go.play:active{
-  transform:translateY(4px);
-  box-shadow:0 1px 0 #b25d00,0 3px 0 #572700,0 8px 14px -8px rgba(0,0,0,.95),inset 0 -2px 8px rgba(178,80,0,.32);
-}
+#ov.start #go.play:hover{transform:translateY(-2px);filter:brightness(1.05);
+  box-shadow:0 7px 0 #b25d00,0 9px 0 #572700,0 22px 32px -12px rgba(0,0,0,.95),0 0 30px rgba(255,190,60,.45),inset 0 -5px 12px rgba(178,80,0,.32),inset 0 3px 0 rgba(255,255,255,.6);}
+#ov.start #go.play:active{transform:translateY(4px);
+  box-shadow:0 1px 0 #b25d00,0 3px 0 #572700,0 8px 14px -8px rgba(0,0,0,.95),inset 0 -2px 8px rgba(178,80,0,.32);}
 #ov.start #go.play:focus-visible{outline:3px solid #8fd0ff;outline-offset:4px}
-#ov.start .cta-row .ghost{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:10px 16px;border-radius:14px;
-  border:1.5px solid rgba(150,200,255,.35);
-  background:linear-gradient(180deg,rgba(20,40,68,.72),rgba(6,14,26,.88));
-  color:#cfe6ff;font:900 12.5px/1 system-ui,Tahoma,sans-serif;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 8px 18px -12px #000;
-  transition:transform .1s,border-color .18s;
-}
-#ov.start .cta-row .ghost:hover{border-color:rgba(150,200,255,.6)}
-#ov.start .cta-row .ghost:active{transform:scale(.96)}
 
-/* ---------- شريطالأدوات: السترة + الصوت ---------- */
-#ov.start .toolbar{
-  display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;
-  padding:4px;border-radius:14px;
-  background:linear-gradient(180deg,rgba(18,36,60,.55),rgba(6,13,24,.82));
-  border:1px solid var(--line);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 10px 20px -16px #000;
-  backdrop-filter:blur(12px) saturate(120%);
-  -webkit-backdrop-filter:blur(12px) saturate(120%);
-}
-#ov.start .skin-row{display:flex;align-items:center;gap:7px;padding:3px 8px;background:none;border:0;box-shadow:none}
-#ov.start .skin-label{font-size:10.5px;font-weight:900;color:var(--ink);white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+/* --- أدوات مصغّرة: سترات + مفاتيح أيقونية --- */
+#ov.start .quick{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:center}
+#ov.start .vest{font-size:12px;opacity:.75;line-height:1}
 #ov.start .skins{display:flex;align-items:center;gap:7px}
-#ov.start .skin-row button{
-  width:26px;height:26px;padding:0;border-radius:50%;cursor:pointer;
-  border:1.5px solid rgba(255,255,255,.55);
-  box-shadow:inset 0 -3px 5px rgba(0,0,0,.38),inset 0 1px 2px rgba(255,255,255,.4),0 2px 6px rgba(0,0,0,.55);
+#ov.start .skins button{
+  width:22px;height:22px;padding:0;border-radius:50%;cursor:pointer;
+  border:1.5px solid rgba(255,255,255,.5);
+  box-shadow:inset 0 -3px 5px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.6);
   transition:transform .16s,box-shadow .16s,border-color .16s;
 }
-#ov.start .skin-row button:hover{transform:scale(1.12)}
-#ov.start .skin-row button.on{
-  border-color:#fff;transform:scale(1.18);
-  box-shadow:0 0 0 2.5px #fff,0 0 14px 4px rgba(255,255,255,.45),inset 0 -3px 6px rgba(0,0,0,.3);
+#ov.start .skins button:hover{transform:scale(1.14)}
+#ov.start .skins button.on{
+  border-color:#fff;transform:scale(1.2);
+  box-shadow:0 0 0 2px rgba(255,255,255,.95),0 0 12px 3px rgba(255,255,255,.4),inset 0 -3px 5px rgba(0,0,0,.3);
 }
-#ov.start .tb-div{width:1px;height:20px;background:linear-gradient(180deg,transparent,rgba(150,195,245,.4),transparent)}
-#ov.start .settings-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center}
-#ov.start .settings-row button{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:5px 9px;border-radius:9px;
-  border:1px solid rgba(150,200,255,.22);
-  background:rgba(10,22,38,.62);
-  color:#cfe6ff;font:900 10px/1.2 system-ui,Tahoma,sans-serif;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.10);
-  transition:border-color .18s,color .18s,background .18s;
+#ov.start .qsep{width:1px;height:16px;background:rgba(180,210,240,.28)}
+#ov.start .qtoggles{display:flex;align-items:center;gap:1px}
+#ov.start .qtoggles button{
+  width:29px;height:29px;padding:0;border:0;border-radius:50%;cursor:pointer;
+  display:grid;place-items:center;font-size:13px;line-height:1;
+  background:transparent;color:#e3f0ff;opacity:.78;
+  box-shadow:none;
+  transition:opacity .16s,background .16s,transform .1s;
 }
-#ov.start .settings-row button:active{transform:scale(.97)}
-#ov.start .settings-row button.off{border-color:rgba(255,120,120,.6);color:#ffb0b0;background:rgba(60,14,14,.7)}
+#ov.start .qtoggles button:hover{opacity:1;background:rgba(255,255,255,.09)}
+#ov.start .qtoggles button:active{transform:scale(.92)}
+#ov.start .qtoggles button.off{opacity:.38;filter:grayscale(1)}
 
-/* ---------- المتصدرون ---------- */
-#ov.start .footer-row{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;width:100%}
-#ov.start .top5{
-  display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;
-  padding:4px 9px;border-radius:10px;font-size:10px;font-weight:800;color:#cfe6ff;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);
-}
-#ov.start .top5 b{font-size:10px;font-weight:900;color:#ffd54a;white-space:nowrap}
-#ov.start .top5 ol{display:flex;align-items:center;gap:4px;margin:0;padding:0;list-style:none;line-height:1}
-#ov.start .top5 li{
-  display:inline-flex;align-items:center;gap:3px;
-  padding:2px 7px;border-radius:999px;
-  background:rgba(255,213,74,.10);border:1px solid rgba(255,213,74,.24);
-  color:#ffe8b3;font-size:9.5px;font-weight:800;white-space:nowrap;
-}
-#ov.start .top5 li:first-child{background:rgba(255,190,60,.2);border-color:rgba(255,206,92,.5);color:#fff3cf}
-#ov.start .top5 li small{opacity:.6;font-size:8.5px}
-#ov.start .top5 li:nth-child(n+4){display:none}
+/* --- أفضل نتيجة + متصدرون (سطر نصي فقط) --- */
 #ov.start .best{
-  font-size:10px;font-weight:900;color:#ffd54a;white-space:nowrap;
-  padding:4px 10px;border-radius:10px;
-  background:rgba(255,190,60,.10);border:1px solid rgba(255,190,60,.28);
+  margin:0;font-size:11px;font-weight:900;letter-spacing:.01em;color:#ffd76e;
+  text-shadow:0 2px 8px rgba(0,0,0,.95);opacity:.92;
 }
-
-/* ---------- حركات ---------- */
-@keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-@keyframes ringPulse{0%{transform:scale(.96);opacity:.8}65%{transform:scale(1.07);opacity:0}100%{opacity:0}}
-@keyframes sheen{0%,60%{left:-70%}100%{left:135%}}
-
-/* ---------- استجابة ---------- */
-@media (max-width:640px){
-  #ov.start .step .dot{width:24px;height:24px;font-size:10.5px}
-  #ov.start .step em{font-size:8.8px}
-  #ov.start .path::before{top:13px;left:9%;right:9%}
-  #ov.start .menu-grid{gap:5px}
-  #ov.start .mcard{flex-direction:column;gap:3px;padding:6px 4px;border-radius:11px;text-align:center}
-  #ov.start .mcard .ic{width:24px;height:24px;font-size:13px;border-radius:8px}
-  #ov.start .mcard b{font-size:9.8px}
-  #ov.start .mcard small{display:none}
-  #ov.start .cta-row{gap:7px}
-  #ov.start #go.play{padding:11px 30px 13px;border-radius:14px}
-  #ov.start .cta-row .ghost{padding:9px 12px;font-size:11px}
-  #ov.start .board-head{font-size:9px;margin-bottom:5px}
-  #ov.start .board-head i{font-size:8.6px;padding:1px 6px}
-  #ov.start .toolbar{gap:4px;padding:3px}
-  #ov.start .skin-label{font-size:9.5px}
-  #ov.start .skin-row button{width:21px;height:21px}
-  #ov.start .settings-row button{font-size:9px;padding:4px 7px}
-  #ov.start .footer-row{gap:4px}
-  #ov.start .top5{font-size:9px;padding:3px 7px}
-  #ov.start .top5 b{font-size:9px}
-  #ov.start .top5 li{font-size:8.6px;padding:1px 5px}
-  #ov.start .best{font-size:9px;padding:3px 8px}
+#ov.start .top5{
+  margin:0;font-size:9.5px;font-weight:800;line-height:1.7;color:#a9c4dd;
+  text-align:center;text-shadow:0 2px 6px rgba(0,0,0,.9);opacity:.85;
+  background:none;border:0;padding:0;
 }
+#ov.start .top5 b{font-size:9.5px;font-weight:900;color:#ffd76e;margin-inline-end:5px}
+#ov.start .top5 ol{display:inline;margin:0;padding:0;list-style:none}
+#ov.start .top5 li{display:inline}
+#ov.start .top5 li+li::before{content:" · ";opacity:.5}
+#ov.start .top5 li small{display:none}
+
+/* --- حركة --- */
+@keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes sheen{0%,62%{left:-70%}100%{left:135%}}
+
 @media (max-width:430px){
-  #ov.start .top5{display:none}
-  #ov.start .hero .logo{width:36px;height:36px;font-size:18px}
-  #ov.start .kicker{font-size:8px;letter-spacing:.18em}
-  #ov.start .hero h1{font-size:clamp(21px,7.4vmin,28px)}
-  #ov.start .tagline{font-size:9px;padding:2px 9px}
+  #ov.start .start-inner{gap:10px}
+  #ov.start .logo{font-size:28px}
+  #ov.start .hero h1{font-size:clamp(22px,7.2vmin,28px)}
+  #ov.start .tagline{font-size:9.5px}
+  #ov.start #go.play{padding:12px 26px 14px;border-radius:14px}
+  #ov.start .skins button{width:20px;height:20px}
+  #ov.start .qtoggles button{width:26px;height:26px;font-size:12px}
 }
-@media (max-height:660px){
-  #ov.start .hero .logo{width:34px;height:34px;font-size:17px}
-  #ov.start .hero h1{font-size:clamp(20px,5.2vmin,28px)}
+@media (max-height:640px){
+  #ov.start .logo{font-size:24px}
+  #ov.start .hero h1{font-size:clamp(20px,5vmin,26px)}
   #ov.start .top5{display:none}
-  #ov.start .mcard{padding:5px 6px}
-  #ov.start .step .dot{width:24px;height:24px;font-size:10.5px}
-  #ov.start .step em{font-size:8.8px}
-  #ov.start #go.play{padding:9px 30px 11px}
 }
 @media (prefers-reduced-motion:reduce){
-  #ov.start .hero .logo,#ov.start #go.play::before,#ov.start #go.play::after{animation:none!important}
+  #ov.start .logo,#ov.start #go.play::after{animation:none!important}
   #dust{display:none}
 }
+
+/* أدوات اللعب تُخفى في شاشة البداية (مكررة هناك) */
+body:not(.ingame) .top-btns{display:none}
