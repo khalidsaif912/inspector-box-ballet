@@ -28,6 +28,11 @@ jobs:
           cp -R public/. _site/
           cp public/game.html _site/index.html
           touch _site/.nojekyll
+          V="${GITHUB_SHA::8}"
+          for f in _site/game.html _site/index.html; do
+            sed -i "s|game/game.css|game/game.css?v=$V|g; s|game/game.js|game/game.js?v=$V|g" "$f"
+          done
+          grep -o 'game/game\.\(css\|js\)?v=[a-f0-9]*' _site/game.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

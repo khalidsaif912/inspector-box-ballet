@@ -1359,6 +1359,7 @@ $('rc').onclick = $('rb').onclick;
 $('how').onclick = $('rb').onclick;
 function end(){
 run = false;
+document.body.classList.remove('ingame');
 if(FD.on) stopDrive();
 resetFire();
 const o = $('ov'); o.style.display = 'flex';
