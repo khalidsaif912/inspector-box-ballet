@@ -393,32 +393,48 @@ details.full .tbl{max-width:100%}
 #ov.start #go.play:focus-visible{outline:3px solid #8fd0ff;outline-offset:4px}
 
 /* --- أدوات مصغّرة: سترات + مفاتيح أيقونية --- */
-#ov.start .quick{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:center}
-#ov.start .vest{font-size:12px;opacity:.75;line-height:1}
-#ov.start .skins{display:flex;align-items:center;gap:7px}
+#ov.start .quick{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:center;max-width:100%}
+#ov.start .pill-group,
+#ov.start .opt{
+  display:inline-flex;align-items:center;gap:8px;
+  min-height:33px;padding:0 13px;border-radius:999px;
+  font:800 11.5px/1 system-ui,Tahoma,sans-serif;color:#e7f0fb;white-space:nowrap;
+  border:1px solid rgba(160,200,240,.26);
+  background:linear-gradient(180deg,rgba(21,40,65,.84),rgba(8,19,34,.92));
+  box-shadow:0 3px 10px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.10);
+  transition:border-color .16s,background .16s,transform .1s,box-shadow .16s;
+}
+#ov.start .pill-group{padding:0 12px;cursor:default}
+#ov.start .opt{cursor:pointer}
+#ov.start .opt:hover{
+  border-color:rgba(150,205,255,.62);transform:translateY(-1px);
+  background:linear-gradient(180deg,rgba(32,60,93,.9),rgba(12,27,46,.95));
+  box-shadow:0 5px 14px rgba(0,0,0,.6),0 0 14px rgba(70,160,255,.16),inset 0 1px 0 rgba(255,255,255,.14);
+}
+#ov.start .opt:active{transform:translateY(1px)}
+#ov.start .opt:focus-visible{outline:2px solid #8fd0ff;outline-offset:2px}
+#ov.start .opt .dot{
+  width:11px;height:11px;flex:0 0 auto;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#cdeaff,#3fa9f5 55%,#1d6ccb 100%);
+  box-shadow:0 0 8px rgba(70,170,255,.85),inset 0 -1px 2px rgba(0,0,0,.42);
+  transition:background .16s,box-shadow .16s;
+}
+#ov.start .opt.off{color:#9db0c4;opacity:.78}
+#ov.start .opt.off .dot{background:radial-gradient(circle at 34% 30%,#93a0ae,#465361);box-shadow:none}
+#ov.start .opt.guide{color:#ffe0a0;border-color:rgba(255,196,90,.32)}
+#ov.start .opt.guide:hover{border-color:rgba(255,205,110,.75);background:linear-gradient(180deg,rgba(74,50,16,.9),rgba(34,23,9,.95))}
+#ov.start .skins{display:flex;align-items:center;gap:6px}
 #ov.start .skins button{
-  width:22px;height:22px;padding:0;border-radius:50%;cursor:pointer;
-  border:1.5px solid rgba(255,255,255,.5);
-  box-shadow:inset 0 -3px 5px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.6);
+  width:19px;height:19px;padding:0;border-radius:50%;cursor:pointer;
+  border:1.5px solid rgba(255,255,255,.45);
+  box-shadow:inset 0 -3px 5px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.55);
   transition:transform .16s,box-shadow .16s,border-color .16s;
 }
-#ov.start .skins button:hover{transform:scale(1.14)}
+#ov.start .skins button:hover{transform:scale(1.16)}
 #ov.start .skins button.on{
   border-color:#fff;transform:scale(1.2);
   box-shadow:0 0 0 2px rgba(255,255,255,.95),0 0 12px 3px rgba(255,255,255,.4),inset 0 -3px 5px rgba(0,0,0,.3);
 }
-#ov.start .qsep{width:1px;height:16px;background:rgba(180,210,240,.28)}
-#ov.start .qtoggles{display:flex;align-items:center;gap:1px}
-#ov.start .qtoggles button{
-  width:29px;height:29px;padding:0;border:0;border-radius:50%;cursor:pointer;
-  display:grid;place-items:center;font-size:13px;line-height:1;
-  background:transparent;color:#e3f0ff;opacity:.78;
-  box-shadow:none;
-  transition:opacity .16s,background .16s,transform .1s;
-}
-#ov.start .qtoggles button:hover{opacity:1;background:rgba(255,255,255,.09)}
-#ov.start .qtoggles button:active{transform:scale(.92)}
-#ov.start .qtoggles button.off{opacity:.38;filter:grayscale(1)}
 
 /* --- أفضل نتيجة + متصدرون (سطر نصي فقط) --- */
 #ov.start .best{
@@ -448,8 +464,9 @@ details.full .tbl{max-width:100%}
   #ov.start .hero h1{font-size:clamp(22px,7.2vmin,28px)}
   #ov.start .tagline{font-size:9.5px}
   #ov.start #go.play{padding:12px 26px 14px;border-radius:14px}
-  #ov.start .skins button{width:20px;height:20px}
-  #ov.start .qtoggles button{width:26px;height:26px;font-size:12px}
+  #ov.start .skins button{width:17px;height:17px}
+  #ov.start .pill-group,#ov.start .opt{min-height:31px;padding:0 11px;font-size:10.5px;gap:7px}
+  #ov.start .quick{gap:6px}
 }
 @media (max-height:640px){
   #ov.start .logo{font-size:24px}
