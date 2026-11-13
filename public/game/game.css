@@ -203,26 +203,6 @@ canvas{display:block;position:absolute;inset:0}
   background:radial-gradient(ellipse at 50% 50%,transparent 46%,rgba(220,30,30,.55) 100%);
   animation:penaltyVignette .85s ease-out forwards}
 @keyframes penaltyVignette{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
-/* زر إبطاء الحزام — قرب لوحة تحكم الحزام في مقدّمة المشهد */
-#belt-slow{
-  position:absolute;left:44%;top:64%;transform:translate(-50%,-50%);
-  z-index:7;pointer-events:auto;cursor:pointer;
-  display:flex;align-items:center;gap:6px;white-space:nowrap;
-  padding:6px 11px;border-radius:99px;font-family:inherit;
-  font-size:clamp(10px,2.4vmin,13px);font-weight:800;color:#04241e;
-  background:linear-gradient(180deg,#8affd8,#17c39a);border:2px solid #d6fff4;
-  animation:beltBtnPulse 1.6s ease-in-out infinite;
-}
-#belt-slow span{font-size:1.25em;line-height:1}
-#belt-slow small{font-size:.82em;font-weight:700;opacity:.72}
-#belt-slow.used{background:linear-gradient(180deg,#48585a,#273234);border-color:#6b7b7b;color:#b9c6c6;animation:none;cursor:default}
-#belt-slow.used span{filter:grayscale(1)}
-@keyframes beltBtnPulse{
-  0%,100%{box-shadow:0 4px 14px rgba(0,0,0,.6),0 0 10px rgba(35,230,180,.45)}
-  50%{box-shadow:0 4px 14px rgba(0,0,0,.6),0 0 24px rgba(35,230,180,.9)}
-}
-body:not(.ingame) #belt-slow{display:none}
-#stage.fire #belt-slow{opacity:0;pointer-events:none}
 /* تنبيه عصا الاتجاه: وميض عند اقتراب الرافعة أو المفتش */
 #joy.warn{border-color:#ffcf5c;animation:joyWarn .62s ease-in-out infinite}
 @keyframes joyWarn{

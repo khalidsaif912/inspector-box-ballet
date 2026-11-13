@@ -422,6 +422,24 @@ stripes.push(st);
 }
 B(2.6, 3.8, 3.6, 0x324454, -25.8, 1.9, 12, S, 0.4, 0.4);
 B(2.6, 3.8, 3.6, 0x324454, 25.8, 1.9, 12, S, 0.4, 0.4);
+// زر إبطاء الحزام: زر فيزيائي صغير على سطح محرّك الحزام (بلا أي نص)
+const beltBtnGroup = new THREE.Group();
+beltBtnGroup.position.set(-25.9, 3.82, 11.5);
+S.add(beltBtnGroup);
+const beltBtnBezel = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.36, 0.38, 0.09, 28),
+  new THREE.MeshStandardMaterial({color:0x1c242b, roughness:.55, metalness:.65})
+);
+beltBtnGroup.add(beltBtnBezel);
+const beltBtnMat = new THREE.MeshStandardMaterial({color:0x14e0b0, emissive:0x00ffc4, emissiveIntensity:1.5, roughness:.28, metalness:.15});
+const beltBtnCap = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.27, 0.1, 28), beltBtnMat);
+beltBtnCap.position.y = 0.05; beltBtnGroup.add(beltBtnCap);
+const beltBtnRing = new THREE.Mesh(
+  new THREE.TorusGeometry(0.31, 0.028, 12, 32),
+  new THREE.MeshStandardMaterial({color:0x8affd8, emissive:0x2bffd0, emissiveIntensity:1.1, roughness:.3})
+);
+beltBtnRing.rotation.x = Math.PI / 2; beltBtnRing.position.y = 0.045; beltBtnGroup.add(beltBtnRing);
+beltBtnGroup.traverse(o => { if(o.isMesh) o.castShadow = false; });
 [-1,1].forEach(s => {
 const flap = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), new THREE.MeshStandardMaterial({color:0x222a30, roughness:0.4, transparent:true, opacity:0.85, side:THREE.DoubleSide}));
 flap.rotation.y = Math.PI/2; flap.position.set(s*24.48, 1.6, 12); S.add(flap);
@@ -987,26 +1005,22 @@ g.fillStyle = '#7b1fa2'; g.font = '900 190px sans-serif'; g.textAlign = 'center'
 const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisotropy = R.capabilities.getMaxAnisotropy(); return t;
 }
 let slowT = 0;
-/* إبطاء الحزام: زر يُستخدم مرّة واحدة في الوردية، يبطئ ٣٠ ثانية */
-let beltSlowT = 0, beltSlowUsed = false, lastBeltSec = -1;
-const beltBtnEl = document.getElementById('belt-slow');
-function beltSlowLabel(){
-  if(!beltBtnEl) return;
-  if(beltSlowUsed){
-    beltBtnEl.classList.add('used');
-    beltBtnEl.innerHTML = '<span>🐢</span>الحزام أبطأ' + (beltSlowT > 0 ? '<small>' + Math.ceil(beltSlowT) + ' ث</small>' : '<small>انتهى</small>');
-  } else {
-    beltBtnEl.classList.remove('used');
-    beltBtnEl.innerHTML = '<span>🐢</span>إبطاء الحزام<small>٣٠ ث · مرّة واحدة</small>';
-  }
-}
+/* إبطاء الحزام: زر فيزيائي على محرّك الحزام، يُستخدم مرّة واحدة، يبطئ ٣٠ ثانية */
+let beltSlowT = 0, beltSlowUsed = false;
 function useBeltSlow(){
   if(beltSlowUsed || !run || fire.active) return;
-  beltSlowUsed = true; beltSlowT = 30; lastBeltSec = 30;
+  beltSlowUsed = true; beltSlowT = 30;
   snd('ship'); toast('🐢 الحزام يبطؤ ٣٠ ثانية', '#80d8ff');
-  hud(); beltSlowLabel();
+  hud();
 }
-if(beltBtnEl) beltBtnEl.onclick = e => { e.stopPropagation(); useBeltSlow(); };
+const beltRay = new THREE.Raycaster(), beltNdc = new THREE.Vector2();
+R.domElement.addEventListener('pointerdown', e => {
+  if(!run || fire.active) return;
+  const r = R.domElement.getBoundingClientRect();
+  beltNdc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  beltRay.setFromCamera(beltNdc, C);
+  if(beltRay.intersectObjects(beltBtnGroup.children, false).length) useBeltSlow();
+});
 function mystery(it){
 rm(it); totalProcessed = Math.max(0, totalProcessed);
 const r = Math.random();
@@ -1381,7 +1395,7 @@ function start(){
 initAudio();
 items.forEach(i => S.remove(i.m)); items = [];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
-slowT = 0; beltSlowT = 0; beltSlowUsed = false; lastBeltSec = -1; beltSlowLabel();
+slowT = 0; beltSlowT = 0; beltSlowUsed = false; beltBtnMat.color.setHex(0x14e0b0); beltBtnMat.emissiveIntensity = 1.5;
 score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1; stage = 1;
 streak = 0; streakT = 0; maxStreak = 0; rushT = 30; rushN = 0; rushDelay = 0;
 $('streak').classList.remove('on');
@@ -1821,7 +1835,6 @@ if(jy){
 }
 slowT = Math.max(0, slowT - dt);
 beltSlowT = Math.max(0, beltSlowT - dt);
-if(beltSlowUsed && Math.ceil(beltSlowT) !== lastBeltSec){ lastBeltSec = Math.ceil(beltSlowT); beltSlowLabel(); }
 const beltK = fire.active ? 0 : (slowT > 0 ? 0.35 : (beltSlowT > 0 ? 0.6 : 1));
 let best = null, bd = 2.8;
 for(const it of items.slice()){
@@ -1895,6 +1908,15 @@ stripes.forEach(s => {
 s.position.x += beltSpeed() * beltK * dt;
 if(s.position.x > 24) s.position.x -= 50;
 });
+if(beltSlowUsed){
+  const on = beltSlowT > 0;
+  beltBtnMat.emissiveIntensity = on ? 1.0 + Math.max(0, Math.sin(now*0.009))*0.8 : 0.04;
+  beltBtnMat.color.setHex(on ? 0x14e0b0 : 0x3b4a4a);
+  beltBtnRing.material.emissiveIntensity = on ? 0.8 : 0.04;
+} else {
+  beltBtnMat.emissiveIntensity = 1.1 + Math.max(0, Math.sin(now*0.0035))*1.4;
+  beltBtnRing.material.emissiveIntensity = 0.6 + Math.max(0, Math.sin(now*0.0035))*1.0;
+}
 hudTicker += dt;
 if(hudTicker >= .1){ hudTicker = 0; hud(); }
 }
