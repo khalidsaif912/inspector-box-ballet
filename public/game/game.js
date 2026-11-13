@@ -987,6 +987,26 @@ g.fillStyle = '#7b1fa2'; g.font = '900 190px sans-serif'; g.textAlign = 'center'
 const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisotropy = R.capabilities.getMaxAnisotropy(); return t;
 }
 let slowT = 0;
+/* إبطاء الحزام: زر يُستخدم مرّة واحدة في الوردية، يبطئ ٣٠ ثانية */
+let beltSlowT = 0, beltSlowUsed = false, lastBeltSec = -1;
+const beltBtnEl = document.getElementById('belt-slow');
+function beltSlowLabel(){
+  if(!beltBtnEl) return;
+  if(beltSlowUsed){
+    beltBtnEl.classList.add('used');
+    beltBtnEl.innerHTML = '<span>🐢</span>الحزام أبطأ' + (beltSlowT > 0 ? '<small>' + Math.ceil(beltSlowT) + ' ث</small>' : '<small>انتهى</small>');
+  } else {
+    beltBtnEl.classList.remove('used');
+    beltBtnEl.innerHTML = '<span>🐢</span>إبطاء الحزام<small>٣٠ ث · مرّة واحدة</small>';
+  }
+}
+function useBeltSlow(){
+  if(beltSlowUsed || !run || fire.active) return;
+  beltSlowUsed = true; beltSlowT = 30; lastBeltSec = 30;
+  snd('ship'); toast('🐢 الحزام يبطؤ ٣٠ ثانية', '#80d8ff');
+  hud(); beltSlowLabel();
+}
+if(beltBtnEl) beltBtnEl.onclick = e => { e.stopPropagation(); useBeltSlow(); };
 function mystery(it){
 rm(it); totalProcessed = Math.max(0, totalProcessed);
 const r = Math.random();
@@ -1361,7 +1381,8 @@ function start(){
 initAudio();
 items.forEach(i => S.remove(i.m)); items = [];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
-slowT = 0; score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1; stage = 1;
+slowT = 0; beltSlowT = 0; beltSlowUsed = false; lastBeltSec = -1; beltSlowLabel();
+score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1; stage = 1;
 streak = 0; streakT = 0; maxStreak = 0; rushT = 30; rushN = 0; rushDelay = 0;
 $('streak').classList.remove('on');
 demo = {insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}; inspector.demo = false; hideIntro();
@@ -1732,7 +1753,7 @@ const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultipl
 const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
 if(FD.on){
 FD.left = Math.max(0, FD.left - dt);
-const dSpd = 11.5;
+const dSpd = 7.4;
 if(l > .001) fk.rotation.y = Math.atan2(vx, vz);
 for(let step=0; step<steps; step++){
 const c = resolvePlayerCollisions(fk.position.x + vx * dSpd * stepDt, fk.position.z + vz * dSpd * stepDt, vx, vz, stepDt);
@@ -1792,7 +1813,16 @@ if(zz){ it.st = 'sorting'; resolvePlacement(zz, it); }
 }
 separateBoxes();
 if(!fire.active && (stage>=2 || demo.insp)) updateInspector(dt);
-slowT = Math.max(0, slowT - dt); const beltK = fire.active ? 0 : (slowT > 0 ? 0.35 : 1);
+if(jy){
+  const tp2 = gameRules.position(truckState);
+  const nearTruck = truckState.active && tp2.x < px.x + 4 && Math.abs(tp2.x - px.x) < 14;
+  const nearInsp = inspector.active && Math.abs(inspector.x - px.x) < 12;
+  jy.classList.toggle('warn', run && !fire.active && (nearTruck || nearInsp));
+}
+slowT = Math.max(0, slowT - dt);
+beltSlowT = Math.max(0, beltSlowT - dt);
+if(beltSlowUsed && Math.ceil(beltSlowT) !== lastBeltSec){ lastBeltSec = Math.ceil(beltSlowT); beltSlowLabel(); }
+const beltK = fire.active ? 0 : (slowT > 0 ? 0.35 : (beltSlowT > 0 ? 0.6 : 1));
 let best = null, bd = 2.8;
 for(const it of items.slice()){
 it.csh.visible = it.st !== 'held' && it.st !== 'lifting';
