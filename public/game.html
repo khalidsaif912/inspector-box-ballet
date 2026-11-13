@@ -68,13 +68,13 @@
 <h1>مستودع الشحن الجوي</h1>
 <div class="tagline">التقط • افحص • افرز — قبل أن يفوت الحزام</div>
 </header>
-<section class="board">
-<div class="board-head"><span>اختر المرحلة</span><i id="stage-hint">تبدأ من التدريب</i></div>
-<div class="stagebar" id="stagebar">
-<button type="button" class="scard on" data-stage="1" aria-pressed="true"><b class="badge">١</b><span class="nm">التدريب</span><small class="ds">شحن عام</small></button>
-<button type="button" class="scard" data-stage="2" aria-pressed="false"><b class="badge">٢</b><span class="nm">المواد الخطرة</span><small class="ds">IATA</small></button>
-<button type="button" class="scard" data-stage="3" aria-pressed="false"><b class="badge">٣</b><span class="nm">الرافعة</span><small class="ds">FOD</small></button>
-<button type="button" class="scard" data-stage="4" aria-pressed="false"><b class="badge">٤</b><span class="nm">خطرة فقط</span><small class="ds">٣ حاويات</small></button>
+<section class="board" aria-label="مسار اللعبة">
+<div class="board-head"><span>مسار واحد متسلسل</span><i>ابدأ التدريب وانتقل تلقائيًا</i></div>
+<div class="path">
+<span class="step"><b class="dot">١</b><em>التدريب</em></span>
+<span class="step"><b class="dot">٢</b><em>المواد الخطرة</em></span>
+<span class="step"><b class="dot">٣</b><em>الرافعة</em></span>
+<span class="step"><b class="dot">٤</b><em>خطرة فقط</em></span>
 </div>
 </section>
 <div class="menu-grid">

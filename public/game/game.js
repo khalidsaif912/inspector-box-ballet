@@ -1335,7 +1335,7 @@ function start(){
 initAudio();
 items.forEach(i => S.remove(i.m)); items = [];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
-slowT = 0; score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1; stage = selStage;
+slowT = 0; score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1; stage = 1;
 streak = 0; streakT = 0; maxStreak = 0; rushT = 30; rushN = 0; rushDelay = 0;
 $('streak').classList.remove('on');
 demo = {insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}; inspector.demo = false; hideIntro();
@@ -1349,20 +1349,6 @@ run = true; $('ov').style.display = 'none'; R.domElement.focus({preventScroll:tr
 tip('stage1', '🎓 المرحلة ١: التدريب — التقط وافرز', '#64ffda');
 }
 $('go').onclick = start;
-let selStage = 1;
-(() => {
-const bar = document.getElementById('stagebar'), hint = document.getElementById('stage-hint');
-if(!bar) return;
-const HINTS = ['تبدأ من التدريب','تبدأ من المواد الخطرة','تبدأ من الرافعة','تبدأ من خطرة فقط'];
-bar.querySelectorAll('.scard').forEach(btn => {
-  btn.onclick = () => {
-    selStage = +btn.dataset.stage || 1;
-    bar.querySelectorAll('.scard').forEach(b => { const on = b === btn; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-    if(hint) hint.textContent = HINTS[selStage-1] || '';
-  };
-});
-hint && (hint.textContent = HINTS[0]);
-})();
 let pz = false;
 $('rb').onclick = () => {
 const r = $('rules'), o = r.style.display === 'none';

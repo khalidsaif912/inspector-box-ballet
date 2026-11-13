@@ -274,7 +274,7 @@ details.full .tbl{max-width:100%}
 #ov.start .hero h1{font-size:clamp(24px,6.6vmin,44px);font-weight:900;line-height:1.12;margin:2px 0 0;background:linear-gradient(180deg,#fffbe6 0%,#ffd54a 45%,#ff8a00 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #7a3500) drop-shadow(0 4px 0 #3d1a00) drop-shadow(0 8px 14px rgba(0,0,0,.7));animation:titleIn .9s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes titleIn{from{transform:scale(.4) translateY(-30px);opacity:0}}
 #ov.start .tagline{background:rgba(0,0,0,.55);padding:2px 11px;border-radius:7px;color:#fff;text-shadow:0 2px 4px #000;margin-top:8px;font-size:clamp(10px,2.9vmin,12.5px)}
-#ov.start .scard,#ov.start .mcard{background:rgba(8,16,30,.72);backdrop-filter:blur(6px)}
+#ov.start .mcard{background:rgba(8,16,30,.72);backdrop-filter:blur(6px)}
 #ov.start .leg{display:none}
 #ov #go.play{position:relative;overflow:hidden;font-size:clamp(18px,4.4vmin,26px);padding:12px 46px 14px;border-radius:20px;color:#3a1600;letter-spacing:.5px;text-shadow:0 1px 0 rgba(255,255,255,.6);background:linear-gradient(180deg,#fff2a8 0%,#ffcf33 40%,#ff9800 100%);border:3px solid #fff7d1;box-shadow:0 6px 0 #b35a00,0 8px 0 #5c2b00,0 14px 26px rgba(0,0,0,.6),inset 0 -5px 0 rgba(180,80,0,.35),inset 0 3px 0 rgba(255,255,255,.7);animation:playBob 1.6s ease-in-out infinite;transition:transform .08s,box-shadow .08s}
 #ov #go.play::after{content:"";position:absolute;top:-20%;left:-60%;width:40%;height:140%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);transform:skewX(-20deg);animation:shine 2.4s ease-in-out infinite}
@@ -409,63 +409,40 @@ details.full .tbl{max-width:100%}
   padding:2px 8px;border-radius:999px;
   background:rgba(255,190,60,.12);border:1px solid rgba(255,190,60,.28);
 }
-#ov.start .stagebar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
-#ov.start .scard{
-  position:relative;overflow:hidden;cursor:pointer;
+/* --- مسار اللعبة: عرض فقط، لعبة واحدة متسلسلة --- */
+#ov.start .path{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:2px;
+  position:relative;padding:2px 4px 0;
+}
+#ov.start .path::before{
+  content:"";position:absolute;top:15px;left:11%;right:11%;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,rgba(124,196,255,.45),rgba(255,206,92,.75),rgba(255,206,92,.45));
+  opacity:.55;
+}
+#ov.start .step{
+  position:relative;z-index:1;flex:1 1 0;min-width:0;
   display:flex;flex-direction:column;align-items:center;gap:4px;
-  padding:8px 5px 9px;border-radius:13px;
-  background:linear-gradient(180deg,rgba(30,56,92,.55),rgba(7,15,28,.92));
-  border:1px solid var(--line);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 16px -12px rgba(0,0,0,1);
-  color:var(--ink);font:900 11px/1.25 system-ui,Tahoma,sans-serif;
-  transition:transform .22s cubic-bezier(.2,1.4,.4,1),border-color .22s,box-shadow .22s,background .22s;
-  -webkit-tap-highlight-color:transparent;
 }
-#ov.start .scard::before{
-  content:"";position:absolute;inset:0 0 auto 0;height:50%;pointer-events:none;
-  background:linear-gradient(180deg,rgba(255,255,255,.14),transparent);
+#ov.start .step .dot{
+  width:28px;height:28px;display:grid;place-items:center;border-radius:50%;
+  font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;
+  color:#bfe2ff;background:radial-gradient(circle at 50% 32%,#2f659e,#0a1b31 74%);
+  border:1.5px solid rgba(124,196,255,.75);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 10px rgba(58,160,255,.28),0 4px 10px -6px #000;
 }
-#ov.start .scard::after{
-  content:"";position:absolute;top:0;left:14%;right:14%;height:2px;border-radius:2px;
-  background:linear-gradient(90deg,transparent,rgba(255,214,110,.95),transparent);
-  opacity:0;transition:opacity .22s;
+#ov.start .step em{
+  font-style:normal;font-size:10px;font-weight:900;line-height:1.2;color:#b6d2ea;
+  text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.9);
 }
-#ov.start .scard .badge{
-  width:26px;height:26px;display:grid;place-items:center;border-radius:50%;
-  font-size:12px;font-weight:900;color:#bfe2ff;font-variant-numeric:tabular-nums;
-  background:radial-gradient(circle at 50% 32%,#2f659e,#0a1b31 74%);
-  border:1.5px solid rgba(124,196,255,.8);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.42),0 0 10px rgba(58,160,255,.32);
-  transition:background .22s,border-color .22s,box-shadow .22s,color .22s,transform .22s;
-}
-#ov.start .scard .nm{font-size:11px;letter-spacing:.01em;text-shadow:0 1px 3px rgba(0,0,0,.9)}
-#ov.start .scard .ds{font-size:9.3px;font-weight:800;color:#9ab9d6;letter-spacing:.02em;text-shadow:0 1px 2px rgba(0,0,0,.9)}
-#ov.start .scard:hover{transform:translateY(-2px);border-color:rgba(124,196,255,.45)}
-#ov.start .scard.on:hover{transform:translateY(-4px)}
-#ov.start .scard:focus-visible{outline:2px solid #8fd0ff;outline-offset:2px}
-#ov.start .scard:active{transform:translateY(0) scale(.985)}
-/* لمسة لون لكل مرحلة */
-#ov.start .scard[data-stage="2"]{background:linear-gradient(180deg,rgba(88,38,32,.55),rgba(12,14,24,.92))}
-#ov.start .scard[data-stage="3"]{background:linear-gradient(180deg,rgba(84,64,20,.55),rgba(12,16,24,.92))}
-#ov.start .scard[data-stage="4"]{background:linear-gradient(180deg,rgba(62,36,86,.55),rgba(10,14,26,.92))}
-#ov.start .scard[data-stage="2"] .badge{color:#ffcfc2;border-color:rgba(255,140,110,.8);background:radial-gradient(circle at 50% 32%,#8f3a2c,#260d09 74%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 10px rgba(255,110,60,.35)}
-#ov.start .scard[data-stage="3"] .badge{color:#ffe2a8;border-color:rgba(255,196,90,.8);background:radial-gradient(circle at 50% 32%,#8a6418,#25190a 74%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 10px rgba(255,186,60,.35)}
-#ov.start .scard[data-stage="4"] .badge{color:#e3c6ff;border-color:rgba(196,140,255,.8);background:radial-gradient(circle at 50% 32%,#6a3a98,#1d112c 74%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 10px rgba(180,110,255,.35)}
-#ov.start .scard.on{
-  transform:translateY(-3px);
-  background:linear-gradient(180deg,rgba(255,190,68,.30),rgba(96,46,0,.62));
-  border-color:rgba(255,206,92,.85);
-  box-shadow:0 0 0 1px rgba(255,206,92,.32),0 0 20px -2px rgba(255,166,32,.55),0 12px 20px -14px rgba(0,0,0,1),inset 0 1px 0 rgba(255,255,255,.32);
-}
-#ov.start .scard.on::after{opacity:1}
-#ov.start .scard.on .badge{
+#ov.start .step:nth-child(2) .dot{color:#ffcfc2;border-color:rgba(255,140,110,.75);background:radial-gradient(circle at 50% 32%,#8f3a2c,#260d09 74%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 10px rgba(255,110,60,.3),0 4px 10px -6px #000}
+#ov.start .step:nth-child(3) .dot{color:#ffe2a8;border-color:rgba(255,196,90,.75);background:radial-gradient(circle at 50% 32%,#8a6418,#25190a 74%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 10px rgba(255,186,60,.3),0 4px 10px -6px #000}
+#ov.start .step:nth-child(4) .dot{color:#e3c6ff;border-color:rgba(196,140,255,.75);background:radial-gradient(circle at 50% 32%,#6a3a98,#1d112c 74%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 10px rgba(180,110,255,.3),0 4px 10px -6px #000}
+#ov.start .step:first-child .dot{
   color:#432003;border-color:#fff3c0;
   background:linear-gradient(180deg,#fff5bd,var(--gold-3));
-  box-shadow:0 0 14px rgba(255,196,60,.8),inset 0 -2px 0 rgba(150,70,0,.3),inset 0 1px 0 rgba(255,255,255,.8);
-  transform:scale(1.06);
+  box-shadow:0 0 14px rgba(255,196,60,.75),inset 0 -2px 0 rgba(150,70,0,.3),inset 0 1px 0 rgba(255,255,255,.8);
 }
-#ov.start .scard.on .nm{color:#fff7dd}
-#ov.start .scard.on .ds{color:#ffdf9c}
+#ov.start .step:first-child em{color:#ffe9b3}
 
 /* ---------- بطاقات التعليمات ---------- */
 #ov.start .menu-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%}
@@ -604,11 +581,9 @@ details.full .tbl{max-width:100%}
 
 /* ---------- استجابة ---------- */
 @media (max-width:640px){
-  #ov.start .stagebar{gap:5px}
-  #ov.start .scard{padding:6px 3px 7px;border-radius:11px;gap:3px}
-  #ov.start .scard .nm{font-size:9.6px;line-height:1.2;white-space:normal}
-  #ov.start .scard .ds{font-size:8.4px}
-  #ov.start .scard .badge{width:22px;height:22px;font-size:10.5px}
+  #ov.start .step .dot{width:24px;height:24px;font-size:10.5px}
+  #ov.start .step em{font-size:8.8px}
+  #ov.start .path::before{top:13px;left:9%;right:9%}
   #ov.start .menu-grid{gap:5px}
   #ov.start .mcard{flex-direction:column;gap:3px;padding:6px 4px;border-radius:11px;text-align:center}
   #ov.start .mcard .ic{width:24px;height:24px;font-size:13px;border-radius:8px}
@@ -641,7 +616,8 @@ details.full .tbl{max-width:100%}
   #ov.start .hero h1{font-size:clamp(20px,5.2vmin,28px)}
   #ov.start .top5{display:none}
   #ov.start .mcard{padding:5px 6px}
-  #ov.start .scard{padding:6px 4px 7px}
+  #ov.start .step .dot{width:24px;height:24px;font-size:10.5px}
+  #ov.start .step em{font-size:8.8px}
   #ov.start #go.play{padding:9px 30px 11px}
 }
 @media (prefers-reduced-motion:reduce){
