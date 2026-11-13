@@ -422,23 +422,36 @@ stripes.push(st);
 }
 B(2.6, 3.8, 3.6, 0x324454, -25.8, 1.9, 12, S, 0.4, 0.4);
 B(2.6, 3.8, 3.6, 0x324454, 25.8, 1.9, 12, S, 0.4, 0.4);
-// زر إبطاء الحزام: زر فيزيائي صغير على سطح محرّك الحزام (بلا أي نص)
+// زر إبطاء الحزام: كونسول فيزيائي على الجانب القريب من الحزام، في متناول الموظف (بلا أي نص)
 const beltBtnGroup = new THREE.Group();
-beltBtnGroup.position.set(-25.9, 3.82, 11.5);
+beltBtnGroup.position.set(-25.2, 1.15, 10.28);
 S.add(beltBtnGroup);
+const beltBtnPlate = new THREE.Mesh(
+  new THREE.BoxGeometry(0.86, 0.66, 0.1),
+  new THREE.MeshStandardMaterial({color:0x222b33, roughness:.6, metalness:.45})
+);
+beltBtnPlate.position.z = -0.07; beltBtnGroup.add(beltBtnPlate);
 const beltBtnBezel = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.36, 0.38, 0.09, 28),
+  new THREE.CylinderGeometry(0.34, 0.36, 0.1, 28),
   new THREE.MeshStandardMaterial({color:0x1c242b, roughness:.55, metalness:.65})
 );
-beltBtnGroup.add(beltBtnBezel);
+beltBtnBezel.rotation.x = Math.PI / 2;
+beltBtnBezel.position.z = -0.13; beltBtnGroup.add(beltBtnBezel);
 const beltBtnMat = new THREE.MeshStandardMaterial({color:0x14e0b0, emissive:0x00ffc4, emissiveIntensity:1.5, roughness:.28, metalness:.15});
-const beltBtnCap = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.27, 0.1, 28), beltBtnMat);
-beltBtnCap.position.y = 0.05; beltBtnGroup.add(beltBtnCap);
+const beltBtnCap = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.26, 0.12, 28), beltBtnMat);
+beltBtnCap.rotation.x = Math.PI / 2;
+beltBtnCap.position.z = -0.19; beltBtnGroup.add(beltBtnCap);
 const beltBtnRing = new THREE.Mesh(
-  new THREE.TorusGeometry(0.31, 0.028, 12, 32),
+  new THREE.TorusGeometry(0.3, 0.028, 12, 32),
   new THREE.MeshStandardMaterial({color:0x8affd8, emissive:0x2bffd0, emissiveIntensity:1.1, roughness:.3})
 );
-beltBtnRing.rotation.x = Math.PI / 2; beltBtnRing.position.y = 0.045; beltBtnGroup.add(beltBtnRing);
+beltBtnRing.position.z = -0.25; beltBtnGroup.add(beltBtnRing);
+// هدف لمس أكبر من الحجم المرئي لسهولة الضغط على الهاتف
+const beltBtnHit = new THREE.Mesh(
+  new THREE.SphereGeometry(0.95, 8, 6),
+  new THREE.MeshBasicMaterial({transparent:true, opacity:0, depthWrite:false})
+);
+beltBtnHit.position.z = -0.2; beltBtnGroup.add(beltBtnHit);
 beltBtnGroup.traverse(o => { if(o.isMesh) o.castShadow = false; });
 [-1,1].forEach(s => {
 const flap = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), new THREE.MeshStandardMaterial({color:0x222a30, roughness:0.4, transparent:true, opacity:0.85, side:THREE.DoubleSide}));
@@ -1393,6 +1406,7 @@ hud();
 }
 function start(){
 initAudio();
+stopVib();
 items.forEach(i => S.remove(i.m)); items = [];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
 slowT = 0; beltSlowT = 0; beltSlowUsed = false; beltBtnMat.color.setHex(0x14e0b0); beltBtnMat.emissiveIntensity = 1.5;
@@ -1421,6 +1435,7 @@ $('rc').onclick = openRules;
 $('how').onclick = openRules;
 function end(){
 run = false;
+stopVib();
 document.body.classList.remove('ingame');
 if(FD.on) stopDrive();
 resetFire();
@@ -1455,6 +1470,11 @@ $('go').onclick = start;
 $('rb2').onclick = openRules;
 }
 // ===== إنذار الحريق: إيقاف الحزام، إخلاء إلى منطقة التجمع، ورقم الطوارئ =====
+function vib(pattern){
+if(!navigator.vibrate) return;
+try{ navigator.vibrate(pattern); }catch(e){}
+}
+function stopVib(){ vib(0); }
 function speakFireAlert(){
 if(!soundEnabled || !('speechSynthesis' in window)) return;
 try{
@@ -1474,8 +1494,10 @@ $('fire-banner').classList.add('on');
 $('fire-hint').classList.add('on');
 alarmFlash.group.visible = true;
 snd('fire');
+// هزّات الهاتف عند صدور الإنذار: نمط قوي أوّلي ثم نبضات مع كل صفارة
+vib([600, 200, 600, 200, 900]);
 speakFireAlert();
-fire.siren = setInterval(() => { if(fire.active && fire.phase !== 'done') snd('fire'); }, 7000);
+fire.siren = setInterval(() => { if(fire.active && fire.phase !== 'done'){ snd('fire'); vib([350, 160, 350]); } }, 7000);
 toast('🚨 إنذار حريق — توجّه يميناً إلى منطقة التجمع', '#ff5252');
 hud();
 }
@@ -1545,6 +1567,7 @@ function finishFire(msg){
 if(!fire.active) return;
 fire.active = false; fire.done = true; fire.phase = 'idle'; fire.t = 0;
 clearInterval(fire.siren); fire.siren = null;
+stopVib();
 try{ speechSynthesis.cancel(); }catch(e){}
 closeCodePad();
 $('fire-banner').classList.remove('on');
