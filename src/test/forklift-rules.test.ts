@@ -21,7 +21,11 @@ type Rules = {
     reach: number;
     forkOffset: number;
     carryY: number;
-    nearest(list: { x: number; z: number }[], x: number, z: number): { x: number; z: number } | null;
+    nearest(
+      list: { x: number; z: number }[],
+      x: number,
+      z: number,
+    ): { x: number; z: number } | null;
     forkX(x: number, yaw: number): number;
     forkZ(z: number, yaw: number): number;
   };
