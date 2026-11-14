@@ -493,28 +493,41 @@ const b = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.2,0.35,14), new THREE
 b.position.set(x, 4.0, 12); S.add(b); beacons.push(b);
 });
 function drawZoneSign(z){
-const cv = z.signCv, ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
-ctx.clearRect(0,0,W,H);
+const cv = z.signCv, ctx = cv.getContext('2d');
+// لوحة المواد الخطرة تُرسم بدقة مضاعفة لأنها تُقرأ من بعيد: خط أوضح بلا ضبابية
+const k = z.hz ? 2 : 1, W = cv.width / k, H = cv.height / k;
+const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); };
+ctx.setTransform(1, 0, 0, 1, 0, 0);
+ctx.clearRect(0, 0, cv.width, cv.height);
+ctx.setTransform(k, 0, 0, k, 0, 0);
 ctx.fillStyle = '#' + z.c.toString(16).padStart(6,'0');
-ctx.beginPath(); ctx.roundRect ? ctx.roundRect(8,8,W-16,H-16,32) : ctx.rect(8,8,W-16,H-16);
-ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 12; ctx.stroke();
+rr(8,8,W-16,H-16,32); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 12; ctx.stroke();
 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 if(z.hz){
 ctx.direction = 'rtl';
 // شريط العنوان
-ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(24,24,W-48,96,20) : ctx.rect(24,24,W-48,96); ctx.fill();
-ctx.fillStyle = '#fff'; fit(ctx, z.e + '  ' + z.n, W-90, 52); ctx.fillText(z.e + '  ' + z.n, W/2, 74);
-ctx.fillStyle = 'rgba(0,0,0,.32)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(24,140,W-48,H-232,16) : ctx.rect(24,140,W-48,H-232); ctx.fill();
-if(!z.items.length){ ctx.fillStyle = 'rgba(255,255,255,.68)'; ctx.font = 'bold 32px sans-serif'; ctx.fillText('— فارغة —', W/2, 140 + (H-232)/2); }
+ctx.fillStyle = 'rgba(0,0,0,.45)'; rr(24,20,W-48,92,20); ctx.fill();
+ctx.fillStyle = '#fff'; fit(ctx, z.e + '  ' + z.n, W-90, 48); ctx.fillText(z.e + '  ' + z.n, W/2, 66);
+// قائمة المحتويات: بطاقة لكل طرد مع شريحة فئة وشريحة كود
+const listTop = 126, listBottom = H - 76;
+ctx.fillStyle = 'rgba(0,0,0,.38)'; rr(24, listTop, W-48, listBottom-listTop, 18); ctx.fill();
+if(!z.items.length){ ctx.fillStyle = 'rgba(255,255,255,.78)'; ctx.font = 'bold 34px sans-serif'; ctx.fillText('— فارغة —', W/2, (listTop+listBottom)/2); }
+const rows = Math.max(1, Math.min(6, z.cap));
+const rowH = (listBottom - listTop - 14) / rows;
+const divW = 104, impW = 92;
 z.items.forEach((it, i) => {
 if(!it) return;
-const y = 186 + i*52;
-ctx.textAlign = 'right'; ctx.fillStyle = '#ffd54a'; ctx.font = '900 34px monospace'; ctx.fillText(it.data.div, W-46, y);
-ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.font = '800 26px monospace'; ctx.fillText(it.data.imp, 46, y);
-ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; fit(ctx, it.data.name, W-230, 28); ctx.fillText(it.data.name, W/2, y);
+const y = listTop + 7 + i*rowH, mid = y + rowH/2, cardH = rowH - 8;
+ctx.fillStyle = i % 2 ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.20)';
+rr(30, y+4, W-60, cardH, 10); ctx.fill();
+ctx.fillStyle = '#ffd54a'; rr(W-30-divW-6, mid-cardH/2, divW, cardH, 8); ctx.fill();
+ctx.fillStyle = '#1a1200'; ctx.font = '900 28px monospace'; ctx.fillText(it.data.div, W-30-divW/2-6, mid+1);
+ctx.fillStyle = 'rgba(255,255,255,.16)'; rr(36, mid-cardH/2, impW, cardH, 8); ctx.fill();
+ctx.fillStyle = '#eaf2fb'; ctx.font = '800 24px monospace'; ctx.fillText(it.data.imp, 36+impW/2, mid+1);
+ctx.fillStyle = '#fff'; fit(ctx, it.data.name, W-60-divW-impW-34, 28); ctx.fillText(it.data.name, W/2, mid+1);
 });
-ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.font = '800 28px sans-serif';
-ctx.fillText('المحتوى ' + z.items.length + ' من ' + z.cap, W/2, H-52);
+ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.font = '800 27px sans-serif';
+ctx.fillText('المحتوى ' + z.items.length + ' من ' + z.cap, W/2, H-38);
 } else {
 ctx.fillStyle = '#111'; ctx.font = '96px sans-serif'; ctx.fillText(z.e, 256, 80);
 fit(ctx, z.n, 440, 75); ctx.fillText(z.n, 256, 185);
@@ -522,9 +535,10 @@ fit(ctx, z.n, 440, 75); ctx.fillText(z.n, 256, 185);
 z.signTex.needsUpdate = true;
 }
 function makeZoneSign(z){
-const cv = document.createElement('canvas'); cv.width = z.hz ? 640 : 512; cv.height = z.hz ? 480 : 256;
+const cv = document.createElement('canvas'); cv.width = z.hz ? 1280 : 512; cv.height = z.hz ? 960 : 256;
 z.signCv = cv; z.signTex = new THREE.CanvasTexture(cv); z.signTex.encoding = THREE.sRGBEncoding;
 z.signTex.anisotropy = R.capabilities.getMaxAnisotropy();
+z.signTex.minFilter = THREE.LinearMipmapLinearFilter; z.signTex.magFilter = THREE.LinearFilter;
 drawZoneSign(z);
 const spr = new THREE.Sprite(new THREE.SpriteMaterial({map:z.signTex, fog:false, toneMapped:false}));
 spr.scale.set(z.w*0.95, z.w*0.95*(cv.height/cv.width), 1);

@@ -88,6 +88,13 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain("forkDriver.visible = false");
   });
 
+  it("draws the hazard board at double resolution with readable parcel rows", () => {
+    expect(game).toContain("cv.width = z.hz ? 1280 : 512");
+    expect(game).toContain("const k = z.hz ? 2 : 1");
+    expect(game).toContain("rr(W-30-divW-6, mid-cardH/2, divW, cardH, 8)");
+    expect(game).toContain("minFilter = THREE.LinearMipmapLinearFilter");
+  });
+
   it("installs as a PWA and opens the game inside a framed page", () => {
     expect(html).toContain('rel="manifest" href="manifest.webmanifest"');
     expect(index).toContain('src="game.html"');
