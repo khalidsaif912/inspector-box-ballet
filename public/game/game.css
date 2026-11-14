@@ -635,3 +635,8 @@ body:not(.ingame) #dash-btn{display:none}
   .penalty-tag{padding:4px 9px 5px}
 }
 
+
+/* English (LTR) alignment */
+html[lang="en"] .tbl,html[lang="en"] #intro,html[lang="en"] .golden,html[lang="en"] details.full,html[lang="en"] .help-card{text-align:left}
+html[lang="en"] .top5 ol{padding:0 0 0 18px;text-align:left}
+html[lang="en"] .hero{text-align:left}

@@ -144,6 +144,8 @@ body.ios .ios-note{display:inline}
   .frame iframe{border-radius:0}
   .caption{display:none}
 }
+/* English (LTR) */
+html[lang="en"] .help-card{text-align:left}
 </style>
 </head>
 <body>
@@ -156,6 +158,10 @@ body.ios .ios-note{display:inline}
     </div>
   </div>
   <div class="actions">
+    <button class="btn" id="lang" type="button" title="تغيير اللغة / Change language" aria-label="تغيير اللغة / Change language">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8"/><path d="M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+      <span id="lang-label">English</span>
+    </button>
     <button class="btn gold" id="install" type="button" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>
       <span>تثبيت اللعبة</span>
@@ -212,12 +218,35 @@ body.ios .ios-note{display:inline}
   </div>
 </div>
 
+<script src="game/i18n.js"></script>
 <script>
 if (/iPhone|iPad|iPod/.test(navigator.userAgent)) document.body.classList.add('ios');
 const frame = document.getElementById('frame');
 const game = document.getElementById('game');
 const installBtn = document.getElementById('install');
 let deferredPrompt = null;
+
+/* تبديل اللغة عربي/إنجليزي — يطبّق على الغلاف وعلى اللعبة داخل الإطار */
+const langBtn = document.getElementById('lang');
+const langLabel = document.getElementById('lang-label');
+function syncLangBtn(){
+  if (!langBtn || !langLabel) return;
+  const en = I18N.lang === 'en';
+  langLabel.textContent = en ? 'العربية' : 'English';
+  langBtn.title = en ? 'التبديل إلى العربية' : 'Switch to English';
+  langBtn.setAttribute('aria-label', langBtn.title);
+}
+syncLangBtn();
+function toggleLang(){
+  const next = I18N.lang === 'en' ? 'ar' : 'en';
+  I18N.setLang(next);
+  syncLangBtn();
+  game.src = 'game.html?lang=' + next;
+}
+document.addEventListener('click', (e) => {
+  const btn = e.target && e.target.closest ? e.target.closest('#lang') : null;
+  if (btn) toggleLang();
+});
 
 document.getElementById('full').addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();
@@ -274,3 +303,4 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+

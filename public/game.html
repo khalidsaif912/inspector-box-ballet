@@ -72,6 +72,7 @@
 <div class="top-btns">
 <button id="amb" class="rbtn icon-btn" aria-label="warehouse sound" title="صوت المستودع"><svg viewBox="0 0 24 24"><path d="M2 20V9l10-4.5L22 9v11" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.8"/><path class="w" d="M14.5 12.5a3.5 3.5 0 010 5M17 10.5a7 7 0 010 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M4 4l16 16" stroke="#ff5252" stroke-width="2.6" stroke-linecap="round"/></svg></button>
 <button id="snd" class="rbtn icon-btn" aria-label="sound"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 010 7M18 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M4 4l16 16" stroke="#ff5252" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+<button id="shell" class="rbtn icon-btn" aria-label="exit to game shell" title="العودة إلى الغلاف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
 </div>
 <div id="controls-ui">
 <div id="joy"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><div id="knob"></div></div><div id="inspect" class="chip"></div>
@@ -178,6 +179,7 @@
 </div>
 <script src="vendor/three.min.js"></script>
 <script src="game/game-rules.js"></script>
+<script src="game/i18n.js"></script>
 <script src="game/game.js"></script>
 <script>if('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>

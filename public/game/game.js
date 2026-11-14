@@ -31,7 +31,7 @@ if(label && tip) tip.textContent = label;
 paint(amount);
 }
 paint(8);
-if(tip) tipTimer = setInterval(() => { tip.textContent = TIPS[(++tipIdx) % TIPS.length]; }, 2600);
+if(tip) tipTimer = setInterval(() => { tip.textContent = I18N.t(TIPS[(++tipIdx) % TIPS.length]); }, 2600);
 /* صمام أمان: لا نحجب اللعب أكثر من 7 ثوانٍ مهما حدث */
 safety = setTimeout(finish, 7000);
 return { phase, finish, get value(){ return value; } };
@@ -186,7 +186,7 @@ const Z = [
 {n:'حاوية خطرة ٢',e:'☣️',c:0x8e6098,k:'hz2',x:18,w:5.0,cap:6,cols:3,hz:1},
 {n:'حاوية خطرة ٣',e:'☣️',c:0x3f7f8c,k:'hz3',x:24.5,w:5.0,cap:6,cols:3,hz:1}
 ];
-Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; z.hw = z.w / 2; });
+Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; z.hw = z.w / 2; z.n = I18N.t(z.n); });
 const HCOL = {
 '1.3':0xff8a1f, '1.4':0xff8a1f,
 '2.1':0xe53935, '2.2':0x2e7d32, '2.3':0xffffff,
@@ -224,6 +224,8 @@ const HZ = [
 ['h9','🔋','بطاريات ليثيوم أيون','RLI','9'],
 ['h9','🧊','ثلج جاف كربوني','RMD','9']
 ];
+I.forEach(r => { r[2] = I18N.t(r[2]); });
+HZ.forEach(r => { r[2] = I18N.t(r[2]); });
 const R = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance', alpha:false});
 /* نسبة البكسل الهدف: كثافة الشاشة الفعلية بحد أقصى 2.
    غطاء 2 يعطي حدة كاملة على Retina و4K ويمنع انهيار الأداء على شاشات 3x/4x. */
@@ -255,7 +257,7 @@ return /swiftshader|llvmpipe|software|basic render/i.test(name);
 })();
 const stageEl = document.getElementById('stage');
 R.setPixelRatio(targetPixelRatio(devicePixelRatio));
-loading.phase(28, 'تهيئة محرّك الرسم ثلاثي الأبعاد...');
+loading.phase(28, I18N.t('تهيئة محرّك الرسم ثلاثي الأبعاد...'));
 R.shadowMap.enabled = true;
 R.shadowMap.type = THREE.PCFSoftShadowMap;
 R.outputEncoding = THREE.sRGBEncoding;
@@ -342,7 +344,7 @@ const t = new THREE.CanvasTexture(cv);
 t.encoding = THREE.sRGBEncoding;
 t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry);
 texBuilt++;
-loading.phase(30 + Math.min(50, texBuilt * 3), 'تجهيز خامات المستودع (' + texBuilt + ')...');
+loading.phase(30 + Math.min(50, texBuilt * 3), I18N.T('تجهيز خامات المستودع (', 'Building warehouse textures (') + texBuilt + ')...');
 return applyTextureFiltering(t);
 }
 function rawTex(cv){
@@ -505,10 +507,10 @@ function wallSign(txt, sub, bg, x, y, z, ry=0, w=4){
 const t = canvasTex(512, 256, (g)=>{ g.fillStyle=bg; g.fillRect(0,0,512,256); g.strokeStyle='#fff'; g.lineWidth=10; g.strokeRect(12,12,488,232); g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle'; g.font='bold 74px sans-serif'; g.fillText(txt,256,100); g.font='bold 38px sans-serif'; g.fillText(sub,256,185); });
 const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w/2), new THREE.MeshStandardMaterial({map:t, roughness:0.6})); m.position.set(x,y,z); m.rotation.y = ry; S.add(m);
 }
-wallSign('🚭 ممنوع التدخين','NO SMOKING • DGR AREA','#b3261e', 8.5, 8.6, -17.15);
-wallSign('⚠️ منطقة مواد خطرة','IATA DGR CLASS 1–9','#c77800', 26, 8.6, -17.15);
-wallSign('✈️ مخرج الطيران','AIRSIDE GATE B','#1b6b3a', -34.65, 7.5, -6, Math.PI/2, 3.4);
-wallSign('🚚 رصيف التحميل','LOADING DOCK 4','#204f8c', 34.65, 7.5, -6, -Math.PI/2, 3.4);
+wallSign(I18N.t('🚭 ممنوع التدخين'),'NO SMOKING • DGR AREA','#b3261e', 8.5, 8.6, -17.15);
+wallSign(I18N.t('⚠️ منطقة مواد خطرة'),'IATA DGR CLASS 1–9','#c77800', 26, 8.6, -17.15);
+wallSign(I18N.t('✈️ مخرج الطيران'),'AIRSIDE GATE B','#1b6b3a', -34.65, 7.5, -6, Math.PI/2, 3.4);
+wallSign(I18N.t('🚚 رصيف التحميل'),'LOADING DOCK 4','#204f8c', 34.65, 7.5, -6, -Math.PI/2, 3.4);
 // خطوط الأرضية: ممرات المشاة + حدود الحزام
 B(64, 0.02, 0.3, 0xffc107, 0, 0.012, -4.4, S, 0.4, 0.05).castShadow = false;
 B(64, 0.02, 0.3, 0xffc107, 0, 0.012, 9.4, S, 0.4, 0.05).castShadow = false;
@@ -593,14 +595,14 @@ ctx.fillStyle = '#' + z.c.toString(16).padStart(6,'0');
 rr(8,8,W-16,H-16,32); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 12; ctx.stroke();
 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 if(z.hz){
-ctx.direction = 'rtl';
+ctx.direction = I18N.lang === 'en' ? 'ltr' : 'rtl';
 // شريط العنوان
 ctx.fillStyle = 'rgba(0,0,0,.45)'; rr(24,20,W-48,92,20); ctx.fill();
 ctx.fillStyle = '#fff'; fit(ctx, z.e + '  ' + z.n, W-90, 48); ctx.fillText(z.e + '  ' + z.n, W/2, 66);
 // قائمة المحتويات: بطاقة لكل طرد مع شريحة فئة وشريحة كود
 const listTop = 126, listBottom = H - 76;
 ctx.fillStyle = 'rgba(0,0,0,.38)'; rr(24, listTop, W-48, listBottom-listTop, 18); ctx.fill();
-if(!z.items.length){ ctx.fillStyle = 'rgba(255,255,255,.78)'; ctx.font = 'bold 34px sans-serif'; ctx.fillText('— فارغة —', W/2, (listTop+listBottom)/2); }
+if(!z.items.length){ ctx.fillStyle = 'rgba(255,255,255,.78)'; ctx.font = 'bold 34px sans-serif'; ctx.fillText(I18N.t('— فارغة —'), W/2, (listTop+listBottom)/2); }
 const rows = Math.max(1, Math.min(6, z.cap));
 const rowH = (listBottom - listTop - 14) / rows;
 const divW = 104, impW = 92;
@@ -616,7 +618,7 @@ ctx.fillStyle = '#eaf2fb'; ctx.font = '800 24px monospace'; ctx.fillText(it.data
 ctx.fillStyle = '#fff'; fit(ctx, it.data.name, W-60-divW-impW-34, 28); ctx.fillText(it.data.name, W/2, mid+1);
 });
 ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.font = '800 27px sans-serif';
-ctx.fillText('المحتوى ' + z.items.length + ' من ' + z.cap, W/2, H-38);
+ctx.fillText(I18N.T('المحتوى ','Contents ') + z.items.length + I18N.T(' من ',' of ') + z.cap, W/2, H-38);
 } else {
 ctx.fillStyle = '#111'; ctx.font = '96px sans-serif'; ctx.fillText(z.e, 256, 80);
 fit(ctx, z.n, 440, 75); ctx.fillText(z.n, 256, 185);
@@ -697,12 +699,12 @@ sg.fillStyle = '#0a2a18'; sg.textAlign = 'center'; sg.textBaseline = 'middle';
 // العنوان العربي
 sg.fillStyle = '#ffffff';
 sg.font = '900 250px "Segoe UI",Tahoma,sans-serif';
-sg.fillText('منطقة التجمع', 1024, 262);
+sg.fillText(I18N.t('منطقة التجمع'), 1024, 262);
 sg.direction = 'ltr'; sg.font = 'bold 104px "Segoe UI",Tahoma,sans-serif'; sg.fillStyle = '#baffd6';
-sg.fillText('MUSTER POINT', 1024, 442);
+sg.fillText(I18N.T('MUSTER POINT','ASSEMBLY POINT'), 1024, 442);
 // سطر رقم الطوارئ فوق الشريط الأصفر
 sg.direction = 'rtl'; sg.font = '900 82px "Segoe UI",Tahoma,sans-serif'; sg.fillStyle = '#ffd54a';
-sg.fillText('رقم الطوارئ الداخلي • EMERGENCY NUMBER', 1024, 588);
+sg.fillText(I18N.t('رقم الطوارئ الداخلي • EMERGENCY NUMBER'), 1024, 588);
 // الرقم نفسه كبير وواضح من مسافة (مأخوذ من قواعد اللعبة لا مُكرَّر يدوياً)
 sg.direction = 'ltr'; sg.font = '900 190px "Segoe UI",Tahoma,sans-serif'; sg.fillStyle = '#0a2a18';
 sg.fillText(String((gameRules.emergency && gameRules.emergency.code) || '24352888'), 1024, 818);
@@ -1047,9 +1049,9 @@ const streakWindow = () => stage === 1 ? 7 : 5.5;
 const bestScore = () => { try { return +(localStorage.getItem('acg_best') || 0) || 0; } catch(e){ return 0; } };
 const saveBest = v => { try { localStorage.setItem('acg_best', v); } catch(e){} };
 const getTop = () => { try { return JSON.parse(localStorage.getItem('acg_top') || '[]'); } catch(e){ return []; } };
-const pushTop = v => { const t = getTop(); t.push({s:v, d:new Date().toLocaleDateString('ar')}); t.sort((a,b)=>b.s-a.s); const r = t.slice(0,5); try { localStorage.setItem('acg_top', JSON.stringify(r)); } catch(e){} return r; };
-const topHTML = t => t.length ? t.slice(0,4).map((e,i) => `<span class="score-chip"><i class="rank-dot r${i+1}"></i> ${e.s} نقطة</span>`).join('') : '<span class="lb-empty">العب لتسجّل أول نتيجة</span>';
-function syncMenu(){ const tp = $('top5'); const list = getTop(); if(tp){ tp.innerHTML = topHTML(list); tp.style.display = ''; } const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? `أفضل نتيجة: ${b}` : 'كن أول الأبطال'; }
+const pushTop = v => { const t = getTop(); t.push({s:v, d:new Date().toLocaleDateString(I18N.lang === 'en' ? 'en' : 'ar')}); t.sort((a,b)=>b.s-a.s); const r = t.slice(0,5); try { localStorage.setItem('acg_top', JSON.stringify(r)); } catch(e){} return r; };
+const topHTML = t => t.length ? t.slice(0,4).map((e,i) => `<span class="score-chip"><i class="rank-dot r${i+1}"></i> ${e.s} ${I18N.t('نقطة')}</span>`).join('') : `<span class="lb-empty">${I18N.t('العب لتسجّل أول نتيجة')}</span>`;
+function syncMenu(){ const tp = $('top5'); const list = getTop(); if(tp){ tp.innerHTML = topHTML(list); tp.style.display = ''; } const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? I18N.T('أفضل نتيجة: ','Best score: ') + b : I18N.t('كن أول الأبطال'); }
 const STAGE_AT=[0,0,100,200,320], STAGE_BELT=[0,1.5,1.9,2.4,2.7];
 let demo={insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}, introT=null, introHold=false;
 function showIntro(html,ms=7000,hold=false){
@@ -1078,11 +1080,11 @@ function startInspDemo(){
 const I_=inspector;demo.insp=true;I_.demo=true;I_.dir=Math.random()<.5?1:-1;I_.x=-36*I_.dir;I_.z=4;I_.active=true;I_.g.visible=true;I_.t=0;
 I_.g.rotation.y=I_.dir>0?Math.PI/2:-Math.PI/2;
 document.getElementById('inspector-badge').classList.add('on');snd('whistle');
-showIntro('<b class="t">🦺 المفتش</b>يغرّم كل طرد متروك خارج مناطق الفرز.<small>جولة تعريفية — بلا غرامات</small><span class="hint">⏸ اللعبة متوقفة — اضغط في أي مكان للمتابعة</span>',0,true);
+showIntro(I18N.T('<b class="t">🦺 المفتش</b>يغرّم كل طرد متروك خارج مناطق الفرز.<small>جولة تعريفية — بلا غرامات</small><span class="hint">⏸ اللعبة متوقفة — اضغط في أي مكان للمتابعة</span>', '<b class="t">🦺 Inspector</b>Fines every parcel left outside the sorting zones.<small>Intro round — no fines</small><span class="hint">⏸ Game paused — press anywhere to resume</span>'),0,true);
 }
 function startTruckDemo(){
 demo.truck=true;truckState=gameRules.reset();truckState.elapsed=gameRules.startAt;snd('horn');
-showIntro('<b class="t">🚜 الرافعة الشوكية</b>تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.<small>جولة تعريفية — لن تصطدم بك</small><span class="hint">⏸ اللعبة متوقفة — اضغط في أي مكان للمتابعة</span>',0,true);
+showIntro(I18N.T('<b class="t">🚜 الرافعة الشوكية</b>تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.<small>جولة تعريفية — لن تصطدم بك</small><span class="hint">⏸ اللعبة متوقفة — اضغط في أي مكان للمتابعة</span>', '<b class="t">🚜 Forklift</b>Drops foreign objects (FOD); collect them and put them in the red bin.<small>Intro round — it won\'t hit you</small><span class="hint">⏸ Game paused — press anywhere to resume</span>'),0,true);
 }
 const beltSpeed=()=>(STAGE_BELT[stage]+(lvl-1)*(stage===1?0.06:0.12)) * (feverT > 0 ? FEVER_BOOST : 1);
 let sortedCount=0, totalProcessed=0;
@@ -1182,7 +1184,7 @@ const SHT = canvasTex(128, 128, (g, w, h) => { const gr=g.createRadialGradient(w
 SHT.wrapS = SHT.wrapT = THREE.ClampToEdgeWrapping;
 const SHM = new THREE.MeshBasicMaterial({map:SHT, transparent:true, depthWrite:false});
 const BH = 0.675;
-const MYS = ['mys','🎁','صندوق مفاجآت','???','?'];
+const MYS = ['mys','🎁',I18N.t('صندوق مفاجآت'),'???','?'];
 function mysTex(){
 const cv = document.createElement('canvas'); cv.width = cv.height = 512; const g = cv.getContext('2d');
 const gr = g.createLinearGradient(0,0,512,512); gr.addColorStop(0,'#ffd54a'); gr.addColorStop(1,'#ff9800'); g.fillStyle = gr; g.fillRect(0,0,512,512);
@@ -1217,11 +1219,11 @@ R.domElement.addEventListener('pointerdown', e => {
 function mystery(it){
 rm(it); totalProcessed = Math.max(0, totalProcessed);
 const r = Math.random();
-if(r < 0.25){ time += 12; snd('ship'); spawnFloatTag('+12 ث ⏱','#64ffda'); toast('🎁 مفاجأة: +12 ثانية','#64ffda'); }
+if(r < 0.25){ time += 12; snd('ship'); spawnFloatTag(I18N.T('+12 ث ⏱','+12s ⏱'),'#64ffda'); toast('🎁 مفاجأة: +12 ثانية','#64ffda'); }
 else if(r < 0.5){ score += 60; snd('ship'); toast('🎁 مفاجأة: +60 نقطة','#ffd54a'); }
 else if(r < 0.7){ combo = 8; snd('ship'); toast('🎁 مفاجأة: كومبو ×8 🔥','#ff9800'); }
 else if(r < 0.85){ slowT = 8; snd('ship'); toast('🎁 مفاجأة: الحزام يبطؤ ٨ ثوانٍ 🐢','#80d8ff'); }
-else { time = Math.max(0, time - 6); snd('error'); spawnFloatTag('-6 ث','#ff5252'); toast('💥 مفاجأة سيئة: -6 ثوانٍ','#ff5252'); }
+else { time = Math.max(0, time - 6); snd('error'); spawnFloatTag(I18N.T('-6 ث','-6s'),'#ff5252'); toast('💥 مفاجأة سيئة: -6 ثوانٍ','#ff5252'); }
 hud();
 }
 function spawn(){
@@ -1317,7 +1319,7 @@ totalProcessed++;
 addShake(.65); snd('error');
 penaltyFx(lost, true);
 spawnFloatTag('-' + CRIT_PENALTY, '#ff5252');
-toast('☠️ انفجر طرد مبرّد قبل فرزه! -' + CRIT_PENALTY + ' نقطة', '#ff5252');
+toast(I18N.T('☠️ انفجر طرد مبرّد قبل فرزه! -', '☠️ A chilled parcel spoiled before sorting! -') + CRIT_PENALTY + I18N.T(' نقطة',' pts'), '#ff5252');
 clearCrit(it); rm(it); hud();
 }
 function dropFod(x,z){
@@ -1328,7 +1330,7 @@ nut.rotation.x=Math.PI/2; nut.position.set(.15,.15,0); m.add(nut);
 const marker = canvasTex(128,64,(g,w,h)=>{g.fillStyle='#ffd54a';g.fillRect(0,0,w,h);g.fillStyle='#17252b';g.font='900 40px monospace';g.textAlign='center';g.fillText('FOD',w/2,46);});
 const label = new THREE.Sprite(new THREE.SpriteMaterial({map:marker,depthTest:false}));label.position.y=.6;label.scale.set(.95,.48,1);m.add(label);
 const csh=new THREE.Mesh(new THREE.PlaneGeometry(1.2,1.2),SHM);csh.rotation.x=-Math.PI/2;csh.position.y=-.13;m.add(csh);
-S.add(m);items.push({m,csh,data:{t:'fod',emoji:'🔩',name:'جسم غريب',imp:'FOD',div:'',isFod:true,isHz:false,isMys:false},st:'floor',fall:true,vy:0,ty:.2});
+S.add(m);items.push({m,csh,data:{t:'fod',emoji:'🔩',name:I18N.t('جسم غريب'),imp:'FOD',div:'',isFod:true,isHz:false,isMys:false},st:'floor',fall:true,vy:0,ty:.2});
 snd('place');tip('foddrop', '🔩 سقط جسم غريب FOD!', '#ffd54a');
 }
 function resetTruck(){ truckState=gameRules.reset();fearT=0;recklessTruck.visible=false; }
@@ -1352,16 +1354,23 @@ recklessTruck.rotation.z=truckState.active && !truckState.turned && truckState.x
 truckDriver.rotation.z=Math.sin(truckState.elapsed*18)*.04;
 }
 const $ = id => document.getElementById(id);
+/* الخروج من اللعب: العودة إلى غلاف اللعبة (index.html) وليس البقاء داخل الإطار */
+function exitToShell(){
+try {
+if(window.parent && window.parent !== window){ window.parent.location.href = 'index.html'; return; }
+} catch(e){}
+location.href = 'index.html';
+}
 let tt;
 function toast(t, col){
-const e = $('toast'); e.textContent = t; e.style.color = col; e.style.opacity = 1;
+const e = $('toast'); e.textContent = I18N.t(t); e.style.color = col; e.style.opacity = 1;
 e.style.transform = 'translateX(-50%) scale(1.05)';
 clearTimeout(tt);
 tt = setTimeout(() => { e.style.opacity = 0; e.style.transform = 'translateX(-50%) scale(1)'; }, 1300);
 }
 function spawnFloatTag(txt, col){
 const el = document.createElement('div');
-el.className = 'float-tag'; el.textContent = txt; el.style.color = col;
+el.className = 'float-tag'; el.textContent = I18N.t(txt); el.style.color = col;
 el.style.left = '50%'; el.style.top = '44%';
 $('floating-fx').appendChild(el);
 setTimeout(() => el.remove(), 850);
@@ -1372,7 +1381,7 @@ const fx = $('floating-fx'), box = $('scbox'), stage = $('stage');
 if(!fx) return;
 const tag = document.createElement('div');
 tag.className = 'penalty-tag' + (hz ? ' hz' : '');
-tag.innerHTML = '<b>−' + n + '</b><i>' + (hz ? 'مادة خطرة فاتت' : 'طرد فات') + '</i>';
+tag.innerHTML = '<b>−' + n + '</b><i>' + (hz ? I18N.t('مادة خطرة فاتت') : I18N.t('طرد فات')) + '</i>';
 if(box && stage){
 const r = box.getBoundingClientRect(), s = stage.getBoundingClientRect();
 tag.style.left = (r.left - s.left + r.width / 2) + 'px';
@@ -1393,7 +1402,7 @@ penaltyFx.v = setTimeout(() => st.classList.remove('penalty'), 900);
 }
 }
 function hud(){
-$('sc').textContent = score;$('stg').textContent = stage<4 ? `🎓 المرحلة ${stage} • ${Math.min(score,STAGE_AT[stage+1])}/${STAGE_AT[stage+1]}` : '🏁 المرحلة ٤ • الأخيرة — مواد خطرة فقط';
+$('sc').textContent = score;$('stg').textContent = stage<4 ? `${I18N.T('🎓 المرحلة','🎓 Stage')} ${stage} • ${Math.min(score,STAGE_AT[stage+1])}/${STAGE_AT[stage+1]}` : I18N.t('🏁 المرحلة ٤ • الأخيرة — مواد خطرة فقط');
 $('cb').textContent = '×' + combo;
 setDashButton();
 $('cbbox').classList.toggle('hot', combo > 1);
@@ -1424,7 +1433,7 @@ insp.classList.add('fade');
 $('act').classList.toggle('held', !!held);
 const dv = $('drv');
 if(dv){
-if(FD.on){ dv.textContent = '🚜 القيادة: ' + Math.ceil(FD.left) + ' ث • اضغط هنا للنزول'; dv.style.display = 'block'; }
+if(FD.on){ dv.textContent = I18N.T('🚜 القيادة: ','🚜 Driving: ') + Math.ceil(FD.left) + I18N.T(' ث • اضغط هنا للنزول','s • tap to get off'); dv.style.display = 'block'; }
 else dv.style.display = 'none';
 dv.classList.toggle('drive', FD.on);
 }
@@ -1439,8 +1448,8 @@ z.items.forEach(x => rm(x));
 z.items = []; z.full = false; if(z.hz) drawZoneSign(z);
 score += 40;
 time += 15;
-spawnFloatTag('+15 ثوانٍ ⏱', '#64ffda');
-toast('🚚 شُحنت ' + z.n + ' (+40 و +15 ث)', '#64ffda');
+spawnFloatTag(I18N.T('+15 ثوانٍ ⏱','+15s ⏱'), '#64ffda');
+toast(I18N.T('🚚 شُحنت ','🚚 Shipped ') + z.n + I18N.T(' (+40 و +15 ث)',' (+40 and +15s)'), '#64ffda');
 hud();
 }, 900);
 }
@@ -1448,7 +1457,7 @@ function resolvePlacement(z, it){
 const d = it.data;
 if(d.isFod){
 const bonus=gameRules.reward(true,z.k);
-if(bonus){score+=bonus;rm(it);snd('ok');spawnFloatTag('+'+bonus+' FOD','#69f0ae');toast('✔ جمع الجسم الغريب +'+bonus+' نقطة','#69f0ae');}
+if(bonus){score+=bonus;rm(it);snd('ok');spawnFloatTag('+'+bonus+' FOD','#69f0ae');toast(I18N.T('✔ جمع الجسم الغريب +','✔ FOD collected +')+bonus+I18N.T(' نقطة',' pts'),'#69f0ae');}
 else {it.st='floor';it.fall=false;it.m.position.set(px.x, .2, Math.max(-4,px.z+1.5));snd('warn');tip('fodbox', '🔩 ضعه في صندوق FOD الأحمر','#ffd54a');}
 hud();return;
 }
@@ -1459,13 +1468,13 @@ let ok = false;
 let conflictReason = '';
 if(z.hz){
 if(!d.isHz){
-conflictReason = 'هذه الحاوية مخصصة فقط للمواد الخطرة (DGR)!';
+conflictReason = I18N.t('هذه الحاوية مخصصة فقط للمواد الخطرة (DGR)!');
 } else {
 let hasConflict = false;
 for(const placed of z.items){
 if(gameRules.conflict(d, placed.data)){
 hasConflict = true;
-conflictReason = `تعارض IATA: لا يُخلط [${d.imp} . ${d.div}] مع [${placed.data.imp} . ${placed.data.div}] في حاوية واحدة!`;
+conflictReason = I18N.T('تعارض IATA: لا يُخلط [','IATA conflict: never stow [') + `${d.imp} . ${d.div}] ` + I18N.T('مع [','with [') + `${placed.data.imp} . ${placed.data.div}` + I18N.T('] في حاوية واحدة!','] in one container!');
 break;
 }
 }
@@ -1474,7 +1483,7 @@ if(!hasConflict) ok = true;
 } else {
 ok = (z.k === d.t);
 if(!ok && d.isHz){
-conflictReason = `ممنوع وضع مادة خطرة (${d.imp} . ${d.div}) في مناطق الشحن العادي! ضعها في إحدى حاويات المواد الخطرة.`;
+conflictReason = I18N.T('ممنوع وضع مادة خطرة (','Never stow a dangerous good (') + `${d.imp} . ${d.div}) ` + I18N.t('في مناطق الشحن العادي! ضعها في إحدى حاويات المواد الخطرة.');
 } else if(!ok){
 conflictReason = 'منطقة فرز غير مطابقة لنوع الشحنة!';
 }
@@ -1491,22 +1500,22 @@ if(it.crit){
 score += CRIT_BONUS;
 snd('fever');
 spawnFloatTag('+' + CRIT_BONUS + ' 🎉', '#ffd54a');
-critMsg = ` • ❄️ طرد تبريد +${CRIT_BONUS}`;
+critMsg = I18N.T(' • ❄️ طرد تبريد +',' • ❄️ chilled parcel +') + CRIT_BONUS;
 addShake(.25);
 clearCrit(it);
 }
 if(streak >= 5 && streak % 5 === 0) startFever();
 snd('ok', 1 + Math.min(streak, STREAK_MAX) * .05);
-spawnFloatTag('+3 ث ⏱', '#69f0ae');
+spawnFloatTag(I18N.T('+3 ث ⏱','+3s ⏱'), '#69f0ae');
 let chainMsg = '';
 if(streak % 4 === 0){
 const b = Math.min(30, streak * 2.5);
-score += b; chainMsg = ` • سلسلة +${b} 🔥`;
+score += b; chainMsg = I18N.T(` • سلسلة +${b} 🔥`,` • chain +${b} 🔥`);
 stageEl.classList.remove('flash'); void stageEl.offsetWidth; stageEl.classList.add('flash');
 setTimeout(() => stageEl.classList.remove('flash'), 550);
 snd('ship', 1 + Math.min(streak, 8) * .04);
 }
-toast(`✔ فرز متوافق +${p}${chainMsg}${critMsg}` + (d.isHz ? ` [${d.imp} . ${d.div}]` : ''), '#69f0ae');
+toast(I18N.T(`✔ فرز متوافق +${p}`,`✔ Compatible sort +${p}`) + chainMsg + critMsg + (d.isHz ? ` [${d.imp} . ${d.div}]` : ''), '#69f0ae');
 const i = z.hz ? z.items.length : z.n_++ % z.cap;
 if(z.items[i]) rm(z.items[i]);
 z.items[i] = it; it.st = 'placed'; if(z.hz) drawZoneSign(z);
@@ -1520,8 +1529,8 @@ combo = 1; streak = 0; streakT = 0;
 const tp = stage===1 ? 2 : 5;
 time = Math.max(0, time - tp);
 snd('error');
-spawnFloatTag('-'+tp+' ث', '#ff5252');
-toast(`✖ ${conflictReason} (-${tp} ث)`, '#ff5252');
+spawnFloatTag(I18N.T('-'+tp+' ث','-'+tp+'s'), '#ff5252');
+toast(`✖ ${conflictReason} (-${tp} ` + I18N.T('ث)', 's)'), '#ff5252');
 rm(it);
 }
 hud();
@@ -1532,7 +1541,7 @@ FD.on = true; FD.near = false;
 fk.visible = true; rig.visible = false; forkDriver.visible = true;
 px.set(fk.position.x, 0, fk.position.z);
 snd('horn');
-toast('🚜 قُد الرافعة الشوكية — المتبقي ' + Math.ceil(FD.left) + ' ث', '#ffd54a');
+toast(I18N.T('🚜 قُد الرافعة الشوكية — المتبقي ','🚜 Driving the forklift — left: ') + Math.ceil(FD.left) + I18N.T(' ث','s'), '#ffd54a');
 hud();
 }
 function stopDrive(msg){
@@ -1578,7 +1587,7 @@ hud();
 }
 // نزول بزر الشريط نفسه (يترك ✋ لتحميل البضائع)
 const _drvEl = $('drv');
-if(_drvEl) _drvEl.onclick = () => { if(FD.on) stopDrive('🚜 نزلت من الرافعة'); };
+if(_drvEl) _drvEl.onclick = () => { if(FD.on) stopDrive(I18N.t('🚜 نزلت من الرافعة')); };
 function act(){
 initAudio();
 if(!run || liftAnim.active) return;
@@ -1601,9 +1610,9 @@ targetItem.st = 'lifting';
 snd('pick');
 const d = targetItem.data;
 if(d.isHz){
-tip('dg-' + d.imp + d.div, `⚠️ تم التقاط مادة خطرة: ${d.imp} . ${d.div}`, '#ffb020');
+tip('dg-' + d.imp + d.div, I18N.T('⚠️ تم التقاط مادة خطرة: ','⚠️ Dangerous good picked up: ') + `${d.imp} . ${d.div}`, '#ffb020');
 } else {
-toast(`تم الالتقاط: ${d.name}`, '#fff');
+toast(I18N.T('تم الالتقاط: ','Picked up: ') + d.name, '#fff');
 }
 if(lastSecond){
 score += 25;
@@ -1635,10 +1644,10 @@ hud();
 return true;
 }
 /* إيقاف/استئناف مؤقت بمفتاح Esc أو P */
-const CTRL_HINT = '🎮 الحركة [WASD أو الأسهم] • الالتقاط/التفاعل [E أو F أو مسافة] • الإسقاط السريع [Q/X] • الجري [Shift] • الاندفاع [Enter] • الإيقاف [Esc]';
+const CTRL_HINT = I18N.T('🎮 الحركة [WASD أو الأسهم] • الالتقاط/التفاعل [E أو F أو مسافة] • الإسقاط السريع [Q/X] • الجري [Shift] • الاندفاع [Enter] • الإيقاف [Esc]', '🎮 Move [WASD / arrows] • Pick up [E/F/Space] • Quick drop [Q/X] • Sprint [Shift] • Dash [Enter] • Pause [Esc]');
 function pauseGame(){
 if(!run || introHold || FD.on || fire.active) return;
-showIntro('<b class="t">⏸ إيقاف مؤقت</b>اضغط <b style="display:inline">Esc</b> أو <b style="display:inline">P</b> للمتابعة.<span class="hint">' + CTRL_HINT + '</span>',0,true);
+showIntro(I18N.T('<b class="t">⏸ إيقاف مؤقت</b>اضغط <b style="display:inline">Esc</b> أو <b style="display:inline">P</b> للمتابعة.<span class="hint">', '<b class="t">⏸ Paused</b>Press <b style="display:inline">Esc</b> or <b style="display:inline">P</b> to resume.<span class="hint">') + CTRL_HINT + '</span>',0,true);
 clearTimeout(introT);
 }
 addEventListener('keydown', e => {
@@ -1735,7 +1744,7 @@ if(n===2) resetInspector();
 if(n>=3) resetTruck();
 if(!silent){
 snd('ship'); time += 10;
-spawnFloatTag('+10 ث ⏱','#64ffda');
+spawnFloatTag(I18N.T('+10 ث ⏱','+10s ⏱'),'#64ffda');
 tip(n===2?'stage2':n===3?'stage3':'stage4', n===2?'🚀 المرحلة ٢: المواد الخطرة والمفتش! السير أسرع':n===3?'🏁 المرحلة ٣: الرافعة الشوكية تعبر المستودع!':'💥 المرحلة ٤: مواد خطرة فقط — ثلاث حاويات حسب الفئة!','#64ffda');
 }
 hud();
@@ -1786,7 +1795,7 @@ const record = score > best && score > 0;
 if(record) saveBest(score);
 const topList = score > 0 ? pushTop(score) : getTop();
 const grade = (score >= 500 && acc >= 90) ? 's' : (score >= 350 && acc >= 80) ? 'a' : score >= 200 ? 'b' : 'c';
-const titles = { s:'خبير DGR معتمد', a:'مشرف فرز متمكن', b:'فني مستودع واعد', c:'متدرب قيد التأهيل' };
+const titles = { s:I18N.t('خبير DGR معتمد'), a:I18N.t('مشرف فرز متمكن'), b:I18N.t('فني مستودع واعد'), c:I18N.t('متدرب قيد التأهيل') };
 const stars = { s:5, a:4, b:3, c:2 }[grade];
 const p = stars / 5;
 const dash = (351.86 * (1 - p)).toFixed(2);
@@ -1796,7 +1805,7 @@ const planeX = (70 + 56 * Math.sin(rad)).toFixed(2);
 const planeY = (70 - 56 * Math.cos(rad)).toFixed(2);
 const starPath = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
 const starsHTML = Array.from({ length: 5 }, (_, i) => `<svg class="star${i < stars ? ' lit' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="${starPath}"/></svg>`).join('');
-const recLine = record ? '<span class="new-record"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg>رقم قياسي جديد!</span>' : '';
+const recLine = record ? '<span class="new-record"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg>' + I18N.t('رقم قياسي جديد!') + '</span>' : '';
 o.innerHTML = `<div class="shift-panel">
 <section class="hero-section">
 <div class="flight-dial">
@@ -1810,47 +1819,49 @@ o.innerHTML = `<div class="shift-panel">
 <div class="grade-core g-${grade}">${grade.toUpperCase()}</div>
 </div>
 <div class="stars-row">${starsHTML}</div>
-<h1 class="main-title">انتهت الوردية</h1>
+<h1 class="main-title">${I18N.t('انتهت الوردية')}</h1>
 <div class="rank-chip">
 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-<span>الرتبة:</span><strong>${titles[grade]}</strong>
+<span>${I18N.t('الرتبة:')}</span><strong>${titles[grade]}</strong>
 </div>
 </section>
 <section class="stats-grid">
 <div class="stat-card c-amber">
 <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-<strong class="stat-num">${score}</strong><span class="stat-lbl">النقاط</span>
+<strong class="stat-num">${score}</strong><span class="stat-lbl">${I18N.t('النقاط')}</span>
 </div>
 <div class="stat-card c-cyan">
 <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/></svg>
-<strong class="stat-num">${sortedCount}</strong><span class="stat-lbl">طرود مصنّفة</span>
+<strong class="stat-num">${sortedCount}</strong><span class="stat-lbl">${I18N.t('طرود مصنّفة')}</span>
 </div>
 <div class="stat-card c-emerald">
 <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-<strong class="stat-num">${acc}%</strong><span class="stat-lbl">دقة IATA</span>
+<strong class="stat-num">${acc}%</strong><span class="stat-lbl">${I18N.t('دقة IATA')}</span>
 <div class="mini-bar"><span style="width:${acc}%"></span></div>
 </div>
 <div class="stat-card c-orange">
 <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-<strong class="stat-num">${maxStreak}</strong><span class="stat-lbl">أطول سلسلة</span>
+<strong class="stat-num">${maxStreak}</strong><span class="stat-lbl">${I18N.t('أطول سلسلة')}</span>
 </div>
 </section>
 <div class="records-panel">
 <div class="best-badge">
 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg>
-<span>أفضل نتيجة: ${Math.max(best, score)}</span>
+<span>${I18N.T('أفضل نتيجة:','Best score:')} ${Math.max(best, score)}</span>
 </div>
 ${recLine}
-<div class="leaderboard-wrap"><span>لوحة المتصدرين:</span><div class="lb-chips">${topHTML(topList)}</div></div>
+<div class="leaderboard-wrap"><span>${I18N.T('لوحة المتصدرين:','Leaderboard:')}</span><div class="lb-chips">${topHTML(topList)}</div></div>
 </div>
-<p class="tip-msg">${totalProcessed === 0 ? 'لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!' : acc >= 80 ? 'أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.' : 'راجع دليل الفرز السريع ثم عُد لكسر رقمك.'}</p>
+<p class="tip-msg">${totalProcessed === 0 ? I18N.t('لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!') : acc >= 80 ? I18N.t('أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.') : I18N.t('راجع دليل الفرز السريع ثم عُد لكسر رقمك.')}</p>
 <div class="actions-row">
-<button id="go" class="btn btn-primary" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg><span>وردية جديدة</span></button>
-<button id="rb2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg><span>الدليل</span></button>
+<button id="go" class="btn btn-primary" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg><span>${I18N.t('وردية جديدة')}</span></button>
+<button id="rb2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg><span>${I18N.t('الدليل')}</span></button>
+<button id="ex2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>${I18N.t('الغلاف')}</span></button>
 </div>
 </div>`;
 $('go').onclick = start;
 $('rb2').onclick = openRules;
+$('ex2').onclick = exitToShell;
 }
 // ===== إنذار الحريق: إيقاف الحزام، إخلاء إلى منطقة التجمع، ورقم الطوارئ =====
 function vib(pattern){
@@ -1908,9 +1919,9 @@ clearMovement();
 $('cp-disp').textContent = '••••••••';
 $('cp-err').textContent = '';
 $('cp-err').style.color = '#ff8a80';
-$('cp-timer').textContent = '⏱ 20 ث';
+$('cp-timer').textContent = I18N.T('⏱ 20 ث','⏱ 20s');
 $('code-pad').classList.add('on');
-toast('🔢 أدخل رقم الطوارئ لتأكيد الإخلاء', '#ffd54a');
+toast(I18N.t('🔢 أدخل رقم الطوارئ لتأكيد الإخلاء'), '#ffd54a');
 }
 function codePress(ch){
 if(!fire.keypad || fire.phase !== 'code') return;
@@ -1934,18 +1945,18 @@ fire.phase = 'done';
 const bonus = gameRules.emergency.codePoints;
 score += bonus; hud();
 snd('ok', 1.3);
-spawnFloatTag('+' + bonus + ' كود الطوارئ', '#69f0ae');
-$('cp-err').textContent = '✅ تم تأكيد الإخلاء +' + bonus;
+spawnFloatTag(I18N.T('+' + bonus + ' كود الطوارئ','+' + bonus + ' emergency code'), '#69f0ae');
+$('cp-err').textContent = I18N.T('✅ تم تأكيد الإخلاء +','✅ Evacuation confirmed +') + bonus;
 $('cp-err').style.color = '#69f0ae';
 $('cp-disp').textContent = fire.code;
 $('fire-banner').classList.remove('on');
 awardPosition();
-setTimeout(() => finishFire('✅ اكتمل الإخلاء — استؤنفت الوردية'), 1400);
+setTimeout(() => finishFire(I18N.t('✅ اكتمل الإخلاء — استؤنفت الوردية')), 1400);
 } else {
 snd('error');
 fire.code = '';
 $('cp-disp').textContent = '••••••••';
-$('cp-err').textContent = '✖ رقم غير صحيح — حاول مرة أخرى';
+$('cp-err').textContent = I18N.t('✖ رقم غير صحيح — حاول مرة أخرى');
 $('cp-err').style.color = '#ff8a80';
 }
 }
@@ -1954,8 +1965,8 @@ if(fire.posAwarded || !gameRules.emergency.inMuster(px.x, px.z)) return;
 fire.posAwarded = true;
 const p = gameRules.emergency.positionPoints;
 score += p; hud();
-spawnFloatTag('+' + p + ' موقع صحيح', '#69f0ae');
-toast('✔ +' + p + ' لوجودك في منطقة التجمع', '#69f0ae');
+spawnFloatTag(I18N.T('+' + p + ' موقع صحيح','+' + p + ' correct position'), '#69f0ae');
+toast(I18N.T('✔ +' + p + ' لوجودك في منطقة التجمع','✔ +' + p + ' for being at the muster point'), '#69f0ae');
 }
 function closeCodePad(){
 fire.keypad = false;
@@ -1994,7 +2005,7 @@ if(gameRules.emergency.inMuster(px.x, px.z)){ fire.t = 0; openCodePad(); }
 else if(fire.t > 45) finishFire('⏱ انتهت مهلة الإخلاء — استؤنفت الوردية');
 } else if(fire.phase === 'code'){
 fire.codeT -= dt;
-$('cp-timer').textContent = '⏱ ' + Math.max(0, Math.ceil(fire.codeT)) + ' ث';
+$('cp-timer').textContent = '⏱ ' + Math.max(0, Math.ceil(fire.codeT)) + I18N.T(' ث','s');
 if(fire.codeT <= 0){
 closeCodePad();
 awardPosition();
@@ -2263,7 +2274,7 @@ rushT -= dt;
 if(rushT <= 0){
 rushT = 24 + Math.random() * 12; rushN = 3; rushDelay = 0;
 snd('horn');
-showIntro('<b class="t">⚡ تدفق سريع!</b>ثلاث شحنات متتابعة على الحزام — ركّز وسرّع الفرز.', 2600);
+showIntro(I18N.T('<b class="t">⚡ تدفق سريع!</b>ثلاث شحنات متتابعة على الحزام — ركّز وسرّع الفرز.', '<b class="t">⚡ Rush hour!</b>Three shipments in a row on the belt — focus and sort faster.'), 2600);
 }
 if(rushN > 0){
 rushDelay -= dt;
@@ -2304,7 +2315,7 @@ streak = 0; streakT = 0;
 if(stage >= 2) combo = 1;
 snd('error');
 penaltyFx(lost, it.data.isHz);
-toast((it.data.isHz ? '⚠️ فاتتك مادة خطرة! ' : 'فاتك طرد! ') + (lost ? '−' + lost + ' نقاط' : 'بدون خصم'), '#ff8a5c'); hud(); continue;
+toast((it.data.isHz ? I18N.T('⚠️ فاتتك مادة خطرة! ','⚠️ You missed a dangerous good! ') : I18N.T('فاتك طرد! ','Parcel missed! ')) + (lost ? '−' + lost + I18N.T(' نقاط',' pts') : I18N.t('بدون خصم')), '#ff8a5c'); hud(); continue;
 }
 }
 if(it.st === 'held'){
@@ -2402,18 +2413,19 @@ R.render(S, C);
 if(!loadingDone){ loadingDone = true; loading.finish(); }
 }
 syncMenu();
+const shellBtn = $('shell'); if(shellBtn) shellBtn.onclick = e => { e.stopPropagation(); exitToShell(); };
 let loadingDone = false;
-loading.phase(88, 'تسخين الشيدرات والمؤثرات...');
+loading.phase(88, I18N.t('تسخين الشيدرات والمؤثرات...'));
 /* تسخين مسبق للشيدرات لمنع تقطيعة أول إطار */
 try{ R.compile(S, C); }catch(e){}
-loading.phase(96, 'اكتمل التجهيز — لحظة واحدة...');
+loading.phase(96, I18N.t('اكتمل التجهيز — لحظة واحدة...'));
 requestAnimationFrame(loop);
 
 // ===== تخصيص لون سترة العامل =====
 (() => {
 const vestMats = []; rig.traverse(o => { if(o.isMesh && o.material && o.material.color && o.material.color.getHex() === C_VEST) vestMats.push(o.material); });
 vestMats.push(forkVest.material);
-const COLORS = [[0xd4ff00,'أصفر فوسفوري'],[0xff6d00,'برتقالي سلامة'],[0x00e676,'أخضر نيون']];
+const COLORS = [[0xd4ff00,I18N.t('أصفر فوسفوري')],[0xff6d00,I18N.t('برتقالي سلامة')],[0x00e676,I18N.t('أخضر نيون')]];
 const apply = c => { vestMats.forEach(m => m.color.setHex(c)); try { localStorage.setItem('acg_vest', c); } catch(e){} document.querySelectorAll('#skins button').forEach(b => b.classList.toggle('on', +b.dataset.c === c)); };
 const row = document.getElementById('skins'); if(!row) return;
 COLORS.forEach(([c,n]) => { const b = document.createElement('button'); b.dataset.c = c; b.style.background = '#' + c.toString(16).padStart(6,'0'); b.setAttribute('aria-label', n); b.title = n; b.onclick = e => { e.stopPropagation(); apply(c); }; row.appendChild(b); });

@@ -524,3 +524,6 @@
   #ov .btn-play::after,#ov .btn-primary::after{display:none}
   #ov .grade-core{animation:none}
 }
+
+/* English (LTR) */
+html[lang="en"] body{direction:ltr;text-align:left}
