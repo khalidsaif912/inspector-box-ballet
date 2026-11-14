@@ -19,6 +19,21 @@ describe("Game assets and shared rules", () => {
     expect(gameIndex).toBeGreaterThan(rulesIndex);
   });
 
+  it("shares cumulative stage scores and a gate transition to the next game", () => {
+    const hub = readFileSync("public/game/game-hub.js", "utf8");
+    expect(html).toContain('src="game/game-hub.js"');
+    expect(html.indexOf('src="game/game.js"')).toBeGreaterThan(
+      html.indexOf('src="game/game-hub.js"'),
+    );
+    expect(hub).toContain("dgr_game_hub_data");
+    expect(hub).toContain("pairs.html");
+    expect(game).toContain("GameHub.saveGameScore");
+    expect(game).toContain("function beginExitSequence");
+    expect(game).toContain("function updateExitSequence");
+    expect(html).toContain('id="portal-warp"');
+    expect(readFileSync("public/sw.js", "utf8")).toContain('"./game/game-hub.js"');
+  });
+
   it("delegates IATA segregation to the shared browser-safe rules", () => {
     expect(game).not.toContain("function checkIATAConflict");
     expect(game).toContain("gameRules.conflict(");

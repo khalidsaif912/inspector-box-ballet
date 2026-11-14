@@ -527,3 +527,32 @@
 
 /* English (LTR) */
 html[lang="en"] body{direction:ltr;text-align:left}
+
+/* ===== Interactive transition to the next game ===== */
+#ov.fade-out{opacity:0;transform:scale(.97);pointer-events:none;transition:opacity .42s ease,transform .42s ease}
+#ov .total-badge{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.4);color:#bae6fd}
+#portal-warp{
+  position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;visibility:hidden;overflow:hidden;
+}
+#portal-warp::before{
+  content:"";position:absolute;inset:-10%;
+  background:radial-gradient(circle at 6% 52%,#e6fdff 0%,#43dbff 16%,rgba(18,86,146,.92) 34%,rgba(7,11,20,.98) 62%);
+  transform:scale(.02);opacity:0;
+}
+#portal-warp.on{visibility:visible;opacity:1}
+#portal-warp.on::before{animation:portalWipe 1.25s cubic-bezier(.6,0,.25,1) forwards}
+#portal-warp .pw-label{
+  position:relative;z-index:2;padding:10px 22px;border-radius:999px;
+  background:rgba(6,20,32,.72);border:1px solid rgba(120,236,255,.5);
+  color:#d9fbff;font-weight:800;font-size:15px;opacity:0;transform:translateY(10px);
+}
+#portal-warp.on .pw-label{animation:pwLabel .8s .35s ease forwards}
+@keyframes portalWipe{
+  0%{transform:scale(.02);opacity:0}
+  15%{opacity:1}
+  70%{transform:scale(1.6);opacity:1}
+  100%{transform:scale(2.6);opacity:1}
+}
+@keyframes pwLabel{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#portal-warp.on::before{animation-duration:.4s}}

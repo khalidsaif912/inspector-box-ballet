@@ -135,7 +135,9 @@ fire:[[988,.16],[622,.16],[988,.16],[622,.16],[988,.22],[622,.22]],
 warn:[[880,.06],[660,.045]],
 dash:[[740,.04],[1040,.04],[1320,.05]],
 fever:[[784,.09],[1047,.09],[1319,.09],[1568,.14],[2093,.18]],
-crit:[[1200,.05],[900,.05],[1200,.05]]
+crit:[[1200,.05],[900,.05],[1200,.05]],
+gate:[[392,.1],[523,.1],[659,.1],[784,.18],[1047,.24]],
+warp:[[1047,.05],[784,.05],[1047,.05],[1319,.06],[1568,.08],[2093,.26]]
 };
 function snd(type, pitch=1){
 if(!soundEnabled || !actx || !retroCues[type]) return;
@@ -430,6 +432,64 @@ const dl = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.3, 0.3), new THREE.MeshS
 dl.position.set(s*34.3, 6.5, z + 2.0); S.add(dl);
 });
 });
+// ===== بوابة الخروج إلى اللعبة التالية على الجدار الأيسر (رصيف الطيران B) =====
+const EXIT_GATE = { x:-34.1, z:-6, targetX:-32.95, targetZ:-6, active:false, phase:'idle', t:0, open:0, warped:false, trail:[] };
+const gateGroup = new THREE.Group();
+gateGroup.position.set(EXIT_GATE.x, 0, EXIT_GATE.z);
+S.add(gateGroup);
+const gateSteel = new THREE.MeshStandardMaterial({color:0x1b2f3d, metalness:.82, roughness:.28, emissive:0x08222e, emissiveIntensity:.4});
+const gateNeon = new THREE.MeshStandardMaterial({color:0xcff8ff, emissive:0x35d8ff, emissiveIntensity:1.9, metalness:.1, roughness:.25});
+const gateBox = (w,h,d,mat,x,y,z,parent=gateGroup) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+gateBox(0.5, 6.7, 0.5, gateSteel, 0, 3.35, -3.0);
+gateBox(0.5, 6.7, 0.5, gateSteel, 0, 3.35, 3.0);
+gateBox(0.62, 0.62, 6.5, gateSteel, 0, 6.75, 0);
+const gateDoorL = gateBox(0.18, 5.7, 2.72, gateSteel, 0.02, 2.85, -1.36);
+const gateDoorR = gateBox(0.18, 5.7, 2.72, gateSteel, 0.02, 2.85, 1.36);
+[gateDoorL, gateDoorR].forEach((door, i) => {
+const seam = new THREE.Mesh(new THREE.BoxGeometry(0.07, 5.3, 0.1), gateNeon);
+seam.position.set(0.1, 0, i === 0 ? 1.3 : -1.3); door.add(seam);
+});
+const portalTex = canvasTex(256, 256, (g, w, h) => {
+const gr = g.createRadialGradient(w/2, h/2, 8, w/2, h/2, w/2);
+gr.addColorStop(0, 'rgba(226,252,255,1)'); gr.addColorStop(.42, 'rgba(64,214,255,.9)');
+gr.addColorStop(.78, 'rgba(18,86,146,.45)'); gr.addColorStop(1, 'rgba(4,12,24,0)');
+g.fillStyle = gr; g.fillRect(0, 0, w, h);
+}, 1, 1);
+const portalMat = new THREE.MeshBasicMaterial({map:portalTex, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false});
+const portalPlane = new THREE.Mesh(new THREE.PlaneGeometry(5.1, 6.1), portalMat);
+portalPlane.rotation.y = Math.PI/2; portalPlane.position.set(-0.14, 3.25, 0); gateGroup.add(portalPlane);
+const gatePadMat = new THREE.MeshBasicMaterial({map:portalTex, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false});
+const gatePad = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 5.4), gatePadMat);
+gatePad.rotation.x = -Math.PI/2; gatePad.position.set(1.7, 0.035, 0); gateGroup.add(gatePad);
+const gateLight = new THREE.PointLight(0x3fd9ff, 0, 15, 2);
+gateLight.position.set(0.9, 3.6, 0); gateGroup.add(gateLight);
+const gateMarkerTex = canvasTex(640, 160, (g, w, h) => {
+g.clearRect(0, 0, w, h);
+g.fillStyle = 'rgba(6,20,32,.84)';
+g.beginPath();
+if(g.roundRect) g.roundRect(8, 12, w - 16, h - 24, 34); else g.rect(8, 12, w - 16, h - 24);
+g.fill();
+g.strokeStyle = 'rgba(120,236,255,.85)'; g.lineWidth = 4; g.stroke();
+g.direction = 'rtl'; g.textAlign = 'center'; g.textBaseline = 'middle';
+g.fillStyle = '#d9fbff'; g.font = 'bold 52px Cairo, system-ui, sans-serif';
+g.fillText(I18N.T('المخرج إلى اللعبة التالية', 'Exit to the next game'), w/2, h/2 + 2);
+}, 1, 1);
+const gateMarkerMat = new THREE.SpriteMaterial({map:gateMarkerTex, transparent:true, depthWrite:false, opacity:0});
+const gateMarker = new THREE.Sprite(gateMarkerMat);
+gateMarker.scale.set(7.6, 1.9, 1); gateMarker.position.set(0, 8.15, 0); gateGroup.add(gateMarker);
+const gateTrailGroup = new THREE.Group(); gateTrailGroup.visible = false; S.add(gateTrailGroup);
+const chevronTex = canvasTex(128, 128, (g, w, h) => {
+g.clearRect(0, 0, w, h);
+g.strokeStyle = '#a9f5ff'; g.lineWidth = 15; g.lineCap = 'round'; g.lineJoin = 'round';
+g.shadowColor = '#36d8ff'; g.shadowBlur = 20;
+g.beginPath(); g.moveTo(30, 98); g.lineTo(64, 34); g.lineTo(98, 98); g.stroke();
+}, 1, 1);
+const chevronGeo = new THREE.PlaneGeometry(1.7, 1.7); chevronGeo.rotateX(-Math.PI/2);
+for(let i = 0; i < 18; i++){
+const mm = new THREE.MeshBasicMaterial({map:chevronTex, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending});
+const arrow = new THREE.Mesh(chevronGeo, mm); arrow.visible = false; arrow.userData.delay = i * 0.09;
+gateTrailGroup.add(arrow); EXIT_GATE.trail.push(arrow);
+}
 // ===== هيكل السقف: جمالونات + نوافذ ضوئية مضيئة
 // أعمدة + مصابيح صناعية معلقة
 const lampMat = new THREE.MeshStandardMaterial({color:0xfff3d6, emissive:0xffe2a8, emissiveIntensity:2.2});
@@ -1763,6 +1823,7 @@ $('dash-fx').classList.remove('on'); $('stage').classList.remove('fever'); setDa
 demo = {insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}; inspector.demo = false; hideIntro();
 sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false;
 $('rules').style.display = 'none';
+resetExitGate();
 resetFire();
 px.set(0, 0, 3); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
 FD.on = false; FD.left = 60; FD.near = false; rig.visible = true; forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = Math.PI/2;
@@ -1797,6 +1858,11 @@ const topList = score > 0 ? pushTop(score) : getTop();
 const grade = (score >= 500 && acc >= 90) ? 's' : (score >= 350 && acc >= 80) ? 'a' : score >= 200 ? 'b' : 'c';
 const titles = { s:I18N.t('خبير DGR معتمد'), a:I18N.t('مشرف فرز متمكن'), b:I18N.t('فني مستودع واعد'), c:I18N.t('متدرب قيد التأهيل') };
 const stars = { s:5, a:4, b:3, c:2 }[grade];
+const hubStars = Math.max(1, Math.min(3, Math.round((stars * 3) / 5)));
+let hub = null;
+try { if(window.GameHub) hub = GameHub.saveGameScore('game1', score, hubStars); } catch(e){}
+const totalScore = hub ? hub.totalScore : score;
+const stageBest = hub ? hub.bestScore : Math.max(best, score);
 const p = stars / 5;
 const dash = (351.86 * (1 - p)).toFixed(2);
 const deg = p * 360;
@@ -1849,19 +1915,118 @@ o.innerHTML = `<div class="shift-panel">
 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg>
 <span>${I18N.T('أفضل نتيجة:','Best score:')} ${Math.max(best, score)}</span>
 </div>
+<div class="best-badge total-badge">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3M3 12h18"/></svg>
+<span>${I18N.T('المجموع التراكمي:','Total score:')} ${totalScore}</span>
+</div>
 ${recLine}
 <div class="leaderboard-wrap"><span>${I18N.T('لوحة المتصدرين:','Leaderboard:')}</span><div class="lb-chips">${topHTML(topList)}</div></div>
 </div>
 <p class="tip-msg">${totalProcessed === 0 ? I18N.t('لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!') : acc >= 80 ? I18N.t('أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.') : I18N.t('راجع دليل الفرز السريع ثم عُد لكسر رقمك.')}</p>
 <div class="actions-row">
-<button id="go" class="btn btn-primary" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg><span>${I18N.t('وردية جديدة')}</span></button>
+<button id="next" class="btn btn-primary" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M3 12h18"/><path d="M15 6l6 6-6 6"/></svg><span>${I18N.T('الانتقال للمرحلة التالية','Next stage')}</span></button>
+<button id="go" class="btn btn-secondary" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg><span>${I18N.T('إعادة المحاولة','Replay level')}</span></button>
 <button id="rb2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg><span>${I18N.t('الدليل')}</span></button>
 <button id="ex2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>${I18N.t('الغلاف')}</span></button>
 </div>
 </div>`;
 $('go').onclick = start;
+$('next').onclick = beginExitSequence;
 $('rb2').onclick = openRules;
 $('ex2').onclick = exitToShell;
+}
+// ===== تسلسل الإرشاد وفتح البوابة والانتقال إلى اللعبة التالية =====
+function buildExitTrail(){
+const fx = px.x, fz = px.z, tx = EXIT_GATE.targetX, tz = EXIT_GATE.targetZ;
+const dx = tx - fx, dz = tz - fz, len = Math.hypot(dx, dz) || 1;
+const angle = Math.atan2(-dx / len, -dz / len);
+const count = Math.max(6, Math.min(EXIT_GATE.trail.length, Math.round(len / 1.4)));
+EXIT_GATE.trail.forEach((arrow, i) => {
+const on = i < count;
+arrow.visible = on;
+arrow.material.opacity = 0;
+if(!on) return;
+const t = (i + 1) / (count + 1);
+arrow.position.set(fx + dx * t, 0.05, fz + dz * t);
+arrow.rotation.y = angle;
+arrow.userData.delay = i * 0.08;
+});
+gateTrailGroup.visible = true;
+}
+function resetExitGate(){
+EXIT_GATE.active = false; EXIT_GATE.phase = 'idle'; EXIT_GATE.t = 0; EXIT_GATE.open = 0; EXIT_GATE.warped = false;
+gateDoorL.position.z = -1.36; gateDoorR.position.z = 1.36;
+portalMat.opacity = 0; gatePadMat.opacity = 0; gateLight.intensity = 0; gateMarkerMat.opacity = 0;
+EXIT_GATE.trail.forEach(arrow => { arrow.visible = false; arrow.material.opacity = 0; });
+gateTrailGroup.visible = false;
+document.body.classList.remove('exit-mode');
+const warp = $('portal-warp'); if(warp) warp.classList.remove('on');
+}
+function beginExitSequence(){
+if(EXIT_GATE.active) return;
+initAudio();
+EXIT_GATE.active = true; EXIT_GATE.phase = 'guide'; EXIT_GATE.t = 0; EXIT_GATE.open = 0; EXIT_GATE.warped = false;
+run = false; clearMovement(); stopVib();
+if(FD.on) stopDrive();
+resetFire();
+document.body.classList.remove('ingame');
+document.body.classList.add('exit-mode');
+const ov = $('ov');
+if(ov){ ov.classList.add('fade-out'); setTimeout(() => { ov.style.display = 'none'; ov.classList.remove('fade-out'); }, 460); }
+buildExitTrail();
+snd('gate');
+toast(I18N.T('🚪 البوابة على يسارك — اتبع مسار الإرشاد','🚪 The gate is on your left — follow the trail'), '#64ffda');
+try { if(window.GameHub) GameHub.setActiveGame('game1'); } catch(e){}
+}
+function startPortalWarp(){
+if(EXIT_GATE.warped) return;
+EXIT_GATE.warped = true; EXIT_GATE.phase = 'warp'; EXIT_GATE.t = 0;
+snd('warp'); addShake(0.55);
+const warp = $('portal-warp'); if(warp) warp.classList.add('on');
+setTimeout(() => {
+const next = window.GameHub ? GameHub.nextUrl('game1') : 'https://dgr-exp.netlify.app/m1/pairs.html?source=game1&session=active';
+window.location.href = next;
+}, 1250);
+}
+function updateExitSequence(now, dt){
+if(!EXIT_GATE.active) return;
+EXIT_GATE.t += dt;
+const t = EXIT_GATE.t;
+if(EXIT_GATE.phase !== 'warp'){
+const step = Math.min(1, Math.max(0, (t - 0.55) / 1.3));
+EXIT_GATE.open = step * step * (3 - 2 * step);
+}
+const open = EXIT_GATE.open, pulse = 0.55 + 0.45 * Math.sin(now * 0.006);
+gateDoorL.position.z = -1.36 - open * 2.72;
+gateDoorR.position.z = 1.36 + open * 2.72;
+portalMat.opacity = open * (0.55 + 0.35 * pulse);
+gatePadMat.opacity = open * (0.22 + 0.18 * pulse);
+gateLight.intensity = open * (2.2 + pulse * 1.6);
+gateMarkerMat.opacity = Math.min(1, t / 0.6);
+gateMarker.position.y = 8.15 + Math.sin(now * 0.0026) * 0.16;
+gateNeon.emissiveIntensity = 1.4 + pulse * 1.3;
+EXIT_GATE.trail.forEach(arrow => {
+if(!arrow.visible) return;
+const phase = ((now * 0.0016 - arrow.userData.delay) % 1 + 1) % 1;
+const wave = Math.sin(phase * Math.PI);
+arrow.material.opacity = 0.25 + 0.75 * wave * wave;
+arrow.scale.setScalar(0.82 + 0.18 * wave);
+});
+if(EXIT_GATE.phase === 'guide' && t > 0.9){
+const dx = EXIT_GATE.targetX - px.x, dz = EXIT_GATE.targetZ - px.z;
+const dist = Math.hypot(dx, dz);
+if(dist <= 0.4){ startPortalWarp(); return; }
+const ux = dx / dist, uz = dz / dist, spd = 5.4;
+const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
+for(let i = 0; i < steps; i++){
+const c = resolvePlayerCollisions(px.x + ux * spd * stepDt, px.z + uz * spd * stepDt, ux, uz, stepDt);
+px.x = c.x; px.z = c.z;
+}
+const targetRot = Math.atan2(ux, uz);
+curRotY += Math.atan2(Math.sin(targetRot - curRotY), Math.cos(targetRot - curRotY)) * Math.min(1, dt * 10);
+rig.rotation.y = curRotY;
+anim(dt, 8.2, ux, uz);
+}
 }
 // ===== إنذار الحريق: إيقاف الحزام، إخلاء إلى منطقة التجمع، ورقم الطوارئ =====
 function vib(pattern){
@@ -2183,6 +2348,7 @@ renderScale = next; slowStreak = 0; fastStreak = 0; rs();
 }
 }
 }
+updateExitSequence(now, dt);
 if(liftAnim.active){
 liftAnim.t += dt / liftAnim.dur;
 const progress = Math.min(1, liftAnim.t);
@@ -2397,11 +2563,19 @@ hudTicker += dt;
 if(hudTicker >= .1){ hudTicker = 0; hud(); }
 }
 const evacView = fire.active && fire.phase !== 'done' ? -Math.max(0, -px.x) * 0.3 : 0;
+if(EXIT_GATE.active){
+// توجيه الكاميرا نحو بوابة الخروج على اليسار أثناء تسلسل الانتقال
+const gateK = 1 - Math.exp(-dt * 2.2);
+C.position.lerp(camTarget.set(px.x + 10.6, 8.4, px.z + 5.2), gateK);
+camLook.lerp(camLookT.set(-34.2, 3.2, -6), 1 - Math.exp(-dt * 2.6));
+C.lookAt(camLook);
+} else {
 // الكاميرا تتبع الموظف كاملاً (مع سقف عند جدران المستودع) فلا يصل إلى حافة الشاشة
 const camX = Math.max(-camMaxX, Math.min(camMaxX, px.x));
 C.position.lerp(camTarget.set(camX + evacView, 13.2, px.z + 12.4), 1 - Math.exp(-dt*9));
 camLook.lerp(camLookT.set(px.x + evacView, 0.9, px.z - 2.2), 1 - Math.exp(-dt*10));
 C.lookAt(camLook);
+}
 // اهتزاز الكاميرا (Trauma): يُطبَّق بعد lookAt حتى يهتز المنظور فعلاً
 const shake = shakeTrauma * shakeTrauma;
 if(shake > 0.0005){
