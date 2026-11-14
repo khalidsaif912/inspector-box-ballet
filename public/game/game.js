@@ -202,6 +202,7 @@ const S = new THREE.Scene();
 S.background = new THREE.Color(0x1a2430);
 S.fog = new THREE.Fog(0x1a2430, 34, 85);
 const C = new THREE.PerspectiveCamera(48, 1, 0.1, 140);
+let camMaxX = 14;
 function rs(){
 const w = stageEl.clientWidth || innerWidth, h = stageEl.clientHeight || innerHeight;
 R.setPixelRatio(renderPixelRatio(w, h, devicePixelRatio) * renderScale);
@@ -211,6 +212,10 @@ C.aspect = w / h;
 const land = w > h;
 C.fov = land ? 46 + Math.max(0, Math.min(10, (1.75 - C.aspect) * 8)) : 62;
 C.updateProjectionMatrix();
+// أقصى إزاحة أفقية للكاميرا: نُبقي المشهد داخل جدران المستودع (السعة 70 وحدة)
+const camDist = Math.hypot(14.6, 12.3);
+const camHalfW = camDist * Math.tan((C.fov * Math.PI) / 360) * C.aspect;
+camMaxX = Math.max(0, 33.5 - camHalfW);
 }
 /* التكيّف مع تدوير الهاتف: resize + orientationchange + visualViewport */
 let rsRaf = 0;
@@ -1877,7 +1882,7 @@ ring.rotation.x = -Math.PI/2; ring.visible = false; S.add(ring);
 let warnTicker = 0;
 let hudTicker = 0, frameTotal = 0, frameCount = 0;
 const cargoTarget = new THREE.Vector3();
-const camTarget = new THREE.Vector3(), camLook = new THREE.Vector3(0,0.9,0.8), camLookT = new THREE.Vector3();
+let camTarget = new THREE.Vector3(), camLook = new THREE.Vector3(0,0.9,0.8), camLookT = new THREE.Vector3();
 C.position.set(0, 13.2, 15.4);
 function loop(now){
 requestAnimationFrame(loop);
@@ -2086,8 +2091,10 @@ hudTicker += dt;
 if(hudTicker >= .1){ hudTicker = 0; hud(); }
 }
 const evacView = fire.active && fire.phase !== 'done' ? -Math.max(0, -px.x) * 0.3 : 0;
-C.position.lerp(camTarget.set(px.x * 0.75 + evacView, 13.2, px.z + 12.4), 1 - Math.exp(-dt*9));
-camLook.lerp(camLookT.set(px.x * 0.8 + evacView, 0.9, px.z - 2.2), 1 - Math.exp(-dt*12));
+// الكاميرا تتبع الموظف كاملاً (مع سقف عند جدران المستودع) فلا يصل إلى حافة الشاشة
+const camX = Math.max(-camMaxX, Math.min(camMaxX, px.x));
+C.position.lerp(camTarget.set(camX + evacView, 13.2, px.z + 12.4), 1 - Math.exp(-dt*9));
+camLook.lerp(camLookT.set(px.x + evacView, 0.9, px.z - 2.2), 1 - Math.exp(-dt*10));
 C.lookAt(camLook);
 R.render(S, C);
 }
