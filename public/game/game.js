@@ -95,7 +95,10 @@ bump:[[110,.045],[55,.07]],
 whistle:[[1047,.08],[1397,.08],[1047,.1]],
 horn:[[196,.12],[247,.16],[196,.12]],
 fire:[[988,.16],[622,.16],[988,.16],[622,.16],[988,.22],[622,.22]],
-warn:[[880,.06],[660,.045]]
+warn:[[880,.06],[660,.045]],
+dash:[[740,.04],[1040,.04],[1320,.05]],
+fever:[[784,.09],[1047,.09],[1319,.09],[1568,.14],[2093,.18]],
+crit:[[1200,.05],[900,.05],[1200,.05]]
 };
 function snd(type, pitch=1){
 if(!soundEnabled || !actx || !retroCues[type]) return;
@@ -791,20 +794,15 @@ Z.filter(z=>z.k!=='fod').forEach(z => STATIC_OBSTACLES.push({minX:z.x-(z.w+0.1)/
 STATIC_OBSTACLES.push({minX:gameRules.fodZoneX-1.0,maxX:gameRules.fodZoneX+1.0,minZ:-9.6,maxZ:-7.6});
 let bumpCD = 0, lastBump = 0;
 // دفع دائرة اللاعب خارج مستطيل مع انزلاق ناعم على الحواف بدل القفز للمحور الأقرب
+// دفع اللاعب خارج مستطيل مع الانزلاق على السطح: نُصحّح المحور الأقل اختراقاً فقط
+// فيبقى المحور الآخر حراً تماماً (Wall Sliding) بدل الارتجاج عند الزوايا
 function pushOutAABB(p, minX, maxX, minZ, maxZ, r){
-const cx = Math.max(minX, Math.min(p.x, maxX));
-const cz = Math.max(minZ, Math.min(p.z, maxZ));
-let dx = p.x - cx, dz = p.z - cz;
-const d2 = dx*dx + dz*dz;
-if(d2 >= r*r) return false;
-if(d2 > 1e-8){
-const d = Math.sqrt(d2), push = r - d;
-p.x += dx/d * push; p.z += dz/d * push;
-} else {
-const l = p.x - minX, rr = maxX - p.x, t = p.z - minZ, b = maxZ - p.z;
-const m = Math.min(l, rr, t, b);
-if(m === l) p.x = minX - r; else if(m === rr) p.x = maxX + r; else if(m === t) p.z = minZ - r; else p.z = maxZ + r;
-}
+if(p.x + r <= minX || p.x - r >= maxX || p.z + r <= minZ || p.z - r >= maxZ) return false;
+const penL = (p.x + r) - minX, penR = maxX - (p.x - r);
+const penT = (p.z + r) - minZ, penB = maxZ - (p.z - r);
+const px = Math.min(penL, penR), pz = Math.min(penT, penB);
+if(px <= pz) p.x += penL < penR ? -px : px;
+else p.z += penT < penB ? -pz : pz;
 return true;
 }
 function resolvePlayerCollisions(targetX, targetZ, mvx=0, mvz=0, dt=0.016) {
@@ -848,7 +846,7 @@ if(v){ const m = Math.hypot(v[0], v[1]), f = m < 0.3 ? 1 : 0.3/m; p.x += v[0]*f;
 }
 }
 }
-if(hit && (Math.abs(mvx)+Math.abs(mvz)) > 0.3 && performance.now() - lastBump > 380){ lastBump = performance.now(); snd('bump'); }
+if(hit && (Math.abs(mvx)+Math.abs(mvz)) > 0.3 && performance.now() - lastBump > 380){ lastBump = performance.now(); snd('bump'); addShake(.45); }
 return p;
 }
 let bob=0, walk=0, turnLean=0, curRotY=0, inX=0, inZ=0, animSpd=0;
@@ -868,7 +866,7 @@ if(isMoving){
 walk += dt * (isHeld ? 9.2 : 13.5) * gameRules.movementMultiplier(fearT);
 const targetRot = Math.atan2(vx, vz);
 const diff = Math.atan2(Math.sin(targetRot - curRotY), Math.cos(targetRot - curRotY));
-const turnK = Math.min(.3, dt * (14 + Math.abs(diff) * 9));
+const turnK = Math.min(1, dt * (18 + Math.abs(diff) * 12));
 const turn = diff * turnK;
 curRotY += turn;
 rig.rotation.y = curRotY;
@@ -939,6 +937,30 @@ hd.rotation.y = isMoving ? sw * 0.06 : Math.sin(performance.now()*0.0015) * 0.12
 pl.position.set(0, 0, 3);
 let items=[], run=false, score=0, combo=1, time=100, spawnT=0, held=null, lvl=1, near=null, stage=1;
 let streak=0, streakT=0, maxStreak=0, rushT=30, rushN=0, rushDelay=0;
+/* ===== إثارة: اندفاع + اهتزاز كاميرا + وضع الحمى ===== */
+let dashT = 0, dashCD = 0, feverT = 0, shakeTrauma = 0;
+const DASH_TIME = .8, DASH_CD = 3, DASH_BOOST = 1.6, FEVER_TIME = 8, FEVER_BOOST = 1.15;
+function feverOn(){ return feverT > 0; }
+function addShake(a){ shakeTrauma = Math.min(1, shakeTrauma + a); }
+function setDashButton(){
+const b = $('dash-btn'); if(!b) return;
+b.classList.toggle('cool', dashCD > 0);
+b.style.setProperty('--cd', (dashCD > 0 ? (dashCD / DASH_CD) * 100 : 0) + '%');
+}
+function startFever(){
+if(feverT > 0) return;
+feverT = FEVER_TIME;
+$('stage').classList.add('fever');
+snd('fever');
+toast('🔥 وضع الحمى! النقاط مضاعفة ×2', '#ffd54a');
+}
+function doDash(){
+if(dashCD > 0 || dashT > 0 || !run || introHold || fire.keypad || FD.on) return;
+dashT = DASH_TIME; dashCD = DASH_CD;
+addShake(.22); snd('dash');
+$('dash-fx').classList.add('on');
+setDashButton();
+}
 const fire = {active:false, done:false, phase:'idle', t:0, codeT:0, keypad:false, posAwarded:false, siren:null, buzz:null};
 const STREAK_MAX = 8;
 const streakWindow = () => stage === 1 ? 7 : 5.5;
@@ -982,7 +1004,7 @@ function startTruckDemo(){
 demo.truck=true;truckState=gameRules.reset();truckState.elapsed=gameRules.startAt;snd('horn');
 showIntro('<b class="t">🚜 الرافعة الشوكية</b>تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.<small>جولة تعريفية — لن تصطدم بك</small><span class="hint">⏸ اللعبة متوقفة — اضغط في أي مكان للمتابعة</span>',0,true);
 }
-const beltSpeed=()=>STAGE_BELT[stage]+(lvl-1)*(stage===1?0.06:0.12);
+const beltSpeed=()=>(STAGE_BELT[stage]+(lvl-1)*(stage===1?0.06:0.12)) * (feverT > 0 ? FEVER_BOOST : 1);
 let sortedCount=0, totalProcessed=0;
 const px = pl.position, key = {}, joy = {x:0, y:0};
 const tc = {};
@@ -1129,7 +1151,89 @@ m.castShadow = true; m.receiveShadow = true; m.position.set(-22.5, 0.74 + BH, 12
 m.add(new THREE.LineSegments(EDGEG, EDGEM));
 const csh = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 2.1), SHM);
 csh.rotation.x = -Math.PI/2; csh.position.y = -BH + 0.015; m.add(csh);
-S.add(m); items.push({m, data:itObj, st:'belt', csh});
+S.add(m);
+const it = {m, data:itObj, st:'belt', csh};
+makeCrit(it);
+items.push(it);
+}
+/* ===== طرد حرج بمؤقت تفجير (15%) ===== */
+const CRIT_CHANCE = .15, CRIT_TIME = 18, CRIT_BONUS = 80, CRIT_PENALTY = 40;
+const critHaloTex = canvasTex(128, 128, (g, w, h) => {
+const gr = g.createRadialGradient(w/2, h/2, w*.1, w/2, h/2, w/2);
+gr.addColorStop(0, 'rgba(255,70,40,.9)'); gr.addColorStop(.55, 'rgba(255,100,30,.35)'); gr.addColorStop(1, 'rgba(255,40,0,0)');
+g.fillStyle = gr; g.beginPath(); g.arc(w/2, h/2, w/2, 0, Math.PI*2); g.fill();
+});
+const smokeTex = canvasTex(64, 64, (g, w, h) => {
+const gr = g.createRadialGradient(w/2, h/2, 2, w/2, h/2, w/2);
+gr.addColorStop(0, 'rgba(78,78,78,.8)'); gr.addColorStop(1, 'rgba(46,46,46,0)');
+g.fillStyle = gr; g.fillRect(0, 0, w, h);
+});
+function critTagCanvas(){
+const cv = document.createElement('canvas'); cv.width = 192; cv.height = 96;
+const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding;
+return { cv, t, sec: -1 };
+}
+function drawCritTag(tag, sec){
+const g = tag.cv.getContext('2d'), w = tag.cv.width, h = tag.cv.height;
+g.clearRect(0, 0, w, h);
+g.fillStyle = sec <= 5 ? 'rgba(120,8,8,.92)' : 'rgba(14,10,10,.88)';
+g.fillRect(8, 10, w-16, h-20);
+g.strokeStyle = sec <= 5 ? '#ff5252' : '#ffd54a'; g.lineWidth = 5; g.strokeRect(8, 10, w-16, h-20);
+g.fillStyle = sec <= 5 ? '#fff' : '#ffd54a';
+g.font = '900 52px ui-monospace,monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+g.fillText(sec + 's', w/2, h/2 + 4);
+tag.sec = sec; tag.t.needsUpdate = true;
+}
+function makeCrit(it){
+if(it.data.isMys || it.data.isFod) return;
+if(Math.random() >= CRIT_CHANCE || items.some(i => i.crit)) return;
+const halo = new THREE.Sprite(new THREE.SpriteMaterial({map:critHaloTex, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending}));
+halo.position.y = .05; halo.scale.set(2.3, 2.3, 1); it.m.add(halo);
+const tag = critTagCanvas();
+const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tag.t, transparent:true, depthTest:false}));
+sp.position.y = 1.35; sp.scale.set(1.15, .58, 1); sp.renderOrder = 6; it.m.add(sp);
+drawCritTag(tag, CRIT_TIME);
+it.crit = { t: CRIT_TIME, halo, tag, sp };
+}
+function clearCrit(it){
+if(!it.crit) return;
+it.m.remove(it.crit.halo); it.m.remove(it.crit.sp);
+it.crit.halo.material.dispose(); it.crit.sp.material.dispose(); it.crit.tag.t.dispose();
+it.crit = null;
+}
+function smokePuff(x, y, z){
+for(let i=0; i<8; i++){
+const sm = new THREE.MeshBasicMaterial({map:smokeTex, transparent:true, opacity:.85, depthWrite:false});
+const s = new THREE.Sprite(sm);
+s.position.set(x + (Math.random()-.5)*.7, y + Math.random()*.35, z + (Math.random()-.5)*.7);
+const sc = .5 + Math.random()*.6; s.scale.set(sc, sc, 1);
+S.add(s);
+const vx = (Math.random()-.5)*1.1, vy = .9 + Math.random()*.9, vz = (Math.random()-.5)*1.1;
+let life = 0, lastT = performance.now();
+const tick = () => {
+const nowT = performance.now(), d = Math.min(.05, (nowT - lastT) / 1000); lastT = nowT;
+life += d;
+s.position.x += vx*d; s.position.y += vy*d; s.position.z += vz*d;
+sm.opacity = Math.max(0, .85 * (1 - life/1.35));
+const grow = 1 + life*1.4; s.scale.set(sc*grow, sc*grow, 1);
+if(life < 1.35) requestAnimationFrame(tick);
+else { S.remove(s); sm.dispose(); }
+};
+requestAnimationFrame(tick);
+}
+}
+function critExplode(it){
+if(!it.crit) return;
+smokePuff(it.m.position.x, it.m.position.y + .2, it.m.position.z);
+const lost = Math.min(score, CRIT_PENALTY);
+score = Math.max(0, score - CRIT_PENALTY);
+streak = 0; streakT = 0; combo = 1;
+totalProcessed++;
+addShake(.65); snd('error');
+penaltyFx(lost, true);
+spawnFloatTag('-' + CRIT_PENALTY, '#ff5252');
+toast('☠️ انفجر طرد حرج قبل فرزه! -' + CRIT_PENALTY + ' نقطة', '#ff5252');
+clearCrit(it); rm(it); hud();
 }
 function dropFod(x,z){
 const m = new THREE.Mesh(new THREE.BoxGeometry(.5,.3,.7), new THREE.MeshStandardMaterial({color:0x94aebc,metalness:.7,roughness:.35}));
@@ -1148,7 +1252,7 @@ fearT=Math.max(0,fearT-dt);
 const steps=Math.max(1,Math.ceil(dt/.016)), step=dt/steps;
 for(let i=0;i<steps;i++){
 const before=gameRules.position(truckState), event=gameRules.advance(truckState,step,px.z), after=gameRules.position(truckState);
-if(event.entered){snd('horn');tip('forklift', '⚠️ رافعة متهورة تعبر المستودع!', '#ffd54a');}
+if(event.entered){snd('horn');addShake(.35);tip('forklift', '⚠️ رافعة متهورة تعبر المستودع!', '#ffd54a');}
 if(event.drop) dropFod(after.x,after.z);
 if(!demo.truck && truckState.active && !truckState.hit && gameRules.touches(before.x,before.z,after.x,after.z,px.x,px.z)){
 truckState.hit=true;fearT=gameRules.fearDuration;snd('bump');tip('bump', '😨 اصطدام! حركة أبطأ مؤقتًا', '#ffd54a');
@@ -1157,6 +1261,8 @@ truckState.hit=true;fearT=gameRules.fearDuration;snd('bump');tip('bump', '😨 �
 if(demo.truck && truckState.done){ demo.truck=false; demo.truckDone=true; hideIntro(); }
 const pos=gameRules.position(truckState);
 recklessTruck.visible=truckState.active;recklessTruck.position.set(pos.x,0,pos.z);recklessTruck.rotation.y=pos.yaw;
+// اهتزاز كاميرا خفيف عند مرور الرافعة المتهورة قرب اللاعب
+if(truckState.active && Math.abs(pos.x - px.x) < 7 && Math.abs(pos.z - px.z) < 5) addShake(dt * 1.8);
 recklessTruck.rotation.z=truckState.active && !truckState.turned && truckState.x===0 ? -.12 : 0;
 truckDriver.rotation.z=Math.sin(truckState.elapsed*18)*.04;
 }
@@ -1202,9 +1308,9 @@ penaltyFx.v = setTimeout(() => st.classList.remove('penalty'), 900);
 }
 }
 function hud(){
-$('sc').textContent = score;
-$('stg').textContent = stage<4 ? `🎓 المرحلة ${stage} • ${Math.min(score,STAGE_AT[stage+1])}/${STAGE_AT[stage+1]}` : '🏁 المرحلة ٤ • الأخيرة — مواد خطرة فقط';
+$('sc').textContent = score;$('stg').textContent = stage<4 ? `🎓 المرحلة ${stage} • ${Math.min(score,STAGE_AT[stage+1])}/${STAGE_AT[stage+1]}` : '🏁 المرحلة ٤ • الأخيرة — مواد خطرة فقط';
 $('cb').textContent = '×' + combo;
+setDashButton();
 $('cbbox').classList.toggle('hot', combo > 1);
 const stkOn = streak >= 2 && streakT > 0;
 $('streak').classList.toggle('on', stkOn);
@@ -1238,7 +1344,7 @@ else dv.style.display = 'none';
 dv.classList.toggle('drive', FD.on);
 }
 }
-function rm(it){ S.remove(it.m); items = items.filter(i => i !== it); }
+function rm(it){ clearCrit(it); S.remove(it.m); items = items.filter(i => i !== it); }
 function ship(z){
 z.full = true;
 snd('ship');
@@ -1290,11 +1396,21 @@ conflictReason = 'منطقة فرز غير مطابقة لنوع الشحنة!';
 }
 if(ok){
 sortedCount++;
-const p = 10 * combo * (d.isHz ? 2 : 1);
+const p = 10 * combo * (d.isHz ? 2 : 1) * (feverT > 0 ? 2 : 1);
 score += p;
 combo = Math.min(combo + 1, 8);
 streak++; streakT = streakWindow(); maxStreak = Math.max(maxStreak, streak);
 time += 3;
+let critMsg = '';
+if(it.crit){
+score += CRIT_BONUS;
+snd('fever');
+spawnFloatTag('+' + CRIT_BONUS + ' 🎉', '#ffd54a');
+critMsg = ` • 🎉 طرد حرج +${CRIT_BONUS}`;
+addShake(.25);
+clearCrit(it);
+}
+if(streak >= 5 && streak % 5 === 0) startFever();
 snd('ok', 1 + Math.min(streak, STREAK_MAX) * .05);
 spawnFloatTag('+3 ث ⏱', '#69f0ae');
 let chainMsg = '';
@@ -1305,7 +1421,7 @@ stageEl.classList.remove('flash'); void stageEl.offsetWidth; stageEl.classList.a
 setTimeout(() => stageEl.classList.remove('flash'), 550);
 snd('ship', 1 + Math.min(streak, 8) * .04);
 }
-toast(`✔ فرز متوافق +${p}${chainMsg}` + (d.isHz ? ` [${d.imp} . ${d.div}]` : ''), '#69f0ae');
+toast(`✔ فرز متوافق +${p}${chainMsg}${critMsg}` + (d.isHz ? ` [${d.imp} . ${d.div}]` : ''), '#69f0ae');
 const i = z.hz ? z.items.length : z.n_++ % z.cap;
 if(z.items[i]) rm(z.items[i]);
 z.items[i] = it; it.st = 'placed'; if(z.hz) drawZoneSign(z);
@@ -1431,7 +1547,11 @@ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.
 if(introHold){ if(['Space','KeyE','Enter','Escape'].includes(e.code)){ e.preventDefault(); if(!e.repeat) resumeFromIntro(); } return; }
 if(fire.keypad){ handlePadKey(e); return; }
 key[e.code] = 1;
-if(['Space','KeyE','Enter'].includes(e.code)){ e.preventDefault(); if(!e.repeat) act(); }
+if(e.code === 'ShiftLeft' || e.code === 'ShiftRight'){ e.preventDefault(); if(!e.repeat) doDash(); return; }
+if(['Space','KeyE','Enter'].includes(e.code)){
+  e.preventDefault();
+  if(!e.repeat){ if(e.code === 'Space' && !held) doDash(); else act(); }
+}
 });
 addEventListener('keyup', e => key[e.code] = 0);
 function clearMovement(){ for(const code in key) key[code] = 0; je(); inX = inZ = animSpd = 0; }
@@ -1452,7 +1572,7 @@ if(!b) return;
 e.preventDefault(); codePress(b.dataset.k);
 });
 const jy = $('joy'), kn = $('knob');
-let jid = null;
+let jid = null, joyBaseR = null;
 function jm(e){
 const r = jy.getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.height/2;
 let dx = e.clientX - cx, dy = e.clientY - cy;
@@ -1465,10 +1585,39 @@ else { const s = (mag - dead) / (1 - dead) / mag; jx = Math.max(-1, Math.min(1, 
 joy.x = jx; joy.y = jv;
 kn.style.transform = `translate(${dx}px,${dy}px)`;
 }
+/* الجويستيك العائم: ينتقل إلى مركز اللمسة في النصف الأيسر ثم يعود لمكانه */
+function joyFloatTo(cx, cy){
+  if(!joyBaseR) joyBaseR = jy.getBoundingClientRect();
+  const st = stageEl.getBoundingClientRect(), r = joyBaseR.width / 2;
+  const tx = Math.max(st.left + r, Math.min(st.right - r, cx));
+  const ty = Math.max(st.top + r, Math.min(st.bottom - r, cy));
+  jy.style.transform = `translate(${tx - (joyBaseR.left + r)}px,${ty - (joyBaseR.top + r)}px)`;
+  jy.classList.add('floating');
+}
+function joyFloatEnd(){ jy.classList.remove('floating'); jy.style.transform = ''; joyBaseR = null; }
 jy.addEventListener('pointerdown', e => { initAudio(); jid = e.pointerId; jy.setPointerCapture(jid); jm(e); });
 jy.addEventListener('pointermove', e => { if(e.pointerId === jid) jm(e); });
-const je = () => { jid = null; joy.x = joy.y = 0; kn.style.transform = ''; };
+const je = () => { jid = null; joy.x = joy.y = 0; kn.style.transform = ''; joyFloatEnd(); };
 jy.addEventListener('pointerup', je); jy.addEventListener('pointercancel', je);
+/* لمس النصف الأيسر من الشاشة يبدأ الجويستيك العائم فوراً (بدل تفويت اللمسة) */
+stageEl.addEventListener('pointerdown', e => {
+  if(jid !== null || !run || introHold || fire.keypad || FD.on) return;
+  if(e.pointerType === 'mouse') return;
+  if(e.clientX > innerWidth * 0.48) return;
+  if(e.target.closest && e.target.closest('#controls-ui, .top-btns, .ov, #code-pad')) return;
+  initAudio();
+  jid = e.pointerId; joyBaseR = jy.getBoundingClientRect();
+  joyFloatTo(e.clientX, e.clientY);
+  jm(e);
+});
+addEventListener('pointermove', e => {
+  if(e.pointerId !== jid || !jy.classList.contains('floating')) return;
+  e.preventDefault();
+  jm(e);
+}, { passive:false });
+addEventListener('pointerup', e => { if(e.pointerId === jid) je(); });
+addEventListener('pointercancel', e => { if(e.pointerId === jid) je(); });
+$('dash-btn').addEventListener('pointerdown', e => { e.preventDefault(); doDash(); });
 function setStage(n,silent){
 stage=n;
 inspector.demo=false; demo.insp=false; demo.truck=false; hideIntro();
@@ -1484,12 +1633,14 @@ hud();
 function start(){
 initAudio();
 stopVib();
-items.forEach(i => S.remove(i.m)); items = [];
+items.forEach(i => { clearCrit(i); S.remove(i.m); }); items = [];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
 slowT = 0; beltSlowT = 0; beltSlowUsed = false; beltBtnMat.color.setHex(0x14e0b0); beltBtnMat.emissiveIntensity = 1; beltBtnHalo.scale.setScalar(1);
 score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1; stage = 1;
 streak = 0; streakT = 0; maxStreak = 0; rushT = 30; rushN = 0; rushDelay = 0;
 $('streak').classList.remove('on');
+dashT = 0; dashCD = 0; feverT = 0; shakeTrauma = 0;
+$('dash-fx').classList.remove('on'); $('stage').classList.remove('fever'); setDashButton();
 demo = {insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}; inspector.demo = false; hideIntro();
 sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false;
 $('rules').style.display = 'none';
@@ -1513,6 +1664,8 @@ $('how').onclick = openRules;
 function end(){
 run = false;
 stopVib();
+feverT = 0; dashT = 0; dashCD = 0; shakeTrauma = 0;
+$('stage').classList.remove('fever'); $('dash-fx').classList.remove('on'); setDashButton();
 document.body.classList.remove('ingame');
 if(FD.on) stopDrive();
 resetFire();
@@ -1628,6 +1781,7 @@ $('fire-banner').classList.add('on');
 $('fire-hint').classList.add('on');
 alarmFlash.group.visible = true;
 snd('fire');
+addShake(.6);
 // هزّات الهاتف عند صدور الإنذار: نمط قوي أوّلي ثم نبضات متكررة أثناء الإنذار
 startFireBuzz();
 vib([600, 200, 600, 200, 900]);
@@ -1919,7 +2073,7 @@ let tx = (key.KeyD || key.ArrowRight ? 1 : 0) - (key.KeyA || key.ArrowLeft ? 1 :
 let tz = (key.KeyS || key.ArrowDown ? 1 : 0) - (key.KeyW || key.ArrowUp ? 1 : 0) + joy.y;
 const tl = Math.hypot(tx, tz);
 if(tl > 1){ tx /= tl; tz /= tl; }
-const inputK = 1 - Math.exp(-dt * 16);
+const inputK = 1 - Math.exp(-dt * ((tx * inX < 0 || tz * inZ < 0 || tl === 0) ? 28 : 16));
 inX += (tx - inX) * inputK; inZ += (tz - inZ) * inputK;
 let vx = inX, vz = inZ;
 let l = Math.hypot(vx, vz);
@@ -1927,9 +2081,15 @@ if(l < .015){ vx = vz = 0; l = 0; }
 if(l > 1){ vx /= l; vz /= l; l = 1; }
 animSpd += (l - animSpd) * (1 - Math.exp(-dt * 12));
 if(fire.active) updateFire(dt);
+/* مؤقتات الاندفاع والحمى */
+if(dashT > 0){ dashT = Math.max(0, dashT - dt); if(dashT === 0) $('dash-fx').classList.remove('on'); }
+if(dashCD > 0) dashCD = Math.max(0, dashCD - dt);
+if(feverT > 0){ feverT = Math.max(0, feverT - dt); if(feverT === 0) $('stage').classList.remove('fever'); }
+shakeTrauma = Math.max(0, shakeTrauma - dt * 2.5);
 if(run && !fire.keypad){
 if(!fire.active && (stage>=3 || demo.truck)) updateTruck(dt);
-const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultiplier(fearT);
+const sprintK = (dashT > 0 ? DASH_BOOST : 1) * (feverT > 0 ? FEVER_BOOST : 1);
+const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultiplier(fearT) * sprintK;
 // Small collision steps preserve full travel time even when rendering slows down.
 const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
 if(FD.on){
@@ -2006,7 +2166,7 @@ const beltK = fire.active ? 0 : (slowT > 0 ? 0.35 : (beltSlowT > 0 ? 0.6 : 1));
 let best = null, bd = 2.8;
 for(const it of items.slice()){
 it.csh.visible = it.st !== 'held' && it.st !== 'lifting';
-if(it.fall){ it.vy -= 32 * dt; it.m.position.y += it.vy * dt; if(it.m.position.y <= it.ty){ it.m.position.y = it.ty; it.fall = false; if(it.st === 'floor') snd('bump'); } }
+if(it.fall){ it.vy -= 32 * dt; it.m.position.y += it.vy * dt; if(it.m.position.y <= it.ty){ it.m.position.y = it.ty; it.fall = false; if(it.st === 'floor'){ snd('bump'); const dd = Math.hypot(it.m.position.x - px.x, it.m.position.z - px.z); if(dd < 9) addShake(.45 * (1 - dd / 9)); } } }
 if(it.st === 'belt'){
 it.m.position.x += beltSpeed() * beltK * dt;
 if(it.m.position.x > 23.5){
@@ -2057,6 +2217,17 @@ if(it.wob){ it.wob *= Math.exp(-dt*6); it.m.rotation.z = Math.sin(performance.no
 { const ts = (it.st === 'held' || it.st === 'lifting') ? 0.8 : 1; if(Math.abs(it.m.scale.x - ts) > 0.001) it.m.scale.setScalar(it.m.scale.x + (ts - it.m.scale.x) * Math.min(1, dt * 12)); }
 if(it.m.material.emissive) it.m.material.emissive.setHex(0);
 if(it.data.isMys && it.m.material.emissive){ it.m.material.emissive.setHex(0x4a3000); it.m.material.emissiveIntensity = 0.5 + Math.sin(now*0.006)*0.4; }
+if(it.crit){
+if(it.st === 'belt' || it.st === 'floor' || it.st === 'held'){
+it.crit.t -= dt;
+const sec = Math.max(0, Math.ceil(it.crit.t));
+if(sec !== it.crit.tag.sec) drawCritTag(it.crit.tag, sec);
+const pl = 1 + Math.sin(now * 0.012) * 0.16;
+it.crit.halo.scale.set(2.3 * pl, 2.3 * pl, 1);
+it.crit.halo.material.opacity = .55 + Math.sin(now * 0.012) * .3;
+if(it.crit.t <= 0){ critExplode(it); continue; }
+} else if(it.st === 'placed' || it.st === 'sorting') clearCrit(it);
+}
 }
 near = held || liftAnim.active ? null : best;
 if(near && near.m.material.emissive){ near.m.material.emissive.setHex(0x3a2400); near.m.material.emissiveIntensity = 0.6 + Math.sin(now*0.008)*0.4; }
@@ -2096,6 +2267,13 @@ const camX = Math.max(-camMaxX, Math.min(camMaxX, px.x));
 C.position.lerp(camTarget.set(camX + evacView, 13.2, px.z + 12.4), 1 - Math.exp(-dt*9));
 camLook.lerp(camLookT.set(px.x + evacView, 0.9, px.z - 2.2), 1 - Math.exp(-dt*10));
 C.lookAt(camLook);
+// اهتزاز الكاميرا (Trauma): يُطبَّق بعد lookAt حتى يهتز المنظور فعلاً
+const shake = shakeTrauma * shakeTrauma;
+if(shake > 0.0005){
+C.position.x += (Math.random() - 0.5) * shake * 0.7;
+C.position.y += (Math.random() - 0.5) * shake * 0.5;
+C.rotation.z += (Math.random() - 0.5) * shake * 0.03;
+}
 R.render(S, C);
 }
 syncMenu();
