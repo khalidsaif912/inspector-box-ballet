@@ -672,10 +672,35 @@ body.timer-frozen #grid{outline:2px solid rgba(120,230,255,.7);outline-offset:5p
 .card.special.freeze .back{background:radial-gradient(circle at 50% 45%,rgba(120,230,255,.34),rgba(10,16,32,.62));color:#d8f6ff}
 .card.special.magnet .back{background:radial-gradient(circle at 50% 45%,rgba(251,194,235,.34),rgba(10,16,32,.62));color:#ffe3f6}
 .card.special.chest .back{background:radial-gradient(circle at 50% 45%,rgba(255,210,0,.34),rgba(10,16,32,.62));color:#ffe9a8}
+
+/* ===== بوابة الوضع العمودي على الهاتف: كل البطاقات لا تظهر في الوضع الأفقي ===== */
+#rotateGate{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(4,8,15,.97);text-align:center}
+html.need-portrait #rotateGate{display:flex}
+html.need-portrait,html.need-portrait body{overflow:hidden}
+.rotateCard{width:min(360px,100%);display:flex;flex-direction:column;align-items:center;gap:12px;padding:24px 18px;border-radius:24px;border:1px solid var(--stroke);background:linear-gradient(180deg,rgba(18,28,48,.96),rgba(8,14,26,.92));box-shadow:var(--shadow)}
+.rotatePhone{width:60px;height:104px;border-radius:14px;border:3px solid #4facfe;box-shadow:0 0 26px rgba(79,172,254,.45);position:relative;transform:rotate(90deg);animation:rotateHint 2s ease-in-out infinite}
+.rotatePhone::after{content:"";position:absolute;left:50%;bottom:7px;transform:translateX(-50%);width:20px;height:3px;border-radius:3px;background:rgba(79,172,254,.85)}
+@keyframes rotateHint{0%,22%{transform:rotate(90deg)}72%,100%{transform:rotate(0deg)}}
+.rotateCard h2{margin:6px 0 0;font-size:18px;font-weight:900}
+.rotateCard p{margin:0;font-size:13px;line-height:1.75;color:var(--muted)}
+.rotateBtn{margin-top:4px;padding:11px 16px;border-radius:16px;border:1px solid rgba(120,230,255,.45);background:rgba(79,172,254,.18);color:var(--text);font-size:13px;font-weight:800;cursor:pointer}
+.rotateBtn[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){.rotatePhone{animation:none}}
 </style>
 
 </head>
 <body>
+
+<!-- بوابة الوضع العمودي: البطاقات لا تظهر كاملة في الوضع الأفقي على الهاتف -->
+<div id="rotateGate" role="alertdialog" aria-modal="true" aria-labelledby="rotateTitle" aria-hidden="true" tabindex="-1">
+  <div class="rotateCard">
+    <div class="rotatePhone" aria-hidden="true"></div>
+    <h2 id="rotateTitle">أدِر هاتفك عمودياً 📱</h2>
+    <p>لعبة «قرائن الصور» تُلعب بالوضع العمودي حتى تظهر كل البطاقات كاملة.</p>
+    <p>إذا كان «قفل تدوير الشاشة» مفعّلاً في هاتفك، أطفئه ثم أدِر الهاتف.</p>
+    <button class="rotateBtn" id="rotateLock" type="button">ملء الشاشة + قفل عمودي</button>
+  </div>
+</div>
 
 <!-- Mobile Top Bar -->
 <div class="mTop">
@@ -963,6 +988,57 @@ function stageLayout(){
   // الهاتف/الشاشة العمودية: شبكة عمودية (صفوف أكثر من أعمدة) — الأفقي: 5×4
   const cols=portrait?4:5;
   return {cols,rows:Math.max(1,Math.ceil(total/cols))};
+}
+
+/* ===== الوضع العمودي إلزامي على الهاتف حتى لا تُقص البطاقات ===== */
+let orientationPausedAt = 0;
+function isPhoneDevice(){
+  const touch = (navigator.maxTouchPoints || 0) > 0 || "ontouchstart" in window;
+  return touch && Math.min(window.innerWidth, window.innerHeight) <= 500;
+}
+function lockPortrait(){
+  try{
+    const so = window.screen && screen.orientation;
+    if(!so || typeof so.lock !== "function") return;
+    const p = so.lock("portrait");
+    if(p && p.catch) p.catch(()=>{});
+  }catch(e){}
+}
+function syncOrientationGate(){
+  const gate = document.getElementById("rotateGate");
+  const root = document.documentElement;
+  const need = isPhoneDevice() && window.innerWidth > window.innerHeight;
+  if(need === root.classList.contains("need-portrait")){
+    if(!need) sizeGrid();
+    return;
+  }
+  root.classList.toggle("need-portrait", need);
+  if(gate) gate.setAttribute("aria-hidden", need ? "false" : "true");
+  if(need){
+    if(running && !orientationPausedAt) orientationPausedAt = Date.now();
+    if(gate && gate.focus) gate.focus({preventScroll:true});
+  }else{
+    if(orientationPausedAt){ pausedTotal += Date.now() - orientationPausedAt; orientationPausedAt = 0; }
+    setTimeout(sizeGrid, 180);
+  }
+}
+function onViewportChange(){
+  lockPortrait();
+  syncOrientationGate();
+  sizeGrid();
+}
+function initOrientationGuard(){
+  const btn = document.getElementById("rotateLock");
+  if(btn){
+    if(!document.documentElement.requestFullscreen) btn.hidden = true;
+    btn.addEventListener("click", async () => {
+      try{ await document.documentElement.requestFullscreen(); }catch(e){}
+      lockPortrait();
+      setTimeout(onViewportChange, 300);
+    });
+  }
+  lockPortrait();
+  syncOrientationGate();
 }
 
 function formatTime(sec){const m=Math.floor(sec/60),s=sec%60;return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
@@ -2002,6 +2078,7 @@ function completeStage(){
 
 function clickCard(card){
   if(lock) return;
+  if(document.documentElement.classList.contains("need-portrait")) return;
   if(card.dataset.special){ clickSpecialCard(card); return; }
   if(card===first||card.classList.contains("matched"))return;
   startTimerIfNeeded();
@@ -2101,10 +2178,12 @@ function setupEventListeners(){
   soundSide.addEventListener("click",()=>{soundOn=!soundOn;syncSound()});
   if(mSound)mSound.addEventListener("click",()=>{soundOn=!soundOn;syncSound()});
 
-  window.addEventListener("resize",sizeGrid);
+  window.addEventListener("resize",onViewportChange);
   window.visualViewport?.addEventListener('resize',sizeGrid);
   window.visualViewport?.addEventListener('scroll',sizeGrid);
-  window.addEventListener('orientationchange',()=>setTimeout(sizeGrid,200));
+  window.addEventListener('orientationchange',()=>setTimeout(onViewportChange,200));
+  window.addEventListener('fullscreenchange',()=>{ lockPortrait(); setTimeout(onViewportChange,200); });
+  initOrientationGuard();
 }
 
 window.addEventListener('DOMContentLoaded',()=>{

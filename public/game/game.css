@@ -640,3 +640,56 @@ body:not(.ingame) #dash-btn{display:none}
 html[lang="en"] .tbl,html[lang="en"] #intro,html[lang="en"] .golden,html[lang="en"] details.full,html[lang="en"] .help-card{text-align:left}
 html[lang="en"] .top5 ol{padding:0 0 0 18px;text-align:left}
 html[lang="en"] .hero{text-align:left}
+
+
+/* ================================================================
+   HUD بثلاث مناطق آمنة + خصائص منطقية (العربية RTL / الإنجليزية LTR)
+   المنطقة 1: النقاط والوقت • المنطقة 2 (الوسط): الشارات والتنبيهات
+   المنطقة 3: أزرار التحكم + مضاعف النقاط + المرحلة
+   ================================================================ */
+#hud{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 0 minmax(0,1fr);
+  grid-template-areas:"start center end";
+  align-items:start;
+  column-gap:8px;
+}
+.hud-start{grid-area:start;justify-self:start;display:flex;align-items:flex-start;gap:8px;min-width:0}
+.hud-end{grid-area:end;justify-self:end;display:flex;align-items:flex-start;gap:8px;min-width:0}
+.hud-end .hud-side{order:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.hud-end .top-btns{
+  order:2;position:static;inset:auto;top:auto;left:auto;right:auto;
+  flex-direction:column;align-items:center;gap:calc(var(--hh)*.2);
+  padding:calc(var(--hh)*.16);width:calc(var(--hh)*1.9);border-radius:999px;
+  background:rgba(8,20,42,.55);border:1px solid rgba(124,196,255,.35);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:0 6px 16px rgba(0,0,0,.45);z-index:1;
+}
+#stg{position:static;inset:auto;right:auto;top:auto;left:auto;max-width:100%;text-align:center;line-height:1.3}
+html:has(#inspector-badge.on) #stg{opacity:0}
+@media (orientation:landscape){
+  .hud-end .top-btns{flex-direction:row;width:auto;padding:calc(var(--hh)*.14);gap:calc(var(--hh)*.16)}
+}
+
+/* نافذة المفتش: محاذاة منطقية وسهم يتبع اتجاه اللغة */
+#intro{text-align:start;border-start-start-radius:20px;border-start-end-radius:20px;border-end-end-radius:20px;border-end-start-radius:8px}
+#intro::after{left:auto;right:auto;inset-inline-start:26px}
+.tbl{text-align:start}
+.golden,details.full,details.full summary{text-align:start}
+#ov .top5 ol{padding-inline:0 0;padding-inline-start:18px}
+
+/* الإنجليزية (LTR): خط لاتيني متناسق بنفس الأوزان والأحجام */
+html[lang="en"] body,
+html[lang="en"] #ov.start,
+html[lang="en"] .ov,
+html[lang="en"] .loading-screen,
+html[lang="en"] #intro,
+html[lang="en"] .chip,
+html[lang="en"] .table{
+  font-family:"Segoe UI",Inter,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+}
+html[lang="en"] .top-btns .rbtn,html[lang="en"] .pill b{font-family:inherit}
+/* شاشات ضيقة: شارة المرحلة تنزل تحت شريط النقاط بدل مزاحمة الأزرار */
+@media (max-width:520px){
+  #stg{position:absolute;inset-inline-start:0;inset-inline-end:auto;top:calc(env(safe-area-inset-top,0px) + var(--hh) + 12px);max-width:calc(100% - 110px)}
+}

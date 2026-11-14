@@ -31,13 +31,25 @@
 </div>
 <div id="stage">
 <div id="hud">
+<div class="hud-start">
 <div class="hgrp">
 <div class="pill" id="scbox"><svg viewBox="0 0 48 48"><defs><linearGradient id="gT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset="1" stop-color="#f5a400"/></linearGradient></defs><path d="M14 6h20v10c0 8-4 13-10 13S14 24 14 16z" fill="url(#gT)" stroke="#8a5a00" stroke-width="2" stroke-linejoin="round"/><path d="M14 9H7c0 8 3 12 8 13M34 9h7c0 8-3 12-8 13" fill="none" stroke="#e0a000" stroke-width="3" stroke-linecap="round"/><rect x="21" y="29" width="6" height="7" fill="#e8a400"/><rect x="14" y="36" width="20" height="6" rx="2" fill="url(#gT)" stroke="#8a5a00" stroke-width="2"/><path d="M24 11l2.2 4.6 5 .6-3.7 3.4 1 5-4.5-2.5-4.5 2.5 1-5-3.7-3.4 5-.6z" fill="#fff6c8" opacity=".9"/></svg><b id="sc">0</b></div>
 <div class="pill" id="tmbox"><svg viewBox="0 0 48 48"><rect x="21" y="3" width="6" height="5" rx="1.5" fill="#f5b400"/><path d="M33 9l4-3M35 11l3 3" stroke="#f5b400" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="27" r="17" fill="#f5b400" stroke="#8a5a00" stroke-width="2"/><circle cx="24" cy="27" r="13" fill="#fffdf2" stroke="#c98500" stroke-width="1.5"/><path d="M24 27V17M24 27l7 4" stroke="#1a2b4d" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="27" r="2" fill="#1a2b4d"/><path d="M24 15v2M24 37v2M12 27h2M34 27h2" stroke="#1a2b4d" stroke-width="2"/></svg><b id="tm">01:40</b></div>
 </div>
+</div>
+<div class="hud-end">
+<div class="top-btns">
+<button id="amb" class="rbtn icon-btn" aria-label="warehouse sound" title="صوت المستودع"><svg viewBox="0 0 24 24"><path d="M2 20V9l10-4.5L22 9v11" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.8"/><path class="w" d="M14.5 12.5a3.5 3.5 0 010 5M17 10.5a7 7 0 010 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M4 4l16 16" stroke="#ff5252" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+<button id="snd" class="rbtn icon-btn" aria-label="sound"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 010 7M18 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M4 4l16 16" stroke="#ff5252" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+<button id="shell" class="rbtn icon-btn" aria-label="exit to game shell" title="العودة إلى الغلاف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
+</div>
+<div class="hud-side">
 <div class="cbwrap">
 <div class="cbadge" id="cbbox"><svg viewBox="0 0 48 48"><defs><radialGradient id="gB" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#ffd54a"/><stop offset="1" stop-color="#ff8f00"/></radialGradient></defs><polygon points="24.0,1.0 28.2,5.5 34.0,3.3 35.8,9.1 42.0,9.7 41.1,15.8 46.4,18.9 43.0,24.0 46.4,29.1 41.1,32.2 42.0,38.3 35.8,38.9 34.0,44.7 28.2,42.5 24.0,47.0 19.8,42.5 14.0,44.7 12.2,38.9 6.0,38.3 6.9,32.2 1.6,29.1 5.0,24.0 1.6,18.9 6.9,15.8 6.0,9.7 12.2,9.1 14.0,3.3 19.8,5.5" fill="url(#gB)" stroke="#8a4a00" stroke-width="1.6" stroke-linejoin="round"/><circle cx="24" cy="24" r="15" fill="#d9480f" stroke="#ffe08a" stroke-width="1.6"/></svg><b id="cb">×1</b></div>
 <div id="streak"><i id="stkbar"></i></div>
+</div>
+<div id="stg" class="chip">🎓 المرحلة 1</div>
+</div>
 </div>
 </div>
 <div id="toast"></div>
@@ -66,14 +78,8 @@
 <div class="cp-timer" id="cp-timer"></div>
 </div>
 </div>
-<div id="stg" class="chip">🎓 المرحلة 1</div>
 <div id="inspector-badge">🦺 المفتش</div>
 <div id="floating-fx"></div>
-<div class="top-btns">
-<button id="amb" class="rbtn icon-btn" aria-label="warehouse sound" title="صوت المستودع"><svg viewBox="0 0 24 24"><path d="M2 20V9l10-4.5L22 9v11" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.8"/><path class="w" d="M14.5 12.5a3.5 3.5 0 010 5M17 10.5a7 7 0 010 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M4 4l16 16" stroke="#ff5252" stroke-width="2.6" stroke-linecap="round"/></svg></button>
-<button id="snd" class="rbtn icon-btn" aria-label="sound"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 010 7M18 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M4 4l16 16" stroke="#ff5252" stroke-width="2.6" stroke-linecap="round"/></svg></button>
-<button id="shell" class="rbtn icon-btn" aria-label="exit to game shell" title="العودة إلى الغلاف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
-</div>
 <div id="controls-ui">
 <div id="joy"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i><div id="knob"></div></div><div id="inspect" class="chip"></div>
 <button id="dash-btn" aria-label="dash" title="اندفاع"><svg viewBox="0 0 48 48"><path d="M27 4L13 26h8l-2 18 16-24h-9l1-16z" fill="currentColor" stroke="rgba(0,20,40,.55)" stroke-width="2" stroke-linejoin="round"/></svg></button>
