@@ -1,4 +1,41 @@
 const gameRules = WarehouseRules;
+/* ===== شاشة التحميل: تقدّم حقيقي مبني على مراحل البناء الفعلية ===== */
+const loading = (() => {
+const screen = document.getElementById('loading-screen');
+const fill = document.getElementById('loading-bar-fill');
+const pct = document.getElementById('loading-percent');
+const tip = document.getElementById('loading-tip');
+const TIPS = [
+'تلميح: حافظ على فصل المواد الخطرة لتجنب الغرامات!',
+'تلميح: المسافة أو E أو F للالتقاط والتفاعل.',
+'تلميح: Shift للجري، و Q أو X لإسقاط الطرد فوراً.',
+'تلميح: الطرود المبرّدة لها مؤقت — أسرع قبل أن تفسد!'
+];
+let value = 0, done = false, tipIdx = 0, tipTimer = 0, safety = 0;
+function paint(v){
+value = Math.max(value, Math.min(100, Math.round(v)));
+if(fill) fill.style.width = value + '%';
+if(pct) pct.textContent = value + '%';
+}
+/* إخفاء الشاشة بعد أول إطار مرسوم فعلياً (لا شاشة بيضاء ولا تقطيع أول) */
+function finish(){
+if(done) return;
+done = true;
+clearTimeout(safety); clearInterval(tipTimer);
+paint(100);
+setTimeout(() => { if(screen) screen.classList.add('hidden'); }, 400);
+}
+function phase(amount, label){
+if(done) return;
+if(label && tip) tip.textContent = label;
+paint(amount);
+}
+paint(8);
+if(tip) tipTimer = setInterval(() => { tip.textContent = TIPS[(++tipIdx) % TIPS.length]; }, 2600);
+/* صمام أمان: لا نحجب اللعب أكثر من 7 ثوانٍ مهما حدث */
+safety = setTimeout(finish, 7000);
+return { phase, finish, get value(){ return value; } };
+})();
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let actx = null, soundEnabled = true, ambEnabled = true, ambNode = null;
 function initAudio(){
@@ -218,6 +255,7 @@ return /swiftshader|llvmpipe|software|basic render/i.test(name);
 })();
 const stageEl = document.getElementById('stage');
 R.setPixelRatio(targetPixelRatio(devicePixelRatio));
+loading.phase(28, 'تهيئة محرّك الرسم ثلاثي الأبعاد...');
 R.shadowMap.enabled = true;
 R.shadowMap.type = THREE.PCFSoftShadowMap;
 R.outputEncoding = THREE.sRGBEncoding;
@@ -296,12 +334,15 @@ const CY = (rt, rb, h, c, x, y, z, p=S, r=0.5, m=0.2, seg=16) => {
 const o = M(new THREE.CylinderGeometry(rt, rb, h, seg), c, r, m);
 o.position.set(x, y, z); p.add(o); return o;
 };
+let texBuilt = 0;
 function canvasTex(w, h, draw, rx=1, ry=1){
 const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
 draw(cv.getContext('2d'), w, h);
 const t = new THREE.CanvasTexture(cv);
 t.encoding = THREE.sRGBEncoding;
 t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry);
+texBuilt++;
+loading.phase(30 + Math.min(50, texBuilt * 3), 'تجهيز خامات المستودع (' + texBuilt + ')...');
 return applyTextureFiltering(t);
 }
 function rawTex(cv){
@@ -2358,8 +2399,14 @@ C.position.y += (Math.random() - 0.5) * shake * 0.5;
 C.rotation.z += (Math.random() - 0.5) * shake * 0.03;
 }
 R.render(S, C);
+if(!loadingDone){ loadingDone = true; loading.finish(); }
 }
 syncMenu();
+let loadingDone = false;
+loading.phase(88, 'تسخين الشيدرات والمؤثرات...');
+/* تسخين مسبق للشيدرات لمنع تقطيعة أول إطار */
+try{ R.compile(S, C); }catch(e){}
+loading.phase(96, 'اكتمل التجهيز — لحظة واحدة...');
 requestAnimationFrame(loop);
 
 // ===== تخصيص لون سترة العامل =====

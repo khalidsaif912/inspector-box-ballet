@@ -1,4 +1,89 @@
 /* ===== واجهة موحّدة: شاشة البداية + شاشة نهاية الوردية ===== */
+/* ===== شاشة التحميل: تغطي الشاشة حتى أول إطار مرسوم فعلياً ===== */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: radial-gradient(circle at center, #1b222d 0%, #0d1117 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  color: #f0f6fc;
+  direction: rtl;
+  text-align: center;
+  padding: 20px;
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+}
+
+.loading-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 92vw;
+}
+
+.loading-title {
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin: 0;
+  color: #f59e0b;
+}
+
+.loading-subtitle {
+  font-size: clamp(0.85rem, 1.5vw, 1.05rem);
+  color: #94a3b8;
+  margin: 0 0 10px;
+}
+
+.loading-bar-wrapper {
+  width: 320px;
+  max-width: 85vw;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 10px auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.loading-bar-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #10b981);
+  border-radius: 999px;
+  transition: width 0.2s ease-out;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+.loading-meta {
+  width: 320px;
+  max-width: 85vw;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.loading-tip {
+  color: #64748b;
+  font-size: 0.8rem;
+  text-align: left;
+}
+@media (max-width:420px){
+  .loading-bar-wrapper, .loading-meta{width:min(300px,86vw)}
+  .loading-tip{display:none}
+}
 @font-face{
   font-family:'Cairo';font-style:normal;font-weight:500 900;font-display:swap;
   src:url(../vendor/fonts/cairo-arabic.woff2) format('woff2');
