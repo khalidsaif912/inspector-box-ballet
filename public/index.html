@@ -70,6 +70,22 @@ header{
 }
 .btn svg{width:15px;height:15px}
 .btn[hidden]{display:none!important}
+/* ===== نافذة تعليمات التحكم (هاتف + كمبيوتر) ===== */
+.help-modal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:clamp(12px,3vw,32px);background:rgba(4,9,16,.78);backdrop-filter:blur(10px);opacity:0;visibility:hidden;transition:opacity .22s ease,visibility .22s}
+.help-modal.on{opacity:1;visibility:visible}
+.help-card{position:relative;width:min(680px,100%);max-height:88dvh;overflow-y:auto;border-radius:20px;padding:clamp(16px,3vw,26px);background:linear-gradient(165deg,#1b2c40,#0e1a27 55%,#0a131e);border:1px solid rgba(150,205,255,.26);box-shadow:0 30px 80px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.07);text-align:right;transform:translateY(10px) scale(.985);transition:transform .22s ease}
+.help-modal.on .help-card{transform:none}
+.help-card h2{margin:0 0 4px;font-size:clamp(17px,2.4vw,22px);font-weight:900;color:#f3f8ff;display:flex;align-items:center;gap:9px}
+.help-card .sub{margin:0 0 16px;font-size:12.5px;color:#8fa7c0}
+.help-hd{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-size:13px;font-weight:900;color:#ffd05a;letter-spacing:.2px}
+.help-hd:first-of-type{margin-top:0}
+.help-list{display:grid;gap:7px;margin:0;padding:0;list-style:none}
+.help-list li{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:8px 12px;border-radius:11px;background:rgba(255,255,255,.045);border:1px solid rgba(150,205,255,.12);font-size:13px;color:#cfe0f2}
+.help-keys{display:flex;gap:5px;flex-wrap:wrap;direction:ltr;flex:0 0 auto}
+.help-keys kbd{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;font-weight:800;color:#0b1521;background:linear-gradient(180deg,#eaf3ff,#c3d6ea);border-radius:7px;padding:3px 8px;box-shadow:0 2px 0 rgba(0,0,0,.45);white-space:nowrap}
+.help-close{position:absolute;top:10px;left:10px;width:34px;height:34px;border-radius:10px;border:1px solid rgba(150,205,255,.26);background:rgba(255,255,255,.06);color:#dbe7f5;font-size:18px;font-weight:900;line-height:1;cursor:pointer}
+.help-close:hover{background:rgba(255,255,255,.12)}
+@media (max-width:520px){.help-list li{font-size:12px;padding:7px 10px}}
 .frame-wrap{position:relative;z-index:1;width:min(1680px,96vw);display:flex;flex-direction:column;gap:8px}
 .frame{
   position:relative;
@@ -144,6 +160,10 @@ body.ios .ios-note{display:inline}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>
       <span>تثبيت اللعبة</span>
     </button>
+    <button class="btn" id="help" type="button" aria-haspopup="dialog" aria-controls="help-modal" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 11h4"/><path d="M8 9v4"/><circle cx="16.5" cy="10.5" r="1"/><circle cx="18.5" cy="13.5" r="1"/><rect x="2" y="6" width="20" height="12" rx="5"/></svg>
+      <span>التحكم</span>
+    </button>
     <button class="btn" id="full" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg>
       <span>ملء الشاشة</span>
@@ -161,9 +181,39 @@ body.ios .ios-note{display:inline}
   </div>
 </div>
 
+<div class="help-modal" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title" aria-hidden="true">
+  <div class="help-card" role="document">
+    <button class="help-close" id="help-close" type="button" aria-label="إغلاق">✕</button>
+    <h2 id="help-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffd05a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 11h4"/><path d="M8 9v4"/><circle cx="16.5" cy="10.5" r="1"/><circle cx="18.5" cy="13.5" r="1"/><rect x="2" y="6" width="20" height="12" rx="5"/></svg>
+      تعليمات التحكم
+    </h2>
+    <p class="sub">الحركة والتفاعل والفرز — على الكمبيوتر والهاتف.</p>
+
+    <div class="help-hd">💻 على الكمبيوتر</div>
+    <ul class="help-list">
+      <li><span>الحركة</span><span class="help-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></span></li>
+      <li><span>الالتقاط والتفاعل وركوب الرافعة</span><span class="help-keys"><kbd>E</kbd><kbd>F</kbd><kbd>Space</kbd></span></li>
+      <li><span>إسقاط الطرد فوراً</span><span class="help-keys"><kbd>Q</kbd><kbd>X</kbd></span></li>
+      <li><span>الجري</span><span class="help-keys"><kbd>Shift</kbd></span></li>
+      <li><span>الاندفاع السريع</span><span class="help-keys"><kbd>Enter</kbd></span></li>
+      <li><span>إيقاف / متابعة</span><span class="help-keys"><kbd>Esc</kbd><kbd>P</kbd></span></li>
+      <li><span>تفاعل سريع بالفأرة</span><span class="help-keys"><kbd>Click</kbd></span></li>
+    </ul>
+
+    <div class="help-hd">📱 على الهاتف</div>
+    <ul class="help-list">
+      <li><span>الحركة</span><span class="help-keys"><kbd>اسحب في النصف الأيسر</kbd></span></li>
+      <li><span>الالتقاط والتفاعل وركوب الرافعة</span><span class="help-keys"><kbd>✋ زر الالتقاط</kbd></span></li>
+      <li><span>وضع الطرد أو إسقاطه</span><span class="help-keys"><kbd>✋ مرة أخرى</kbd></span></li>
+      <li><span>الاندفاع السريع</span><span class="help-keys"><kbd>⚡ زر الاندفاع</kbd></span></li>
+      <li><span>الصوت والمؤثرات</span><span class="help-keys"><kbd>🔊 أعلى الملعب</kbd></span></li>
+    </ul>
+  </div>
+</div>
+
 <script>
 if (/iPhone|iPad|iPod/.test(navigator.userAgent)) document.body.classList.add('ios');
-
 const frame = document.getElementById('frame');
 const game = document.getElementById('game');
 const installBtn = document.getElementById('install');
@@ -188,8 +238,34 @@ installBtn.addEventListener('click', async () => {
 });
 addEventListener('appinstalled', () => { installBtn.hidden = true; deferredPrompt = null; });
 
-game.addEventListener('load', () => {
-  try { game.contentWindow.focus(); } catch (e) {}
+/* نافذة تعليمات التحكم */
+const helpBtn = document.getElementById('help');
+const helpModal = document.getElementById('help-modal');
+const helpClose = document.getElementById('help-close');
+let helpReturnFocus = null;
+function openHelp(){
+  helpReturnFocus = document.activeElement;
+  helpModal.classList.add('on');
+  helpModal.setAttribute('aria-hidden', 'false');
+  helpBtn.setAttribute('aria-expanded', 'true');
+  helpClose.focus({ preventScroll: true });
+}
+function closeHelp(){
+  helpModal.classList.remove('on');
+  helpModal.setAttribute('aria-hidden', 'true');
+  helpBtn.setAttribute('aria-expanded', 'false');
+  if (helpReturnFocus && helpReturnFocus.focus) helpReturnFocus.focus({ preventScroll: true });
+}
+const helpOpen = () => helpModal.classList.contains('on');
+helpBtn.addEventListener('click', () => (helpOpen() ? closeHelp() : openHelp()));
+helpClose.addEventListener('click', closeHelp);
+helpModal.addEventListener('click', (e) => { if (e.target === helpModal) closeHelp(); });
+addEventListener('keydown', (e) => {
+  if (!helpOpen()) return;
+  if (e.code === 'Escape') { e.preventDefault(); closeHelp(); }
+});
+/* لعبة داخل الإطار: زر التحكم في الهاتف/الكمبيوتر يبقى ظاهراً خارج الملعب */
+game.addEventListener('load', () => {  try { game.contentWindow.focus(); } catch (e) {}
 });
 
 if ('serviceWorker' in navigator) {
