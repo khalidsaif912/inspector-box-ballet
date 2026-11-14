@@ -188,12 +188,25 @@ const HZ = [
 ['h9','🧊','ثلج جاف كربوني','RMD','9']
 ];
 const R = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance', alpha:false});
-/* دقة أصلية كاملة: نستخدم devicePixelRatio الفعلي (Retina/2K/4K) بلا سقف مساحي.
-   كان السقف القديم (2.6 ميجابكسل) يجعل المخزن أصغر من الشاشة فتُمدّ الصورة وتظهر مدموجة. */
-function renderPixelRatio(dpr){
-return Math.max(1, Number(dpr) || 1);
+/* نسبة البكسل الهدف: كثافة الشاشة الفعلية بحد أقصى 2.
+   غطاء 2 يعطي حدة كاملة على Retina و4K ويمنع انهيار الأداء على شاشات 3x/4x. */
+function targetPixelRatio(dpr){
+const d = Number(dpr) || 1;
+return Math.max(1, Math.min(d, 2));
 }
-let renderScale = 1, scaleCeil = 1, renderReady = false, perfWarm = 0, perfWin = 0, perfFrames = 0;
+const maxAnisotropy = R.capabilities.getMaxAnisotropy();
+/* ترشيح موحّد لكل الخامات: أعلى ترشيح مائل + mipmaps يمنع ضبابية الأرضية واللافتات في الزوايا البعيدة */
+function applyTextureFiltering(t){
+if(!t) return t;
+t.anisotropy = maxAnisotropy;
+t.minFilter = THREE.LinearMipmapLinearFilter;
+t.magFilter = THREE.LinearFilter;
+t.generateMipmaps = true;
+t.needsUpdate = true;
+return t;
+}
+let renderScale = 1, scaleCeil = 1, renderReady = false;
+let perfWarm = 0, perfWin = 0, perfFrames = 0, slowStreak = 0, fastStreak = 0;
 const lastSize = { w: 0, h: 0, dpr: 0 };
 /* كشف العرض البرمجي (بلا GPU): هذه البيئات لا تتحمل مخزن دقة أصلية 4K وتُسقط الصفحة */
 const softwareGL = (() => {
@@ -204,7 +217,7 @@ return /swiftshader|llvmpipe|software|basic render/i.test(name);
 }catch(e){ return false; }
 })();
 const stageEl = document.getElementById('stage');
-R.setPixelRatio(renderPixelRatio(devicePixelRatio));
+R.setPixelRatio(targetPixelRatio(devicePixelRatio));
 R.shadowMap.enabled = true;
 R.shadowMap.type = THREE.PCFSoftShadowMap;
 R.outputEncoding = THREE.sRGBEncoding;
@@ -219,18 +232,19 @@ const C = new THREE.PerspectiveCamera(48, 1, 0.1, 140);
 let camMaxX = 14;
 function rs(){
 const w = stageEl.clientWidth || innerWidth, h = stageEl.clientHeight || innerHeight;
-const dpr = renderPixelRatio(devicePixelRatio);
-// أي تغيّر في مساحة العرض أو كثافة البكسل يعيد ضبط الجودة من جديد (لا ننقل مقياساً قديماً لحجم آخر)
+const dpr = targetPixelRatio(devicePixelRatio);
+// أي تغيّر في مساحة العرض أو كثافة البكسل يعيد ضبط الجودة من جديد
 if(!renderReady || w !== lastSize.w || h !== lastSize.h || dpr !== lastSize.dpr){
 renderReady = true; lastSize.w = w; lastSize.h = h; lastSize.dpr = dpr;
 const nativePx = w * h * dpr * dpr;
 const budget = softwareGL ? 2.0e6 : (((navigator.hardwareConcurrency || 4) >= 8) ? 9.0e6 : 6.0e6);
 renderScale = nativePx > budget ? Math.max(.5, Math.sqrt(budget / nativePx)) : 1;
 if(softwareGL) scaleCeil = renderScale;
-perfWarm = 0; perfWin = 0; perfFrames = 0;
+perfWarm = 0; perfWin = 0; perfFrames = 0; slowStreak = 0; fastStreak = 0;
 }
 R.setPixelRatio(dpr * renderScale);
-R.setSize(w, h);
+// false: لا نترك Three.js يكتب أبعاد CSS على الكانفاس — التنسيق من CSS وحده فلا تمطيط ثنائي الخطية
+R.setSize(w, h, false);
 C.aspect = w / h;
 // تكييف زاوية الرؤية مع اتجاه الشاشة (أفقي/عمودي) ليبقى الملعب مرئياً
 const land = w > h;
@@ -288,8 +302,12 @@ draw(cv.getContext('2d'), w, h);
 const t = new THREE.CanvasTexture(cv);
 t.encoding = THREE.sRGBEncoding;
 t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry);
-t.anisotropy = R.capabilities.getMaxAnisotropy();
-return t;
+return applyTextureFiltering(t);
+}
+function rawTex(cv){
+const t = new THREE.CanvasTexture(cv);
+t.encoding = THREE.sRGBEncoding;
+return applyTextureFiltering(t);
 }
 // ===== أرضية خرسانية مصقولة: ألواح 5×5 بدرجات متفاوتة + فواصل غائرة + طبقة تآكل وبقع وآثار عجلات + بقع ضوء المصابيح
 const TONES=[[92,97,104],[84,89,96],[97,102,108],[88,93,100]];
@@ -566,9 +584,7 @@ z.signTex.needsUpdate = true;
 }
 function makeZoneSign(z){
 const cv = document.createElement('canvas'); cv.width = z.hz ? 1280 : 512; cv.height = z.hz ? 960 : 256;
-z.signCv = cv; z.signTex = new THREE.CanvasTexture(cv); z.signTex.encoding = THREE.sRGBEncoding;
-z.signTex.anisotropy = R.capabilities.getMaxAnisotropy();
-z.signTex.minFilter = THREE.LinearMipmapLinearFilter; z.signTex.magFilter = THREE.LinearFilter;
+z.signCv = cv; z.signTex = rawTex(cv);
 drawZoneSign(z);
 const spr = new THREE.Sprite(new THREE.SpriteMaterial({map:z.signTex, fog:false, toneMapped:false}));
 spr.scale.set(z.w*0.95, z.w*0.95*(cv.height/cv.width), 1);
@@ -645,11 +661,7 @@ sg.font = '900 300px "Segoe UI",Tahoma,sans-serif';
 sg.fillText('منطقة التجمع', 1024, 330);
 sg.direction = 'ltr'; sg.font = 'bold 124px "Segoe UI",Tahoma,sans-serif'; sg.fillStyle = '#baffd6';
 sg.fillText('MUSTER POINT', 1024, 566);
-const signTex = new THREE.CanvasTexture(signCv);
-signTex.encoding = THREE.sRGBEncoding;
-signTex.anisotropy = R.capabilities.getMaxAnisotropy();
-signTex.minFilter = THREE.LinearMipmapLinearFilter;
-signTex.magFilter = THREE.LinearFilter;
+const signTex = rawTex(signCv);
 const boardMat = new THREE.MeshBasicMaterial({map:signTex, toneMapped:false, fog:false});
 B(5.8, 3.0, 0.14, 0x14301f, EM.musterX, 3.4, boardZ - 0.1, g, 0.7, 0.1).castShadow = true;
 const board = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 2.8), boardMat);
@@ -1115,7 +1127,7 @@ ctx.fillStyle='#222'; ctx.font='bold 22px sans-serif'; ctx.fillText('KEEP THIS S
 }
 ctx.fillStyle='#171b1e';
 for(let i=0;i<30;i++){ const x=55+i*7.1; ctx.fillRect(x,486, i%4===0?4:2,18); }
-const t=new THREE.CanvasTexture(cv); t.encoding=THREE.sRGBEncoding; t.anisotropy=R.capabilities.getMaxAnisotropy();
+const t=rawTex(cv);
 return tc[k]=t;
 }
 const BOXG = new THREE.BoxGeometry(1.35, 1.35, 1.35), EDGEG = new THREE.EdgesGeometry(BOXG);
@@ -1134,7 +1146,7 @@ g.fillStyle = '#ab47bc'; g.fillRect(236,0,12,512); g.fillRect(0,236,512,12);
 g.strokeStyle = '#4a148c'; g.lineWidth = 14; g.strokeRect(7,7,498,498);
 g.fillStyle = '#fff'; g.beginPath(); g.arc(256,256,120,0,6.3); g.fill(); g.lineWidth = 10; g.stroke();
 g.fillStyle = '#7b1fa2'; g.font = '900 190px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?',256,270);
-const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisotropy = R.capabilities.getMaxAnisotropy(); return t;
+const t = rawTex(cv); return t;
 }
 let slowT = 0;
 /* إبطاء الحزام: زر فيزيائي بجوار الحزام، يُستخدم مرّة واحدة، يبطئ ٣٠ ثانية */
@@ -1194,7 +1206,7 @@ g.fillStyle = gr; g.fillRect(0, 0, w, h);
 });
 function critTagCanvas(){
 const cv = document.createElement('canvas'); cv.width = 192; cv.height = 96;
-const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding;
+const t = rawTex(cv);
 return { cv, t, sec: -1 };
 }
 function drawCritTag(tag, sec){
@@ -2070,19 +2082,22 @@ requestAnimationFrame(loop);
 const rawDt = (now - last) / 1000;
 const dt = document.hidden || rawDt > 1 ? 0 : Math.min(rawDt, .5); last = now;
 if(!document.hidden && rawDt > 0 && rawDt < 1){
-// جودة متكيّفة في الاتجاهين: تخفض عند البطء وتستعيد الحدة الكاملة عند توفر الأداء
-if(perfWarm < 3) perfWarm += rawDt;
+// حماية الأداء: أقل من 35 إطاراً/ث لعدّتين متتاليتين ⇒ خفض مؤقت للنسبة؛ وعند الاستقرار نعود للنسبة الهدف
+if(perfWarm < 2.5) perfWarm += rawDt;
 else {
 perfWin += rawDt; perfFrames++;
-if(perfFrames >= 60 || (perfFrames >= 12 && perfWin >= 1.2)){
+if(perfFrames >= 30 || (perfFrames >= 10 && perfWin >= 1.4)){
 const avg = perfWin / perfFrames; perfWin = 0; perfFrames = 0;
+if(avg > 1/35){ slowStreak++; fastStreak = 0; }
+else if(avg < 1/52){ fastStreak++; slowStreak = 0; }
+else { slowStreak = 0; fastStreak = 0; }
 let next = renderScale;
-if(avg > .070) next = renderScale - .2;
-else if(avg > .055) next = renderScale - .1;
-else if(avg < .0135) next = renderScale + .2;
-else if(avg < .0185) next = renderScale + .05;
+if(slowStreak >= 2) next = Math.max(.5, renderScale - .25);
+else if(fastStreak >= 3) next = Math.min(scaleCeil, renderScale + .25);
 next = Math.max(.5, Math.min(scaleCeil, next));
-if(Math.abs(next - renderScale) > .001){ renderScale = next; rs(); }
+if(Math.abs(next - renderScale) > .001){
+renderScale = next; slowStreak = 0; fastStreak = 0; rs();
+}
 }
 }
 }
