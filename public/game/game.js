@@ -650,17 +650,21 @@ sg.fillStyle = '#063d22'; sg.fillRect(0,0,2048,1024);
 const sgr = sg.createLinearGradient(0,0,0,1024); sgr.addColorStop(0,'rgba(255,255,255,.1)'); sgr.addColorStop(1,'rgba(0,0,0,.22)');
 sg.fillStyle = sgr; sg.fillRect(0,0,2048,1024);
 sg.strokeStyle = '#eafff2'; sg.lineWidth = 40; sg.strokeRect(40,40,1968,944);
-// شريط سفلي أصفر عالي التباين
-sg.fillStyle = '#ffd54a'; sg.fillRect(80,704,1888,240);
+// شريط سفلي أصفر عالي التباين يحمل رقم الطوارئ الداخلي
+sg.fillStyle = '#ffd54a'; sg.fillRect(80,690,1888,254);
 sg.fillStyle = '#0a2a18'; sg.textAlign = 'center'; sg.textBaseline = 'middle';
-sg.direction = 'rtl'; sg.font = '900 108px "Segoe UI",Tahoma,sans-serif';
-sg.fillText('مخرج طوارئ • EMERGENCY EXIT', 1024, 826);
 // العنوان العربي
 sg.fillStyle = '#ffffff';
-sg.font = '900 300px "Segoe UI",Tahoma,sans-serif';
-sg.fillText('منطقة التجمع', 1024, 330);
-sg.direction = 'ltr'; sg.font = 'bold 124px "Segoe UI",Tahoma,sans-serif'; sg.fillStyle = '#baffd6';
-sg.fillText('MUSTER POINT', 1024, 566);
+sg.font = '900 250px "Segoe UI",Tahoma,sans-serif';
+sg.fillText('منطقة التجمع', 1024, 262);
+sg.direction = 'ltr'; sg.font = 'bold 104px "Segoe UI",Tahoma,sans-serif'; sg.fillStyle = '#baffd6';
+sg.fillText('MUSTER POINT', 1024, 442);
+// سطر رقم الطوارئ فوق الشريط الأصفر
+sg.direction = 'rtl'; sg.font = '900 82px "Segoe UI",Tahoma,sans-serif'; sg.fillStyle = '#ffd54a';
+sg.fillText('رقم الطوارئ الداخلي • EMERGENCY NUMBER', 1024, 588);
+// الرقم نفسه كبير وواضح من مسافة (مأخوذ من قواعد اللعبة لا مُكرَّر يدوياً)
+sg.direction = 'ltr'; sg.font = '900 190px "Segoe UI",Tahoma,sans-serif'; sg.fillStyle = '#0a2a18';
+sg.fillText(String((gameRules.emergency && gameRules.emergency.code) || '24352888'), 1024, 818);
 const signTex = rawTex(signCv);
 const boardMat = new THREE.MeshBasicMaterial({map:signTex, toneMapped:false, fog:false});
 B(5.8, 3.0, 0.14, 0x14301f, EM.musterX, 3.4, boardZ - 0.1, g, 0.7, 0.1).castShadow = true;

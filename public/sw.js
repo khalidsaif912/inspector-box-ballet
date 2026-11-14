@@ -1,5 +1,5 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v7";
+const VERSION = "v8";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
