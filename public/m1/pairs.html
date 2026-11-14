@@ -1,0 +1,1300 @@
+﻿<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<script>try{document.documentElement.setAttribute("data-theme", localStorage.getItem("dgr-theme") || "dark");}catch(e){document.documentElement.setAttribute("data-theme","dark");}</script>
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#070B14"/>
+<title>قرائن الصور</title>
+
+<style>
+:root{
+  --bg0:#070B14; --bg1:#0B1220;
+  --stroke:rgba(255,255,255,.12);
+  --text:#EEF3FF;
+  --muted:rgba(238,243,255,.72);
+  --shadow:0 18px 55px rgba(0,0,0,.45);
+  --card-back:url('card-back.png');
+}
+*{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial}
+html,body{height:100%;margin:0;overflow:hidden}
+body{
+  color:var(--text);
+  background:
+    radial-gradient(920px 520px at 12% 8%, rgba(79,172,254,.14), transparent 58%),
+    linear-gradient(180deg, var(--bg0), var(--bg1));
+}
+
+/* ===== Desktop Layout ===== */
+.app{position:fixed;inset:0;display:grid;grid-template-columns:260px 1fr}
+.sidebar{padding:14px}
+.sbox{
+  height:100%;border-radius:28px;border:1px solid var(--stroke);
+  background:linear-gradient(180deg, rgba(18,28,48,.94), rgba(8,14,26,.88));
+  box-shadow:var(--shadow);
+  padding:14px;display:flex;flex-direction:column;gap:12px;
+}
+.brand{
+  display:flex;flex-direction:column;gap:4px;padding:10px 12px;
+  border-radius:20px;border:1px solid rgba(255,255,255,.10);
+  background:rgba(5,10,20,.35);
+}
+.brand .appname{font-size:12px;color:var(--muted)}
+.brand .title{font-size:16px;font-weight:900;letter-spacing:.2px}
+
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.iconBtn{
+  width:40px;height:40px;border-radius:16px;
+  border:1px solid var(--stroke);background:rgba(255,255,255,.05);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;text-decoration:none;font-size:22px;
+  transition:transform .12s ease;-webkit-tap-highlight-color:transparent;
+}
+.iconBtn:hover{background:rgba(255,255,255,.07)}
+.iconBtn:active{transform:scale(.97)}
+
+.pills{display:flex;gap:8px}
+.pill{
+  flex:1;height:42px;border-radius:16px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.05);
+  display:flex;align-items:center;justify-content:center;
+  text-decoration:none;font-size:18px;
+}
+.pill.active{box-shadow:0 0 0 2px rgba(79,172,254,.35) inset}
+
+.timer{
+  padding:14px;border-radius:22px;border:1px solid rgba(255,255,255,.10);
+  background:rgba(5,10,20,.35);
+}
+.timer .lbl{font-size:12px;color:var(--muted);margin-bottom:8px}
+.timer .val{
+  font-variant-numeric:tabular-nums;font-size:46px;font-weight:950;
+  letter-spacing:1px;text-align:center;padding:10px;
+  border-radius:18px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.04);
+}
+.timer .val.pulse{animation:glow 1.15s ease-in-out infinite}
+@keyframes glow{0%,100%{text-shadow:0 0 0 rgba(79,172,254,0)}50%{text-shadow:0 0 22px rgba(79,172,254,.55)}}
+.kv{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.kv span{font-size:12px;color:var(--muted)}
+.kv strong{font-size:18px}
+
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.act{
+  height:46px;border-radius:16px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.05);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:22px;
+}
+.act:active{transform:scale(.98)}
+
+.spacer{flex:1}
+.note{font-size:12px;color:var(--muted);text-align:center;padding:8px 6px}
+
+/* ===== Main Game Area ===== */
+main{
+  padding:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  overflow:hidden;
+}
+
+
+/* ===== Character Panel (Desktop) ===== */
+.playArea{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+}
+.charPanel{
+  display:none;            /* يظهر فقط في الشاشات الكبيرة */
+  flex:0 0 260px;
+  width:260px;
+  align-items:flex-end;
+  justify-content:center;
+  pointer-events:none;
+  user-select:none;
+}
+.charPanel img{
+  width:100%;
+  height:auto;
+  max-height:calc(100vh - 2cm - 40px);
+  object-fit:contain;
+  filter:drop-shadow(0 18px 40px rgba(0,0,0,.45));
+}
+
+/* ✅ تمركز + فراغ 1 سم أعلى وأسفل بدون التلاصق */
+.stage{
+  width:100%;
+  max-width:900px;
+  padding-top: 1cm;
+  padding-bottom: 1cm;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* ✅ شبكة مربعات + تمركز في الوسط (أفقي وعمودي) */
+.grid{
+  --cell: 120px;
+  display:grid;
+  grid-template-columns:repeat(4, var(--cell));
+  grid-auto-rows: var(--cell);
+  gap:12px;
+  justify-content:center;
+  align-content:center;
+}
+
+/* ===== Cards ===== */
+.card{
+  width:100%;
+  height:auto;
+  aspect-ratio: 1 / 1;
+  perspective:1100px;
+  cursor:pointer;
+  position:relative
+}
+.inner{
+  width:100%;height:100%;position:relative;
+  transform-style:preserve-3d;
+  transition:transform .25s cubic-bezier(.2,.9,.2,1);
+}
+.card.flipped .inner{transform:rotateY(180deg)}
+.face{
+  position:absolute;inset:0;border-radius:18px;
+  border:1px solid var(--stroke);
+  background:rgba(255,255,255,.04);
+  box-shadow:0 10px 25px rgba(0,0,0,.25);
+  backface-visibility:hidden;overflow:hidden;
+}
+.face::after{
+  content:"";position:absolute;inset:-2px;
+  background:linear-gradient(120deg, transparent 0%, rgba(255,255,255,.12) 35%, transparent 60%);
+  transform:translateX(-80%) rotate(10deg);opacity:.22;
+}
+.card:hover .face::after{animation:shine 1.2s ease-in-out}
+@keyframes shine{0%{transform:translateX(-80%) rotate(10deg)}100%{transform:translateX(80%) rotate(10deg)}}
+.front{
+  background:
+    radial-gradient(400px 240px at 30% 25%, rgba(79,172,254,.18), transparent 55%),
+    radial-gradient(340px 200px at 80% 80%, rgba(0,242,254,.12), transparent 55%),
+    var(--card-back) center/44% no-repeat,
+    rgba(255,255,255,.035);
+}
+.back{
+  transform:rotateY(180deg);
+  background:radial-gradient(420px 260px at 25% 30%, rgba(255,255,255,.06), transparent 60%), rgba(10,16,32,.55);
+  display:flex;align-items:center;justify-content:center;
+}
+.imgBox{
+  width:82%;height:82%;border-radius:14px;
+  background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.10);
+  overflow:hidden;
+}
+.imgBox img{width:100%;height:100%;object-fit:contain;display:block}
+.card.matched .face{border-color:rgba(79,172,254,.35)}
+.card.matched::before{
+  content:"";position:absolute;inset:-1px;border-radius:22px;z-index:-1;
+  background:var(--pair-gradient);opacity:.9;
+}
+.card.match-anim .inner{animation:pop .28s ease-out}
+@keyframes pop{0%{transform:rotateY(180deg) scale(1)}65%{transform:rotateY(180deg) scale(1.10)}100%{transform:rotateY(180deg) scale(1)}}
+
+/* ===== Modal ===== */
+.modal{
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  z-index:90;padding:16px;background:rgba(0,0,0,.55);
+}
+.modal.show{display:flex}
+.cardModal{
+  width:min(640px,94vw);border-radius:24px;border:1px solid rgba(255,255,255,.14);
+  background:linear-gradient(180deg, rgba(18,28,48,.94), rgba(8,14,26,.88));
+  box-shadow:var(--shadow);padding:16px;
+}
+.modalHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.modalHeader h2{margin:0;font-size:16px}
+.xbtn{
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);
+  color:var(--text);border-radius:16px;padding:8px 12px;cursor:pointer;
+}
+.small{color:var(--muted);font-size:13px}
+.inputRow{display:flex;gap:10px;margin:12px 0}
+.inputRow input{
+  flex:1;border-radius:16px;border:1px solid var(--stroke);
+  background:rgba(5,10,20,.35);color:var(--text);padding:12px 14px;
+  font-size:14px;outline:none;
+}
+.primary{
+  border-radius:16px;border:1px solid var(--stroke);
+  background:rgba(79,172,254,.18);color:var(--text);
+  padding:12px 14px;cursor:pointer;white-space:nowrap;
+}
+.table{
+  width:100%;border-collapse:collapse;font-size:13px;
+  overflow:hidden;border-radius:16px;border:1px solid rgba(255,255,255,.10);
+}
+.table th,.table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:center}
+.table th{color:var(--muted);font-weight:700}
+
+/* ===== Mobile Bars ===== */
+.mTop,.mBottom{display:none}
+.mTop{
+  position:fixed;left:10px;right:10px;top:10px;z-index:60;
+  height:54px;border-radius:22px;border:1px solid var(--stroke);
+  background:linear-gradient(180deg, rgba(18,28,48,.94), rgba(8,14,26,.88));
+  box-shadow:0 14px 40px rgba(0,0,0,.40);
+  align-items:center;justify-content:space-between;padding:10px 12px;
+}
+.mTitle{font-weight:900;font-size:15px;letter-spacing:.2px}
+.mTopActions{display:flex;align-items:center;gap:8px}
+.mBtn,.mIcon{
+  width:36px;height:36px;border-radius:12px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.05);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text);font-size:20px;
+  -webkit-tap-highlight-color:transparent;
+}
+.mBtn:active,.mIcon:active{transform:scale(.97)}
+
+.mBottom{
+  position:fixed;left:10px;right:10px;bottom:10px;
+  padding-bottom:calc(env(safe-area-inset-bottom));z-index:60;
+  height:64px;border-radius:24px;border:1px solid var(--stroke);
+  background:linear-gradient(180deg, rgba(18,28,48,.94), rgba(8,14,26,.88));
+  box-shadow:0 14px 40px rgba(0,0,0,.40);
+  align-items:center;justify-content:space-between;padding:10px 12px;
+}
+.mStat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:88px}
+.mLbl{font-size:11px;color:var(--muted)}
+.mVal{font-variant-numeric:tabular-nums;font-size:18px;font-weight:950}
+
+/* ===== Responsive ===== */
+/* تظهر فقط في الشاشات الكبيرة */
+@media (min-width: 1024px){
+  .charPanel{display:flex;}
+  .sidebar{ position:relative; }
+  .charPanel{
+    display:flex;
+    justify-content:center;
+    width:100%;
+    margin:18px 0 -40px 0;   /* خلف الطاولة */
+    z-index:1;
+    pointer-events:none;
+  }
+  .timer{ position:relative; z-index:3; }
+}
+@media (min-width: 1600px){
+  .grid{
+    --cell: clamp(150px, 7vw, 200px);
+    gap:14px;
+  }
+}
+@media (max-width: 720px){
+  .sidebar{display:none}
+  .app{grid-template-columns:1fr}
+
+  main{
+    padding:8px;
+    min-height:100vh;
+    padding-top:68px;
+    padding-bottom:78px;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .stage{
+    max-width:none;
+    width:100%;
+    height:auto;
+    padding-top:0;
+    padding-bottom:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .mTop,.mBottom{display:flex}
+
+  .grid{
+    --cell: min(22vw, 92px);
+    grid-template-columns:repeat(4, var(--cell));
+    gap:6px;
+    justify-content:center;
+    align-content:center;
+  }
+
+  .face{border-radius:14px}
+  .imgBox{width:85%;height:85%}
+  .mBottom{height:58px}
+  .mTop{height:48px}
+  .mBtn,.mIcon{width:36px;height:36px;border-radius:12px;font-size:18px}
+  .mStat{min-width:70px}
+  .mVal{font-size:15px}
+  .mLbl{font-size:10px}
+}
+
+
+
+/* ===== Character as Broadcaster (خلف الطاولة) ===== */
+
+/* افتراضيًا مخفية */
+.charPanel{
+  display:none;
+}
+
+/* تظهر فقط في الشاشات الكبيرة */
+@media (min-width: 1024px){
+  .grid{
+    /* ⬆️ تكبير واضح */
+    --cell: clamp(140px, 8.5vw, 190px);
+    grid-template-columns:repeat(5, var(--cell));
+    gap:14px;
+  }
+}
+
+  /* الشخصية */
+  .charPanel{
+    display:flex;
+    justify-content:center;
+
+    width:100%;
+    margin:18px 0 -40px 0;   /* 👈 السطر السحري */
+    z-index:1;              /* خلف الطاولة */
+    pointer-events:none;    /* لا تتفاعل مع النقر */
+  }
+
+  .charPanel img{
+    max-width:100%;
+    max-height:240px;       /* حجم الرأس/الجسم */
+    object-fit:contain;
+
+    display:block;
+    filter: drop-shadow(0 18px 36px rgba(0,0,0,.45));
+  }
+
+  /* الطاولة (الوقت) */
+  .timer{
+    position:relative;
+    z-index:3;              /* أمام الشخصية */
+  }
+}
+/* لا تعرض alt كعنصر مرئي، فقط امنع ظهور الصورة المكسورة */
+.charPanel img{
+  display:none;           /* مخفية حتى تحمل */
+}
+.charPanel img.is-ready{
+  display:block;          /* تظهر بعد التحميل */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ===== نتيجة المرحلة ونظام النقاط الموحّد ===== */
+.stageResult{
+  display:flex;flex-direction:column;gap:8px;margin:10px 0 4px;padding:12px 14px;border-radius:16px;
+  background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.32);
+}
+.stageResult[hidden]{display:none}
+.srRow{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--muted)}
+.srRow strong{font-size:18px;color:#fff}
+.srStars{display:flex;gap:5px}
+.srStars i{width:16px;height:16px;border-radius:3px;background:rgba(255,255,255,.14);display:block}
+.srStars i.on{background:var(--accent,#fbbf24);box-shadow:0 0 10px rgba(251,191,36,.6)}
+.srActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.srActions .primary,.srActions .ghost{
+  flex:1 1 130px;height:40px;border-radius:12px;display:inline-flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:13px;cursor:pointer;text-decoration:none;
+  font-family:inherit;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:var(--text);
+}
+.srActions .primary{background:linear-gradient(135deg,#fcd34d,#f59e0b);color:#1a1204;border:none}
+</style>
+
+</head>
+<body>
+
+<!-- Mobile Top Bar -->
+<div class="mTop">
+  <a class="mBtn" href="../game.html" title="العودة للعبة الفرز">🏠</a>
+  <div class="mTitle">قرائن الصور 🧩</div>
+  <div class="mTopActions">
+    <button class="mBtn" id="mTheme" data-theme-toggle title="تبديل الثيم" aria-label="تبديل الثيم">🌙</button>
+    <button class="mBtn" id="mGames" title="الألعاب">🎮</button>
+  </div>
+</div>
+
+<!-- Mobile Bottom Bar -->
+<div class="mBottom">
+  <button class="mIcon" id="mBoard" title="السجل">🏆</button>
+  <button class="mIcon" id="mSound" title="الصوت">🔊</button>
+  <div class="mStat">
+    <div class="mLbl">المحاولات</div>
+    <div class="mVal" id="mMoves">0</div>
+  </div>
+  <div class="mStat">
+    <div class="mLbl">الوقت</div>
+    <div class="mVal" id="mTime">00:00</div>
+  </div>
+  <button class="mIcon" id="mRestart" title="إعادة">🔁</button>
+</div>
+
+<!-- Desktop Layout -->
+<div class="app">
+  <aside class="sidebar">
+    <div class="sbox">
+      <div class="brand">
+        <div class="appname">مستودع الشحن الجوي</div>
+        <div class="title">🧩 قرائن الصور</div>
+      </div>
+
+      <div class="row">
+        <a class="iconBtn" href="../game.html" title="العودة للعبة الفرز">🏠</a>
+        <button class="iconBtn" id="themeBtn" data-theme-toggle title="تبديل الثيم" aria-label="تبديل الثيم">🌙</button>
+        <button class="iconBtn" id="gamesBtn" title="الألعاب">🎮</button>
+      </div>
+
+      <aside class="charPanel" aria-hidden="true">
+        <img id="charImg" alt="شخصية" />
+      </aside>
+      <div class="timer">
+        <div class="lbl">الوقت</div>
+        <div class="val" id="timeBig">00:00</div>
+        <div class="kv"><span>المحاولات</span><strong id="movesBig">0</strong></div>
+      </div>
+
+      <div class="actions">
+        <div class="act" id="restartSide" title="إعادة">🔁</div>
+        <div class="act" id="soundSide" title="الصوت">🔊</div>
+        <div class="act" id="boardSide" title="السجل">🏆</div>
+      </div>
+      <div class="spacer"></div>
+          </div>
+  </aside>
+
+  <main>
+    <div class="playArea">
+
+      <div class="stage">
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Stage Result Modal -->
+<div class="modal" id="stageModal">
+  <div class="cardModal">
+    <div class="modalHeader">
+      <h2>✅ اكتملت قرائن الصور</h2>
+      <button class="xbtn" id="closeStage">إغلاق</button>
+    </div>
+    <div class="stageResult" id="stageResult" hidden>
+      <div class="srRow"><span>نقاط المرحلة</span><strong id="srScore">0</strong></div>
+      <div class="srRow"><span>المجموع التراكمي</span><strong id="srTotal">0</strong></div>
+      <div class="srStars" id="srStars"></div>
+      <div class="srActions">
+        <button class="primary" id="srReplay" type="button">إعادة قرائن الصور</button>
+        <a class="ghost" href="../game.html">العودة للعبة الفرز</a>
+      </div>
+      <button class="xbtn" id="srBoard" type="button" style="margin-top:6px">🏆 السجل العالمي</button>
+    </div>
+  </div>
+</div>
+
+<!-- Leaderboard Modal -->
+<div class="modal" id="boardModal">
+  <div class="cardModal">
+    <div class="modalHeader">
+      <h2>🏆 أفضل النتائج (عالمي)</h2>
+      <button class="xbtn" id="closeBoard">إغلاق</button>
+    </div>
+    <div class="small" id="boardStatus">جاهز</div>
+    <div class="inputRow">
+      <input id="playerName" placeholder="اكتب اسمك (اختياري)"/>
+      <button class="primary" id="saveBtn">حفظ نتيجتي</button>
+    </div>
+    <table class="table">
+      <thead><tr><th>#</th><th>الاسم</th><th>الوقت</th><th>المحاولات</th></tr></thead>
+      <tbody id="boardBody"><tr><td colspan="4" class="small">لم يتم التحميل بعد</td></tr></tbody>
+    </table>
+    <div class="small" style="margin-top:10px">الترتيب: أقل وقت ثم أقل محاولات</div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+  // 🔐 Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyD4wKBL-frMWN9Cw7uJFsyaHCk963JRUuA",
+    authDomain: "similarity-f2428.firebaseapp.com",
+    projectId: "similarity-f2428",
+    appId: "1:353323874706:web:7999c84682c30f6800694b",
+    storageBucket: "similarity-f2428.firebasestorage.app",
+    messagingSenderId: "353323874706",
+    measurementId: "G-X5E3CC8RZF"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  async function ensureLogin(){
+    if (auth.currentUser) return auth.currentUser;
+    const cred = await signInAnonymously(auth);
+    return cred.user;
+  }
+
+  // ✅ Save score (matches your Firestore rules)
+  async function saveScoreToFirestore(playerName, timeSeconds, moves){
+    const user = await ensureLogin();
+
+    const doc = {
+      playerName: String(playerName ?? "").trim().slice(0, 20) || "لاعب",
+      timeSeconds: Math.trunc(Number(timeSeconds)),
+      moves: Math.trunc(Number(moves)),
+      pairsCount: 10,
+      gameId: "pairs",
+      createdAt: serverTimestamp(),
+      uid: user.uid
+    };
+
+    // Basic guardrails (helps avoid rule failures)
+    if (doc.timeSeconds < 1 || doc.timeSeconds > 3600) throw new Error("timeSeconds خارج النطاق");
+    if (doc.moves < 1 || doc.moves > 999) throw new Error("moves خارج النطاق");
+
+    const ref = await addDoc(collection(db, "scores"), doc);
+    return ref.id;
+  }
+
+  // ✅ Fetch scores (order by createdAt only, then sort client-side to avoid composite index)
+  async function fetchScores(){
+    const q = query(collection(db, "scores"), orderBy("createdAt", "desc"), limit(200));
+    const snap = await getDocs(q);
+    const rows = [];
+    snap.forEach(d => rows.push(d.data()));
+
+    const filtered = rows.filter(r => r && r.gameId === "pairs");
+    filtered.sort((a,b)=>{
+      const ta = (typeof a.timeSeconds === "number") ? a.timeSeconds : 1e9;
+      const tb = (typeof b.timeSeconds === "number") ? b.timeSeconds : 1e9;
+      if (ta !== tb) return ta - tb;
+      const ma = (typeof a.moves === "number") ? a.moves : 1e9;
+      const mb = (typeof b.moves === "number") ? b.moves : 1e9;
+      return ma - mb;
+    });
+    return filtered.slice(0, 20);
+  }
+
+  // 🌍 expose to non-module scripts
+  window.saveScoreToFirestore = async (playerName, timeSeconds, moves) => {
+    try{
+      const id = await saveScoreToFirestore(playerName, timeSeconds, moves);
+      console.log("✅ Saved score:", id);
+      return { ok:true, id };
+    }catch(e){
+      console.error("❌ Save failed:", e);
+      return { ok:false, error: e?.message || String(e) };
+    }
+  };
+
+  window.fetchScores = async () => {
+    try{
+      const rows = await fetchScores();
+      return { ok:true, rows };
+    }catch(e){
+      console.error("❌ Fetch failed:", e);
+      return { ok:false, error: e?.message || String(e), rows: [] };
+    }
+  };
+
+  console.log("✅ Firebase v9 ready");
+</script>
+
+<script src="../game/game-hub.js"></script>
+<script>
+const MANIFEST_URL="manifest.json";
+const IMG_BASE="";
+
+let grid,timeBig,movesBig,restartSide,soundSide,boardSide,gamesBtn,gamesModal,closeGames;
+let boardModal,closeBoard,boardStatus,boardBody,playerNameEl,saveBtn;
+let mGames,mRestart,mSound,mBoard,mTime,mMoves;
+let first=null,second=null,lock=false;
+let moves=0,matchedPairs=0;
+let elapsedSeconds=0;
+let startMs=0,timerId=null,running=false;
+let soundOn=true;
+let lastResult={timeSeconds:null,moves:null};
+
+const pairGradients=[
+  "linear-gradient(135deg,#4facfe,#00f2fe)",
+  "linear-gradient(135deg,#a18cd1,#fbc2eb)",
+  "linear-gradient(135deg,#43e97b,#38f9d7)",
+  "linear-gradient(135deg,#f7971e,#ffd200)",
+  "linear-gradient(135deg,#fa709a,#fee140)",
+  "linear-gradient(135deg,#30cfd0,#330867)",
+  "linear-gradient(135deg,#84fab0,#8fd3f4)",
+  "linear-gradient(135deg,#667eea,#764ba2)",
+  "linear-gradient(135deg,#f857a6,#ff5858)",
+  "linear-gradient(135deg,#cfd9df,#e2ebf0)"
+];
+const usedGradients={};
+
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function randInt(max){
+  if(max<=0)return 0;
+  try{
+    if(window.crypto?.getRandomValues){
+      const lim=Math.floor(0xFFFFFFFF/max)*max;
+      const buf=new Uint32Array(1);
+      while(true){crypto.getRandomValues(buf);const x=buf[0];if(x<lim)return x%max}
+    }
+  }catch(e){}
+  return Math.floor(Math.random()*max);
+}
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=randInt(i+1);[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
+function pickK(arr,k){const a=arr.slice(),n=a.length,kk=Math.min(k,n);
+  for(let i=0;i<kk;i++){const j=i+randInt(n-i);[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,kk)}
+
+function sizeGrid(){
+  const main=document.querySelector("main").getBoundingClientRect();
+  const gap=parseFloat(getComputedStyle(grid).gap)||10;
+  const isDesktop=window.matchMedia('(min-width:1024px)').matches;
+  const cols=isDesktop?5:4,rows=isDesktop?4:5;
+  const maxW=main.width-(isDesktop?0:16);
+  const maxH=main.height-(isDesktop?0:0);
+  const cell=Math.floor(Math.min((maxW-gap*(cols-1))/cols,(maxH-gap*(rows-1))/rows));
+  grid.style.width=(cell*cols+gap*(cols-1))+"px";
+  grid.style.height=(cell*rows+gap*(rows-1))+"px";
+}
+
+function formatTime(sec){const m=Math.floor(sec/60),s=sec%60;return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
+
+function startTimerIfNeeded(){
+  if(running)return;
+  running=true;
+  timeBig.classList.add("pulse");
+  startMs=Date.now();
+  elapsedSeconds=0;
+  timeBig.textContent="00:00";
+  if(mTime)mTime.textContent="00:00";
+  timerId=setInterval(()=>{
+    const sec=Math.floor((Date.now()-startMs)/1000);
+    const t=formatTime(sec);
+    timeBig.textContent=t;
+    if(mTime)mTime.textContent=t;
+  },250);
+}
+
+function stopTimer(){
+  // احفظ الوقت قبل الإيقاف حتى لا يصبح 0 بعد running=false
+  if (running) {
+    elapsedSeconds = Math.max(1, Math.floor((Date.now() - startMs) / 1000));
+  }
+  running=false;
+  timeBig.classList.remove("pulse");
+  if(timerId){clearInterval(timerId);timerId=null}
+}
+
+function getTimeSeconds(){
+  return running ? Math.max(1, Math.floor((Date.now()-startMs)/1000)) : elapsedSeconds;
+}
+
+const AudioCtx=window.AudioContext||window.webkitAudioContext;
+let ctx;
+function beep(freq=880,dur=0.08){
+  if(!soundOn)return;
+  try{
+    ctx=ctx||new AudioCtx();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type="sine";o.frequency.value=freq;g.gain.value=0.05;
+    o.connect(g).connect(ctx.destination);
+    o.start();o.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
+
+function syncSound(){
+  const icon=soundOn?"🔊":"🔇";
+  soundSide.textContent=icon;
+  if(mSound)mSound.textContent=icon;
+}
+
+
+// ===== Central Games Menu (from games.json) =====
+const IS_SUBFOLDER = location.pathname.split("/").filter(Boolean).length > 1;
+const GAMES_JSON_URL = "../games.json";
+function toRootHref(href){
+  if(!href || href==="#") return "#";
+  if(/^https?:\/\//i.test(href)) return href;
+  if(href.startsWith("/")) return href;
+  return "../" + String(href).replace(/^\.?\/+/,"");
+}
+
+const CURRENT_GAME_ID = "pairs";
+
+function escHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+async function renderGamesMenu(){
+  const box = document.getElementById("gamesList");
+  if(!box) return;
+  box.innerHTML = '<div class="small">جاري تحميل القائمة...</div>';
+  try{
+    const res = await fetch(GAMES_JSON_URL, {cache:"no-store"});
+    if(!res.ok) throw new Error("fetch failed: "+res.status);
+    const data = await res.json();
+    const games = Array.isArray(data?.games) ? data.games : [];
+    if(!games.length) throw new Error("games.json فارغ");
+    box.innerHTML = "";
+    games.forEach(g=>{
+      const id = String(g.id||"");
+      const name = String(g.name||"لعبة");
+      const icon = String(g.icon||"🎮");
+      const note = String(g.note||"");
+      const href = String(g.href||"#");
+      const status = String(g.status||"soon");
+      const isHere = (CURRENT_GAME_ID && id===CURRENT_GAME_ID);
+      const isLive = status==="live" && href && href!=="#";
+      if(isHere){
+        box.insertAdjacentHTML("beforeend", `
+          <div class="pill active" style="height:60px;flex-direction:column;gap:4px">
+            <div>${escHtml(icon)} ${escHtml(name)}</div>
+            <small style="font-size:11px;color:var(--muted)">أنت هنا</small>
+          </div>
+        `);
+      } else if(isLive){
+        box.insertAdjacentHTML("beforeend", `
+          <a class="pill" href="${escHtml(toRootHref(href))}" style="height:60px;flex-direction:column;gap:4px">
+            <div>${escHtml(icon)} ${escHtml(name)}</div>
+            <small style="font-size:11px;color:var(--muted)">${escHtml(note)}</small>
+          </a>
+        `);
+      } else {
+        box.insertAdjacentHTML("beforeend", `
+          <div class="pill" style="height:60px;flex-direction:column;gap:4px;opacity:.55;cursor:not-allowed">
+            <div>${escHtml(icon)} ${escHtml(name)}</div>
+            <small style="font-size:11px;color:var(--muted)">قريباً</small>
+          </div>
+        `);
+      }
+    });
+  }catch(e){
+    console.warn("games menu load failed", e);
+    box.innerHTML = '<div class="small">تعذر تحميل قائمة الألعاب — تأكد أن games.json في الجذر (../games.json)</div>';
+  }
+}
+
+function openStageModal(){
+  const m = document.getElementById("stageModal");
+  if(m) m.classList.add("show");
+}
+function closeStageModal(){
+  const m = document.getElementById("stageModal");
+  if(m) m.classList.remove("show");
+}
+function openGames(){
+  renderGamesMenu();
+gamesModal.classList.add("show")}
+function closeGamesModal(){gamesModal.classList.remove("show")}
+function openBoard(){boardModal.classList.add("show");loadBoard()}
+function closeBoardModal(){boardModal.classList.remove("show")}
+
+async function loadBoard(){
+  // Firestore enabled?
+  if(typeof window.fetchScores !== "function"){
+    boardStatus.textContent="السجل غير مفعّل";
+    boardBody.innerHTML='<tr><td colspan="4" class="small">فعّل Firebase ثم أعد التحميل</td></tr>';
+    return;
+  }
+  boardStatus.textContent="جاري التحميل...";
+  const res = await window.fetchScores();
+  if(!res.ok){
+    boardStatus.textContent="تعذر التحميل: "+(res.error||"");
+    boardBody.innerHTML='<tr><td colspan="4" class="small">تعذر تحميل النتائج</td></tr>';
+    return;
+  }
+
+  const rows = res.rows || [];
+  boardBody.innerHTML = rows.length ? "" : '<tr><td colspan="4" class="small">لا توجد نتائج بعد</td></tr>';
+
+  rows.slice(0,10).forEach((r,i)=>{
+    const name = (r.playerName && String(r.playerName).trim()) ? r.playerName : "لاعب";
+    const t = (typeof r.timeSeconds==="number") ? formatTime(r.timeSeconds) : "--:--";
+    const m = (typeof r.moves==="number") ? r.moves : "-";
+    boardBody.insertAdjacentHTML("beforeend", `<tr><td>${i+1}</td><td>${escapeHtml(name)}</td><td>${t}</td><td>${m}</td></tr>`);
+  });
+
+  boardStatus.textContent="تم التحميل";
+}
+
+async function saveScore(name,timeSeconds,mv){
+  if(typeof window.saveScoreToFirestore !== "function"){
+    throw new Error("السجل غير مفعّل");
+  }
+  const res = await window.saveScoreToFirestore(name, timeSeconds, mv);
+  if(!res.ok) throw new Error(res.error || "فشل الحفظ");
+  return res.id;
+}
+
+// ===== نتيجة المرحلة وحفظها في نظام النقاط الموحّد =====
+const STAGE_ID = "pairs";
+function stageScore(timeSeconds, mv){
+  const raw = 600 - Math.max(0, mv - 10) * 12 - Math.round(timeSeconds * 2);
+  return Math.max(0, Math.min(600, Math.round(raw)));
+}
+function stageStars(timeSeconds, mv){
+  if(mv <= 14 && timeSeconds <= 60) return 3;
+  if(mv <= 20 && timeSeconds <= 100) return 2;
+  return 1;
+}
+function renderStageResult(score, stars, total){
+  const box = document.getElementById("stageResult");
+  if(!box) return;
+  const scoreEl = document.getElementById("srScore"), totalEl = document.getElementById("srTotal"), starBox = document.getElementById("srStars");
+  if(scoreEl) scoreEl.textContent = String(score);
+  if(totalEl) totalEl.textContent = String(total);
+  if(starBox){
+    starBox.innerHTML = "";
+    for(let i = 0; i < 3; i++){
+      const el = document.createElement("i");
+      if(i < stars) el.className = "on";
+      starBox.appendChild(el);
+    }
+  }
+  box.hidden = false;
+}
+function finishStage(result){
+  const t = Math.max(0, Number(result && result.timeSeconds) || 0);
+  const mv = Math.max(0, Number(result && result.moves) || 0);
+  const score = stageScore(t, mv);
+  const stars = stageStars(t, mv);
+  let total = score;
+  try{
+    if(window.GameHub){
+      GameHub.setActiveGame(STAGE_ID);
+      total = GameHub.saveGameScore(STAGE_ID, score, stars).totalScore;
+    }
+  }catch(e){}
+  renderStageResult(score, stars, total);
+  const replay = document.getElementById("srReplay");
+  if(replay && !replay.dataset.wired){
+    replay.dataset.wired = "1";
+    replay.addEventListener("click", () => { closeStageModal(); resetGame(); });
+  }
+  const stageBoard = document.getElementById("srBoard");
+  if(stageBoard && !stageBoard.dataset.wired){
+    stageBoard.dataset.wired = "1";
+    stageBoard.addEventListener("click", () => { closeStageModal(); openBoard(); });
+  }
+  return { score, stars, total };
+}
+
+async function build(){
+  const data=await(await fetch(MANIFEST_URL,{cache:"no-store"})).json();
+  const chosen=pickK(data.pairs,10);
+  const cards=[];
+  for(const p of chosen){
+    cards.push({pair:p.id,img:IMG_BASE+p.img1});
+    cards.push({pair:p.id,img:IMG_BASE+p.img2});
+  }
+  shuffle(cards);
+  grid.innerHTML="";
+  for(const c of cards){
+    const el=document.createElement("div");
+    el.className="card";
+    el.dataset.pair=c.pair;
+    el.innerHTML=`<div class="inner">
+      <div class="face front"></div>
+      <div class="face back"><div class="imgBox"><img src="${c.img}" loading="lazy" alt=""></div></div>
+    </div>`;
+    el.addEventListener("click",()=>clickCard(el));
+    grid.appendChild(el);
+  }
+  sizeGrid();
+}
+
+function setMoves(){
+  movesBig.textContent=String(moves);
+  if(mMoves)mMoves.textContent=String(moves);
+}
+
+function resetGame(){
+  stopTimer();
+  timeBig.textContent="00:00";
+  if(mTime)mTime.textContent="00:00";
+  startMs=0;running=false;elapsedSeconds=0;
+  moves=0;matchedPairs=0;setMoves();
+  first=second=null;lock=false;
+  lastResult={timeSeconds:null,moves:null};
+  for(const k of Object.keys(usedGradients))delete usedGradients[k];
+  build();
+  window.setCharacterState && window.setCharacterState('think');
+}
+
+function clickCard(card){
+  if(lock||card===first||card.classList.contains("matched"))return;
+  startTimerIfNeeded();
+  card.classList.add("flipped");
+  if(!first){first=card;return}
+  second=card;
+  moves++;setMoves();
+
+  if(first.dataset.pair===second.dataset.pair){
+    if(!usedGradients[first.dataset.pair]){
+      usedGradients[first.dataset.pair]=pairGradients[Object.keys(usedGradients).length%pairGradients.length];
+    }
+    const g=usedGradients[first.dataset.pair];
+    [first,second].forEach(c=>{
+      c.classList.add("matched","match-anim");
+      c.style.setProperty("--pair-gradient",g);
+      setTimeout(()=>c.classList.remove("match-anim"),280);
+    });
+    matchedPairs++;beep(1040,0.09);
+    window.setCharacterState && window.setCharacterState('win');
+    setTimeout(()=>{ if(matchedPairs!==10) window.setCharacterState && window.setCharacterState('think'); }, 1200);
+    navigator.vibrate?.(18);
+    first=second=null;
+    if(matchedPairs===10){
+      stopTimer();
+      lastResult={timeSeconds:getTimeSeconds(),moves:moves};
+      finishStage(lastResult);
+      setTimeout(openStageModal,420);
+    }
+  }else{
+    lock=true;beep(320,0.08);
+    window.setCharacterState && window.setCharacterState('confused');
+    setTimeout(()=>{
+      first.classList.remove("flipped");
+      second.classList.remove("flipped");
+      first=second=null;lock=false;
+      window.setCharacterState && window.setCharacterState('think');
+    },380);
+  }
+}
+
+function initElements(){
+  grid=document.getElementById("grid");
+  timeBig=document.getElementById("timeBig");
+  movesBig=document.getElementById("movesBig");
+  restartSide=document.getElementById("restartSide");
+  soundSide=document.getElementById("soundSide");
+  boardSide=document.getElementById("boardSide");
+  gamesBtn=document.getElementById("gamesBtn");
+  gamesModal=document.getElementById("gamesModal");
+  closeGames=document.getElementById("closeGames");
+  boardModal=document.getElementById("boardModal");
+  closeBoard=document.getElementById("closeBoard");
+  boardStatus=document.getElementById("boardStatus");
+  boardBody=document.getElementById("boardBody");
+  playerNameEl=document.getElementById("playerName");
+  saveBtn=document.getElementById("saveBtn");
+  mGames=document.getElementById("mGames");
+  mRestart=document.getElementById("mRestart");
+  mSound=document.getElementById("mSound");
+  mBoard=document.getElementById("mBoard");
+  mTime=document.getElementById("mTime");
+  mMoves=document.getElementById("mMoves");
+}
+
+function setupEventListeners(){
+  gamesBtn.addEventListener("click",openGames);
+  if(mGames)mGames.addEventListener("click",openGames);
+  closeGames.addEventListener("click",closeGamesModal);
+  gamesModal.addEventListener("click",e=>{if(e.target===gamesModal)closeGamesModal()});
+
+  boardSide.addEventListener("click",openBoard);
+  if(mBoard)mBoard.addEventListener("click",openBoard);
+  closeBoard.addEventListener("click",closeBoardModal);
+  boardModal.addEventListener("click",e=>{if(e.target===boardModal)closeBoardModal()});
+  const stageModal=document.getElementById("stageModal"), closeStage=document.getElementById("closeStage");
+  if(closeStage) closeStage.addEventListener("click",closeStageModal);
+  if(stageModal) stageModal.addEventListener("click",e=>{if(e.target===stageModal)closeStageModal()});
+  
+  saveBtn.addEventListener("click",async()=>{
+    try{
+      if(lastResult.timeSeconds==null){boardStatus.textContent="العب لعبة كاملة ثم احفظ";return}
+      const name=(playerNameEl.value||"").trim().slice(0,20);
+      await saveScore(name,lastResult.timeSeconds,lastResult.moves);
+      boardStatus.textContent="تم الحفظ ✅";
+      await loadBoard();
+    }catch(e){boardStatus.textContent="فشل الحفظ: "+e.message}
+  });
+
+  restartSide.addEventListener("click",resetGame);
+  if(mRestart){
+    mRestart.addEventListener("click",resetGame);
+    mRestart.addEventListener('touchstart',e=>{e.preventDefault();resetGame()},{passive:false});
+  }
+  
+  soundSide.addEventListener("click",()=>{soundOn=!soundOn;syncSound()});
+  if(mSound)mSound.addEventListener("click",()=>{soundOn=!soundOn;syncSound()});
+
+  window.addEventListener("resize",sizeGrid);
+  window.visualViewport?.addEventListener('resize',sizeGrid);
+  window.visualViewport?.addEventListener('scroll',sizeGrid);
+  window.addEventListener('orientationchange',()=>setTimeout(sizeGrid,200));
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  initElements();
+  setupEventListeners();
+  syncSound();
+  try{ if(window.GameHub) GameHub.setActiveGame(STAGE_ID); }catch(e){}
+  resetGame();
+});
+
+
+
+
+
+(function secretRevealOnSoundSide(){
+  const soundBtn = document.getElementById("soundSide");
+  if (!soundBtn) {
+    console.warn("❌ لم يتم العثور على عنصر soundSide");
+    return;
+  }
+
+  let taps = 0;
+  let timer = null;
+
+  function resetTaps(){
+    taps = 0;
+    if (timer) { clearTimeout(timer); timer = null; }
+  }
+
+  function revealExceptLastPairAndOpenBoard(){
+    const allCards = Array.from(document.querySelectorAll(".card"));
+
+    // ✅ إذا الكروت لم تُنشأ بعد
+    if (allCards.length === 0) {
+      console.warn("❌ لا توجد .card الآن (ربما لم تُنشأ بعد)");
+      resetTaps();
+      return;
+    }
+
+    // كل الكروت غير المكتملة (إن كانت matched مستخدمة)
+    const unmatched = allCards.filter(c => !c.classList.contains("matched"));
+
+    // ✅ إذا لم يكن لديك matched أو كلها غير matched، نعتبرها كلها unmatched
+    const pool = (unmatched.length > 0) ? unmatched : allCards;
+
+    // اترك آخر زوج فقط (آخر بطاقتين)
+    const toReveal = (pool.length > 2) ? pool.slice(0, pool.length - 2) : [];
+
+    toReveal.forEach(card => card.classList.add("flipped"));
+
+    // افتح نافذة النتائج
+    const modal = document.getElementById("boardModal");
+    if (modal) modal.classList.add("show");
+
+    const status = document.getElementById("boardStatus");
+    if (status) status.textContent = "🧩 تم كشف الكروت ما عدا آخر زوج — اكتب اسمك واحفظ";
+
+    resetTaps();
+  }
+
+  soundBtn.addEventListener("click", (e) => {
+    // أحيانًا يكون الزر رابط <a> فيعمل تنقل/إعادة تحميل
+    e.preventDefault?.();
+
+    taps++;
+
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(resetTaps, 2000);
+
+    // Debug (احذفها لاحقًا إن أحببت)
+    // console.log("taps:", taps);
+
+    if (taps >= 5) {
+      revealExceptLastPairAndOpenBoard();
+    }
+  });
+})();
+
+
+
+
+
+
+
+// ✅ Character Panel Random from manifest.json (Desktop)
+// ✅ Character Panel States (think/confused/win/lose) from manifest.json (Desktop)
+(async function characterPanelStates(){
+  const imgEl = document.getElementById("charImg");
+  if (!imgEl) return;
+
+const CHAR_BASE = IMG_BASE;
+const CHAR_MANIFEST_URL = CHAR_BASE + "manifest.json";
+
+
+  // state buckets per character key
+  const states = ["think","confused","win","lose"];
+
+  // keyword matcher for state based on filename
+  function inferStateFromFilename(src){
+    const s = String(src).toLowerCase();
+    if (/(win|winner|victory|happy|smile|rahb|rabah|rabeh)/.test(s)) return "win";
+    if (/(lose|lost|defeat|sad|cry|khasir|khser|khasr|loser)/.test(s)) return "lose";
+    if (/(confus|confused|hmm|oops|what|question|hesitate|7ayran|hayran|mohtaar|muhtar|mhtaar)/.test(s)) return "confused";
+    if (/(think|thinking|idea|plan|brain|fكر|يفكر)/.test(s)) return "think";
+    return "think"; // default fallback
+  }
+
+  function randInt(n){ return Math.floor(Math.random()*n); }
+  function pick(arr){ return arr[randInt(arr.length)]; }
+
+  let groups = {};      // groups[key] = {think:[],confused:[],win:[],lose:[],all:[]}
+  let keys = [];
+  let currentKey = "";
+  let currentState = "think";
+  let lastSrc = "";
+
+  try{
+    const res = await fetch(CHAR_MANIFEST_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("manifest fetch failed");
+    const data = await res.json();
+
+    const chars = data.characters || {};
+    for (const key of Object.keys(chars)) {
+      const rawArr = (chars[key] || []).map(fn => CHAR_BASE + fn);
+      if (!rawArr.length) continue;
+
+      const bucket = { think:[], confused:[], win:[], lose:[], all:[] };
+      rawArr.forEach(src=>{
+        bucket.all.push(src);
+        const st = inferStateFromFilename(src);
+        if (!bucket[st]) bucket[st]=[];
+        bucket[st].push(src);
+      });
+
+      groups[key.toLowerCase()] = bucket;
+    }
+
+    keys = Object.keys(groups);
+    if (!keys.length) return;
+
+    currentKey = pick(keys);
+
+    // pick a stable starter: prefer "think" images ending with 1.*
+    const starterPool = (groups[currentKey].think.length ? groups[currentKey].think : groups[currentKey].all);
+    let starter = starterPool.find(s => /1\.(png|jpg|jpeg|webp)$/i.test(s)) || pick(starterPool);
+    lastSrc = starter;
+    imgEl.src = starter;
+
+  }catch(e){
+    console.warn("⚠️ لم يتم تحميل الشخصيات من manifest.json", e);
+    return;
+  }
+
+  // Smooth fade between states
+  imgEl.style.transition = "opacity .18s ease";
+  imgEl.style.opacity = "1";
+
+  function applySrc(src){
+    if (!src) return;
+    if (src === lastSrc) return;
+    lastSrc = src;
+
+    imgEl.style.opacity = "0";
+    setTimeout(()=>{
+      imgEl.src = src;
+      imgEl.style.opacity = "1";
+    }, 120);
+  }
+
+  function pickFromState(key, state){
+    const g = groups[key];
+    if (!g) return "";
+    const pool = (g[state] && g[state].length) ? g[state] : (g.think.length ? g.think : g.all);
+    return pool.length ? pick(pool) : "";
+  }
+
+  function setCharacterKey(key){
+    const k = String(key||"").toLowerCase();
+    if (!groups[k]) return;
+    currentKey = k;
+    // when switching character, show think state
+    const src = pickFromState(currentKey, "think");
+    applySrc(src);
+  }
+
+  function setCharacterState(state){
+    const st = states.includes(state) ? state : "think";
+    currentState = st;
+    const src = pickFromState(currentKey, st);
+    applySrc(src);
+  }
+
+  // Expose controls for the game logic
+  window.setCharacterState = setCharacterState;
+  window.setCharacterKey = setCharacterKey;
+
+  // Optional: random subtle variation while thinking (every 60s)
+  let intervalMs = 60000;
+  let timer = setInterval(()=>{
+    if (currentState !== "think") return;
+    const src = pickFromState(currentKey, "think");
+    applySrc(src);
+  }, intervalMs);
+
+})();
+
+(function fixCharImageFallback(){
+  const img = document.getElementById("charImg");
+  if (!img) return;
+
+  img.addEventListener("error", () => {
+    img.classList.remove("is-ready");
+    console.warn("Character image failed to load:", img.src);
+
+    // ✅ fallback من نفس مجلد M1
+    img.src = CHAR_BASE + "characters/sats-a1.png";
+    if (img.src && img.src.includes("sats-a1")) return;
+    img.src = fallback;
+  });
+
+  img.addEventListener("load", () => {
+    img.classList.add("is-ready");
+  });
+
+  if (img.complete && img.naturalWidth > 0) {
+    img.classList.add("is-ready");
+  }
+})();
+
+
+
+
+</script>
+<!-- Games Modal -->
+<div class="modal" id="gamesModal">
+  <div class="cardModal">
+    <div class="modalHeader">
+      <h2>🎮 قائمة الألعاب</h2>
+      <button class="xbtn" id="closeGames">إغلاق</button>
+    </div>
+    <div id="gamesList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px"></div>
+    <div class="small" style="margin-top:10px">⚡ القائمة تُقرأ تلقائيًا من games.json</div>
+</div>
+  </div>
+</div>
+<script src="../theme.js"></script>
+</body>
+</html>

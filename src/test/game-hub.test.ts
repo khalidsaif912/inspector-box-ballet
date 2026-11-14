@@ -98,12 +98,10 @@ describe("Game hub scoring", () => {
     expect(hub.saveGameScore("game1", 60, 0).data.games["game1"]?.stars).toBe(1);
   });
 
-  it("links to picture clues with the source stage in the query", () => {
+  it("links to picture clues inside the same repo with the source stage in the query", () => {
     const { hub } = loadHub();
     hub.saveGameScore("game1", 100, 3);
-    expect(hub.nextUrl()).toBe(
-      "https://dgr-exp.netlify.app/m1/pairs.html?source=game1&session=active",
-    );
+    expect(hub.nextUrl()).toBe("m1/pairs.html?source=game1&session=active");
     expect(hub.nextUrl("pairs")).toContain("source=pairs");
   });
 });

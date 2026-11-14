@@ -1984,7 +1984,7 @@ EXIT_GATE.warped = true; EXIT_GATE.phase = 'warp'; EXIT_GATE.t = 0;
 snd('warp'); addShake(0.55);
 const warp = $('portal-warp'); if(warp) warp.classList.add('on');
 setTimeout(() => {
-const next = window.GameHub ? GameHub.nextUrl('game1') : 'https://dgr-exp.netlify.app/m1/pairs.html?source=game1&session=active';
+const next = window.GameHub ? GameHub.nextUrl('game1') : 'm1/pairs.html?source=game1&session=active';
 window.location.href = next;
 }, 1250);
 }

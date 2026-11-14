@@ -1,0 +1,20 @@
+{
+  "games": [
+    {
+      "id": "game1",
+      "name": "مستودع الشحن الجوي",
+      "icon": "📦",
+      "href": "game.html",
+      "status": "live",
+      "note": "فرز IATA DGR ثلاثي الأبعاد"
+    },
+    {
+      "id": "pairs",
+      "name": "قرائن الصور",
+      "icon": "🧩",
+      "href": "m1/pairs.html",
+      "status": "live",
+      "note": "قرائن A1↔A2 — ١٠ أزواج"
+    }
+  ]
+}

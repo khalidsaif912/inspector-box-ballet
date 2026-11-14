@@ -34,6 +34,19 @@ describe("Game assets and shared rules", () => {
     expect(readFileSync("public/sw.js", "utf8")).toContain('"./game/game-hub.js"');
   });
 
+  it("ships the picture clues stage with local assets and shared scoring", () => {
+    const pairs = readFileSync("public/m1/pairs.html", "utf8");
+    expect(pairs).toContain('src="../game/game-hub.js"');
+    expect(pairs).toContain('MANIFEST_URL="manifest.json"');
+    expect(pairs).toContain("--card-back:url('card-back.png')");
+    expect(pairs).toContain("GameHub.saveGameScore");
+    expect(pairs).toContain('id="stageResult"');
+    expect(pairs).not.toMatch(/cdn\.jsdelivr\.net/);
+    expect(readFileSync("public/m1/manifest.json", "utf8")).toContain("characters");
+    expect(JSON.parse(readFileSync("public/games.json", "utf8")).games.length).toBe(2);
+    expect(readFileSync("public/game/game-hub.js", "utf8")).not.toContain("dgr-exp.netlify.app");
+  });
+
   it("delegates IATA segregation to the shared browser-safe rules", () => {
     expect(game).not.toContain("function checkIATAConflict");
     expect(game).toContain("gameRules.conflict(");

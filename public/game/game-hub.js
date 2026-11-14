@@ -3,7 +3,7 @@
 (function (root) {
   const STORAGE_KEY = "dgr_game_hub_data";
   const VERSION = "1.0";
-  const NEXT_GAME_URL = "https://dgr-exp.netlify.app/m1/pairs.html";
+  const NEXT_GAME_URL = "m1/pairs.html";
   const STAGES = {
     game1: { name: "اللعبة الأولى", nameEn: "Warehouse Shift" },
     pairs: { name: "قرائن الصور", nameEn: "Picture Clues" },
@@ -122,8 +122,7 @@
     nextUrl(fromGameId) {
       const from = fromGameId || read().activeGameId || "game1";
       return NEXT_GAME_URL + "?source=" + encodeURIComponent(from) + "&session=active";
-    },
-  };
+    },  };
 
   root.GameHub = GameHub;
 })(globalThis);
