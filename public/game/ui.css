@@ -280,8 +280,10 @@
   #ov .records-panel{justify-content:center}
   #ov .actions-row{flex-direction:column}
   #ov .btn-primary,#ov .btn-secondary{width:100%}
-  #ov.start .start-card{padding:24px 18px 20px;border-radius:22px}
+  #ov.start .start-card{padding:20px 18px 16px;border-radius:22px}
   #ov .shift-panel{padding:24px 18px 20px;border-radius:22px}
+  #ov.start{padding:12px;gap:10px}
+  #ov.start .records-box{padding:10px 12px}
 }
 @media (max-height:720px){
   #ov.start{padding:14px;gap:10px}
@@ -294,6 +296,137 @@
   #ov.start .settings-dock{padding:8px 12px;gap:2px}
   #ov.start .setting-item{padding:5px 2px;font-size:12px}
   #ov .guide-btn{height:40px;font-size:13px}
+}
+/* ================================================================
+   الهاتف أفقياً (شاشة قصيرة): البداية عمودان والنهاية لوحة أفقية
+   ================================================================ */
+@media (orientation:landscape) and (min-height:561px) and (max-height:760px) and (max-width:1100px){
+  #ov.start{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,236px);grid-template-rows:auto auto;
+    justify-content:center;align-content:safe center;column-gap:18px;row-gap:10px;
+  }
+  #ov.start .start-card{grid-column:1;grid-row:1 / span 2;justify-self:center;max-width:520px;padding:20px 22px 16px}
+  #ov.start .emblem-wrap{width:62px;height:62px;margin-bottom:7px}
+  #ov.start .game-title{font-size:24px;margin-bottom:5px}
+  #ov.start .tagline-pill{margin-bottom:10px}
+  #ov .btn-play{height:46px;margin-bottom:10px}
+  #ov.start .records-box{padding:10px 12px;border-radius:16px}
+  #ov.start .settings-dock{position:static;grid-column:2;grid-row:1;align-self:end;width:auto;max-width:none}
+  #ov .guide-btn{position:static;grid-column:2;grid-row:2;align-self:start;width:auto;justify-content:center}
+}
+@media (orientation:landscape) and (max-height:560px){
+  #ov.start,#ov{padding:6px 10px;gap:6px}
+  #ov.start{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(146px,190px);grid-template-rows:auto auto;
+    justify-content:center;align-content:safe center;column-gap:10px;row-gap:6px;
+  }
+  #ov.start .start-card{
+    grid-column:1;grid-row:1 / span 2;justify-self:center;
+    max-width:500px;padding:9px 14px 10px;border-radius:18px;
+  }
+  #ov.start .emblem-wrap{width:42px;height:42px;margin-bottom:2px}
+  #ov.start .emblem-plane{width:22px;height:22px}
+  #ov.start .game-title{font-size:clamp(16px,3.2vmin,21px);margin-bottom:3px}
+  #ov.start .tagline-pill{font-size:10.5px;padding:2px 12px;margin-bottom:7px}
+  #ov .btn-play{height:38px;margin-bottom:7px;padding:0 30px;font-size:14.5px;border-radius:12px}
+  #ov .btn-play svg{width:16px;height:16px}
+  #ov.start .records-box{padding:6px 9px;border-radius:12px}
+  #ov.start .best-row{padding:2px 10px;margin-bottom:5px;font-size:11px;gap:5px}
+  #ov.start .lb-title{font-size:10px;margin-bottom:4px}
+  #ov .lb-chips{gap:5px}
+  #ov .score-chip{font-size:10px;padding:2px 7px;gap:4px}
+  #ov .rank-dot{width:6px;height:6px}
+  #ov.start .settings-dock{
+    position:static;grid-column:2;grid-row:1;align-self:end;justify-self:stretch;
+    width:auto;max-width:none;padding:5px 8px;gap:0;border-radius:12px;
+  }
+  #ov.start .setting-item{padding:3px 1px;font-size:10.5px;gap:6px}
+  #ov.start .setting-label{gap:6px;white-space:normal;line-height:1.25}
+  #ov.start .setting-label svg{width:12px;height:12px}
+  #ov.start .toggle{width:28px;height:16px}
+  #ov.start .toggle::after{width:12px;height:12px;top:1px;left:1px}
+  #ov.start .setting-item.off .toggle::after{transform:translateX(12px)}
+  #ov.start .vest-colors{gap:5px}
+  #ov.start .vest-colors button{width:14px;height:14px}
+  #ov .guide-btn{
+    position:static;grid-column:2;grid-row:2;align-self:start;justify-self:stretch;
+    width:auto;height:30px;padding:0 10px;font-size:11px;border-radius:10px;justify-content:center;
+  }
+  #ov .guide-btn svg{width:14px;height:14px}
+}
+
+/* نهاية الوردية أفقياً: الدرجة والنقاط في صف أفقي بلا تمرير */
+@media (orientation:landscape) and (max-height:560px){
+  #ov .shift-panel{
+    max-width:780px;padding:9px 14px;border-radius:20px;
+    display:grid;grid-template-columns:auto minmax(0,1fr);
+    grid-template-rows:auto auto auto auto;align-items:center;
+    column-gap:14px;row-gap:5px;text-align:start;
+  }
+  #ov .hero-section{grid-column:1;grid-row:1 / span 4;align-self:center;gap:0;max-width:172px}
+  #ov .flight-dial{width:92px;height:92px;margin-bottom:2px}
+  #ov .grade-core{width:58px;height:58px;font-size:26px;border-width:2px}
+  #ov .stars-row{gap:3px;margin-bottom:3px}
+  #ov .star{width:12px;height:12px}
+  #ov .main-title{font-size:17px;margin:0 0 3px}
+  #ov .rank-chip{
+    font-size:10px;padding:2px 8px;margin-bottom:0;gap:4px;
+    max-width:100%;flex-wrap:wrap;justify-content:center;line-height:1.35;
+  }
+  #ov .rank-chip svg{width:12px;height:12px}
+  #ov .stats-grid{grid-column:2;grid-row:1;gap:6px;margin-bottom:0}
+  #ov .stat-card{padding:5px 3px 4px;border-radius:11px}
+  #ov .stat-icon{width:13px;height:13px;margin-bottom:1px}
+  #ov .stat-num{font-size:15px}
+  #ov .stat-lbl{font-size:9px;margin-top:1px}
+  #ov .mini-bar{height:3px;margin-top:3px}
+  #ov .records-panel{
+    grid-column:2;grid-row:2;margin-bottom:0;padding:4px 8px;border-radius:11px;
+    gap:6px;justify-content:flex-start;
+  }
+  #ov .best-badge,#ov .new-record{font-size:10px;padding:2px 8px;gap:5px}
+  #ov .leaderboard-wrap{font-size:10px;gap:5px}
+  #ov .tip-msg{grid-column:2;grid-row:3;margin:0;font-size:10px;text-align:center;line-height:1.4}
+  #ov .actions-row{grid-column:2;grid-row:4;gap:8px;justify-content:center}
+  #ov .btn{height:32px;font-size:12.5px;padding:0 16px;border-radius:10px;gap:7px}
+  #ov .btn svg{width:14px;height:14px}
+}
+
+/* هواتف أفقية صغيرة جداً (مثل 568×320): ضغط إضافي حتى لا يظهر تمرير */
+@media (orientation:landscape) and (max-height:360px){
+  #ov.start{grid-template-columns:minmax(0,1fr) minmax(0,128px);column-gap:8px;padding:5px 8px;row-gap:5px}
+  #ov.start .start-card{padding:7px 10px 8px;border-radius:15px}
+  #ov.start .emblem-wrap{width:34px;height:34px;margin-bottom:1px}
+  #ov.start .emblem-plane{width:18px;height:18px}
+  #ov.start .game-title{font-size:14.5px;margin-bottom:2px}
+  #ov.start .tagline-pill{font-size:9.5px;padding:1px 9px;margin-bottom:5px}
+  #ov .btn-play{height:32px;font-size:13px;margin-bottom:5px;padding:0 24px}
+  #ov.start .records-box{padding:4px 7px;border-radius:10px}
+  #ov.start .best-row{font-size:9.5px;padding:1px 8px;margin-bottom:3px}
+  #ov.start .lb-title{display:none}
+  #ov .score-chip{font-size:9px;padding:1px 6px}
+  #ov.start .setting-item{padding:2px 1px;font-size:9.5px}
+  #ov.start .setting-label{font-size:9.5px;gap:4px}
+  #ov.start .setting-label svg{width:11px;height:11px}
+  #ov.start .toggle{width:24px;height:14px}
+  #ov.start .toggle::after{width:10px;height:10px}
+  #ov.start .setting-item.off .toggle::after{transform:translateX(10px)}
+  #ov.start .vest-colors button{width:12px;height:12px}
+  #ov .guide-btn{height:26px;font-size:10px;border-radius:9px}
+  #ov .shift-panel{padding:7px 10px;column-gap:10px;row-gap:3px}
+  #ov .flight-dial{width:72px;height:72px}
+  #ov .grade-core{width:46px;height:46px;font-size:20px}
+  #ov .star{width:10px;height:10px}
+  #ov .main-title{font-size:14px}
+  #ov .rank-chip{font-size:9px;padding:1px 7px;gap:3px}
+  #ov .stat-card{padding:4px 2px 3px}
+  #ov .stat-icon{width:11px;height:11px}
+  #ov .stat-num{font-size:13px}
+  #ov .stat-lbl{font-size:8.5px}
+  #ov .records-panel{padding:3px 7px}
+  #ov .best-badge,#ov .new-record{font-size:9px;padding:1px 7px}
+  #ov .tip-msg{display:none}
+  #ov .btn{height:28px;font-size:11.5px;padding:0 13px}
 }
 @media (prefers-reduced-motion:reduce){
   #ov .btn-play::after,#ov .btn-primary::after{display:none}

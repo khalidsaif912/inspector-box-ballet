@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const html = readFileSync("public/game.html", "utf8");
 const index = readFileSync("public/index.html", "utf8");
+const ui = readFileSync("public/game/ui.css", "utf8");
 const game = readFileSync("public/game/game.js", "utf8");
 
 describe("Game assets and shared rules", () => {
@@ -93,6 +94,13 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain("const k = z.hz ? 2 : 1");
     expect(game).toContain("rr(W-30-divW-6, mid-cardH/2, divW, cardH, 8)");
     expect(game).toContain("minFilter = THREE.LinearMipmapLinearFilter");
+  });
+
+  it("lays the start and shift-end screens out for landscape phones", () => {
+    expect(ui).toContain("@media (orientation:landscape) and (max-height:560px)");
+    expect(ui).toContain("grid-template-columns:minmax(0,1fr) minmax(146px,190px)");
+    expect(ui).toMatch(/#ov \.shift-panel\{[\s\S]{0,260}display:grid/);
+    expect(ui).toContain("@media (orientation:landscape) and (max-height:360px)");
   });
 
   it("installs as a PWA and opens the game inside a framed page", () => {
