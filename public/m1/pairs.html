@@ -425,6 +425,109 @@ main{
   font-family:inherit;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:var(--text);
 }
 .srActions .primary{background:linear-gradient(135deg,#fcd34d,#f59e0b);color:#1a1204;border:none}
+
+/* ===== الألعاب النارية ===== */
+#fxCanvas{position:fixed;inset:0;width:100%;height:100%;z-index:80;pointer-events:none;display:none}
+
+/* ===== شريط المراحل ===== */
+.stage{
+  flex-direction:column;
+  gap:10px;
+}
+.stepper{
+  display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+  position:relative;z-index:2;
+}
+.stepBtn{
+  display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);
+  color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;
+  transition:.2s ease;
+}
+.stepBtn b{font-size:12.5px}
+.stepBtn .dot{
+  width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-size:10.5px;background:rgba(255,255,255,.10);color:#cbd5e1;
+}
+.stepBtn.active{
+  color:#0b1220;border-color:transparent;
+  background:linear-gradient(135deg,#fcd34d,#f59e0b);
+  box-shadow:0 8px 20px rgba(245,158,11,.35);
+}
+.stepBtn.active .dot{background:rgba(11,18,32,.22);color:#3a2400}
+.stepBtn.done{color:#a7f3d0;border-color:rgba(52,211,153,.45);background:rgba(52,211,153,.10)}
+.stepBtn.done .dot{background:rgba(52,211,153,.25);color:#6ee7b7}
+.stepBtn.locked{opacity:.55;cursor:not-allowed}
+.stepBtn:focus-visible{outline:2px solid #8fd0ff;outline-offset:2px}
+@media (max-width:560px){
+  .stepBtn{padding:6px 9px;font-size:10.5px;gap:4px}
+  .stepBtn .lbl{display:none}
+  .stepBtn .dot{width:16px;height:16px}
+}
+
+/* ===== البطاقة المركزية (النجمة) ===== */
+.card.bonus .front{
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255,210,0,.42), transparent 62%),
+    rgba(255,255,255,.04);
+}
+.card.bonus .front::before{
+  content:"⭐";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(24px,6vmin,52px);filter:drop-shadow(0 0 12px rgba(255,210,0,.85));
+}
+.card.bonus .front::after{display:none}
+.card.bonus .back{
+  background:radial-gradient(circle at 50% 45%, rgba(255,210,0,.30), rgba(10,16,32,.62));
+  flex-direction:column;gap:4px;color:#ffe9a8;font-weight:900;font-size:11px;text-align:center;
+}
+.card.bonus .back .starBig{font-size:clamp(22px,5vmin,46px);line-height:1;filter:drop-shadow(0 0 14px rgba(255,210,0,.9))}
+.card.bonus.claimed{opacity:.92;cursor:default}
+.card.peek .inner{transform:rotateY(180deg)}
+
+/* ===== نافذة نهاية المرحلة / النصر ===== */
+.stgTitle{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:900;color:var(--text)}
+.stgSub{margin:2px 0 10px;font-size:12.5px;color:var(--muted)}
+.stgStats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.stgStat{
+  padding:9px 6px;border-radius:14px;text-align:center;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);
+}
+.stgStat b{display:block;font-size:17px;color:#fff}
+.stgStat span{font-size:11px;color:var(--muted)}
+.stgStars{display:flex;justify-content:center;gap:6px;margin:6px 0 10px}
+.stgStars i{width:19px;height:19px;border-radius:4px;background:rgba(255,255,255,.14);display:block}
+.stgStars i.on{background:linear-gradient(135deg,#fde68a,#f59e0b);box-shadow:0 0 12px rgba(251,191,36,.7)}
+.stgTotal{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 4px;
+  padding:11px 14px;border-radius:16px;
+  background:rgba(56,189,248,.10);border:1px solid rgba(56,189,248,.34);
+}
+.stgTotal span{font-size:12.5px;color:#bae6fd}
+.stgTotal b{font-size:21px;color:#e0f7ff}
+.stgActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.stgActions .primary,.stgActions .ghost{
+  flex:1 1 140px;height:42px;border-radius:13px;display:inline-flex;align-items:center;
+  justify-content:center;font-family:inherit;font-weight:800;font-size:13.5px;cursor:pointer;
+  text-decoration:none;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:var(--text);
+}
+.stgActions .primary{background:linear-gradient(135deg,#fcd34d,#f59e0b);color:#1a1204;border:none}
+.stgActions .ghost:hover{background:rgba(255,255,255,.12)}
+.stgAuto{margin-top:8px;font-size:11.5px;color:var(--muted);text-align:center}
+.vicRow{
+  display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;
+  padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);margin-bottom:6px;font-size:12.5px;
+}
+.vicRow b{color:#fff;font-size:14px}
+.vicRow .vicStars{letter-spacing:1px;font-size:12px;color:#fbbf24}
+.vicRow.pending{opacity:.55}
+.fxToast{
+  position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  z-index:85;padding:9px 16px;border-radius:999px;pointer-events:none;
+  background:rgba(6,20,32,.86);border:1px solid rgba(120,236,255,.5);color:#d9fbff;
+  font-size:12.5px;font-weight:800;opacity:0;transition:opacity .25s ease,transform .25s ease;
+}
+.fxToast.on{opacity:1;transform:translateX(-50%) translateY(-6px)}
 </style>
 
 </head>
@@ -492,30 +595,19 @@ main{
     <div class="playArea">
 
       <div class="stage">
+        <div class="stepper" id="stepper" role="tablist" aria-label="مراحل قرائن الصور"></div>
         <div class="grid" id="grid"></div>
       </div>
     </div>
   </main>
 </div>
 
-<!-- Stage Result Modal -->
+<!-- Fireworks canvas (لا يعترض التفاعل) -->
+<canvas id="fxCanvas" aria-hidden="true"></canvas>
+
+<!-- Stage Clear / Grand Victory Modal -->
 <div class="modal" id="stageModal">
-  <div class="cardModal">
-    <div class="modalHeader">
-      <h2>✅ اكتملت قرائن الصور</h2>
-      <button class="xbtn" id="closeStage">إغلاق</button>
-    </div>
-    <div class="stageResult" id="stageResult" hidden>
-      <div class="srRow"><span>نقاط المرحلة</span><strong id="srScore">0</strong></div>
-      <div class="srRow"><span>المجموع التراكمي</span><strong id="srTotal">0</strong></div>
-      <div class="srStars" id="srStars"></div>
-      <div class="srActions">
-        <button class="primary" id="srReplay" type="button">إعادة قرائن الصور</button>
-        <a class="ghost" href="../game.html">العودة للعبة الفرز</a>
-      </div>
-      <button class="xbtn" id="srBoard" type="button" style="margin-top:6px">🏆 السجل العالمي</button>
-    </div>
-  </div>
+  <div class="cardModal" id="stageModalBox"></div>
 </div>
 
 <!-- Leaderboard Modal -->
@@ -645,6 +737,16 @@ let startMs=0,timerId=null,running=false;
 let soundOn=true;
 let lastResult={timeSeconds:null,moves:null};
 
+// ===== المراحل التدريجية =====
+const STAGE_CONFIG={
+  1:{pairs:2,cards:4,cols:2,base:120,moves3:3,moves2:5,time3:10,time2:20,label:"المرحلة الأولى"},
+  2:{pairs:4,cards:9,cols:3,base:280,bonus:true,moves3:7,moves2:11,time3:32,time2:55,label:"المرحلة الثانية"},
+  3:{pairs:10,cards:20,cols:5,base:620,moves3:16,moves2:26,time3:80,time2:135,label:"المرحلة الثالثة"}
+};
+const STAGE_IDS=["1","2","3"];
+let currentStage=1;
+let stageBonus=0;
+
 const pairGradients=[
   "linear-gradient(135deg,#4facfe,#00f2fe)",
   "linear-gradient(135deg,#a18cd1,#fbc2eb)",
@@ -677,15 +779,32 @@ function pickK(arr,k){const a=arr.slice(),n=a.length,kk=Math.min(k,n);
   for(let i=0;i<kk;i++){const j=i+randInt(n-i);[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,kk)}
 
 function sizeGrid(){
-  const main=document.querySelector("main").getBoundingClientRect();
+  if(!grid) return;
+  const mainEl=document.querySelector("main");
+  const mainRect=mainEl.getBoundingClientRect();
+  const ms=getComputedStyle(mainEl);
+  const stageEl=grid.parentElement;
+  const ss=getComputedStyle(stageEl);
   const gap=parseFloat(getComputedStyle(grid).gap)||10;
   const isDesktop=window.matchMedia('(min-width:1024px)').matches;
-  const cols=isDesktop?5:4,rows=isDesktop?4:5;
-  const maxW=main.width-(isDesktop?0:16);
-  const maxH=main.height-(isDesktop?0:0);
-  const cell=Math.floor(Math.min((maxW-gap*(cols-1))/cols,(maxH-gap*(rows-1))/rows));
+  const {cols,rows}=stageLayout();
+  const stepper=document.getElementById("stepper");
+  const reserved=(stepper?stepper.getBoundingClientRect().height+10:0)
+    +parseFloat(ss.paddingTop||0)+parseFloat(ss.paddingBottom||0);
+  const maxW=mainRect.width-parseFloat(ms.paddingLeft||0)-parseFloat(ms.paddingRight||0)-(isDesktop?0:16);
+  const maxH=mainRect.height-parseFloat(ms.paddingTop||0)-parseFloat(ms.paddingBottom||0)-reserved;
+  const cell=Math.max(52,Math.floor(Math.min((maxW-gap*(cols-1))/cols,(maxH-gap*(rows-1))/rows)));
+  grid.style.setProperty("--cell",cell+"px");
+  grid.style.gridTemplateColumns=`repeat(${cols}, ${cell}px)`;
   grid.style.width=(cell*cols+gap*(cols-1))+"px";
   grid.style.height=(cell*rows+gap*(rows-1))+"px";
+}
+
+function stageLayout(){
+  const isDesktop=window.matchMedia('(min-width:1024px)').matches;
+  if(currentStage===1) return {cols:2,rows:2};
+  if(currentStage===2) return {cols:3,rows:3};
+  return isDesktop?{cols:5,rows:4}:{cols:4,rows:5};
 }
 
 function formatTime(sec){const m=Math.floor(sec/60),s=sec%60;return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
@@ -729,6 +848,7 @@ function beep(freq=880,dur=0.08){
     const o=ctx.createOscillator(),g=ctx.createGain();
     o.type="sine";o.frequency.value=freq;g.gain.value=0.05;
     o.connect(g).connect(ctx.destination);
+    o.onended=()=>{try{o.disconnect();g.disconnect()}catch(e){}};
     o.start();o.stop(ctx.currentTime+dur);
   }catch(e){}
 }
@@ -803,14 +923,6 @@ async function renderGamesMenu(){
   }
 }
 
-function openStageModal(){
-  const m = document.getElementById("stageModal");
-  if(m) m.classList.add("show");
-}
-function closeStageModal(){
-  const m = document.getElementById("stageModal");
-  if(m) m.classList.remove("show");
-}
 function openGames(){
   renderGamesMenu();
 gamesModal.classList.add("show")}
@@ -855,80 +967,407 @@ async function saveScore(name,timeSeconds,mv){
   return res.id;
 }
 
-// ===== نتيجة المرحلة وحفظها في نظام النقاط الموحّد =====
+// ===== نظام المراحل التدريجي والنقاط المستقلة =====
 const STAGE_ID = "pairs";
-function stageScore(timeSeconds, mv){
-  const raw = 600 - Math.max(0, mv - 10) * 12 - Math.round(timeSeconds * 2);
-  return Math.max(0, Math.min(600, Math.round(raw)));
+const PROGRESS_KEY = "dgr_pairs_progressive_data";
+const MIN_STAGE_SCORE = 20;
+let autoTimer = null;
+let progressCache = null;
+
+function stageNum(key){ return Number(key) || 0; }
+function readProgress(){
+  if(progressCache) return progressCache;
+  let raw = null;
+  try{ raw = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "null"); }catch(e){ raw = null; }
+  const clean = { totalCumulativeScore: 0, currentStage: 1, stages: {} };
+  if(raw && typeof raw === "object"){
+    clean.currentStage = Math.min(3, Math.max(1, Number(raw.currentStage) || 1));
+    const stages = raw.stages && typeof raw.stages === "object" ? raw.stages : {};
+    for(const key of STAGE_IDS){
+      const s = stages[key];
+      if(!s || typeof s !== "object") continue;
+      clean.stages[key] = {
+        name: String(s.name || (STAGE_CONFIG[stageNum(key)].label + " (" + STAGE_CONFIG[stageNum(key)].cards + " بطاقات)")),
+        cardsCount: Number(s.cardsCount) || STAGE_CONFIG[stageNum(key)].cards,
+        pairsCount: Number(s.pairsCount) || STAGE_CONFIG[stageNum(key)].pairs,
+        bestScore: Math.max(0, Number(s.bestScore) || 0),
+        bestTime: Math.max(0, Number(s.bestTime) || 0),
+        bestMoves: Math.max(0, Number(s.bestMoves) || 0),
+        stars: Math.min(3, Math.max(1, Number(s.stars) || 1)),
+        completed: !!s.completed
+      };
+    }
+  }
+  clean.totalCumulativeScore = STAGE_IDS.reduce((sum, key) => sum + (clean.stages[key]?.bestScore || 0), 0);
+  progressCache = clean;
+  return clean;
 }
-function stageStars(timeSeconds, mv){
-  if(mv <= 14 && timeSeconds <= 60) return 3;
-  if(mv <= 20 && timeSeconds <= 100) return 2;
+function overallStars(data){
+  const done = STAGE_IDS.map((key) => data.stages[key]).filter((s) => s && s.completed);
+  if(!done.length) return 1;
+  return Math.min(3, Math.max(1, Math.round(done.reduce((sum, s) => sum + s.stars, 0) / done.length)));
+}
+function syncHub(data){
+  try{
+    if(!window.GameHub) return;
+    GameHub.setActiveGame(STAGE_ID);
+    GameHub.saveGameScore(STAGE_ID, data.totalCumulativeScore, overallStars(data));
+  }catch(e){}
+}
+function writeProgress(data){
+  data.totalCumulativeScore = STAGE_IDS.reduce((sum, key) => sum + (data.stages[key]?.bestScore || 0), 0);
+  progressCache = data;
+  try{ localStorage.setItem(PROGRESS_KEY, JSON.stringify(data)); }catch(e){}
+  syncHub(data);
+  return data;
+}
+function saveStageScore(stageNumValue, score, timeSeconds, mv){
+  const key = String(stageNumValue);
+  const cfg = STAGE_CONFIG[stageNumValue];
+  const data = readProgress();
+  const prev = data.stages[key] || { bestScore: 0, bestTime: 0, bestMoves: 0, stars: 1 };
+  const value = Math.max(MIN_STAGE_SCORE, Math.round(score));
+  const stars = stageStars(stageNumValue, timeSeconds, mv);
+  const isRecord = value > prev.bestScore;
+  data.stages[key] = {
+    name: cfg.label + " (" + cfg.cards + " بطاقات)",
+    cardsCount: cfg.cards,
+    pairsCount: cfg.pairs,
+    bestScore: Math.max(prev.bestScore || 0, value),
+    bestTime: isRecord || !prev.bestTime ? Math.max(1, Math.round(timeSeconds)) : prev.bestTime,
+    bestMoves: isRecord || !prev.bestMoves ? mv : prev.bestMoves,
+    stars: isRecord || !prev.stars ? Math.max(prev.stars || 1, stars) : prev.stars,
+    completed: true
+  };
+  data.currentStage = Math.min(3, Math.max(data.currentStage || 1, stageNumValue));
+  writeProgress(data);
+  return { data, stage: data.stages[key], isRecord, total: data.totalCumulativeScore, stars };
+}
+function stageUnlocked(n, data){
+  if(n <= 1) return true;
+  const prev = (data || readProgress()).stages[String(n - 1)];
+  return !!(prev && prev.completed);
+}
+function initialStage(){
+  const data = readProgress();
+  for(const n of [1, 2, 3]) if(!(data.stages[String(n)]?.completed)) return n;
   return 1;
 }
-function renderStageResult(score, stars, total){
-  const box = document.getElementById("stageResult");
-  if(!box) return;
-  const scoreEl = document.getElementById("srScore"), totalEl = document.getElementById("srTotal"), starBox = document.getElementById("srStars");
-  if(scoreEl) scoreEl.textContent = String(score);
-  if(totalEl) totalEl.textContent = String(total);
-  if(starBox){
-    starBox.innerHTML = "";
-    for(let i = 0; i < 3; i++){
-      const el = document.createElement("i");
-      if(i < stars) el.className = "on";
-      starBox.appendChild(el);
-    }
-  }
-  box.hidden = false;
+function stageScore(stageNumValue, timeSeconds, mv){
+  const cfg = STAGE_CONFIG[stageNumValue];
+  const extra = Math.max(0, mv - cfg.pairs);
+  const raw = cfg.base + stageBonus - Math.round(timeSeconds * 2) - extra * 3;
+  return Math.max(MIN_STAGE_SCORE, Math.round(raw));
 }
-function finishStage(result){
-  const t = Math.max(0, Number(result && result.timeSeconds) || 0);
-  const mv = Math.max(0, Number(result && result.moves) || 0);
-  const score = stageScore(t, mv);
-  const stars = stageStars(t, mv);
-  let total = score;
-  try{
-    if(window.GameHub){
-      GameHub.setActiveGame(STAGE_ID);
-      total = GameHub.saveGameScore(STAGE_ID, score, stars).totalScore;
-    }
-  }catch(e){}
-  renderStageResult(score, stars, total);
-  const replay = document.getElementById("srReplay");
-  if(replay && !replay.dataset.wired){
-    replay.dataset.wired = "1";
-    replay.addEventListener("click", () => { closeStageModal(); resetGame(); });
-  }
-  const stageBoard = document.getElementById("srBoard");
-  if(stageBoard && !stageBoard.dataset.wired){
-    stageBoard.dataset.wired = "1";
-    stageBoard.addEventListener("click", () => { closeStageModal(); openBoard(); });
-  }
-  return { score, stars, total };
+function stageStars(stageNumValue, timeSeconds, mv){
+  const cfg = STAGE_CONFIG[stageNumValue];
+  if(mv <= cfg.moves3 && timeSeconds <= cfg.time3) return 3;
+  if(mv <= cfg.moves2 && timeSeconds <= cfg.time2) return 2;
+  return 1;
+}
+function starMarkup(n){
+  return [0, 1, 2].map((i) => `<i class="${i < n ? "on" : ""}"></i>`).join("");
 }
 
-async function build(){
-  const data=await(await fetch(MANIFEST_URL,{cache:"no-store"})).json();
-  const chosen=pickK(data.pairs,10);
-  const cards=[];
-  for(const p of chosen){
-    cards.push({pair:p.id,img:IMG_BASE+p.img1});
-    cards.push({pair:p.id,img:IMG_BASE+p.img2});
+// ===== محرك الألعاب النارية (Canvas خفيف) =====
+const FX = (() => {
+  const COLORS = ["#4facfe", "#00f2fe", "#ffd200", "#fbc2eb", "#38f9d7", "#ff4b4b"];
+  let canvas = null, ctx2 = null, raf = 0, particles = [], running = false;
+  function ensure(){
+    if(!canvas) canvas = document.getElementById("fxCanvas");
+    if(!canvas) return false;
+    if(!ctx2) ctx2 = canvas.getContext("2d");
+    resize();
+    return true;
   }
+  function resize(){
+    if(!canvas) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    if(ctx2) ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function burst(cx, cy, count, power){
+    for(let i = 0; i < count; i++){
+      const angle = Math.random() * Math.PI * 2;
+      const speed = (0.5 + Math.random()) * power;
+      particles.push({
+        x: cx, y: cy,
+        px: cx, py: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 1,
+        decay: 0.008 + Math.random() * 0.012,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        size: 1.4 + Math.random() * 2.4
+      });
+    }
+    if(!running) frame();
+  }
+  function frame(){
+    if(!canvas || !ctx2) return;
+    running = true;
+    ctx2.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    ctx2.lineCap = "round";
+    for(const p of particles){
+      p.px = p.x; p.py = p.y;
+      p.x += p.vx; p.y += p.vy;
+      p.vy += 0.075;
+      p.vx *= 0.988; p.vy *= 0.988;
+      p.life -= p.decay;
+      if(p.life <= 0) continue;
+      ctx2.globalAlpha = Math.max(0, p.life);
+      ctx2.strokeStyle = p.color;
+      ctx2.lineWidth = p.size;
+      ctx2.beginPath();
+      ctx2.moveTo(p.px, p.py);
+      ctx2.lineTo(p.x, p.y);
+      ctx2.stroke();
+    }
+    particles = particles.filter((p) => p.life > 0);
+    if(particles.length){
+      raf = requestAnimationFrame(frame);
+    }else{
+      running = false;
+      cancelAnimationFrame(raf);
+      raf = 0;
+      canvas.style.display = "none";
+      ctx2.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    }
+  }
+  function launch(kind){
+    if(!ensure()) return;
+    canvas.style.display = "block";
+    const w = window.innerWidth, h = window.innerHeight;
+    const colors = COLORS.length;
+    const shoot = (x, y, count, power, freq) => {
+      burst(x, y, count, power);
+      beep(freq + Math.floor(Math.random() * 220), 0.16);
+    };
+    if(kind === "grand"){
+      let step = 0;
+      const timer = setInterval(() => {
+        shoot(w * (0.12 + Math.random() * 0.76), h * (0.14 + Math.random() * 0.42), 46, 6.2, 760);
+        step++;
+        if(step >= 16) clearInterval(timer);
+      }, 260);
+      shoot(w * 0.5, h * 0.32, 90, 8, 880);
+    }else if(kind === "dual"){
+      [0, 1, 2, 3, 4].forEach((i) => {
+        setTimeout(() => {
+          const side = i % 2 === 0 ? 0.3 : 0.7;
+          shoot(w * (side + (Math.random() - 0.5) * 0.16), h * (0.22 + Math.random() * 0.28), 52, 6.6, 820);
+        }, i * 230);
+      });
+    }else{
+      [0, 1, 2].forEach((i) => {
+        setTimeout(() => {
+          shoot(w * (0.25 + Math.random() * 0.5), h * (0.2 + Math.random() * 0.3), 44, 5.8, 780);
+        }, i * 260);
+      });
+    }
+    void colors;
+  }
+  window.addEventListener("resize", () => { if(canvas) resize(); });
+  return { launch, burst, resize };
+})();
+
+function launchFireworksCelebration(intensity){
+  FX.launch(intensity === "grand" ? "grand" : intensity === "dual" ? "dual" : "standard");
+}
+function fanfare(kind){
+  if(!soundOn) return;
+  const notes = kind === "grand" ? [523, 659, 784, 1047, 1319] : kind === "big" ? [523, 659, 784, 1047] : [523, 784];
+  notes.forEach((f, i) => setTimeout(() => beep(f, 0.14), i * 130));
+}
+function stageToast(text){
+  let el = document.querySelector(".fxToast");
+  if(!el){ el = document.createElement("div"); el.className = "fxToast"; document.body.appendChild(el); }
+  el.textContent = text;
+  requestAnimationFrame(() => el.classList.add("on"));
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("on"), 2200);
+}
+
+// ===== نوافذ نهاية المرحلة والنصر الشامل =====
+function stageModalBox(){ return document.getElementById("stageModalBox"); }
+function openStageModal(){
+  const m = document.getElementById("stageModal");
+  if(m) m.classList.add("show");
+}
+function clearAuto(){ if(autoTimer){ clearInterval(autoTimer); autoTimer = null; } }
+function closeStageModal(){
+  const m = document.getElementById("stageModal");
+  if(m) m.classList.remove("show");
+  clearAuto();
+}
+function startAutoNext(seconds, fn){
+  clearAuto();
+  let left = seconds;
+  const el = document.getElementById("stgAuto");
+  const tick = () => {
+    if(left <= 0){
+      clearAuto();
+      if(el) el.textContent = "جارٍ الانتقال...";
+      fn();
+      return;
+    }
+    if(el) el.textContent = "الانتقال التلقائي بعد " + left + " ثانية — أو اختر زراً";
+    left--;
+  };
+  tick();
+  autoTimer = setInterval(tick, 1000);
+}
+function showStageClear(stageNumValue, run){
+  const box = stageModalBox();
+  if(!box) return;
+  const cfg = STAGE_CONFIG[stageNumValue];
+  const nextLabel = stageNumValue < 3 ? "متابعة " + STAGE_CONFIG[stageNumValue + 1].label + " ⏩" : "";
+  const record = run.saved && run.saved.isRecord
+    ? '<div class="stgSub" style="color:#a7f3d0">🏅 رقم قياسي جديد لهذه المرحلة</div>'
+    : '<div class="stgSub">أفضل نتيجة محفوظة: ' + (run.saved ? run.saved.stage.bestScore : run.score) + '</div>';
+  box.innerHTML = `
+    <div class="modalHeader">
+      <div class="stgTitle">🏆 اكتملت ${cfg.label}!</div>
+      <button class="xbtn" type="button" data-close-stage>إغلاق</button>
+    </div>
+    <p class="stgSub">${cfg.cards} بطاقة · ${cfg.pairs} أزواج${cfg.bonus ? " · بطاقة النجمة ⭐" : ""}</p>
+    <div class="stgStats">
+      <div class="stgStat"><b>${formatTime(run.time)}</b><span>الوقت</span></div>
+      <div class="stgStat"><b>${run.moves}</b><span>المحاولات</span></div>
+      <div class="stgStat"><b>${run.score}</b><span>نقاط المرحلة</span></div>
+    </div>
+    <div class="stgStars">${starMarkup(run.stars)}</div>
+    ${record}
+    <div class="stgTotal"><span>المجموع التراكمي</span><b>${run.saved ? run.saved.total : run.score}</b></div>
+    <div class="stgActions">
+      <button class="primary" type="button" id="stgNext">${nextLabel || "المرحلة التالية ⏩"}</button>
+      <button class="ghost" type="button" id="stgReplay">إعادة هذه المرحلة 🔄</button>
+    </div>
+    <div class="stgAuto" id="stgAuto"></div>`;
+  openStageModal();
+  const nextBtn = box.querySelector("#stgNext");
+  const replayBtn = box.querySelector("#stgReplay");
+  if(nextBtn) nextBtn.addEventListener("click", () => { closeStageModal(); startStage(stageNumValue + 1); });
+  if(replayBtn) replayBtn.addEventListener("click", () => { closeStageModal(); startStage(stageNumValue); });
+  startAutoNext(3, () => { closeStageModal(); startStage(stageNumValue + 1); });
+}
+function showGrandVictory(data){
+  const box = stageModalBox();
+  if(!box) return;
+  const rows = STAGE_IDS.map((key) => {
+    const st = data.stages[key];
+    const cfg = STAGE_CONFIG[stageNum(key)];
+    if(!st || !st.completed){
+      return `<div class="vicRow pending"><span>${cfg.label}</span><b>—</b><span class="vicStars">☆☆☆</span></div>`;
+    }
+    return `<div class="vicRow"><span>${cfg.label} <small style="color:var(--muted)">(${st.bestTime}ث · ${st.bestMoves} حركة)</small></span><b>${st.bestScore}</b><span class="vicStars">${"★".repeat(st.stars)}${"☆".repeat(3 - st.stars)}</span></div>`;
+  }).join("");
+  box.innerHTML = `
+    <div class="modalHeader">
+      <div class="stgTitle">🥇 النصر الشامل!</div>
+      <button class="xbtn" type="button" data-close-stage>إغلاق</button>
+    </div>
+    <p class="stgSub">أكملت المراحل الثلاث — هذا ملخص أدائك</p>
+    ${rows}
+    <div class="stgTotal"><span>المجموع التراكمي النهائي</span><b>${data.totalCumulativeScore}</b></div>
+    <div class="stgActions">
+      <button class="primary" type="button" id="stgSave">🏆 حفظ في لوحة المتصدرين</button>
+      <button class="ghost" type="button" id="stgBoard">عرض السجل</button>
+      <a class="ghost" href="../game.html">الرجوع للبوابة</a>
+    </div>
+    <div class="stgActions">
+      ${STAGE_IDS.map((key) => `<button class="ghost" type="button" data-replay="${key}">إعادة ${STAGE_CONFIG[stageNum(key)].label} 🔄</button>`).join("")}
+    </div>`;
+  openStageModal();
+  const save = box.querySelector("#stgSave");
+  if(save) save.addEventListener("click", async () => {
+    save.disabled = true;
+    save.textContent = "جارٍ الحفظ...";
+    try{
+      if(lastResult.timeSeconds == null) throw new Error("العب مرحلة كاملة أولاً");
+      const name = (playerNameEl && playerNameEl.value || "").trim().slice(0, 20);
+      await saveScore(name, lastResult.timeSeconds, lastResult.moves);
+      save.textContent = "تم الحفظ ✅";
+    }catch(e){
+      save.disabled = false;
+      save.textContent = "تعذر الحفظ — افتح السجل";
+    }
+  });
+  const board = box.querySelector("#stgBoard");
+  if(board) board.addEventListener("click", () => { closeStageModal(); openBoard(); });
+  box.querySelectorAll("[data-replay]").forEach((btn) => {
+    btn.addEventListener("click", () => { closeStageModal(); startStage(Number(btn.dataset.replay)); });
+  });
+}
+
+// ===== شريط المراحل =====
+function renderStepper(){
+  const box = document.getElementById("stepper");
+  if(!box) return;
+  const data = readProgress();
+  box.innerHTML = "";
+  STAGE_IDS.forEach((key) => {
+    const n = stageNum(key);
+    const cfg = STAGE_CONFIG[n];
+    const st = data.stages[key];
+    const done = !!(st && st.completed);
+    const unlocked = stageUnlocked(n, data);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "stepBtn" + (n === currentStage ? " active" : done ? " done" : unlocked ? "" : " locked");
+    btn.dataset.stage = key;
+    btn.disabled = !unlocked;
+    btn.setAttribute("role", "tab");
+    btn.setAttribute("aria-selected", n === currentStage ? "true" : "false");
+    btn.title = cfg.label + " — " + cfg.cards + " بطاقة" + (done ? " · أفضل " + st.bestScore : "");
+    btn.innerHTML = `<span class="dot">${done ? "✓" : n}</span><span class="lbl">${cfg.label}</span><b>${cfg.cards}</b>`;
+    box.appendChild(btn);
+  });
+}
+
+let manifestCache = null;
+async function loadManifest(){
+  if(manifestCache) return manifestCache;
+  manifestCache = await (await fetch(MANIFEST_URL, { cache: "no-store" })).json();
+  return manifestCache;
+}
+
+async function buildStage(stageNumValue = 1){
+  currentStage = Math.min(3, Math.max(1, Number(stageNumValue) || 1));
+  stageBonus = 0;
+  const cfg = STAGE_CONFIG[currentStage];
+  let pairsData = [];
+  try{
+    const data = await loadManifest();
+    pairsData = Array.isArray(data && data.pairs) ? data.pairs : [];
+  }catch(e){
+    pairsData = [];
+  }
+  const chosen = pickK(pairsData, cfg.pairs);
+  const cards = [];
+  for(const p of chosen){
+    cards.push({pair:p.id, img:IMG_BASE + p.img1});
+    cards.push({pair:p.id, img:IMG_BASE + p.img2});
+  }
+  if(cfg.bonus) cards.push({pair:"__bonus__", bonus:true});
   shuffle(cards);
-  grid.innerHTML="";
+  grid.innerHTML = "";
   for(const c of cards){
-    const el=document.createElement("div");
-    el.className="card";
-    el.dataset.pair=c.pair;
-    el.innerHTML=`<div class="inner">
+    const el = document.createElement("div");
+    el.className = "card" + (c.bonus ? " bonus" : "");
+    el.dataset.pair = c.pair;
+    if(c.bonus) el.dataset.bonus = "1";
+    el.innerHTML = c.bonus
+      ? `<div class="inner"><div class="face front"></div><div class="face back"><span class="starBig">⭐</span><span>بطاقة النجمة</span></div></div>`
+      : `<div class="inner">
       <div class="face front"></div>
       <div class="face back"><div class="imgBox"><img src="${c.img}" loading="lazy" alt=""></div></div>
     </div>`;
-    el.addEventListener("click",()=>clickCard(el));
+    el.addEventListener("click", () => clickCard(el));
     grid.appendChild(el);
   }
+  renderStepper();
   sizeGrid();
 }
 
@@ -937,26 +1376,74 @@ function setMoves(){
   if(mMoves)mMoves.textContent=String(moves);
 }
 
-function resetGame(){
+function startStage(stageNumValue){
   stopTimer();
+  clearAuto();
+  closeStageModal();
+  currentStage = Math.min(3, Math.max(1, Number(stageNumValue) || 1));
   timeBig.textContent="00:00";
   if(mTime)mTime.textContent="00:00";
   startMs=0;running=false;elapsedSeconds=0;
   moves=0;matchedPairs=0;setMoves();
   first=second=null;lock=false;
+  stageBonus=0;
   lastResult={timeSeconds:null,moves:null};
   for(const k of Object.keys(usedGradients))delete usedGradients[k];
-  build();
+  buildStage(currentStage);
   window.setCharacterState && window.setCharacterState('think');
+}
+function resetGame(){
+  startStage(currentStage);
+}
+
+function clickBonusCard(card){
+  if(card.classList.contains("claimed") || lock) return;
+  card.classList.add("claimed", "flipped");
+  stageBonus += 20;
+  beep(1320, 0.10);
+  setTimeout(() => beep(1760, 0.12), 90);
+  stageToast("⭐ بطاقة النجمة: +20 نقطة وكشف سريع");
+  navigator.vibrate?.([12, 40, 12]);
+  lock = true;
+  const peek = [...grid.querySelectorAll(".card:not(.matched):not(.flipped):not(.bonus)")];
+  peek.forEach((c) => c.classList.add("peek"));
+  setTimeout(() => {
+    peek.forEach((c) => c.classList.remove("peek"));
+    lock = false;
+  }, 1100);
+}
+
+function completeStage(){
+  stopTimer();
+  const t = getTimeSeconds();
+  const mv = moves;
+  lastResult = { timeSeconds: t, moves: mv };
+  const score = stageScore(currentStage, t, mv);
+  const stars = stageStars(currentStage, t, mv);
+  const saved = saveStageScore(currentStage, score, t, mv);
+  renderStepper();
+  window.setCharacterState && window.setCharacterState('win');
+  if(currentStage < 3){
+    launchFireworksCelebration(currentStage === 2 ? "dual" : "standard");
+    fanfare(currentStage === 2 ? "big" : "small");
+    setTimeout(() => showStageClear(currentStage, { score, stars, time: t, moves: mv, saved }), 720);
+  }else{
+    launchFireworksCelebration("grand");
+    fanfare("grand");
+    setTimeout(() => showGrandVictory(saved.data), 950);
+  }
 }
 
 function clickCard(card){
-  if(lock||card===first||card.classList.contains("matched"))return;
+  if(lock) return;
+  if(card.dataset.bonus === "1"){ clickBonusCard(card); return; }
+  if(card===first||card.classList.contains("matched"))return;
   startTimerIfNeeded();
   card.classList.add("flipped");
   if(!first){first=card;return}
   second=card;
   moves++;setMoves();
+  const cfg = STAGE_CONFIG[currentStage];
 
   if(first.dataset.pair===second.dataset.pair){
     if(!usedGradients[first.dataset.pair]){
@@ -970,15 +1457,10 @@ function clickCard(card){
     });
     matchedPairs++;beep(1040,0.09);
     window.setCharacterState && window.setCharacterState('win');
-    setTimeout(()=>{ if(matchedPairs!==10) window.setCharacterState && window.setCharacterState('think'); }, 1200);
+    setTimeout(()=>{ if(matchedPairs !== cfg.pairs) window.setCharacterState && window.setCharacterState('think'); }, 1200);
     navigator.vibrate?.(18);
     first=second=null;
-    if(matchedPairs===10){
-      stopTimer();
-      lastResult={timeSeconds:getTimeSeconds(),moves:moves};
-      finishStage(lastResult);
-      setTimeout(openStageModal,420);
-    }
+    if(matchedPairs === cfg.pairs) completeStage();
   }else{
     lock=true;beep(320,0.08);
     window.setCharacterState && window.setCharacterState('confused');
@@ -1025,9 +1507,24 @@ function setupEventListeners(){
   if(mBoard)mBoard.addEventListener("click",openBoard);
   closeBoard.addEventListener("click",closeBoardModal);
   boardModal.addEventListener("click",e=>{if(e.target===boardModal)closeBoardModal()});
-  const stageModal=document.getElementById("stageModal"), closeStage=document.getElementById("closeStage");
-  if(closeStage) closeStage.addEventListener("click",closeStageModal);
-  if(stageModal) stageModal.addEventListener("click",e=>{if(e.target===stageModal)closeStageModal()});
+  const stageModal=document.getElementById("stageModal");
+  if(stageModal){
+    stageModal.addEventListener("click",e=>{
+      if(e.target===stageModal){closeStageModal();return}
+      if(e.target.closest("[data-close-stage]")) closeStageModal();
+    });
+  }
+
+  const stepper=document.getElementById("stepper");
+  if(stepper){
+    stepper.addEventListener("click",(e)=>{
+      const btn=e.target.closest(".stepBtn");
+      if(!btn||btn.disabled) return;
+      const n=Number(btn.dataset.stage);
+      if(!n||n===currentStage) return;
+      startStage(n);
+    });
+  }
   
   saveBtn.addEventListener("click",async()=>{
     try{
@@ -1059,6 +1556,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   setupEventListeners();
   syncSound();
   try{ if(window.GameHub) GameHub.setActiveGame(STAGE_ID); }catch(e){}
+  currentStage = initialStage();
   resetGame();
 });
 

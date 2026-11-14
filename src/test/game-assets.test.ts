@@ -40,7 +40,10 @@ describe("Game assets and shared rules", () => {
     expect(pairs).toContain('MANIFEST_URL="manifest.json"');
     expect(pairs).toContain("--card-back:url('card-back.png')");
     expect(pairs).toContain("GameHub.saveGameScore");
-    expect(pairs).toContain('id="stageResult"');
+    expect(pairs).toContain('id="stepper"');
+    expect(pairs).toContain('id="fxCanvas"');
+    expect(pairs).toContain("dgr_pairs_progressive_data");
+    expect(pairs).toContain("function buildStage");
     expect(pairs).not.toMatch(/cdn\.jsdelivr\.net/);
     expect(readFileSync("public/m1/manifest.json", "utf8")).toContain("characters");
     expect(JSON.parse(readFileSync("public/games.json", "utf8")).games.length).toBe(2);
