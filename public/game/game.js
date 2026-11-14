@@ -896,8 +896,9 @@ torsoTwist:0, torsoLean:0, torsoRoll:0, pelvisDrop:0
 function anim(dt, spd, vx, vz){
 const isMoving = spd > 0.08;
 const isHeld = !!held;
+const sprinting = !isHeld && !!(key.ShiftLeft || key.ShiftRight);
 if(isMoving){
-walk += dt * (isHeld ? 9.2 : 13.5) * gameRules.movementMultiplier(fearT);
+walk += dt * (isHeld ? 9.2 : 13.5) * (sprinting ? 1.35 : 1) * gameRules.movementMultiplier(fearT);
 const targetRot = Math.atan2(vx, vz);
 const diff = Math.atan2(Math.sin(targetRot - curRotY), Math.cos(targetRot - curRotY));
 const turnK = Math.min(1, dt * (18 + Math.abs(diff) * 12));
@@ -1160,11 +1161,13 @@ function useBeltSlow(){
 }
 const beltRay = new THREE.Raycaster(), beltNdc = new THREE.Vector2();
 R.domElement.addEventListener('pointerdown', e => {
-  if(!run || fire.active) return;
+  if(!run || fire.active || introHold) return;
   const r = R.domElement.getBoundingClientRect();
   beltNdc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   beltRay.setFromCamera(beltNdc, C);
-  if(beltRay.intersectObjects(beltBtnGroup.children, false).length) useBeltSlow();
+  if(beltRay.intersectObjects(beltBtnGroup.children, false).length){ useBeltSlow(); return; }
+  /* نقرة الفأرة الأساسية على الملعب = التقاط/تفاعل (اللمس يبقى على أزراره) */
+  if(e.pointerType === 'mouse' && e.button === 0) act();
 });
 function mystery(it){
 rm(it); totalProcessed = Math.max(0, totalProcessed);
@@ -1570,27 +1573,50 @@ if(z){
 const it = held; held = null;
 resolvePlacement(z, it);
 } else {
+dropHeldAtFeet();
+}
+hud();
+}
+}
+/* إسقاط فوري للطرد المحمول على الأرض أمام اللاعب (بلا اشتراط حاوية) */
+function dropHeldAtFeet(){
+if(!held) return false;
 snd('place');
 held.st = 'floor';
 held.m.position.set(Math.max(-33, Math.min(33, px.x + Math.sin(rig.rotation.y)*1.25)), 1.05, Math.max(-11.9, Math.min(9.6, px.z + Math.cos(rig.rotation.y)*1.25)));
 held.m.rotation.set(0, rig.rotation.y, 0); held.fall = true; held.vy = 0; held.ty = held.data.isFod ? .2 : 0.02 + BH;
 held = null;
-}
 hud();
+return true;
 }
+/* إيقاف/استئناف مؤقت بمفتاح Esc أو P */
+const CTRL_HINT = '🎮 الحركة [WASD أو الأسهم] • الالتقاط/التفاعل [E أو F أو مسافة] • الإسقاط السريع [Q/X] • الجري [Shift] • الاندفاع [Enter] • الإيقاف [Esc]';
+function pauseGame(){
+if(!run || introHold || FD.on || fire.active) return;
+showIntro('<b class="t">⏸ إيقاف مؤقت</b>اضغط <b style="display:inline">Esc</b> أو <b style="display:inline">P</b> للمتابعة.<span class="hint">' + CTRL_HINT + '</span>',0,true);
+clearTimeout(introT);
 }
 addEventListener('keydown', e => {
-if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
-if(introHold){ if(['Space','KeyE','Enter','Escape'].includes(e.code)){ e.preventDefault(); if(!e.repeat) resumeFromIntro(); } return; }
+if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyQ','KeyX'].includes(e.code)) e.preventDefault();
+if(introHold){ if(['Space','KeyE','KeyF','Enter','NumpadEnter','Escape','KeyP'].includes(e.code)){ e.preventDefault(); if(!e.repeat) resumeFromIntro(); } return; }
 if(fire.keypad){ handlePadKey(e); return; }
 key[e.code] = 1;
-/* إدخال (Enter) = اندفاع سريع • المسافة = التقاط/وضع */
-if(e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'ShiftLeft' || e.code === 'ShiftRight'){
+/* Esc / P = إيقاف مؤقت أو متابعة */
+if(e.code === 'Escape' || e.code === 'KeyP'){ e.preventDefault(); if(!e.repeat && !FD.on) pauseGame(); return; }
+/* إدخال (Enter) = اندفاع سريع */
+if(e.code === 'Enter' || e.code === 'NumpadEnter'){
   e.preventDefault();
   if(!e.repeat) doDash();
   return;
 }
-if(['Space','KeyE'].includes(e.code)){ e.preventDefault(); if(!e.repeat) act(); }
+/* Q / X = إسقاط سريع للطرد المحمول */
+if(e.code === 'KeyQ' || e.code === 'KeyX'){
+  e.preventDefault();
+  if(!e.repeat && run && !liftAnim.active && !FD.on) dropHeldAtFeet();
+  return;
+}
+/* مسافة / E / F = التقاط وتفاعل وركوب الرافعة */
+if(['Space','KeyE','KeyF'].includes(e.code)){ e.preventDefault(); if(!e.repeat) act(); }
 });
 addEventListener('keyup', e => key[e.code] = 0);
 function clearMovement(){ for(const code in key) key[code] = 0; je(); inX = inZ = animSpd = 0; }
@@ -2140,7 +2166,8 @@ if(feverT > 0){ feverT = Math.max(0, feverT - dt); if(feverT === 0) $('stage').c
 shakeTrauma = Math.max(0, shakeTrauma - dt * 2.5);
 if(run && !fire.keypad){
 if(!fire.active && (stage>=3 || demo.truck)) updateTruck(dt);
-const sprintK = (dashT > 0 ? DASH_BOOST : 1) * (feverT > 0 ? FEVER_BOOST : 1);
+const sprintOn = !held && !!(key.ShiftLeft || key.ShiftRight);
+const sprintK = (dashT > 0 ? DASH_BOOST : 1) * (feverT > 0 ? FEVER_BOOST : 1) * (sprintOn ? 1.35 : 1);
 const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultiplier(fearT) * sprintK;
 // Small collision steps preserve full travel time even when rendering slows down.
 const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;

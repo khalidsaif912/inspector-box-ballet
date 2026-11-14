@@ -81,6 +81,13 @@
 #ov .btn-play:hover::after{left:145%}
 #ov .btn-play:hover{transform:translateY(-2px);box-shadow:0 16px 36px rgba(245,158,11,.58)}
 #ov .btn-play:active{transform:translateY(1px) scale(.99)}
+/* ملخّص لوحة المفاتيح: يظهر على أجهزة الكمبيوتر فقط */
+#ov .keyhint{
+  display:none;margin:-8px auto 14px;max-width:420px;
+  font-size:clamp(10px,1.5vmin,12px);font-weight:700;line-height:1.9;
+  color:#a8bad0;text-align:center;direction:rtl;
+}
+@media (hover:hover) and (pointer:fine){#ov .keyhint{display:block}}
 #ov .btn-play:focus-visible{outline:3px solid #8fd0ff;outline-offset:4px}
 
 #ov.start .records-box{
