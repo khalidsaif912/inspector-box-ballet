@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const html = readFileSync("public/game.html", "utf8");
+const index = readFileSync("public/index.html", "utf8");
 const game = readFileSync("public/game/game.js", "utf8");
 
 describe("Game assets and shared rules", () => {
@@ -78,6 +79,23 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain("function mountDrive");
     expect(game).toContain("function stopDrive");
     expect(game).toContain("FD.left = Math.max(0, FD.left - dt)");
+  });
+
+  it("seats the employee on the forklift and drives it at the shared speed", () => {
+    expect(game).toContain("const dSpd = gameRules.forklift.driveSpeed");
+    expect(game).toContain("const forkDriver = new THREE.Group()");
+    expect(game).toContain("forkDriver.visible = true");
+    expect(game).toContain("forkDriver.visible = false");
+  });
+
+  it("installs as a PWA and opens the game inside a framed page", () => {
+    expect(html).toContain('rel="manifest" href="manifest.webmanifest"');
+    expect(index).toContain('src="game.html"');
+    expect(index).toContain('rel="manifest" href="manifest.webmanifest"');
+    const manifest = JSON.parse(readFileSync("public/manifest.webmanifest", "utf8"));
+    expect(manifest.display).toBe("standalone");
+    expect(manifest.icons.some((i: { sizes: string }) => i.sizes === "512x512")).toBe(true);
+    expect(readFileSync("public/sw.js", "utf8")).toContain('addEventListener("fetch"');
   });
 
   it("lets the forklift carry parcels as an undocumented secret", () => {

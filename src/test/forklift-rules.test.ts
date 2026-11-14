@@ -16,11 +16,13 @@ type Rules = {
   fearDuration: number;
   turnDuration: number;
   fodZoneX: number;
+  speed: number;
   reward(isFod: boolean, zone: string): number;
   forklift: {
     reach: number;
     forkOffset: number;
     carryY: number;
+    driveSpeed: number;
     nearest(
       list: { x: number; z: number }[],
       x: number,
@@ -62,6 +64,13 @@ describe("Reckless forklift", () => {
   });
   it("places the FOD collection area at its configured position", () => {
     expect(rules.fodZoneX).toBe(4.5);
+  });
+  it("keeps the reckless crossing slow enough to react", () => {
+    expect(rules.speed).toBeLessThanOrEqual(12);
+  });
+  it("drives the player forklift faster than before", () => {
+    expect(rules.forklift.driveSpeed).toBeGreaterThan(9);
+    expect(rules.forklift.driveSpeed).toBeLessThan(rules.speed);
   });
   it("awards extra points only for FOD delivered to its own area", () => {
     expect(rules.reward(true, "fod")).toBe(50);

@@ -33,7 +33,7 @@
 
   const rules = {
     startAt: 12,
-    speed: 14,
+    speed: 12,
     turnDuration: 1.5,
     turnRadius: 2,
     fodZoneX: 4.5,
@@ -146,6 +146,7 @@
     reach: 3.3,
     forkOffset: 1.95,
     carryY: 0.88,
+    driveSpeed: 9.8,
     nearest(list, x, z) {
       let best = null,
         bd = forklift.reach;

@@ -739,6 +739,23 @@ const glove = M(new THREE.SphereGeometry(0.088, 16, 12), C_GLOVE, 0.75, 0.05);
 glove.scale.set(1, 1.15, 0.9); glove.position.y = -0.03; hand.add(glove);
 return {shld, uArm, elbow, hand};
 });
+// ===== الموظف يظهر جالساً على الرافعة الشوكية أثناء القيادة =====
+const forkDriver = new THREE.Group(); fk.add(forkDriver); forkDriver.visible = false;
+B(0.56, 0.26, 0.74, C_PANTS, 0, 1.2, -0.02, forkDriver, 0.7, 0.1);
+[-1, 1].forEach(s => {
+B(0.19, 0.52, 0.22, C_PANTS, s * 0.21, 0.86, 0.38, forkDriver, 0.7, 0.1).rotation.x = -0.12;
+B(0.22, 0.16, 0.4, C_BOOTS, s * 0.21, 0.55, 0.58, forkDriver, 0.85, 0.05);
+B(0.16, 0.46, 0.17, C_SKIN, s * 0.35, 1.55, 0.2, forkDriver, 0.6, 0.1).rotation.x = -1.05;
+B(0.15, 0.15, 0.15, C_GLOVE, s * 0.24, 1.32, 0.44, forkDriver, 0.8, 0.05);
+});
+const forkVest = B(0.62, 0.7, 0.44, C_VEST, 0, 1.62, -0.2, forkDriver, 0.55, 0.15);
+B(0.5, 0.16, 0.46, C_VEST_SEC, 0, 1.46, -0.2, forkDriver, 0.55, 0.15);
+const forkHead = M(new THREE.SphereGeometry(0.25, 16, 12), C_SKIN);
+forkHead.position.set(0, 2.14, -0.18); forkHead.scale.set(0.94, 1.06, 0.96); forkDriver.add(forkHead);
+CY(0.28, 0.28, 0.16, C_HELMET, 0, 2.37, -0.18, forkDriver);
+const forkWheel = M(new THREE.TorusGeometry(0.24, 0.035, 8, 20), 0x181c20);
+forkWheel.position.set(0, 1.36, 0.46); forkWheel.rotation.x = -1.15; forkDriver.add(forkWheel);
+B(0.08, 0.5, 0.08, 0x2a2a2a, 0, 1.12, 0.58, forkDriver, 0.5, 0.4);
 const PLAYER_RADIUS = 0.45;
 const STATIC_OBSTACLES = [
 { minX: -26.0, maxX: 26.0, minZ: 10.6, maxZ: 13.6 },
@@ -1283,7 +1300,7 @@ hud();
 function mountDrive(){
 if(FD.on || FD.left <= 0 || held || liftAnim.active) return;
 FD.on = true; FD.near = false;
-fk.visible = true; rig.visible = false;
+fk.visible = true; rig.visible = false; forkDriver.visible = true;
 px.set(fk.position.x, 0, fk.position.z);
 snd('horn');
 toast('🚜 قُد الرافعة الشوكية — المتبقي ' + Math.ceil(FD.left) + ' ث', '#ffd54a');
@@ -1291,7 +1308,7 @@ hud();
 }
 function stopDrive(msg){
 if(!FD.on) return;
-FD.on = false; rig.visible = true;
+FD.on = false; rig.visible = true; forkDriver.visible = false;
 const ox = Math.cos(fk.rotation.y) * 2.1, oz = -Math.sin(fk.rotation.y) * 2.1;
 px.set(Math.max(-33, Math.min(33, fk.position.x + ox)), 0, Math.max(-11, Math.min(9.7, fk.position.z + oz)));
 if(held){
@@ -1450,7 +1467,7 @@ sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false;
 $('rules').style.display = 'none';
 resetFire();
 px.set(0, 0, 3); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
-FD.on = false; FD.left = 60; FD.near = false; rig.visible = true; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = Math.PI/2;
+FD.on = false; FD.left = 60; FD.near = false; rig.visible = true; forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = Math.PI/2;
 clearMovement(); last = performance.now();
 run = true; document.body.classList.add('ingame'); $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true}); hud();
 tip('stage1', '🎓 المرحلة ١: التدريب — التقط وافرز', '#64ffda');
@@ -1889,7 +1906,7 @@ const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultipl
 const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
 if(FD.on){
 FD.left = Math.max(0, FD.left - dt);
-const dSpd = 7.4;
+const dSpd = gameRules.forklift.driveSpeed;
 if(l > .001) fk.rotation.y = Math.atan2(vx, vz);
 for(let step=0; step<steps; step++){
 const c = resolvePlayerCollisions(fk.position.x + vx * dSpd * stepDt, fk.position.z + vz * dSpd * stepDt, vx, vz, stepDt);
@@ -2057,6 +2074,7 @@ requestAnimationFrame(loop);
 // ===== تخصيص لون سترة العامل =====
 (() => {
 const vestMats = []; rig.traverse(o => { if(o.isMesh && o.material && o.material.color && o.material.color.getHex() === C_VEST) vestMats.push(o.material); });
+vestMats.push(forkVest.material);
 const COLORS = [[0xd4ff00,'أصفر فوسفوري'],[0xff6d00,'برتقالي سلامة'],[0x00e676,'أخضر نيون']];
 const apply = c => { vestMats.forEach(m => m.color.setHex(c)); try { localStorage.setItem('acg_vest', c); } catch(e){} document.querySelectorAll('#skins button').forEach(b => b.classList.toggle('on', +b.dataset.c === c)); };
 const row = document.getElementById('skins'); if(!row) return;
