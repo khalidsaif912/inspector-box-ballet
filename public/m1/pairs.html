@@ -303,6 +303,7 @@ main{
   main{
     padding:8px;
     min-height:100vh;
+    min-height:100dvh;
     padding-top:68px;
     padding-bottom:78px;
     overflow:hidden;
@@ -332,6 +333,50 @@ main{
     align-content:center;
   }
 
+  .face{border-radius:14px}
+  .imgBox{width:85%;height:85%}
+  .mBottom{height:58px}
+  .mTop{height:48px}
+  .mBtn,.mIcon{width:36px;height:36px;border-radius:12px;font-size:18px}
+  .mStat{min-width:70px}
+  .mVal{font-size:15px}
+  .mLbl{font-size:10px}
+}
+
+/* هاتف أفقي/شاشة قصيرة: هوامش أصغر حتى لا تُقص الشبكة */
+@media (max-width: 720px) and (orientation: landscape){
+  main{padding-top:54px;padding-bottom:62px}
+  .mTop{height:44px}
+  .mBottom{height:52px}
+}
+
+/* شاشة عمودية عريضة (هاتف مطوي/تابلت صغير): تخطيط عمودي بلا شريط جانبي */
+@media (min-width: 721px) and (max-width: 1023px) and (orientation: portrait){
+  .sidebar{display:none}
+  .app{grid-template-columns:1fr}
+  .mTop,.mBottom{display:flex}
+  main{
+    padding:8px;
+    padding-top:68px;
+    padding-bottom:78px;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    min-height:100dvh;
+  }
+  .stage{
+    max-width:none;
+    width:100%;
+    height:auto;
+    padding-top:0;
+    padding-bottom:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .grid{gap:8px;justify-content:center;align-content:center}
   .face{border-radius:14px}
   .imgBox{width:85%;height:85%}
   .mBottom{height:58px}
@@ -465,24 +510,30 @@ main{
   .stepBtn .dot{width:16px;height:16px}
 }
 
-/* ===== البطاقة المركزية (النجمة) ===== */
-.card.bonus .front{
+/* ===== البطاقات الخاصة (النجمة / الكشف) ===== */
+.card.star:not(.mystery) .front{
   background:
     radial-gradient(circle at 50% 45%, rgba(255,210,0,.42), transparent 62%),
     rgba(255,255,255,.04);
 }
-.card.bonus .front::before{
+.card.star:not(.mystery) .front::before{
   content:"⭐";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-size:clamp(24px,6vmin,52px);filter:drop-shadow(0 0 12px rgba(255,210,0,.85));
 }
-.card.bonus .front::after{display:none}
-.card.bonus .back{
+.card.star:not(.mystery) .front::after{display:none}
+.card.star .back{
   background:radial-gradient(circle at 50% 45%, rgba(255,210,0,.30), rgba(10,16,32,.62));
   flex-direction:column;gap:4px;color:#ffe9a8;font-weight:900;font-size:11px;text-align:center;
 }
-.card.bonus .back .starBig{font-size:clamp(22px,5vmin,46px);line-height:1;filter:drop-shadow(0 0 14px rgba(255,210,0,.9))}
-.card.bonus.claimed{opacity:.92;cursor:default}
-.card.peek .inner{transform:rotateY(180deg)}
+.card.peek .back{
+  background:radial-gradient(circle at 50% 45%, rgba(79,172,254,.32), rgba(10,16,32,.62));
+  flex-direction:column;gap:4px;color:#c9ecff;font-weight:900;font-size:11px;text-align:center;
+}
+.card.special .back .starBig{font-size:clamp(22px,5vmin,46px);line-height:1;filter:drop-shadow(0 0 14px rgba(255,210,0,.9))}
+.card.peek .back .starBig{filter:drop-shadow(0 0 14px rgba(79,172,254,.95))}
+.card.mystery .front::before{display:none}
+.card.claimed{opacity:.92;cursor:default}
+.card.peeked .inner{transform:rotateY(180deg)}
 
 /* ===== نافذة نهاية المرحلة / النصر ===== */
 .stgTitle{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:900;color:var(--text)}
@@ -740,8 +791,8 @@ let lastResult={timeSeconds:null,moves:null};
 // ===== المراحل التدريجية =====
 const STAGE_CONFIG={
   1:{pairs:2,cards:4,cols:2,base:120,moves3:3,moves2:5,time3:10,time2:20,label:"المرحلة الأولى"},
-  2:{pairs:4,cards:9,cols:3,base:280,bonus:true,moves3:7,moves2:11,time3:32,time2:55,label:"المرحلة الثانية"},
-  3:{pairs:10,cards:20,cols:5,base:620,moves3:16,moves2:26,time3:80,time2:135,label:"المرحلة الثالثة"}
+  2:{pairs:4,cards:9,cols:3,base:260,bonus:true,moves3:7,moves2:11,time3:32,time2:55,label:"المرحلة الثانية"},
+  3:{pairs:9,cards:20,cols:5,base:520,bonus:true,peek:true,mystery:true,moves3:16,moves2:26,time3:80,time2:135,label:"المرحلة الثالثة"}
 };
 const STAGE_IDS=["1","2","3"];
 let currentStage=1;
@@ -801,10 +852,13 @@ function sizeGrid(){
 }
 
 function stageLayout(){
-  const isDesktop=window.matchMedia('(min-width:1024px)').matches;
+  const total=(grid&&grid.children.length)?grid.children.length:20;
+  const portrait=window.innerHeight>=window.innerWidth;
   if(currentStage===1) return {cols:2,rows:2};
   if(currentStage===2) return {cols:3,rows:3};
-  return isDesktop?{cols:5,rows:4}:{cols:4,rows:5};
+  // الهاتف/الشاشة العمودية: شبكة عمودية (صفوف أكثر من أعمدة) — الأفقي: 5×4
+  const cols=portrait?4:5;
+  return {cols,rows:Math.max(1,Math.ceil(total/cols))};
 }
 
 function formatTime(sec){const m=Math.floor(sec/60),s=sec%60;return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
@@ -1226,12 +1280,15 @@ function showStageClear(stageNumValue, run){
   const record = run.saved && run.saved.isRecord
     ? '<div class="stgSub" style="color:#a7f3d0">🏅 رقم قياسي جديد لهذه المرحلة</div>'
     : '<div class="stgSub">أفضل نتيجة محفوظة: ' + (run.saved ? run.saved.stage.bestScore : run.score) + '</div>';
+  const detail = stageNumValue === 3
+    ? `${cfg.pairs * 2} بطاقة + بطاقتان مخفيتان (نجمة ⭐ وكشف 🔍)`
+    : `${cfg.cards} بطاقة`;
   box.innerHTML = `
     <div class="modalHeader">
       <div class="stgTitle">🏆 اكتملت ${cfg.label}!</div>
       <button class="xbtn" type="button" data-close-stage>إغلاق</button>
     </div>
-    <p class="stgSub">${cfg.cards} بطاقة · ${cfg.pairs} أزواج${cfg.bonus ? " · بطاقة النجمة ⭐" : ""}</p>
+    <p class="stgSub">${detail} · ${cfg.pairs} أزواج</p>
     <div class="stgStats">
       <div class="stgStat"><b>${formatTime(run.time)}</b><span>الوقت</span></div>
       <div class="stgStat"><b>${run.moves}</b><span>المحاولات</span></div>
@@ -1350,17 +1407,20 @@ async function buildStage(stageNumValue = 1){
     cards.push({pair:p.id, img:IMG_BASE + p.img1});
     cards.push({pair:p.id, img:IMG_BASE + p.img2});
   }
-  if(cfg.bonus) cards.push({pair:"__bonus__", bonus:true});
+  if(cfg.bonus) cards.push({pair:"__star__", special:"star", mystery:!!cfg.mystery});
+  if(cfg.peek) cards.push({pair:"__peek__", special:"peek", mystery:true});
   shuffle(cards);
   grid.innerHTML = "";
   for(const c of cards){
     const el = document.createElement("div");
-    el.className = "card" + (c.bonus ? " bonus" : "");
+    el.className = "card" + (c.special ? " special " + c.special : "") + (c.mystery ? " mystery" : "");
     el.dataset.pair = c.pair;
-    if(c.bonus) el.dataset.bonus = "1";
-    el.innerHTML = c.bonus
-      ? `<div class="inner"><div class="face front"></div><div class="face back"><span class="starBig">⭐</span><span>بطاقة النجمة</span></div></div>`
-      : `<div class="inner">
+    if(c.special) el.dataset.special = c.special;
+    el.innerHTML = c.special === "peek"
+      ? `<div class="inner"><div class="face front"></div><div class="face back"><span class="starBig">🔍</span><span>كشف بطاقتين</span></div></div>`
+      : c.special === "star"
+        ? `<div class="inner"><div class="face front"></div><div class="face back"><span class="starBig">⭐</span><span>بطاقة النجمة</span></div></div>`
+        : `<div class="inner">
       <div class="face front"></div>
       <div class="face back"><div class="imgBox"><img src="${c.img}" loading="lazy" alt=""></div></div>
     </div>`;
@@ -1396,21 +1456,35 @@ function resetGame(){
   startStage(currentStage);
 }
 
-function clickBonusCard(card){
+function clickSpecialCard(card){
   if(card.classList.contains("claimed") || lock) return;
-  card.classList.add("claimed", "flipped");
-  stageBonus += 20;
-  beep(1320, 0.10);
-  setTimeout(() => beep(1760, 0.12), 90);
-  stageToast("⭐ بطاقة النجمة: +20 نقطة وكشف سريع");
-  navigator.vibrate?.([12, 40, 12]);
+  startTimerIfNeeded();
+  const kind = card.dataset.special;
   lock = true;
-  const peek = [...grid.querySelectorAll(".card:not(.matched):not(.flipped):not(.bonus)")];
-  peek.forEach((c) => c.classList.add("peek"));
+  card.classList.add("claimed", "flipped");
+  if(kind === "peek"){
+    beep(720, 0.10);
+    setTimeout(() => beep(980, 0.12), 90);
+    stageToast("🔍 بطاقة الكشف: فتح بطاقتين");
+  }else{
+    stageBonus += 20;
+    beep(1320, 0.10);
+    setTimeout(() => beep(1760, 0.12), 90);
+    stageToast("⭐ بطاقة النجمة: +20 نقطة");
+  }
+  navigator.vibrate?.([12, 40, 12]);
+  const peek = [...grid.querySelectorAll(".card:not(.matched):not(.flipped):not(.special)")];
+  const count = kind === "peek" ? 2 : 0;
+  const picks = [];
+  while(picks.length < count && peek.length){
+    picks.push(peek.splice(randInt(peek.length), 1)[0]);
+  }
+  picks.forEach((c) => c.classList.add("peeked"));
   setTimeout(() => {
-    peek.forEach((c) => c.classList.remove("peek"));
+    picks.forEach((c) => c.classList.remove("peeked"));
+    card.classList.remove("flipped");
     lock = false;
-  }, 1100);
+  }, 1300);
 }
 
 function completeStage(){
@@ -1436,7 +1510,7 @@ function completeStage(){
 
 function clickCard(card){
   if(lock) return;
-  if(card.dataset.bonus === "1"){ clickBonusCard(card); return; }
+  if(card.dataset.special){ clickSpecialCard(card); return; }
   if(card===first||card.classList.contains("matched"))return;
   startTimerIfNeeded();
   card.classList.add("flipped");
