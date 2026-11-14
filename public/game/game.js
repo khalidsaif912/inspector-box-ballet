@@ -372,6 +372,8 @@ CY(0.18, 0.18, 1.1, 0xf5c400, x, 0.55, z, S, 0.45, 0.2);
 CY(0.185, 0.185, 0.16, 0x151515, x, 0.75, z, S, 0.6, 0.1);
 BOLLARDS.push({x, z, r:0.2});
 });
+// زر إبطاء الحزام عمود ثابت: لا يمكن للاعب المرور من خلاله
+BOLLARDS.push({x:-22.8, z:9.95, r:0.22});
 const fk = new THREE.Group(); fk.position.set(-30.8, 0, 9.2); fk.rotation.y = Math.PI/2; S.add(fk);
 B(1.5, 0.9, 2.2, 0xf2a900, 0, 0.75, 0, fk, 0.45, 0.3);
 B(1.3, 0.5, 0.9, 0x222, 0, 1.4, -0.6, fk, 0.7, 0.2);
@@ -422,47 +424,52 @@ stripes.push(st);
 }
 B(2.6, 3.8, 3.6, 0x324454, -25.8, 1.9, 12, S, 0.4, 0.4);
 B(2.6, 3.8, 3.6, 0x324454, 25.8, 1.9, 12, S, 0.4, 0.4);
-// زر إبطاء الحزام: سر مخفي — صندوق صغير عند قاعدة الحزام خارج ممر اللاعب (بلا أي نص أو علامة)
+// زر إبطاء الحزام: سر مخفي — عمود قصير أمام حافة الحزام، خارج مسار العمل (بلا أي نص)
 const beltBtnGroup = new THREE.Group();
-beltBtnGroup.position.set(-22.8, 0, 10.3);
+beltBtnGroup.position.set(-22.8, 0, 9.95);
 S.add(beltBtnGroup);
 const beltBtnBase = new THREE.Mesh(
-  new THREE.BoxGeometry(0.32, 0.26, 0.32),
-  new THREE.MeshStandardMaterial({color:0x232c34, roughness:.78, metalness:.35})
+  new THREE.CylinderGeometry(0.15, 0.19, 0.1, 18),
+  new THREE.MeshStandardMaterial({color:0x232c34, roughness:.78, metalness:.4})
 );
-beltBtnBase.position.y = 0.13; beltBtnGroup.add(beltBtnBase);
+beltBtnBase.position.y = 0.05; beltBtnGroup.add(beltBtnBase);
+const beltBtnPost = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.1, 0.13, 1.16, 16),
+  new THREE.MeshStandardMaterial({color:0x2c3742, roughness:.55, metalness:.7})
+);
+beltBtnPost.position.y = 0.62; beltBtnGroup.add(beltBtnPost);
 const beltBtnPlate = new THREE.Mesh(
-  new THREE.BoxGeometry(0.27, 0.03, 0.27),
-  new THREE.MeshStandardMaterial({color:0x2f3a44, roughness:.6, metalness:.55})
+  new THREE.CylinderGeometry(0.24, 0.245, 0.12, 22),
+  new THREE.MeshStandardMaterial({color:0x39454f, roughness:.5, metalness:.6})
 );
-beltBtnPlate.position.y = 0.262; beltBtnGroup.add(beltBtnPlate);
+beltBtnPlate.position.y = 1.22; beltBtnGroup.add(beltBtnPlate);
 const beltBtnBezel = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.095, 0.1, 0.04, 20),
-  new THREE.MeshStandardMaterial({color:0x141b21, roughness:.6, metalness:.6})
+  new THREE.CylinderGeometry(0.195, 0.2, 0.06, 24),
+  new THREE.MeshStandardMaterial({color:0x0d1318, roughness:.6, metalness:.65})
 );
-beltBtnBezel.position.y = 0.285; beltBtnGroup.add(beltBtnBezel);
-const beltBtnMat = new THREE.MeshStandardMaterial({color:0x14e0b0, emissive:0x00ffc4, emissiveIntensity:1.1, roughness:.32, metalness:.2});
-const beltBtnCap = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.068, 0.05, 20), beltBtnMat);
-beltBtnCap.position.y = 0.315; beltBtnGroup.add(beltBtnCap);
+beltBtnBezel.position.y = 1.3; beltBtnGroup.add(beltBtnBezel);
+const beltBtnMat = new THREE.MeshStandardMaterial({color:0x0a8a66, emissive:0x0a8a66, emissiveIntensity:0.25, roughness:.35, metalness:.1});
+const beltBtnCap = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.16, 0.1, 26), beltBtnMat);
+beltBtnCap.position.y = 1.36; beltBtnGroup.add(beltBtnCap);
 const beltBtnRing = new THREE.Mesh(
-  new THREE.TorusGeometry(0.078, 0.01, 10, 22),
-  new THREE.MeshStandardMaterial({color:0x9dffe4, emissive:0x2bffd0, emissiveIntensity:.6, roughness:.4})
+  new THREE.TorusGeometry(0.2, 0.022, 10, 30),
+  new THREE.MeshStandardMaterial({color:0xb6fff0, emissive:0x2bffd0, emissiveIntensity:0.9, roughness:.32})
 );
 beltBtnRing.rotation.x = Math.PI / 2;
-beltBtnRing.position.y = 0.335; beltBtnGroup.add(beltBtnRing);
-// توهج خفيف جداً يكشفه فقط عند الاقتراب
+beltBtnRing.position.y = 1.4; beltBtnGroup.add(beltBtnRing);
+// توهج أمامي يجعل الزر مقروءًا من زاوية اللعب
 const beltBtnHalo = new THREE.Mesh(
-  new THREE.RingGeometry(0.1, 0.14, 24),
-  new THREE.MeshBasicMaterial({color:0x54ffd8, transparent:true, opacity:.08, side:THREE.DoubleSide, depthWrite:false})
+  new THREE.RingGeometry(0.24, 0.4, 30),
+  new THREE.MeshBasicMaterial({color:0x54ffd8, transparent:true, opacity:.3, side:THREE.DoubleSide, depthWrite:false})
 );
 beltBtnHalo.rotation.x = -Math.PI / 2;
-beltBtnHalo.position.y = 0.3; beltBtnGroup.add(beltBtnHalo);
+beltBtnHalo.position.y = 1.41; beltBtnGroup.add(beltBtnHalo);
 // هدف لمس أكبر من الحجم المرئي لسهولة الضغط على الهاتف
 const beltBtnHit = new THREE.Mesh(
   new THREE.SphereGeometry(0.5, 8, 6),
   new THREE.MeshBasicMaterial({transparent:true, opacity:0, depthWrite:false})
 );
-beltBtnHit.position.y = 0.22; beltBtnGroup.add(beltBtnHit);
+beltBtnHit.position.y = 1.3; beltBtnGroup.add(beltBtnHit);
 beltBtnGroup.traverse(o => { if(o.isMesh) o.castShadow = false; });
 [-1,1].forEach(s => {
 const flap = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), new THREE.MeshStandardMaterial({color:0x222a30, roughness:0.4, transparent:true, opacity:0.85, side:THREE.DoubleSide}));
@@ -1030,7 +1037,7 @@ const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisot
 }
 let slowT = 0;
 /* إبطاء الحزام: زر فيزيائي بجوار الحزام، يُستخدم مرّة واحدة، يبطئ ٣٠ ثانية */
-const BELT_BTN_XZ = { x: -22.8, z: 10.3 };
+const BELT_BTN_XZ = { x: -22.8, z: 9.95 };
 let beltSlowT = 0, beltSlowUsed = false;
 function useBeltSlow(){
   if(beltSlowUsed || !run || fire.active) return;
@@ -2013,15 +2020,15 @@ if(s.position.x > 24) s.position.x -= 50;
 });
 if(beltSlowUsed){
   const on = beltSlowT > 0;
-  beltBtnMat.emissiveIntensity = on ? 0.9 + Math.max(0, Math.sin(now*0.009))*0.5 : 0.04;
-  beltBtnMat.color.setHex(on ? 0x14e0b0 : 0x3b4a4a);
-  beltBtnRing.material.emissiveIntensity = on ? 0.5 : 0.04;
-  beltBtnHalo.material.opacity = on ? 0.08 + Math.max(0, Math.sin(now*0.005))*0.08 : 0;
+  beltBtnMat.emissiveIntensity = on ? 0.9 + Math.max(0, Math.sin(now*0.009))*0.4 : 0.02;
+  beltBtnMat.color.setHex(on ? 0x12b98c : 0x3b4a4a);
+  beltBtnRing.material.emissiveIntensity = on ? 0.6 : 0.05;
+  beltBtnHalo.material.opacity = on ? 0.12 + Math.max(0, Math.sin(now*0.005))*0.1 : 0;
 } else {
-  // سر مخفي: وميض هادئ جداً بلا أي علامة على الشاشة
-  beltBtnMat.emissiveIntensity = 0.35 + Math.max(0, Math.sin(now*0.0022))*0.45;
-  beltBtnRing.material.emissiveIntensity = 0.2 + Math.max(0, Math.sin(now*0.0022))*0.3;
-  beltBtnHalo.material.opacity = 0.05 + Math.max(0, Math.sin(now*0.0022))*0.05;
+  // سر مخفي: نبض واضح على اللوحة لكن بلا أي علامة على الشاشة
+  beltBtnMat.emissiveIntensity = 0.55 + Math.max(0, Math.sin(now*0.0026))*0.35;
+  beltBtnRing.material.emissiveIntensity = 0.7 + Math.max(0, Math.sin(now*0.0026))*0.45;
+  beltBtnHalo.material.opacity = 0.26 + Math.max(0, Math.sin(now*0.0026))*0.2;
 }
 hudTicker += dt;
 if(hudTicker >= .1){ hudTicker = 0; hud(); }
