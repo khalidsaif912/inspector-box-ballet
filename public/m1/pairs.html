@@ -579,6 +579,99 @@ main{
   font-size:12.5px;font-weight:800;opacity:0;transition:opacity .25s ease,transform .25s ease;
 }
 .fxToast.on{opacity:1;transform:translateX(-50%) translateY(-6px)}
+
+/* ===== Arcade: combo / frenzy / VFX ===== */
+.card .glare{
+  position:absolute;inset:0;border-radius:18px;pointer-events:none;z-index:2;
+  background:radial-gradient(120px 120px at var(--gx,50%) var(--gy,50%), rgba(255,255,255,.28), transparent 62%);
+  opacity:0;transition:opacity .18s ease;mix-blend-mode:screen;
+}
+.card:hover .glare{opacity:.9}
+.card:not(.flipped):not(.peeked) .inner{
+  transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+  transition:transform .09s linear;
+}
+.card.flipped .inner{transition:transform .25s cubic-bezier(.2,.9,.2,1)}
+
+.floatText{
+  position:fixed;z-index:86;pointer-events:none;transform:translate(-50%,-50%);
+  font-weight:950;font-size:16px;letter-spacing:.4px;white-space:nowrap;
+  text-shadow:0 2px 10px rgba(0,0,0,.75),0 0 18px currentColor;
+  animation:floatUp .95s ease-out forwards;
+}
+@keyframes floatUp{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}
+  25%{opacity:1;transform:translate(-50%,-70%) scale(1.08)}
+  100%{opacity:0;transform:translate(-50%,-160%) scale(1)}
+}
+.comboBadge{
+  position:fixed;left:50%;top:14%;z-index:86;transform:translateX(-50%);
+  padding:9px 20px;border-radius:999px;pointer-events:none;font-weight:950;font-size:19px;
+  color:#140c00;background:linear-gradient(135deg,#fde68a,#f59e0b);
+  box-shadow:0 12px 34px rgba(245,158,11,.55),0 0 0 2px rgba(255,255,255,.35) inset;
+  animation:comboPop .85s ease-out forwards;
+}
+.comboBadge.hot{background:linear-gradient(135deg,#ff9a3c,#ff3d3d);color:#fff;box-shadow:0 12px 34px rgba(255,61,61,.6)}
+@keyframes comboPop{
+  0%{opacity:0;transform:translateX(-50%) scale(.55)}
+  30%{opacity:1;transform:translateX(-50%) scale(1.12)}
+  70%{opacity:1;transform:translateX(-50%) scale(1)}
+  100%{opacity:0;transform:translateX(-50%) scale(.95) translateY(-14px)}
+}
+body.shake{animation:shakeIt .18s ease-in-out 2}
+@keyframes shakeIt{
+  0%,100%{transform:translate(0,0)}
+  25%{transform:translate(-4px,2px)}
+  60%{transform:translate(4px,-2px)}
+}
+body.frenzy-mode #grid{
+  border-radius:26px;
+  box-shadow:0 0 0 2px rgba(255,210,0,.85),0 0 26px rgba(255,90,0,.55),0 0 60px rgba(79,172,254,.35);
+  animation:fireBorder 1.1s linear infinite;
+}
+@keyframes fireBorder{
+  0%{box-shadow:0 0 0 2px rgba(255,210,0,.9),0 0 24px rgba(255,90,0,.5),0 0 54px rgba(79,172,254,.3)}
+  50%{box-shadow:0 0 0 3px rgba(79,172,254,.9),0 0 30px rgba(255,210,0,.65),0 0 72px rgba(255,61,61,.4)}
+  100%{box-shadow:0 0 0 2px rgba(255,210,0,.9),0 0 24px rgba(255,90,0,.5),0 0 54px rgba(79,172,254,.3)}
+}
+.frenzyPill{
+  position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:86;pointer-events:none;
+  padding:7px 16px;border-radius:999px;font-weight:950;font-size:13px;color:#1a0d00;
+  background:linear-gradient(135deg,#ffd200,#ff7a18);
+  box-shadow:0 8px 24px rgba(255,122,24,.55);
+}
+.card.xray-glow .back{box-shadow:0 0 0 2px rgba(79,172,254,.85),0 0 26px rgba(79,172,254,.7) inset}
+.card.xray-glow{animation:xrayPulse .5s ease-in-out infinite alternate}
+@keyframes xrayPulse{from{filter:brightness(1)}to{filter:brightness(1.22)}}
+body.timer-frozen .timer .val,
+body.timer-frozen .mStat .mVal{color:#9fe8ff;text-shadow:0 0 16px rgba(79,172,254,.85)}
+body.timer-frozen #grid{outline:2px solid rgba(120,230,255,.7);outline-offset:5px;box-shadow:0 0 30px rgba(120,230,255,.45) inset}
+.slotBox{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:92;
+  padding:16px 22px;border-radius:22px;text-align:center;pointer-events:none;
+  background:linear-gradient(180deg,rgba(20,30,50,.97),rgba(8,14,26,.95));
+  border:1px solid rgba(255,210,0,.6);box-shadow:0 24px 70px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06) inset;
+  display:none;
+}
+.slotBox.on{display:block;animation:comboPop .3s ease-out}
+.slotBox .slotIcon{font-size:44px;line-height:1;display:block;margin-bottom:6px}
+.slotBox .slotLbl{font-size:13px;font-weight:900;color:#ffe9a8}
+.speechBubble{
+  position:fixed;left:50%;bottom:132px;transform:translateX(-50%) scale(.9);z-index:86;pointer-events:none;
+  max-width:220px;padding:10px 14px;border-radius:16px 16px 16px 4px;
+  background:rgba(6,20,32,.92);border:1px solid rgba(120,236,255,.55);color:#d9fbff;
+  font-size:12.5px;font-weight:900;text-align:center;opacity:0;transition:.22s ease;
+}
+.speechBubble.on{opacity:1;transform:translateX(-50%) scale(1)}
+@media (max-width:720px){
+  .frenzyPill{top:64px;font-size:12px;padding:6px 13px}
+  .speechBubble{bottom:126px;font-size:12px}
+  .comboBadge{top:11%;font-size:16px;padding:8px 16px}
+}
+.card.special.xray .back{background:radial-gradient(circle at 50% 45%,rgba(79,172,254,.34),rgba(10,16,32,.62));color:#c9ecff}
+.card.special.freeze .back{background:radial-gradient(circle at 50% 45%,rgba(120,230,255,.34),rgba(10,16,32,.62));color:#d8f6ff}
+.card.special.magnet .back{background:radial-gradient(circle at 50% 45%,rgba(251,194,235,.34),rgba(10,16,32,.62));color:#ffe3f6}
+.card.special.chest .back{background:radial-gradient(circle at 50% 45%,rgba(255,210,0,.34),rgba(10,16,32,.62));color:#ffe9a8}
 </style>
 
 </head>
@@ -784,19 +877,30 @@ let mGames,mRestart,mSound,mBoard,mTime,mMoves;
 let first=null,second=null,lock=false;
 let moves=0,matchedPairs=0;
 let elapsedSeconds=0;
-let startMs=0,timerId=null,running=false;
+let startMs=0,timerId=null,running=false,pausedTotal=0;
 let soundOn=true;
 let lastResult={timeSeconds:null,moves:null};
 
 // ===== المراحل التدريجية =====
 const STAGE_CONFIG={
   1:{pairs:2,cards:4,cols:2,base:120,moves3:3,moves2:5,time3:10,time2:20,label:"المرحلة الأولى"},
-  2:{pairs:4,cards:9,cols:3,base:260,bonus:true,moves3:7,moves2:11,time3:32,time2:55,label:"المرحلة الثانية"},
-  3:{pairs:9,cards:20,cols:5,base:520,bonus:true,peek:true,mystery:true,moves3:16,moves2:26,time3:80,time2:135,label:"المرحلة الثالثة"}
+  2:{pairs:4,cards:9,cols:3,base:260,star:true,moves3:7,moves2:11,time3:32,time2:55,label:"المرحلة الثانية"},
+  3:{pairs:9,cards:20,cols:5,base:520,star:true,power:"random",mystery:true,moves3:16,moves2:26,time3:80,time2:135,label:"المرحلة الثالثة"}
 };
 const STAGE_IDS=["1","2","3"];
 let currentStage=1;
 let stageBonus=0;
+
+// بطاقات المفاجأة
+const POWER_META={
+  peek:{icon:"🔍",title:"كشف بطاقتين"},
+  xray:{icon:"👁️",title:"رؤية الأشعة"},
+  freeze:{icon:"⌛",title:"تجميد الزمن"},
+  magnet:{icon:"🪄",title:"المغناطيس"},
+  chest:{icon:"🎁",title:"صندوق الحظ"}
+};
+const POWER_POOL=["peek","peek","xray","freeze","magnet","chest"];
+function pickPower(){ return POWER_POOL[randInt(POWER_POOL.length)]; }
 
 const pairGradients=[
   "linear-gradient(135deg,#4facfe,#00f2fe)",
@@ -868,12 +972,14 @@ function startTimerIfNeeded(){
   running=true;
   timeBig.classList.add("pulse");
   startMs=Date.now();
+  pausedTotal=0;
   elapsedSeconds=0;
   timeBig.textContent="00:00";
   if(mTime)mTime.textContent="00:00";
   timerId=setInterval(()=>{
-    const sec=Math.floor((Date.now()-startMs)/1000);
-    const t=formatTime(sec);
+    if(document.body.classList.contains("timer-frozen")) return;
+    const sec=Math.floor((Date.now()-startMs-pausedTotal)/1000);
+    const t=formatTime(Math.max(0,sec));
     timeBig.textContent=t;
     if(mTime)mTime.textContent=t;
   },250);
@@ -882,7 +988,7 @@ function startTimerIfNeeded(){
 function stopTimer(){
   // احفظ الوقت قبل الإيقاف حتى لا يصبح 0 بعد running=false
   if (running) {
-    elapsedSeconds = Math.max(1, Math.floor((Date.now() - startMs) / 1000));
+    elapsedSeconds = Math.max(1, Math.floor((Date.now() - startMs - pausedTotal) / 1000));
   }
   running=false;
   timeBig.classList.remove("pulse");
@@ -890,7 +996,40 @@ function stopTimer(){
 }
 
 function getTimeSeconds(){
-  return running ? Math.max(1, Math.floor((Date.now()-startMs)/1000)) : elapsedSeconds;
+  return running ? Math.max(1, Math.floor((Date.now()-startMs-pausedTotal)/1000)) : elapsedSeconds;
+}
+
+// ===== تجميد الزمن =====
+let freezeTimerId = null;
+let freezeToken = 0;
+function freezeClock(seconds){
+  const ms = seconds * 1000;
+  const from = Date.now();
+  const myToken = ++freezeToken;
+  document.body.classList.add("timer-frozen");
+  clearInterval(freezeTimerId);
+  freezeTimerId = setInterval(() => {
+    const left = Math.ceil((ms - (Date.now() - from)) / 1000);
+    if(left <= 0){
+      clearInterval(freezeTimerId);
+      freezeTimerId = null;
+      document.body.classList.remove("timer-frozen");
+      return;
+    }
+    if(mTime) mTime.textContent = "❄ " + left;
+    timeBig.textContent = "❄ " + left;
+  }, 200);
+  setTimeout(() => {
+    if(myToken !== freezeToken) return;
+    pausedTotal += Date.now() - from;
+    document.body.classList.remove("timer-frozen");
+    if(freezeTimerId){ clearInterval(freezeTimerId); freezeTimerId = null; }
+  }, ms);
+}
+function clearFreeze(){
+  freezeToken++;
+  if(freezeTimerId){ clearInterval(freezeTimerId); freezeTimerId = null; }
+  document.body.classList.remove("timer-frozen");
 }
 
 const AudioCtx=window.AudioContext||window.webkitAudioContext;
@@ -911,6 +1050,212 @@ function syncSound(){
   const icon=soundOn?"🔊":"🔇";
   soundSide.textContent=icon;
   if(mSound)mSound.textContent=icon;
+}
+
+// ===== محرك أصوات اصطناعي (Web Audio) =====
+const SoundFX = (() => {
+  let noiseBuf = null;
+  function ac(){
+    if(!soundOn) return null;
+    try{
+      ctx = ctx || new AudioCtx();
+      if(ctx.state === "suspended") ctx.resume();
+      return ctx;
+    }catch(e){ return null; }
+  }
+  function tone(opts){
+    const a = ac();
+    if(!a) return;
+    const { type = "sine", from = 440, to = from, dur = 0.14, vol = 0.16, delay = 0 } = opts || {};
+    const t0 = a.currentTime + delay;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(Math.max(30, from), t0);
+    if(to !== from) o.frequency.exponentialRampToValueAtTime(Math.max(30, to), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(a.destination);
+    o.onended = () => { try{ o.disconnect(); g.disconnect(); }catch(e){} };
+    o.start(t0);
+    o.stop(t0 + dur + 0.02);
+  }
+  function wood(){
+    tone({ type: "triangle", from: 200, to: 90, dur: 0.13, vol: 0.13 });
+  }
+  return {
+    flip(){ tone({ type: "triangle", from: 320, to: 150, dur: 0.08, vol: 0.09 }); },
+    match(){ tone({ type: "sine", from: 523.25, dur: 0.16, vol: 0.13 }); tone({ type: "sine", from: 659.25, dur: 0.2, vol: 0.11, delay: 0.05 }); },
+    error(){ wood(); },
+    combo(level){
+      const notes = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
+      const f = notes[Math.min(Math.max(level - 1, 0), notes.length - 1)];
+      tone({ type: "sine", from: f, to: f * 1.5, dur: 0.26, vol: 0.15 });
+    },
+    magic(){
+      for(let i = 0; i < 4; i++) tone({ type: "sine", from: 600 + i * 220, dur: 0.15, vol: 0.10, delay: i * 0.07 });
+    },
+    freeze(){
+      for(let i = 0; i < 3; i++) tone({ type: "sine", from: 1500 - i * 260, dur: 0.3, vol: 0.08, delay: i * 0.09 });
+    },
+    pop(){
+      const a = ac();
+      tone({ type: "square", from: 900, to: 220, dur: 0.16, vol: 0.10 });
+      if(!a) return;
+      try{
+        if(!noiseBuf){
+          noiseBuf = a.createBuffer(1, Math.floor(a.sampleRate * 0.25), a.sampleRate);
+          const d = noiseBuf.getChannelData(0);
+          for(let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) ** 2;
+        }
+        const src = a.createBufferSource(), bp = a.createBiquadFilter(), g = a.createGain();
+        src.buffer = noiseBuf;
+        bp.type = "bandpass"; bp.frequency.value = 2400; bp.Q.value = 0.8;
+        g.gain.value = 0.14;
+        src.connect(bp).connect(g).connect(a.destination);
+        src.onended = () => { try{ src.disconnect(); bp.disconnect(); g.disconnect(); }catch(e){} };
+        src.start();
+      }catch(e){}
+    }
+  };
+})();
+
+// ===== الكومبو ومضاعفاته =====
+const COMBO_MULT = [1, 1, 1.5, 2, 3, 4];
+const COMBO_WORDS = ["", "", "رائع!", "مذهل!", "خارق!", "أسطوري!"];
+let comboStreak = 0, comboMult = 1, matchTimes = [];
+let frenzyUntil = 0, frenzyTimer = null, frenzyPill = null;
+let pairPoints = 0;
+
+function comboMultiplier(streak){
+  return COMBO_MULT[Math.min(streak, COMBO_MULT.length - 1)] || 1;
+}
+function isFrenzy(){ return Date.now() < frenzyUntil; }
+function floatText(x, y, text, color){
+  const el = document.createElement("div");
+  el.className = "floatText";
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+  el.style.color = color || "#ffd200";
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+function cardCenter(card){
+  const r = card.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+function comboBadge(streak){
+  const el = document.createElement("div");
+  el.className = "comboBadge" + (streak >= 5 ? " hot" : "");
+  el.textContent = "COMBO ×" + streak + " 🔥";
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+function shakeScreen(){
+  document.body.classList.remove("shake");
+  void document.body.offsetWidth;
+  document.body.classList.add("shake");
+  setTimeout(() => document.body.classList.remove("shake"), 420);
+}
+function mascotSay(text){
+  let el = document.querySelector(".speechBubble");
+  if(!el){ el = document.createElement("div"); el.className = "speechBubble"; document.body.appendChild(el); }
+  el.textContent = text;
+  requestAnimationFrame(() => el.classList.add("on"));
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("on"), 1800);
+}
+
+function awardMatchPoints(card){
+  const cfg = STAGE_CONFIG[currentStage];
+  const mult = comboMultiplier(comboStreak);
+  const bonus = Math.round(10 * mult * (isFrenzy() ? 2 : 1));
+  stageBonus += bonus;
+  pairPoints += bonus;
+  if(card){
+    const c = cardCenter(card);
+    floatText(c.x, c.y, "+" + bonus + (mult > 1 ? " ×" + mult : ""), isFrenzy() ? "#ff9a3c" : "#7ef0ff");
+  }
+  return bonus;
+}
+
+function registerMatch(card){
+  const now = Date.now();
+  comboStreak++;
+  comboMult = comboMultiplier(comboStreak);
+  matchTimes.push(now);
+  if(matchTimes.length > 6) matchTimes.shift();
+  awardMatchPoints(card);
+  SoundFX.match();
+  if(comboStreak > 1){
+    SoundFX.combo(comboStreak);
+    comboBadge(comboStreak);
+    const word = COMBO_WORDS[Math.min(comboStreak, COMBO_WORDS.length - 1)];
+    if(card){
+      const c = cardCenter(card);
+      floatText(c.x, c.y - 34, word, "#fde68a");
+    }
+    if(comboStreak >= 4) shakeScreen();
+    if(comboStreak >= 5){
+      mascotSay("استمر يا أسطورة! 🏆");
+      for(let i = 0; i < 3; i++){
+        setTimeout(() => FX.burst(window.innerWidth * (0.2 + Math.random() * 0.6), window.innerHeight * 0.25, 26, 4), i * 120);
+      }
+    }
+  }
+  // 3 مطابقات في أقل من 6 ثوانٍ → وضع الاشتعال
+  const n = matchTimes.length;
+  if(!isFrenzy() && n >= 3 && (now - matchTimes[n - 3]) < 6000) triggerFrenzy();
+}
+
+function breakCombo(){
+  if(comboStreak >= 3){
+    const c = { x: window.innerWidth / 2, y: window.innerHeight * 0.42 };
+    floatText(c.x, c.y, "انقطع الكومبو!", "#ff6b6b");
+  }
+  comboStreak = 0;
+  comboMult = 1;
+  matchTimes = [];
+}
+
+function triggerFrenzy(){
+  if(isFrenzy()) return;
+  if(!running && elapsedSeconds === 0) return;
+  frenzyUntil = Date.now() + 8000;
+  document.body.classList.add("frenzy-mode");
+  SoundFX.magic();
+  SoundFX.pop();
+  mascotSay("وضع الاشتعال! نقاط مضاعفة 🔥");
+  window.setCharacterState && window.setCharacterState('win');
+  shakeScreen();
+  FX.burst(window.innerWidth / 2, window.innerHeight * 0.3, 60, 7);
+  if(!frenzyPill){
+    frenzyPill = document.createElement("div");
+    frenzyPill.className = "frenzyPill";
+    document.body.appendChild(frenzyPill);
+  }
+  clearInterval(frenzyTimer);
+  frenzyTimer = setInterval(() => {
+    const left = Math.ceil((frenzyUntil - Date.now()) / 1000);
+    if(left <= 0){
+      clearInterval(frenzyTimer);
+      frenzyTimer = null;
+      frenzyUntil = 0;
+      document.body.classList.remove("frenzy-mode");
+      if(frenzyPill) frenzyPill.remove();
+      frenzyPill = null;
+      return;
+    }
+    if(frenzyPill) frenzyPill.textContent = "🔥 مضاعف ×2 — " + left + "ث";
+  }, 200);
+}
+function clearFrenzy(){
+  clearInterval(frenzyTimer);
+  frenzyTimer = null;
+  frenzyUntil = 0;
+  document.body.classList.remove("frenzy-mode");
+  if(frenzyPill){ frenzyPill.remove(); frenzyPill = null; }
 }
 
 
@@ -1281,7 +1626,7 @@ function showStageClear(stageNumValue, run){
     ? '<div class="stgSub" style="color:#a7f3d0">🏅 رقم قياسي جديد لهذه المرحلة</div>'
     : '<div class="stgSub">أفضل نتيجة محفوظة: ' + (run.saved ? run.saved.stage.bestScore : run.score) + '</div>';
   const detail = stageNumValue === 3
-    ? `${cfg.pairs * 2} بطاقة + بطاقتان مخفيتان (نجمة ⭐ وكشف 🔍)`
+    ? `${cfg.pairs * 2} بطاقة + بطاقتان مخفيتان (نجمة ⭐ ومفاجأة)`
     : `${cfg.cards} بطاقة`;
   box.innerHTML = `
     <div class="modalHeader">
@@ -1295,6 +1640,7 @@ function showStageClear(stageNumValue, run){
       <div class="stgStat"><b>${run.score}</b><span>نقاط المرحلة</span></div>
     </div>
     <div class="stgStars">${starMarkup(run.stars)}</div>
+    ${run.combo ? `<p class="stgSub" style="color:#fde68a">🔥 مكافآت الكومبو والمفاجآت: +${run.combo} نقطة</p>` : ""}
     ${record}
     <div class="stgTotal"><span>المجموع التراكمي</span><b>${run.saved ? run.saved.total : run.score}</b></div>
     <div class="stgActions">
@@ -1407,8 +1753,11 @@ async function buildStage(stageNumValue = 1){
     cards.push({pair:p.id, img:IMG_BASE + p.img1});
     cards.push({pair:p.id, img:IMG_BASE + p.img2});
   }
-  if(cfg.bonus) cards.push({pair:"__star__", special:"star", mystery:!!cfg.mystery});
-  if(cfg.peek) cards.push({pair:"__peek__", special:"peek", mystery:true});
+  if(cfg.star) cards.push({pair:"__star__", special:"star", mystery:!!cfg.mystery});
+  if(cfg.power){
+    const kind = cfg.power === "random" ? pickPower() : cfg.power;
+    cards.push({pair:"__power__", special:kind, mystery:!!cfg.mystery});
+  }
   shuffle(cards);
   grid.innerHTML = "";
   for(const c of cards){
@@ -1416,17 +1765,20 @@ async function buildStage(stageNumValue = 1){
     el.className = "card" + (c.special ? " special " + c.special : "") + (c.mystery ? " mystery" : "");
     el.dataset.pair = c.pair;
     if(c.special) el.dataset.special = c.special;
-    el.innerHTML = c.special === "peek"
-      ? `<div class="inner"><div class="face front"></div><div class="face back"><span class="starBig">🔍</span><span>كشف بطاقتين</span></div></div>`
-      : c.special === "star"
-        ? `<div class="inner"><div class="face front"></div><div class="face back"><span class="starBig">⭐</span><span>بطاقة النجمة</span></div></div>`
+    const meta = c.special && c.special !== "star" ? POWER_META[c.special] : null;
+    el.innerHTML = c.special === "star"
+      ? `<div class="inner"><div class="face front"></div><div class="face back"><span class="starBig">⭐</span><span>بطاقة النجمة</span></div></div>`
+      : meta
+        ? `<div class="inner"><div class="face front"></div><div class="face back"><span class="starBig">${meta.icon}</span><span>${meta.title}</span></div></div>`
         : `<div class="inner">
       <div class="face front"></div>
       <div class="face back"><div class="imgBox"><img src="${c.img}" loading="lazy" alt=""></div></div>
     </div>`;
+    if(!c.mystery) el.insertAdjacentHTML("beforeend", '<span class="glare"></span>');
     el.addEventListener("click", () => clickCard(el));
     grid.appendChild(el);
   }
+  attachTilt();
   renderStepper();
   sizeGrid();
 }
@@ -1439,14 +1791,17 @@ function setMoves(){
 function startStage(stageNumValue){
   stopTimer();
   clearAuto();
+  clearFrenzy();
+  clearFreeze();
   closeStageModal();
   currentStage = Math.min(3, Math.max(1, Number(stageNumValue) || 1));
   timeBig.textContent="00:00";
   if(mTime)mTime.textContent="00:00";
-  startMs=0;running=false;elapsedSeconds=0;
+  startMs=0;running=false;elapsedSeconds=0;pausedTotal=0;
   moves=0;matchedPairs=0;setMoves();
   first=second=null;lock=false;
-  stageBonus=0;
+  stageBonus=0;pairPoints=0;
+  comboStreak=0;comboMult=1;matchTimes=[];
   lastResult={timeSeconds:null,moves:null};
   for(const k of Object.keys(usedGradients))delete usedGradients[k];
   buildStage(currentStage);
@@ -1462,33 +1817,169 @@ function clickSpecialCard(card){
   const kind = card.dataset.special;
   lock = true;
   card.classList.add("claimed", "flipped");
-  if(kind === "peek"){
-    beep(720, 0.10);
-    setTimeout(() => beep(980, 0.12), 90);
-    stageToast("🔍 بطاقة الكشف: فتح بطاقتين");
-  }else{
-    stageBonus += 20;
-    beep(1320, 0.10);
-    setTimeout(() => beep(1760, 0.12), 90);
-    stageToast("⭐ بطاقة النجمة: +20 نقطة");
-  }
+  SoundFX.magic();
   navigator.vibrate?.([12, 40, 12]);
-  const peek = [...grid.querySelectorAll(".card:not(.matched):not(.flipped):not(.special)")];
-  const count = kind === "peek" ? 2 : 0;
-  const picks = [];
-  while(picks.length < count && peek.length){
-    picks.push(peek.splice(randInt(peek.length), 1)[0]);
+  const closeCard = (delay) => setTimeout(() => { card.classList.remove("flipped"); lock = false; }, delay || 600);
+
+  if(kind === "star"){
+    stageBonus += 25;
+    pairPoints += 25;
+    SoundFX.pop();
+    stageToast("⭐ بطاقة النجمة: +25 نقطة");
+    const c = cardCenter(card);
+    floatText(c.x, c.y, "+25", "#ffd200");
+    closeCard(700);
+    return;
   }
-  picks.forEach((c) => c.classList.add("peeked"));
-  setTimeout(() => {
-    picks.forEach((c) => c.classList.remove("peeked"));
-    card.classList.remove("flipped");
-    lock = false;
-  }, 1300);
+  if(kind === "peek"){
+    stageToast("🔍 كشف سريع: بطاقتان");
+    const pool = [...grid.querySelectorAll(".card:not(.matched):not(.flipped):not(.special)")];
+    const picks = [];
+    while(picks.length < 2 && pool.length) picks.push(pool.splice(randInt(pool.length), 1)[0]);
+    picks.forEach((c) => c.classList.add("peeked"));
+    setTimeout(() => picks.forEach((c) => c.classList.remove("peeked")), 1300);
+    closeCard(1350);
+    return;
+  }
+  if(kind === "xray"){
+    stageToast("👁️ رؤية الأشعة: كل البطاقات!");
+    mascotSay("تركيز خارق! ⚡");
+    const all = [...grid.querySelectorAll(".card:not(.matched):not(.flipped):not(.special)")];
+    all.forEach((c) => c.classList.add("flipped", "xray-glow"));
+    FX.burst(window.innerWidth / 2, window.innerHeight / 2, 40, 5.5);
+    setTimeout(() => all.forEach((c) => c.classList.remove("flipped", "xray-glow")), 1250);
+    closeCard(1300);
+    return;
+  }
+  if(kind === "freeze"){
+    stageToast("⌛ تجميد الزمن: 7 ثوانٍ");
+    SoundFX.freeze();
+    freezeClock(7);
+    closeCard(700);
+    return;
+  }
+  if(kind === "magnet"){
+    stageToast("🪄 المغناطيس: مطابقة تلقائية");
+    const pool = [...grid.querySelectorAll(".card:not(.matched):not(.flipped):not(.special)")];
+    const groups = {};
+    pool.forEach((c) => { (groups[c.dataset.pair] = groups[c.dataset.pair] || []).push(c); });
+    const ready = Object.keys(groups).filter((k) => groups[k].length >= 2);
+    closeCard(500);
+    if(ready.length){
+      const pairKey = ready[randInt(ready.length)];
+      const [a, b] = groups[pairKey];
+      setTimeout(() => {
+        [a, b].forEach((c) => c.classList.add("flipped"));
+        setTimeout(() => finishMatch(a, b), 260);
+      }, 420);
+    }
+    return;
+  }
+  if(kind === "chest"){
+    SoundFX.pop();
+    openChest(card);
+  }
+}
+
+// ===== صندوق الحظ (عجلة سريعة) =====
+function openChest(card){
+  const icons = ["250", "⭐", "🔥", "💎", "🎁"];
+  let box = document.querySelector(".slotBox");
+  if(!box){
+    box = document.createElement("div");
+    box.className = "slotBox";
+    box.innerHTML = '<span class="slotIcon">🎁</span><div class="slotLbl">...</div>';
+    document.body.appendChild(box);
+  }
+  box.classList.add("on");
+  const iconEl = box.querySelector(".slotIcon"), lblEl = box.querySelector(".slotLbl");
+  let ticks = 0;
+  const spin = setInterval(() => {
+    iconEl.textContent = icons[ticks % icons.length];
+    lblEl.textContent = "جارٍ فتح الصندوق...";
+    ticks++;
+    SoundFX.flip();
+    if(ticks >= 12){
+      clearInterval(spin);
+      const prize = ["bonus", "star", "frenzy"][randInt(3)];
+      if(prize === "bonus"){
+        iconEl.textContent = "💰";
+        lblEl.textContent = "بونص +250 نقطة!";
+        stageBonus += 250;
+        pairPoints += 250;
+      }else if(prize === "star"){
+        iconEl.textContent = "⭐";
+        lblEl.textContent = "نجمتان مضمونتان! +120";
+        stageBonus += 120;
+        pairPoints += 120;
+      }else{
+        iconEl.textContent = "🔥";
+        lblEl.textContent = "وضع الاشتعال!";
+        frenzyUntil = 0;
+        triggerFrenzy();
+      }
+      SoundFX.pop();
+      const c = cardCenter(card || document.body);
+      floatText(c.x || window.innerWidth / 2, c.y || window.innerHeight / 2, "🎁!", "#ffd200");
+      shakeScreen();
+      setTimeout(() => { box.classList.remove("on"); if(card){ card.classList.remove("flipped"); lock = false; } }, 1200);
+    }
+  }, 90);
+}
+
+// ===== مطابقة (مع كومبو ونقاط) =====
+function finishMatch(a, b){
+  if(!a || !b) return;
+  if(!usedGradients[a.dataset.pair]){
+    usedGradients[a.dataset.pair]=pairGradients[Object.keys(usedGradients).length%pairGradients.length];
+  }
+  const g=usedGradients[a.dataset.pair];
+  [a,b].forEach(c=>{
+    c.classList.add("matched","match-anim");
+    c.style.setProperty("--pair-gradient",g);
+    setTimeout(()=>c.classList.remove("match-anim"),280);
+  });
+  matchedPairs++;
+  registerMatch(a);
+  const center=cardCenter(a);
+  FX.burst(center.x,center.y,22,4.2);
+  [a,b].forEach((c,i)=>setTimeout(()=>{const p=cardCenter(c);FX.burst(p.x,p.y,10,3)},i*70));
+  window.setCharacterState && window.setCharacterState('win');
+  const cfg=STAGE_CONFIG[currentStage];
+  setTimeout(()=>{ if(matchedPairs !== cfg.pairs) window.setCharacterState && window.setCharacterState('think'); }, 1200);
+  navigator.vibrate?.(18);
+  if(matchedPairs >= cfg.pairs) completeStage();
+}
+
+// ===== إمالة ثلاثية الأبعاد ولمعان =====
+function attachTilt(){
+  if(!grid || grid.dataset.tilt) return;
+  grid.dataset.tilt = "1";
+  const reset = (card) => {
+    card.style.setProperty("--rx", "0deg");
+    card.style.setProperty("--ry", "0deg");
+  };
+  grid.addEventListener("pointermove", (e) => {
+    if(e.pointerType === "touch") return;
+    const card = e.target.closest(".card");
+    if(!card) return;
+    const r = card.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+    card.style.setProperty("--ry", ((px - 0.5) * 14).toFixed(2) + "deg");
+    card.style.setProperty("--rx", ((0.5 - py) * 14).toFixed(2) + "deg");
+    card.style.setProperty("--gx", (px * 100).toFixed(0) + "%");
+    card.style.setProperty("--gy", (py * 100).toFixed(0) + "%");
+  }, { passive: true });
+  grid.addEventListener("pointerout", (e) => {
+    const card = e.target.closest(".card");
+    if(card) reset(card);
+  }, { passive: true });
 }
 
 function completeStage(){
   stopTimer();
+  clearFrenzy();
+  clearFreeze();
   const t = getTimeSeconds();
   const mv = moves;
   lastResult = { timeSeconds: t, moves: mv };
@@ -1496,11 +1987,12 @@ function completeStage(){
   const stars = stageStars(currentStage, t, mv);
   const saved = saveStageScore(currentStage, score, t, mv);
   renderStepper();
+  mascotSay("يا بطل! 🔥");
   window.setCharacterState && window.setCharacterState('win');
   if(currentStage < 3){
     launchFireworksCelebration(currentStage === 2 ? "dual" : "standard");
     fanfare(currentStage === 2 ? "big" : "small");
-    setTimeout(() => showStageClear(currentStage, { score, stars, time: t, moves: mv, saved }), 720);
+    setTimeout(() => showStageClear(currentStage, { score, stars, time: t, moves: mv, saved, combo: pairPoints }), 720);
   }else{
     launchFireworksCelebration("grand");
     fanfare("grand");
@@ -1513,30 +2005,20 @@ function clickCard(card){
   if(card.dataset.special){ clickSpecialCard(card); return; }
   if(card===first||card.classList.contains("matched"))return;
   startTimerIfNeeded();
+  SoundFX.flip();
   card.classList.add("flipped");
   if(!first){first=card;return}
   second=card;
   moves++;setMoves();
-  const cfg = STAGE_CONFIG[currentStage];
 
   if(first.dataset.pair===second.dataset.pair){
-    if(!usedGradients[first.dataset.pair]){
-      usedGradients[first.dataset.pair]=pairGradients[Object.keys(usedGradients).length%pairGradients.length];
-    }
-    const g=usedGradients[first.dataset.pair];
-    [first,second].forEach(c=>{
-      c.classList.add("matched","match-anim");
-      c.style.setProperty("--pair-gradient",g);
-      setTimeout(()=>c.classList.remove("match-anim"),280);
-    });
-    matchedPairs++;beep(1040,0.09);
-    window.setCharacterState && window.setCharacterState('win');
-    setTimeout(()=>{ if(matchedPairs !== cfg.pairs) window.setCharacterState && window.setCharacterState('think'); }, 1200);
-    navigator.vibrate?.(18);
+    const a=first,b=second;
     first=second=null;
-    if(matchedPairs === cfg.pairs) completeStage();
+    finishMatch(a,b);
   }else{
-    lock=true;beep(320,0.08);
+    lock=true;
+    SoundFX.error();
+    breakCombo();
     window.setCharacterState && window.setCharacterState('confused');
     setTimeout(()=>{
       first.classList.remove("flipped");

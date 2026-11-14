@@ -44,6 +44,12 @@ describe("Game assets and shared rules", () => {
     expect(pairs).toContain('id="fxCanvas"');
     expect(pairs).toContain("dgr_pairs_progressive_data");
     expect(pairs).toContain("function buildStage");
+    expect(pairs).toContain("const SoundFX");
+    expect(pairs).toContain("function registerMatch");
+    expect(pairs).toContain("function triggerFrenzy");
+    expect(pairs).toContain("function freezeClock");
+    expect(pairs).toContain("function finishMatch");
+    expect(pairs).toContain("POWER_META");
     expect(pairs).not.toMatch(/cdn\.jsdelivr\.net/);
     expect(readFileSync("public/m1/manifest.json", "utf8")).toContain("characters");
     expect(JSON.parse(readFileSync("public/games.json", "utf8")).games.length).toBe(2);
