@@ -1157,7 +1157,9 @@ makeCrit(it);
 items.push(it);
 }
 /* ===== طرد حرج بمؤقت تفجير (15%) ===== */
-const CRIT_CHANCE = .15, CRIT_TIME = 18, CRIT_BONUS = 80, CRIT_PENALTY = 40;
+/* المؤقت خاص بطرود سلسلة التبريد (❄️) فقط. نسبة الاختيار 45% من طرود التبريد
+   ≈ 15% من إجمالي الطرود العادية (التبريد ثلث قائمة الشحن العادي) */
+const CRIT_CHANCE = .45, CRIT_TIME = 18, CRIT_BONUS = 80, CRIT_PENALTY = 40;
 const critHaloTex = canvasTex(128, 128, (g, w, h) => {
 const gr = g.createRadialGradient(w/2, h/2, w*.1, w/2, h/2, w/2);
 gr.addColorStop(0, 'rgba(255,70,40,.9)'); gr.addColorStop(.55, 'rgba(255,100,30,.35)'); gr.addColorStop(1, 'rgba(255,40,0,0)');
@@ -1185,7 +1187,8 @@ g.fillText(sec + 's', w/2, h/2 + 4);
 tag.sec = sec; tag.t.needsUpdate = true;
 }
 function makeCrit(it){
-if(it.data.isMys || it.data.isFod) return;
+// المؤقت للطرود التي تحتاج سلسلة تبريد فقط (منطقة ❄️ تبريد) — لا للطرود العامة أو القابلة للتلف
+if(it.data.t !== 'cold' || it.data.isFod || it.data.isMys) return;
 if(Math.random() >= CRIT_CHANCE || items.some(i => i.crit)) return;
 const halo = new THREE.Sprite(new THREE.SpriteMaterial({map:critHaloTex, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending}));
 halo.position.y = .05; halo.scale.set(2.3, 2.3, 1); it.m.add(halo);
@@ -1232,7 +1235,7 @@ totalProcessed++;
 addShake(.65); snd('error');
 penaltyFx(lost, true);
 spawnFloatTag('-' + CRIT_PENALTY, '#ff5252');
-toast('☠️ انفجر طرد حرج قبل فرزه! -' + CRIT_PENALTY + ' نقطة', '#ff5252');
+toast('☠️ انفجر طرد مبرّد قبل فرزه! -' + CRIT_PENALTY + ' نقطة', '#ff5252');
 clearCrit(it); rm(it); hud();
 }
 function dropFod(x,z){
@@ -1406,7 +1409,7 @@ if(it.crit){
 score += CRIT_BONUS;
 snd('fever');
 spawnFloatTag('+' + CRIT_BONUS + ' 🎉', '#ffd54a');
-critMsg = ` • 🎉 طرد حرج +${CRIT_BONUS}`;
+critMsg = ` • ❄️ طرد تبريد +${CRIT_BONUS}`;
 addShake(.25);
 clearCrit(it);
 }
@@ -1547,11 +1550,13 @@ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.
 if(introHold){ if(['Space','KeyE','Enter','Escape'].includes(e.code)){ e.preventDefault(); if(!e.repeat) resumeFromIntro(); } return; }
 if(fire.keypad){ handlePadKey(e); return; }
 key[e.code] = 1;
-if(e.code === 'ShiftLeft' || e.code === 'ShiftRight'){ e.preventDefault(); if(!e.repeat) doDash(); return; }
-if(['Space','KeyE','Enter'].includes(e.code)){
+/* إدخال (Enter) = اندفاع سريع • المسافة = التقاط/وضع */
+if(e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'ShiftLeft' || e.code === 'ShiftRight'){
   e.preventDefault();
-  if(!e.repeat){ if(e.code === 'Space' && !held) doDash(); else act(); }
+  if(!e.repeat) doDash();
+  return;
 }
+if(['Space','KeyE'].includes(e.code)){ e.preventDefault(); if(!e.repeat) act(); }
 });
 addEventListener('keyup', e => key[e.code] = 0);
 function clearMovement(){ for(const code in key) key[code] = 0; je(); inX = inZ = animSpd = 0; }
