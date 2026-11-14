@@ -1135,6 +1135,8 @@ function resumeFromIntro(){
 if(!introHold) return;
 if($('rules').style.display !== 'none') return;
 hideIntro(); run=true; pz=false; last=performance.now(); clearMovement();
+/* إعادة تمكين الإدخال (لوحة المفاتيح + العصا) بعد نافذة التنبيه */
+try { R.domElement.focus({preventScroll:true}); } catch(e){}
 }
 function startInspDemo(){
 const I_=inspector;demo.insp=true;I_.demo=true;I_.dir=Math.random()<.5?1:-1;I_.x=-36*I_.dir;I_.z=4;I_.active=true;I_.g.visible=true;I_.t=0;
@@ -1734,6 +1736,48 @@ if(['Space','KeyE','KeyF'].includes(e.code)){ e.preventDefault(); if(!e.repeat) 
 });
 addEventListener('keyup', e => key[e.code] = 0);
 function clearMovement(){ for(const code in key) key[code] = 0; je(); inX = inZ = animSpd = 0; }
+/* ===== نقطة البداية الآمنة: لا يقف اللاعب داخل جدار أو صندوق عند انتقال المرحلة ===== */
+const SAFE_SPAWN = {x:0, z:3};
+function blockedAt(x, z, r = PLAYER_RADIUS){
+  if(x < -33.6 + r || x > 33.6 - r || z < -11.5 + r || z > 10.1 - r) return true;
+  for(const o of STATIC_OBSTACLES)
+    if(x + r > o.minX && x - r < o.maxX && z + r > o.minZ && z - r < o.maxZ) return true;
+  for(const b of BOLLARDS)
+    if(Math.hypot(x - b.x, z - b.z) < r + b.r) return true;
+  if(!FD.on && Math.abs(x - fk.position.x) < 1.15 + r && Math.abs(z - fk.position.z) < 0.85 + r) return true;
+  return false;
+}
+function findFreeSpot(x, z, r = PLAYER_RADIUS){
+  if(!blockedAt(x, z, r)) return {x, z};
+  for(let ring = 1; ring <= 18; ring++){
+    const d = ring * 0.6;
+    for(let i = 0; i < 16; i++){
+      const a = (i / 16) * Math.PI * 2;
+      const nx = Math.max(-33.6, Math.min(33.6, x + Math.cos(a) * d));
+      const nz = Math.max(-11.5, Math.min(10.1, z + Math.sin(a) * d));
+      if(!blockedAt(nx, nz, r)) return {x:nx, z:nz};
+    }
+  }
+  return {x, z};
+}
+/* إخراج أي طرد كان في منتصف حركة الرفع ثم تصفير كل أقفال الحركة وإعادة اللاعب لنقطة آمنة */
+function safeSpawnPlayer(){
+  if(liftAnim.active){
+    const pending = liftAnim.toHold;
+    liftAnim.active = false; liftAnim.t = 0; liftAnim.toHold = null;
+    if(pending && pending.m){
+      pending.st = 'floor'; pending.fall = true; pending.vy = 0;
+      pending.ty = pending.data && pending.data.isFod ? .2 : 0.02 + BH;
+    }
+  }
+  fearT = 0; inX = inZ = animSpd = 0; clearMovement();
+  if(held && held.m) held.m.position.set(px.x, 1.38, px.z);
+  const spot = findFreeSpot(SAFE_SPAWN.x, SAFE_SPAWN.z);
+  px.set(spot.x, 0, spot.z);
+  curRotY = 0; turnLean = 0;
+  rig.rotation.set(0, 0, 0);
+  last = performance.now();
+}
 addEventListener('blur', clearMovement);
 document.addEventListener('visibilitychange', () => { if(document.hidden) clearMovement(); });
 R.domElement.tabIndex = 0;
@@ -1802,14 +1846,78 @@ stage=n;
 inspector.demo=false; demo.insp=false; demo.truck=false; hideIntro();
 if(n===2) resetInspector();
 if(n>=3) resetTruck();
+/* إعادة تموضع آمنة + تصفير كل أقفال الحركة حتى لا يعلق اللاعب في المرحلة الجديدة */
+safeSpawnPlayer();
+if(n>1) unlockStage(n);
 if(!silent){
 snd('ship'); time += 10;
 spawnFloatTag(I18N.T('+10 ث ⏱','+10s ⏱'),'#64ffda');
 tip(n===2?'stage2':n===3?'stage3':'stage4', n===2?'🚀 المرحلة ٢: المواد الخطرة والمفتش! السير أسرع':n===3?'🏁 المرحلة ٣: الرافعة الشوكية تعبر المستودع!':'💥 المرحلة ٤: مواد خطرة فقط — ثلاث حاويات حسب الفئة!','#64ffda');
 }
+/* استئناف الإدخال بعد أي نافذة تنبيه علّقت اللعب */
+if(!fire.active && !fire.keypad && !introHold && $('rules').style.display === 'none'){ run = true; pz = false; }
 hud();
 }
-function start(){
+/* ===== فتح المراحل وحفظ التقدم (يبقى بعد إعادة تحميل الصفحة) ===== */
+const UNLOCK_KEY = "aircargo_max_stage";
+let maxUnlockedStage = 1;
+try { maxUnlockedStage = Math.max(1, Math.min(3, parseInt(localStorage.getItem(UNLOCK_KEY) || "1", 10) || 1)); } catch(e){ maxUnlockedStage = 1; }
+function unlockStage(n){
+const v = Math.max(1, Math.min(3, Number(n) || 1));
+if(v <= maxUnlockedStage) return false;
+maxUnlockedStage = v;
+try { localStorage.setItem(UNLOCK_KEY, String(v)); } catch(e){}
+renderStageSelect();
+return true;
+}
+const STAGE_LABELS = {
+1: { ar:'المرحلة ١: فرز الطرود الأساسية', en:'Stage 1: Basic sorting', subAr:'تدريب بلا غرامات', subEn:'Practice, no fines' },
+2: { ar:'المرحلة ٢: تفتيش المواد الخطرة', en:'Stage 2: DGR inspection', subAr:'المفتش والمخالفات', subEn:'Inspector and fines' },
+3: { ar:'المرحلة ٣: طوارئ الإخلاء والحريق', en:'Stage 3: Fire drill', subAr:'إنذار حريق ورقم الطوارئ', subEn:'Alarm and emergency code' }
+};
+function stageSelectHTML(){
+const lang = I18N.lang === 'en' ? 'en' : 'ar';
+let out = '';
+for(let n = 1; n <= 3; n++){
+const unlocked = n === 1 || maxUnlockedStage >= n;
+const label = STAGE_LABELS[n];
+const title = lang === 'en' ? label.en : label.ar;
+const sub = lang === 'en' ? label.subEn : label.subAr;
+const lockMsg = n === 3
+  ? I18N.T('🔒 أكمل المرحلة الثانية للفتح', '🔒 Finish stage 2 to unlock')
+  : I18N.T('🔒 أكمل المرحلة الأولى للفتح', '🔒 Finish stage 1 to unlock');
+const cta = unlocked
+  ? `<span class="si-cta">${I18N.T('ابدأ', 'Start')}</span>`
+  : `<span class="si-cta long">${lockMsg}</span><span class="si-cta short">${I18N.T('🔒 مقفلة', '🔒 Locked')}</span>`;
+out += `<button class="stage-item${unlocked ? '' : ' locked'}${n === 1 ? ' first' : ''}" data-stage="${n}" type="button"${unlocked ? '' : ' disabled aria-disabled="true"'} aria-label="${title}${unlocked ? '' : ' — ' + lockMsg}">
+<span class="si-badge">${unlocked ? n : '🔒'}</span>
+<span class="si-txt"><b>${title}</b><small>${sub}</small></span>
+${cta}
+</button>`;
+}
+return out;
+}
+function renderStageSelect(){
+const lang = I18N.lang === 'en' ? 'en' : 'ar';
+document.querySelectorAll('.stage-select').forEach(box => {
+box.innerHTML = stageSelectHTML();
+box.dir = lang === 'en' ? 'ltr' : 'rtl';
+box.setAttribute('aria-label', I18N.T('اختيار المرحلة', 'Stage select'));
+});
+}
+function startGameAt(n){
+const pick = Math.max(1, Math.min(3, Number(n) || 1));
+if(pick > maxUnlockedStage) return;
+start(pick);
+}
+document.addEventListener('click', e => {
+const btn = e.target && e.target.closest ? e.target.closest('.stage-item') : null;
+if(!btn || btn.disabled) return;
+startGameAt(parseInt(btn.dataset.stage || '1', 10));
+});
+addEventListener('i18n:change', renderStageSelect);
+function start(initialStage){
+const startStageNum = Math.max(1, Math.min(3, Number(initialStage) || 1));
 initAudio();
 stopVib();
 items.forEach(i => { clearCrit(i); S.remove(i.m); }); items = [];
@@ -1820,18 +1928,21 @@ streak = 0; streakT = 0; maxStreak = 0; rushT = 30; rushN = 0; rushDelay = 0;
 $('streak').classList.remove('on');
 dashT = 0; dashCD = 0; feverT = 0; shakeTrauma = 0;
 $('dash-fx').classList.remove('on'); $('stage').classList.remove('fever'); setDashButton();
-demo = {insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}; inspector.demo = false; hideIntro();
+demo = {insp:false,truck:false,inspDone:startStageNum>1,truckDone:startStageNum>1,truckIn:0}; inspector.demo = false; hideIntro();
 sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false;
 $('rules').style.display = 'none';
 resetExitGate();
 resetFire();
-px.set(0, 0, 3); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
+px.set(SAFE_SPAWN.x, 0, SAFE_SPAWN.z); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
 FD.on = false; FD.left = 60; FD.near = false; rig.visible = true; forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = Math.PI/2;
 clearMovement(); last = performance.now();
-run = true; document.body.classList.add('ingame'); $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true}); hud();
-tip('stage1', '🎓 المرحلة ١: التدريب — التقط وافرز', '#64ffda');
+run = true; document.body.classList.add('ingame'); $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true});
+setStage(startStageNum, true);
+hud();
+if(startStageNum === 1) tip('stage1', '🎓 المرحلة ١: التدريب — التقط وافرز', '#64ffda');
+else tip('stage' + startStageNum, startStageNum === 2 ? '🚀 المرحلة ٢: المواد الخطرة والمفتش!' : '🏁 المرحلة ٣: الرافعة الشوكية تعبر المستودع!', '#64ffda');
 }
-$('go').onclick = start;
+$('go').onclick = () => startGameAt(1);
 let pz = false;
 const openRules = () => {
 const r = $('rules'), o = r.style.display === 'none';
@@ -1923,6 +2034,7 @@ ${recLine}
 <div class="leaderboard-wrap"><span>${I18N.T('لوحة المتصدرين:','Leaderboard:')}</span><div class="lb-chips">${topHTML(topList)}</div></div>
 </div>
 <p class="tip-msg">${totalProcessed === 0 ? I18N.t('لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!') : acc >= 80 ? I18N.t('أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.') : I18N.t('راجع دليل الفرز السريع ثم عُد لكسر رقمك.')}</p>
+<div class="stage-select compact">${stageSelectHTML()}</div>
 <div class="actions-row">
 <button id="next" class="btn btn-primary" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M3 12h18"/><path d="M15 6l6 6-6 6"/></svg><span>${I18N.T('الانتقال للمرحلة التالية','Next stage')}</span></button>
 <button id="go" class="btn btn-secondary" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg><span>${I18N.T('إعادة المحاولة','Replay level')}</span></button>
@@ -1930,7 +2042,7 @@ ${recLine}
 <button id="ex2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>${I18N.t('الغلاف')}</span></button>
 </div>
 </div>`;
-$('go').onclick = start;
+$('go').onclick = () => startGameAt(stage);
 $('next').onclick = beginExitSequence;
 $('rb2').onclick = openRules;
 $('ex2').onclick = exitToShell;
@@ -2587,6 +2699,7 @@ R.render(S, C);
 if(!loadingDone){ loadingDone = true; loading.finish(); }
 }
 syncMenu();
+renderStageSelect();
 const shellBtn = $('shell'); if(shellBtn) shellBtn.onclick = e => { e.stopPropagation(); exitToShell(); };
 let loadingDone = false;
 loading.phase(88, I18N.t('تسخين الشيدرات والمؤثرات...'));

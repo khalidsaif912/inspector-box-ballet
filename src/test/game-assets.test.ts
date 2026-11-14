@@ -161,6 +161,19 @@ describe("Game assets and shared rules", () => {
     expect(html).not.toMatch(/حمل الطرود بالرافعة/);
   });
 
+  it("unlocks stages from the cover and always spawns the player safely", () => {
+    expect(game).toContain('const UNLOCK_KEY = "aircargo_max_stage"');
+    expect(game).toContain("let maxUnlockedStage");
+    expect(game).toContain("function unlockStage(n)");
+    expect(game).toContain("function startGameAt(n)");
+    expect(game).toContain("function safeSpawnPlayer()");
+    expect(game).toContain("function findFreeSpot(x, z");
+    expect(game).toMatch(/function setStage\(n,silent\)\{[\s\S]{0,320}safeSpawnPlayer\(\)/);
+    expect(html).toContain('id="stageSelect"');
+    expect(game).toContain('data-stage="${n}"');
+    expect(readFileSync("public/game/game.css", "utf8")).toContain(".stage-item.locked");
+  });
+
   it("keeps the box-type hint between the two touch controls", () => {
     const controls =
       html.match(/<div id="controls-ui">([\s\S]*?)<\/div>\s*<div class="ov/)?.[1] ?? "";
