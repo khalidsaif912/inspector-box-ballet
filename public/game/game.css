@@ -545,3 +545,72 @@ details.full .tbl{max-width:100%}
 
 /* أدوات اللعب تُخفى في شاشة البداية (مكررة هناك) */
 body:not(.ingame) .top-btns{display:none}
+
+/* ================================================================
+   الوضع الأفقي (الهاتف على جانبه) — تستغل اللعبة كامل الشاشة
+   ================================================================ */
+@media (orientation:landscape){
+  html,body{height:100%;overflow:hidden}
+  #stage{
+    width:100vw;width:100dvw;height:100vh;height:100dvh;
+    aspect-ratio:auto;max-width:none;border-radius:0;border:0;
+    box-shadow:inset 0 0 90px rgba(0,0,0,.75);
+  }
+  :root{--hh:clamp(24px,6.4vmin,34px);--js:clamp(64px,15vmin,92px);--ab:clamp(52px,12vmin,74px)}
+  #hud{padding:calc(env(safe-area-inset-top,0px) + 4px) max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px))}
+  .top-btns{top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.15 + 6px);left:max(10px,env(safe-area-inset-left,0px));gap:6px;padding:4px}
+  .top-btns .rbtn{width:calc(var(--hh)*.95);height:calc(var(--hh)*.95)}
+  #controls-ui{bottom:calc(env(safe-area-inset-bottom,0px) + 8px);padding:0 max(14px,env(safe-area-inset-left,0px))}
+  #inspect{max-width:min(42%,360px);padding:5px 12px;gap:8px}
+  #inspect .hc{font-size:clamp(14px,3vmin,20px)!important}
+  #inspect .dgl{width:34px!important;height:34px!important}
+  #inspect .emo{font-size:22px!important}
+  #toast{top:24%;font-size:clamp(14px,3.4vmin,22px)}
+  #intro{top:clamp(74px,18%,140px);max-width:min(84%,440px);font-size:clamp(11.5px,2.4vmin,14px);padding:10px 14px 9px}
+  #fire-banner{top:calc(env(safe-area-inset-top,0px) + var(--hh) + 6px);width:min(72%,520px);padding:6px 12px}
+  #fire-hint{top:46%;padding:9px 14px}
+  #stg{top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.2 + 6px)}
+  #drv{bottom:calc(env(safe-area-inset-bottom,0px) + var(--js) + 12px);max-width:70vw}
+  #code-pad{padding:8px}
+  .cp{width:min(100%,420px);padding:10px 12px}
+  .cp-keys button{height:clamp(32px,8.4vmin,44px)}
+  .ov{padding:10px;gap:9px;justify-content:center}
+  .ov h1{font-size:clamp(19px,4.4vmin,28px)}
+  .ov p{font-size:12.5px;line-height:1.6;max-width:min(70ch,100%)}
+  .ov button{padding:11px 30px;font-size:16px}
+  /* شاشة البداية أفقياً: العنوان يمين وزر اللعب يسار */
+  #ov.start{padding:8px}
+  #ov.start .start-inner{max-width:min(560px,94%);flex-direction:row-reverse;justify-content:center;align-items:center;gap:clamp(14px,3vmin,30px);flex-wrap:wrap}
+  #ov.start .hero{flex:0 1 auto;min-width:0}
+  #ov.start .logo{font-size:clamp(24px,5vmin,34px)}
+  #ov.start .hero h1{font-size:clamp(20px,4.6vmin,32px)}
+  #ov.start .tagline{font-size:clamp(9px,2vmin,12px)}
+  #ov.start #go.play{min-width:clamp(160px,30vmin,220px);padding:11px 26px 13px;font-size:clamp(15px,2.8vmin,20px)}
+  #ov.start .best,#ov.start .top5{display:none}
+  #ov.start .corner-opts{bottom:10px;inset-inline-start:10px;width:min(30vw,168px);gap:5px}
+  #ov.start .pill-group,#ov.start .opt{min-height:28px;padding:0 10px;font-size:10px;gap:6px}
+  #ov.start>.opt.guide{bottom:10px;inset-inline-end:10px;padding:0 12px;min-height:28px;font-size:10px}
+  .statgrid{grid-template-columns:repeat(4,1fr);max-width:600px}
+  .res{gap:7px}
+  .rank{width:clamp(52px,11vmin,80px);height:clamp(52px,11vmin,80px);font-size:clamp(26px,6vmin,42px)}
+  .menu-grid{gap:6px;max-width:600px}
+  .mcard{padding:6px 5px;font-size:10.5px}
+  .mcard .ic{font-size:17px}
+  .steps{gap:6px;max-width:640px}
+  .step{padding:6px 8px;font-size:10.5px}
+}
+@media (orientation:landscape) and (max-height:430px){
+  :root{--hh:clamp(20px,6vmin,28px)}
+  #hud{padding-top:calc(env(safe-area-inset-top,0px) + 2px)}
+  .ov{gap:6px;padding:6px}
+  .ov h1{font-size:clamp(16px,4vmin,22px)}
+  .ov p{font-size:11px;line-height:1.45}
+  .ov button{padding:8px 20px;font-size:14px}
+  #ov.start .logo{display:none}
+  #ov.start .hero h1{font-size:clamp(17px,4.2vmin,24px)}
+  #ov.start .tagline{font-size:8.5px}
+  #ov.start .best,#ov.start .top5,#ov .stats-row{display:none}
+  #inspect .dgl{display:none}
+  .penalty-tag{padding:4px 9px 5px}
+}
+

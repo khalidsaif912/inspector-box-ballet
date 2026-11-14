@@ -207,10 +207,22 @@ const w = stageEl.clientWidth || innerWidth, h = stageEl.clientHeight || innerHe
 R.setPixelRatio(renderPixelRatio(w, h, devicePixelRatio) * renderScale);
 R.setSize(w, h);
 C.aspect = w / h;
-C.fov = w < h ? 62 : 48;
+// تكييف زاوية الرؤية مع اتجاه الشاشة (أفقي/عمودي) ليبقى الملعب مرئياً
+const land = w > h;
+C.fov = land ? 46 + Math.max(0, Math.min(10, (1.75 - C.aspect) * 8)) : 62;
 C.updateProjectionMatrix();
 }
-addEventListener('resize', rs); rs();
+/* التكيّف مع تدوير الهاتف: resize + orientationchange + visualViewport */
+let rsRaf = 0;
+function rsSoon(){
+if(rsRaf) cancelAnimationFrame(rsRaf);
+rsRaf = requestAnimationFrame(() => { rsRaf = 0; rs(); requestAnimationFrame(rs); });
+}
+addEventListener('resize', rsSoon, { passive:true });
+addEventListener('orientationchange', rsSoon, { passive:true });
+if(window.visualViewport) visualViewport.addEventListener('resize', rsSoon, { passive:true });
+if(window.screen && screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', rsSoon);
+rs();
 // ===== الإضاءة: ضوء سماوي بارد من النوافذ العلوية + مصابيح صناعية دافئة + إضاءة مركّزة على مناطق الفرز
 const hemiLight = new THREE.HemisphereLight(0xcfe2ff, 0x3a3226, 0.55);
 S.add(hemiLight);
