@@ -1,5 +1,5 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
@@ -63,20 +63,21 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // الملفات: من الذاكرة أولاً (سريع)، وأي رابط جديد يحمل نسخة ?v= يُجلب من الشبكة ويُخزَّن.
+  // الملفات: من الذاكرة فوراً، مع تحديثها في الخلفية حتى تصل التعديلات في التشغيل التالي.
   event.respondWith(
-    caches.match(request).then(
-      (hit) =>
-        hit ||
-        fetch(request)
-          .then((response) => {
-            if (response.ok && response.type === "basic") {
-              const copy = response.clone();
-              caches.open(CACHE).then((cache) => cache.put(request, copy));
-            }
-            return response;
-          })
-          .catch(() => caches.match(request, { ignoreSearch: true })),
-    ),
+    caches.match(request).then((hit) => {
+      const net = fetch(request).then((response) => {
+        if (response.ok && response.type === "basic") {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      });
+      if (hit) {
+        net.catch(() => {});
+        return hit;
+      }
+      return net.catch(() => caches.match(request, { ignoreSearch: true }));
+    }),
   );
 });
