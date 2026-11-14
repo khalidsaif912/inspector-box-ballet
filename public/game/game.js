@@ -188,12 +188,23 @@ const HZ = [
 ['h9','🧊','ثلج جاف كربوني','RMD','9']
 ];
 const R = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance', alpha:false});
-function renderPixelRatio(width, height, dpr){
-return Math.min(dpr, 2, Math.sqrt(2600000 / Math.max(1, width * height)));
+/* دقة أصلية كاملة: نستخدم devicePixelRatio الفعلي (Retina/2K/4K) بلا سقف مساحي.
+   كان السقف القديم (2.6 ميجابكسل) يجعل المخزن أصغر من الشاشة فتُمدّ الصورة وتظهر مدموجة. */
+function renderPixelRatio(dpr){
+return Math.max(1, Number(dpr) || 1);
 }
-let renderScale = 1;
+let renderScale = 1, scaleCeil = 1, renderReady = false, perfWarm = 0, perfWin = 0, perfFrames = 0;
+const lastSize = { w: 0, h: 0, dpr: 0 };
+/* كشف العرض البرمجي (بلا GPU): هذه البيئات لا تتحمل مخزن دقة أصلية 4K وتُسقط الصفحة */
+const softwareGL = (() => {
+try{
+const gl = R.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info');
+const name = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
+return /swiftshader|llvmpipe|software|basic render/i.test(name);
+}catch(e){ return false; }
+})();
 const stageEl = document.getElementById('stage');
-R.setPixelRatio(renderPixelRatio(stageEl.clientWidth, stageEl.clientHeight, devicePixelRatio));
+R.setPixelRatio(renderPixelRatio(devicePixelRatio));
 R.shadowMap.enabled = true;
 R.shadowMap.type = THREE.PCFSoftShadowMap;
 R.outputEncoding = THREE.sRGBEncoding;
@@ -208,7 +219,17 @@ const C = new THREE.PerspectiveCamera(48, 1, 0.1, 140);
 let camMaxX = 14;
 function rs(){
 const w = stageEl.clientWidth || innerWidth, h = stageEl.clientHeight || innerHeight;
-R.setPixelRatio(renderPixelRatio(w, h, devicePixelRatio) * renderScale);
+const dpr = renderPixelRatio(devicePixelRatio);
+// أي تغيّر في مساحة العرض أو كثافة البكسل يعيد ضبط الجودة من جديد (لا ننقل مقياساً قديماً لحجم آخر)
+if(!renderReady || w !== lastSize.w || h !== lastSize.h || dpr !== lastSize.dpr){
+renderReady = true; lastSize.w = w; lastSize.h = h; lastSize.dpr = dpr;
+const nativePx = w * h * dpr * dpr;
+const budget = softwareGL ? 2.0e6 : (((navigator.hardwareConcurrency || 4) >= 8) ? 9.0e6 : 6.0e6);
+renderScale = nativePx > budget ? Math.max(.5, Math.sqrt(budget / nativePx)) : 1;
+if(softwareGL) scaleCeil = renderScale;
+perfWarm = 0; perfWin = 0; perfFrames = 0;
+}
+R.setPixelRatio(dpr * renderScale);
 R.setSize(w, h);
 C.aspect = w / h;
 // تكييف زاوية الرؤية مع اتجاه الشاشة (أفقي/عمودي) ليبقى الملعب مرئياً
@@ -238,7 +259,8 @@ const amb = new THREE.AmbientLight(0x404a58, 0.25); S.add(amb);
 const sun = new THREE.DirectionalLight(0xdfeaff, 0.95);
 sun.position.set(-14, 34, 18);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+const shadowRes = (stageEl.clientWidth || innerWidth) > 1400 ? 3072 : 2048;
+sun.shadow.mapSize.set(shadowRes, shadowRes);
 sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.03;
 sun.shadow.radius = 3;
@@ -2039,7 +2061,7 @@ let last = performance.now();
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.12, 40), new THREE.MeshBasicMaterial({color:0xffc94d, transparent:true, opacity:0.85, depthWrite:false}));
 ring.rotation.x = -Math.PI/2; ring.visible = false; S.add(ring);
 let warnTicker = 0;
-let hudTicker = 0, frameTotal = 0, frameCount = 0;
+let hudTicker = 0;
 const cargoTarget = new THREE.Vector3();
 let camTarget = new THREE.Vector3(), camLook = new THREE.Vector3(0,0.9,0.8), camLookT = new THREE.Vector3();
 C.position.set(0, 13.2, 15.4);
@@ -2047,11 +2069,21 @@ function loop(now){
 requestAnimationFrame(loop);
 const rawDt = (now - last) / 1000;
 const dt = document.hidden || rawDt > 1 ? 0 : Math.min(rawDt, .5); last = now;
-if(run && rawDt > 0 && rawDt < 1){
-frameTotal += rawDt; frameCount++;
-if(frameCount >= 90){
-if(frameTotal / frameCount > .025 && renderScale > .6){ renderScale = Math.max(.6, renderScale - .1); rs(); }
-frameTotal = 0; frameCount = 0;
+if(!document.hidden && rawDt > 0 && rawDt < 1){
+// جودة متكيّفة في الاتجاهين: تخفض عند البطء وتستعيد الحدة الكاملة عند توفر الأداء
+if(perfWarm < 3) perfWarm += rawDt;
+else {
+perfWin += rawDt; perfFrames++;
+if(perfFrames >= 60 || (perfFrames >= 12 && perfWin >= 1.2)){
+const avg = perfWin / perfFrames; perfWin = 0; perfFrames = 0;
+let next = renderScale;
+if(avg > .070) next = renderScale - .2;
+else if(avg > .055) next = renderScale - .1;
+else if(avg < .0135) next = renderScale + .2;
+else if(avg < .0185) next = renderScale + .05;
+next = Math.max(.5, Math.min(scaleCeil, next));
+if(Math.abs(next - renderScale) > .001){ renderScale = next; rs(); }
+}
 }
 }
 if(liftAnim.active){

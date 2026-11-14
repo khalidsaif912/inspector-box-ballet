@@ -2,7 +2,9 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Tahoma,sans-serif;overflow:hidden;touch-action:none;user-select:none}
 body{display:grid;place-items:center;background:radial-gradient(circle at 50% 26%,#20334b 0,#111b27 48%,#070d14 100%)}
-#stage{position:relative;width:min(94vw,calc(94vh * 4 / 3),1120px);aspect-ratio:4 / 3;border-radius:22px;overflow:hidden;background:#0a121c;border:1px solid rgba(124,196,255,.28);box-shadow:0 30px 90px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.5),0 0 44px rgba(58,160,255,.12);isolation:isolate}
+#stage{position:relative;width:min(94vw,calc(94vh * 4 / 3),1720px);aspect-ratio:4 / 3;border-radius:22px;overflow:hidden;background:#0a121c;border:1px solid rgba(124,196,255,.28);box-shadow:0 30px 90px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.5),0 0 44px rgba(58,160,255,.12);isolation:isolate}
+/* لوحة WebGL تُرسم بدقة الشاشة الأصلية: لا تحجيم CSS ولا تنعيم قسري */
+#stage>canvas{display:block;image-rendering:auto}
 @media (max-width:720px) and (orientation:portrait){#stage{width:min(94vw,560px);height:min(94vh,calc(94vw * 1.75),780px);height:min(94svh,calc(94vw * 1.75),780px);aspect-ratio:auto}}
 canvas{display:block;position:absolute;inset:0}
 #hud{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 0;display:flex;gap:12px;justify-content:space-between;pointer-events:none;z-index:5}
