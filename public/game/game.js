@@ -216,7 +216,7 @@ C.updateProjectionMatrix();
 let rsRaf = 0;
 function rsSoon(){
 if(rsRaf) cancelAnimationFrame(rsRaf);
-rsRaf = requestAnimationFrame(() => { rsRaf = 0; rs(); requestAnimationFrame(rs); });
+rsRaf = requestAnimationFrame(() => { rsRaf = 0; rs(); requestAnimationFrame(rs); placeToastBelowIntro(); });
 }
 addEventListener('resize', rsSoon, { passive:true });
 addEventListener('orientationchange', rsSoon, { passive:true });
@@ -948,11 +948,20 @@ let demo={insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}, intr
 function showIntro(html,ms=7000,hold=false){
 const e=document.getElementById('intro');
 e.innerHTML=html;e.classList.add('on');e.classList.toggle('wait',hold);
+placeToastBelowIntro();
 clearTimeout(introT);
 if(hold){ introHold=true; e.onclick=resumeFromIntro; run=false; clearMovement(); introT=setTimeout(resumeFromIntro,20000); }
-else { introHold=false; e.onclick=null; introT=setTimeout(()=>e.classList.remove('on'),ms); }
+else { introHold=false; e.onclick=null; introT=setTimeout(()=>{e.classList.remove('on');placeToastBelowIntro();},ms); }
 }
-function hideIntro(){const e=document.getElementById('intro');if(e){e.classList.remove('on','wait');e.onclick=null;}introHold=false;clearTimeout(introT);}
+function hideIntro(){const e=document.getElementById('intro');if(e){e.classList.remove('on','wait');e.onclick=null;}document.getElementById('stage')?.style.removeProperty('--toast-top');introHold=false;clearTimeout(introT);}
+// نُبعد شريط الرسائل المؤقتة (toast) تحت فقاعة الرسالة حتى لا يظهر جزء منه خلفها
+function placeToastBelowIntro(){
+const e=document.getElementById('intro'), st=document.getElementById('stage');
+if(!e||!st||!e.classList.contains('on')){ st&&st.style.removeProperty('--toast-top'); return; }
+const sb=st.getBoundingClientRect(), ib=e.getBoundingClientRect();
+const top=Math.round(ib.bottom-sb.top)+16;
+st.style.setProperty('--toast-top', Math.min(top, Math.round(sb.height*.8))+'px');
+}
 function resumeFromIntro(){
 if(!introHold) return;
 if($('rules').style.display !== 'none') return;
