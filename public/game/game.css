@@ -692,4 +692,10 @@ html[lang="en"] .top-btns .rbtn,html[lang="en"] .pill b{font-family:inherit}
 /* شاشات ضيقة: شارة المرحلة تنزل تحت شريط النقاط بدل مزاحمة الأزرار */
 @media (max-width:520px){
   #stg{position:absolute;inset-inline-start:0;inset-inline-end:auto;top:calc(env(safe-area-inset-top,0px) + var(--hh) + 12px);max-width:calc(100% - 110px)}
-}
+}/* كبسولات النقاط/الوقت: لا تنكسر ولا تنضغط عند الأرقام الطويلة أو الإنجليزية */
+.hud-start{flex-wrap:nowrap}
+.hgrp{flex:0 0 auto;min-width:0}
+.pill{flex:0 0 auto;white-space:nowrap;max-width:none}
+.pill b{white-space:nowrap}
+#stg{white-space:nowrap}
+.hud-end .top-btns{flex:0 0 auto}
