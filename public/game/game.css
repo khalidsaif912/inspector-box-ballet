@@ -177,8 +177,8 @@ canvas{display:block;position:absolute;inset:0}
 .cp-timer{text-align:center;font-size:clamp(10px,3vmin,12px);color:#9fd8b8;margin-top:5px}
 #stg{position:absolute;z-index:6;right:10px;top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.2 + 14px);padding:5px 12px;font-size:clamp(11px,3.2vmin,14px);border-radius:999px;pointer-events:none;color:#ffe082;transition:opacity .25s}
 #stg:has(+ #inspector-badge.on){opacity:0}
-#inspector-badge{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translate(-50%,-140%);z-index:8;background:linear-gradient(180deg,#ffd54a,#f39c12);color:#1a0f00;font-weight:900;font-size:clamp(13px,4vmin,17px);padding:8px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.5);transition:transform .3s;white-space:nowrap;pointer-events:none}
-#inspector-badge.on{transform:translate(-50%,calc(var(--hh) + 10px))}
+#inspector-badge{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translate(-50%,-140%);z-index:8;background:linear-gradient(180deg,#ffd54a,#f39c12);color:#1a0f00;font-weight:900;font-size:clamp(13px,4vmin,17px);padding:8px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.5);transition:transform .3s,opacity .25s,visibility .3s;white-space:nowrap;pointer-events:none;opacity:0;visibility:hidden}
+#inspector-badge.on{transform:translate(-50%,calc(var(--hh) + 10px));opacity:1;visibility:visible}
 #stage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse at center,transparent 55%,rgba(4,10,18,.55) 100%)}
 .ov{background:radial-gradient(circle at 50% 30%,rgba(30,56,92,.97),rgba(6,12,20,.98))}
 .ov h1{text-shadow:0 0 18px rgba(243,156,18,.45)}
