@@ -1107,8 +1107,7 @@ setDashButton();
 }
 const fire = {active:false, done:false, phase:'idle', t:0, codeT:0, keypad:false, posAwarded:false, siren:null, buzz:null};
 const STREAK_MAX = 8;
-const COMBO_MAX = 5;
-const streakWindow = () => stage === 1 ? 7 : 5.5;
+const streakWindow = () => gameRules.economy.streakWindow(stage);
 const bestScore = () => { try { return +(localStorage.getItem('acg_best') || 0) || 0; } catch(e){ return 0; } };
 const saveBest = v => { try { localStorage.setItem('acg_best', v); } catch(e){} };
 const getTop = () => { try { return gameRules.board.top(JSON.parse(localStorage.getItem('acg_top') || '[]')); } catch(e){ return []; } };
@@ -1168,7 +1167,7 @@ function startTruckDemo(){
 demo.truck=true;truckState=gameRules.reset();truckState.elapsed=gameRules.startAt;snd('horn');
 showIntro(I18N.T('<b class="t">🚜 الرافعة الشوكية</b>تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.<small>جولة تعريفية — لن تصطدم بك</small><span class="hint">⏸ اللعبة متوقفة — اضغط في أي مكان للمتابعة</span>', '<b class="t">🚜 Forklift</b>Drops foreign objects (FOD); collect them and put them in the red bin.<small>Intro round — it won\'t hit you</small><span class="hint">⏸ Game paused — press anywhere to resume</span>'),0,true);
 }
-const beltSpeed=()=> STAGE_BELT[stage] * (feverT > 0 ? FEVER_BOOST : 1);
+const beltSpeed=()=> gameRules.layout.beltSpeed(stage, feverT > 0);
 let sortedCount=0, totalProcessed=0;
 const px = pl.position, key = {}, joy = {x:0, y:0};
 const tc = {};
@@ -1302,7 +1301,7 @@ rm(it);
 const r = Math.random();
 if(r < 0.25){ time += 12; snd('ship'); spawnFloatTag(I18N.T('+12 ث ⏱','+12s ⏱'),'#64ffda'); toast('🎁 مفاجأة: +12 ثانية','#64ffda'); }
 else if(r < 0.5){ score += 60; snd('ship'); toast('🎁 مفاجأة: +60 نقطة','#ffd54a'); }
-else if(r < 0.7){ combo = COMBO_MAX; snd('ship'); toast('🎁 مفاجأة: كومبو ×5 🔥','#ff9800'); }
+else if(r < 0.7){ combo = gameRules.economy.comboMax; snd('ship'); toast('🎁 مفاجأة: كومبو ×5 🔥','#ff9800'); }
 else if(r < 0.85){ slowT = 8; snd('ship'); toast('🎁 مفاجأة: الحزام يبطؤ ٨ ثوانٍ 🐢','#80d8ff'); }
 else { time = Math.max(0, time - 6); snd('error'); spawnFloatTag(I18N.T('-6 ث','-6s'),'#ff5252'); toast('💥 مفاجأة سيئة: -6 ثوانٍ','#ff5252'); }
 hud();
@@ -1312,7 +1311,7 @@ const list = stage===4 ? HZ : ((stage>=2 && Math.random() < (stage===3?0.6:0.45)
 const raw = (stage>=2 && stage<4 && Math.random() < 0.13 && !items.some(i => i.data.isMys)) ? MYS : list[Math.random()*list.length | 0];
 const itObj = { t:raw[0], emoji:raw[1], name:raw[2], imp:raw[3], div:raw[4], isHz:raw[0][0]==='h', isMys:raw===MYS };
 const m = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({map:tex(raw), roughness:0.5, metalness:0.05}));
-m.castShadow = true; m.receiveShadow = true; m.position.set(-22.5, 0.74 + BH, 12);
+m.castShadow = true; m.receiveShadow = true; const bs = gameRules.layout.beltSpawn(); m.position.set(bs.x, bs.y, bs.z);
 m.add(new THREE.LineSegments(EDGEG, EDGEM));
 const csh = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 2.1), SHM);
 csh.rotation.x = -Math.PI/2; csh.position.y = -BH + 0.015; m.add(csh);
@@ -1324,7 +1323,7 @@ items.push(it);
 /* ===== طرد حرج بمؤقت تفجير (15%) ===== */
 /* المؤقت خاص بطرود سلسلة التبريد (❄️) فقط. نسبة الاختيار 45% من طرود التبريد
    ≈ 15% من إجمالي الطرود العادية (التبريد ثلث قائمة الشحن العادي) */
-const CRIT_CHANCE = .45, CRIT_TIME = 18, CRIT_BONUS = 75, CRIT_PENALTY = 40;
+const CRIT_CHANCE = .45, CRIT_TIME = gameRules.economy.critTime, CRIT_PENALTY = gameRules.economy.critPenalty;
 const critHaloTex = canvasTex(128, 128, (g, w, h) => {
 const gr = g.createRadialGradient(w/2, h/2, w*.1, w/2, h/2, w/2);
 gr.addColorStop(0, 'rgba(255,70,40,.9)'); gr.addColorStop(.55, 'rgba(255,100,30,.35)'); gr.addColorStop(1, 'rgba(255,40,0,0)');
@@ -1490,10 +1489,10 @@ $('sc').textContent = score;
 const stageIcons = ['','🎓','🚀','⚡','🏁'];
 const stgTxt = $('stgtxt'), stgFill = $('stgfill');
 if(stage < 4){
-const cap = STAGE_AT[stage+1], base = STAGE_AT[stage];
-const shown = Math.min(score, cap);
+const prog = gameRules.layout.stageProgress(stage, score), cap = prog.cap;
+const shown = prog.shown;
 if(stgTxt) stgTxt.textContent = `${stageIcons[stage]} ${I18N.T('المرحلة','Stage')} ${stage} • ${shown}/${cap}`;
-if(stgFill) stgFill.style.width = Math.max(0, Math.min(100, ((shown-base)/(cap-base))*100)) + '%';
+if(stgFill) stgFill.style.width = prog.percent + '%';
 $('stg').classList.remove('final');
 } else {
 if(stgTxt) stgTxt.textContent = I18N.t('🏁 المرحلة ٤ • مستوى الخبراء — مواد خطرة فقط');
@@ -1595,20 +1594,19 @@ conflictReason = 'منطقة فرز غير مطابقة لنوع الشحنة!';
 }
 if(ok){
 sortedCount++;
-const base = d.isHz ? 25 : 10;
-const p = base * combo * (feverT > 0 ? 2 : 1);
+const p = gameRules.economy.sortReward({ isHz: !!d.isHz, combo, fever: feverT > 0 });
 score += p;
 streak++; streakT = streakWindow(); maxStreak = Math.max(maxStreak, streak);
-combo = Math.min(COMBO_MAX, 1 + Math.floor(streak / 3));
+combo = gameRules.economy.comboAfter(streak);
 time += 3;
 let critMsg = '';
 if(it.crit){
 /* Large tier: hit-stop + ضربة اهتزاز + وميض ذهبي + رقم كبير بارتداد */
-score += CRIT_BONUS; time += 5;
+score += gameRules.economy.critBonus; time += 5;
 snd('fever');
 hitStopNow(.05); addShake(.6); screenFlash('gold');
-spawnFloatTag('+' + CRIT_BONUS + ' ❄️ +5 ث', '#69f0ae', 'big');
-critMsg = I18N.T(' • ❄️ طرد تبريد +',' • ❄️ chilled parcel +') + CRIT_BONUS + I18N.T(' و +5 ث',' and +5s');
+spawnFloatTag('+' + gameRules.economy.critBonus + ' ❄️ +5 ث', '#69f0ae', 'big');
+critMsg = I18N.T(' • ❄️ طرد تبريد +',' • ❄️ chilled parcel +') + gameRules.economy.critBonus + I18N.T(' و +5 ث',' and +5s');
 clearCrit(it);
 }
 /* Medium tier: طرد خطير أو كومبو ≥3 ⇒ اهتزاز خفيف ووميض ذهبي للشارة */
@@ -1618,7 +1616,7 @@ snd('ok', 1 + Math.min(streak, STREAK_MAX) * .05);
 spawnFloatTag(I18N.T('+3 ث ⏱','+3s ⏱'), '#69f0ae');
 let chainMsg = '';
 if(streak > 4){
-const b = Math.min(40, (streak - 4) * 5);
+const b = gameRules.economy.chainBonus(streak);
 score += b; chainMsg = I18N.T(` • سلسلة +${b} 🔥`,` • chain +${b} 🔥`);
 stageEl.classList.remove('flash'); void stageEl.offsetWidth; stageEl.classList.add('flash');
 setTimeout(() => stageEl.classList.remove('flash'), 550);
@@ -1628,12 +1626,12 @@ toast(I18N.T(`✔ فرز متوافق +${p}`,`✔ Compatible sort +${p}`) + chai
 const i = z.hz ? z.items.length : z.n_++ % z.cap;
 if(z.items[i]) rm(z.items[i]);
 z.items[i] = it; it.st = 'placed'; if(z.hz) drawZoneSign(z);
-const P_ = 1.37, rows_ = z.cap / z.cols;
-it.m.position.set(z.x + (i%z.cols - (z.cols-1)/2)*P_, 0.74 + 0.5, -8.6 + (Math.floor(i/z.cols) - (rows_-1)/2)*P_);
+const slot = gameRules.layout.containerSlot(z, i);
+it.m.position.set(slot.x, slot.y, slot.z);
 it.m.rotation.set(0,0,0); it.fall = true; it.vy = 0; it.ty = 0.06 + BH;
 if(z.hz && z.items.length >= z.cap) ship(z);
 } else {
-const pen = conflict ? 35 : 15;
+const pen = gameRules.economy.penalty(conflict);
 const lost = Math.min(score, pen);
 score = Math.max(0, score - pen);
 combo = 1; streak = 0; streakT = 0;
@@ -2536,8 +2534,7 @@ demo.truckIn = Math.max(0, demo.truckIn - dt);
 if(demo.truckIn <= 0) startTruckDemo();
 }
 }
-if(stage<4 && score >= STAGE_AT[stage+1]) setStage(stage+1);
-if(!fire.active){
+if(stage<4 && score >= STAGE_AT[stage+1]) setStage(gameRules.layout.stageForScore(stage, score));if(!fire.active){
 spawnT -= dt;
 if(spawnT <= 0){
 spawn();

@@ -5,6 +5,7 @@ const html = readFileSync("public/game.html", "utf8");
 const index = readFileSync("public/index.html", "utf8");
 const ui = readFileSync("public/game/ui.css", "utf8");
 const game = readFileSync("public/game/game.js", "utf8");
+const rules = readFileSync("public/game/game-rules.js", "utf8");
 
 describe("Game assets and shared rules", () => {
   it("loads Three.js from the local vendor copy", () => {
@@ -189,20 +190,22 @@ describe("Game assets and shared rules", () => {
     expect(game).not.toContain("maxUnlockedStage");
     expect(game).toContain("dgr_tutorial_completed");
     expect(game).toContain("function skipTutorial()");
-    expect(game).toContain("if(stage<4 && score >= STAGE_AT[stage+1]) setStage(stage+1);");
+    expect(game).toContain("setStage(gameRules.layout.stageForScore(stage, score))");
     expect(game).toContain("function safeSpawnPlayer()");
     expect(game).toContain("function findFreeSpot(x, z");
     expect(game).toMatch(/function setStage\(n,silent\)\{[\s\S]{0,500}safeSpawnPlayer\(\)/);
   });
 
   it("matches the arcade scoring economy", () => {
-    expect(game).toContain("const COMBO_MAX = 5;");
+    expect(game).toContain("gameRules.economy.comboAfter(streak)");
     expect(game).toContain("FEVER_TIME = 6");
-    expect(game).toContain("const base = d.isHz ? 25 : 10;");
-    expect(game).toContain("combo = Math.min(COMBO_MAX, 1 + Math.floor(streak / 3));");
+    expect(game).toContain(
+      "gameRules.economy.sortReward({ isHz: !!d.isHz, combo, fever: feverT > 0 })",
+    );
+    expect(game).toContain("gameRules.economy.comboAfter(streak)");
     expect(game).toContain("if(streak >= 10 && streak % 10 === 0) startFever();");
-    expect(game).toContain("const pen = conflict ? 35 : 15;");
-    expect(game).toContain("CRIT_BONUS = 75");
+    expect(game).toContain("const pen = gameRules.economy.penalty(conflict);");
+    expect(rules).toContain("critBonus: CRIT.bonus");
     expect(game).toContain("time += 5;");
     expect(game).toContain("score += 50;");
   });
