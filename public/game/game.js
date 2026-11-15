@@ -161,12 +161,15 @@ document.getElementById('amb').onclick = () => { initAudio(); setAmb(!ambEnabled
 const tipsBtn = document.getElementById('tips'); if(tipsBtn) tipsBtn.onclick = () => { setTips(!tipsEnabled); };
 function syncAudioUI(){
 const s = document.getElementById('snd'), a = document.getElementById('amb');
+const pressed = (el, on) => el.setAttribute('aria-pressed', on ? 'true' : 'false');
 if(s) s.classList.toggle('off', !soundEnabled);
 if(a) a.classList.toggle('off', !ambEnabled);
-document.querySelectorAll('[data-audio="snd"]').forEach(b => b.classList.toggle('off', !soundEnabled));
-document.querySelectorAll('[data-audio="amb"]').forEach(b => b.classList.toggle('off', !ambEnabled));
-document.querySelectorAll('[data-tips-toggle]').forEach(b => b.classList.toggle('off', !tipsEnabled));
-const t = document.getElementById('tips'); if(t) t.classList.toggle('off', !tipsEnabled);
+if(s) pressed(s, soundEnabled);
+if(a) pressed(a, ambEnabled);
+document.querySelectorAll('[data-audio="snd"]').forEach(b => { b.classList.toggle('off', !soundEnabled); pressed(b, soundEnabled); });
+document.querySelectorAll('[data-audio="amb"]').forEach(b => { b.classList.toggle('off', !ambEnabled); pressed(b, ambEnabled); });
+document.querySelectorAll('[data-tips-toggle]').forEach(b => { b.classList.toggle('off', !tipsEnabled); pressed(b, tipsEnabled); });
+const t = document.getElementById('tips'); if(t) { t.classList.toggle('off', !tipsEnabled); pressed(t, tipsEnabled); }
 }
 document.querySelectorAll('[data-audio="snd"]').forEach(b => b.onclick = () => { initAudio(); setSnd(!soundEnabled); });
 document.querySelectorAll('[data-audio="amb"]').forEach(b => b.onclick = () => { initAudio(); setAmb(!ambEnabled); });
@@ -189,17 +192,6 @@ const Z = [
 {n:'حاوية خطرة ٣',e:'☣️',c:0x3f7f8c,k:'hz3',x:24.5,w:5.0,cap:6,cols:3,hz:1}
 ];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; z.hw = z.w / 2; z.n = I18N.t(z.n); });
-const HCOL = {
-'1.3':0xff8a1f, '1.4':0xff8a1f,
-'2.1':0xe53935, '2.2':0x2e7d32, '2.3':0xffffff,
-'3':0xe53935,
-'4.1':0xf44336, '4.2':0xffffff, '4.3':0x1976d2,
-'5.1':0xfbc02d, '5.2':0xfbc02d,
-'6.1':0xffffff, '6.2':0xffffff,
-'7':0xfff176,
-'8':0xffffff,
-'9':0xffffff
-};
 const I = [
 ['cold','💉','لقاحات مبردة','COL','REF'],['cold','🐟','أسماك طازجة','PES','COL'],['cold','💊','أنسولين وأدوية','MED','COL'],
 ['perish','🍓','فراولة طازجة','PER','EAT'],['perish','🌹','زهور مقطوفة','PEF','EAT'],['perish','🍞','مخبوزات طازجة','PEM','EAT'],
@@ -315,7 +307,9 @@ const amb = new THREE.AmbientLight(0x404a58, 0.25); S.add(amb);
 const sun = new THREE.DirectionalLight(0xdfeaff, 0.95);
 sun.position.set(-14, 34, 18);
 sun.castShadow = true;
-const shadowRes = (stageEl.clientWidth || innerWidth) > 1400 ? 3072 : 2048;
+// 2048: أسرع بنحو 14% من 3072 بنفس الكادر (انظر docs/perf/shadow-steps.md).
+// 1536 جُرّب ورُفض: كسبه على GPU داخل الضجيج مقابل تنعيم ظاهر لنصف الظل على أرضية المستودع.
+const shadowRes = 2048;
 sun.shadow.mapSize.set(shadowRes, shadowRes);
 sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.03;
@@ -1115,11 +1109,10 @@ setDashButton();
 }
 const fire = {active:false, done:false, phase:'idle', t:0, codeT:0, keypad:false, posAwarded:false, siren:null, buzz:null};
 const STREAK_MAX = 8;
-const COMBO_MAX = 5;
-const streakWindow = () => stage === 1 ? 7 : 5.5;
+const streakWindow = () => gameRules.economy.streakWindow(stage);
 const bestScore = () => { try { return +(localStorage.getItem('acg_best') || 0) || 0; } catch(e){ return 0; } };
 const saveBest = v => { try { localStorage.setItem('acg_best', v); } catch(e){} };
-const getTop = () => { try { return JSON.parse(localStorage.getItem('acg_top') || '[]'); } catch(e){ return []; } };
+const getTop = () => { try { return gameRules.board.top(JSON.parse(localStorage.getItem('acg_top') || '[]')); } catch(e){ return []; } };
 const pushTop = v => { const t = getTop(); t.push({s:v, d:new Date().toLocaleDateString(I18N.lang === 'en' ? 'en' : 'ar')}); t.sort((a,b)=>b.s-a.s); const r = t.slice(0,5); try { localStorage.setItem('acg_top', JSON.stringify(r)); } catch(e){} return r; };
 const topHTML = t => t.length ? t.slice(0,4).map((e,i) => `<span class="score-chip"><i class="rank-dot r${i+1}"></i> ${e.s} ${I18N.t('نقطة')}</span>`).join('') : `<span class="lb-empty">${I18N.t('العب لتسجّل أول نتيجة')}</span>`;
 function syncMenu(){ const tp = $('top5'); const list = getTop(); if(tp){ tp.innerHTML = topHTML(list); tp.style.display = ''; } const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? I18N.T('أفضل نتيجة: ','Best score: ') + b : I18N.t('كن أول الأبطال'); }
@@ -1176,7 +1169,7 @@ function startTruckDemo(){
 demo.truck=true;truckState=gameRules.reset();truckState.elapsed=gameRules.startAt;snd('horn');
 showIntro(I18N.T('<b class="t">🚜 الرافعة الشوكية</b>تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.<small>جولة تعريفية — لن تصطدم بك</small><span class="hint">⏸ اللعبة متوقفة — اضغط في أي مكان للمتابعة</span>', '<b class="t">🚜 Forklift</b>Drops foreign objects (FOD); collect them and put them in the red bin.<small>Intro round — it won\'t hit you</small><span class="hint">⏸ Game paused — press anywhere to resume</span>'),0,true);
 }
-const beltSpeed=()=> STAGE_BELT[stage] * (feverT > 0 ? FEVER_BOOST : 1);
+const beltSpeed=()=> gameRules.layout.beltSpeed(stage, feverT > 0);
 let sortedCount=0, totalProcessed=0;
 const px = pl.position, key = {}, joy = {x:0, y:0};
 const tc = {};
@@ -1245,7 +1238,6 @@ ctx.strokeStyle='#222'; ctx.lineWidth=8; ctx.strokeRect(34,30,444,452);
 ctx.textAlign='center'; ctx.textBaseline='middle';
 if(it[0][0] === 'h'){
 const div=it[4];
-const colHex=HCOL[div] || HCOL[div.slice(0,3)] || 0xffffff;
 ctx.fillStyle='#24292d'; ctx.fillRect(42,38,428,66);
 ctx.fillStyle='#fff'; ctx.font='bold 27px sans-serif'; ctx.fillText('DANGEROUS GOODS  •  IATA',256,72);
 const lbl = new Image();
@@ -1307,11 +1299,11 @@ R.domElement.addEventListener('pointerdown', e => {
   if(e.pointerType === 'mouse' && e.button === 0) act();
 });
 function mystery(it){
-rm(it); totalProcessed = Math.max(0, totalProcessed);
+rm(it);
 const r = Math.random();
 if(r < 0.25){ time += 12; snd('ship'); spawnFloatTag(I18N.T('+12 ث ⏱','+12s ⏱'),'#64ffda'); toast('🎁 مفاجأة: +12 ثانية','#64ffda'); }
 else if(r < 0.5){ score += 60; snd('ship'); toast('🎁 مفاجأة: +60 نقطة','#ffd54a'); }
-else if(r < 0.7){ combo = COMBO_MAX; snd('ship'); toast('🎁 مفاجأة: كومبو ×5 🔥','#ff9800'); }
+else if(r < 0.7){ combo = gameRules.economy.comboMax; snd('ship'); toast('🎁 مفاجأة: كومبو ×5 🔥','#ff9800'); }
 else if(r < 0.85){ slowT = 8; snd('ship'); toast('🎁 مفاجأة: الحزام يبطؤ ٨ ثوانٍ 🐢','#80d8ff'); }
 else { time = Math.max(0, time - 6); snd('error'); spawnFloatTag(I18N.T('-6 ث','-6s'),'#ff5252'); toast('💥 مفاجأة سيئة: -6 ثوانٍ','#ff5252'); }
 hud();
@@ -1321,7 +1313,7 @@ const list = stage===4 ? HZ : ((stage>=2 && Math.random() < (stage===3?0.6:0.45)
 const raw = (stage>=2 && stage<4 && Math.random() < 0.13 && !items.some(i => i.data.isMys)) ? MYS : list[Math.random()*list.length | 0];
 const itObj = { t:raw[0], emoji:raw[1], name:raw[2], imp:raw[3], div:raw[4], isHz:raw[0][0]==='h', isMys:raw===MYS };
 const m = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({map:tex(raw), roughness:0.5, metalness:0.05}));
-m.castShadow = true; m.receiveShadow = true; m.position.set(-22.5, 0.74 + BH, 12);
+m.castShadow = true; m.receiveShadow = true; const bs = gameRules.layout.beltSpawn(); m.position.set(bs.x, bs.y, bs.z);
 m.add(new THREE.LineSegments(EDGEG, EDGEM));
 const csh = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 2.1), SHM);
 csh.rotation.x = -Math.PI/2; csh.position.y = -BH + 0.015; m.add(csh);
@@ -1333,7 +1325,7 @@ items.push(it);
 /* ===== طرد حرج بمؤقت تفجير (15%) ===== */
 /* المؤقت خاص بطرود سلسلة التبريد (❄️) فقط. نسبة الاختيار 45% من طرود التبريد
    ≈ 15% من إجمالي الطرود العادية (التبريد ثلث قائمة الشحن العادي) */
-const CRIT_CHANCE = .45, CRIT_TIME = 18, CRIT_BONUS = 75, CRIT_PENALTY = 40;
+const CRIT_CHANCE = .45, CRIT_TIME = gameRules.economy.critTime, CRIT_PENALTY = gameRules.economy.critPenalty;
 const critHaloTex = canvasTex(128, 128, (g, w, h) => {
 const gr = g.createRadialGradient(w/2, h/2, w*.1, w/2, h/2, w/2);
 gr.addColorStop(0, 'rgba(255,70,40,.9)'); gr.addColorStop(.55, 'rgba(255,100,30,.35)'); gr.addColorStop(1, 'rgba(255,40,0,0)');
@@ -1499,10 +1491,10 @@ $('sc').textContent = score;
 const stageIcons = ['','🎓','🚀','⚡','🏁'];
 const stgTxt = $('stgtxt'), stgFill = $('stgfill');
 if(stage < 4){
-const cap = STAGE_AT[stage+1], base = STAGE_AT[stage];
-const shown = Math.min(score, cap);
+const prog = gameRules.layout.stageProgress(stage, score), cap = prog.cap;
+const shown = prog.shown;
 if(stgTxt) stgTxt.textContent = `${stageIcons[stage]} ${I18N.T('المرحلة','Stage')} ${stage} • ${shown}/${cap}`;
-if(stgFill) stgFill.style.width = Math.max(0, Math.min(100, ((shown-base)/(cap-base))*100)) + '%';
+if(stgFill) stgFill.style.width = prog.percent + '%';
 $('stg').classList.remove('final');
 } else {
 if(stgTxt) stgTxt.textContent = I18N.t('🏁 المرحلة ٤ • مستوى الخبراء — مواد خطرة فقط');
@@ -1544,7 +1536,14 @@ else dv.style.display = 'none';
 dv.classList.toggle('drive', FD.on);
 }
 }
-function rm(it){ clearCrit(it); S.remove(it.m); items = items.filter(i => i !== it); }
+function rm(it){
+clearCrit(it);
+/* تحرير أي مرجع حمل يشير إلى الطرد المُتلف قبل إزالته من المشهد */
+const h = gameRules.hold.forget(it, { held, lifting: liftAnim.toHold });
+held = h.held;
+if(liftAnim.toHold && h.lifting === null){ liftAnim.active = false; liftAnim.t = 0; liftAnim.toHold = null; }
+S.remove(it.m); items = items.filter(i => i !== it);
+}
 function ship(z){
 z.full = true;
 snd('ship');
@@ -1570,13 +1569,13 @@ hud();return;
 if(z.k==='fod'){ it.st='floor';it.fall=false;it.m.position.set(z.x,.7,-4);snd('warn');tip('fodonly', 'هذا الصندوق للأجسام الغريبة FOD فقط','#ffd54a');hud();return; }
 if(d.isMys){ mystery(it); return; }
 totalProcessed++;
-let ok = false;
-let conflict = false;
+const verdict = gameRules.placement.decide(z, d, z.items);
+let ok = verdict.ok;
+let conflict = verdict.conflict;
 let conflictReason = '';
-if(z.hz){
-if(!d.isHz){
+if(verdict.reason === 'hazardous-only'){
 conflictReason = I18N.t('هذه الحاوية مخصصة فقط للمواد الخطرة (DGR)!');
-} else {
+} else if(verdict.reason === 'iata-conflict'){
 let hasConflict = false;
 for(const placed of z.items){
 if(gameRules.conflict(d, placed.data)){
@@ -1585,32 +1584,27 @@ conflictReason = I18N.T('تعارض IATA: لا يُخلط [','IATA conflict: nev
 break;
 }
 }
-if(hasConflict) conflict = true; else ok = true;
-}
-} else {
-ok = (z.k === d.t);
-if(!ok && d.isHz){
+if(hasConflict){ conflict = true; ok = false; }
+} else if(!ok && d.isHz){
 conflictReason = I18N.T('ممنوع وضع مادة خطرة (','Never stow a dangerous good (') + `${d.imp} . ${d.div}) ` + I18N.t('في مناطق الشحن العادي! ضعها في إحدى حاويات المواد الخطرة.');
 } else if(!ok){
 conflictReason = 'منطقة فرز غير مطابقة لنوع الشحنة!';
 }
-}
 if(ok){
 sortedCount++;
-const base = d.isHz ? 25 : 10;
-const p = base * combo * (feverT > 0 ? 2 : 1);
+const p = gameRules.economy.sortReward({ isHz: !!d.isHz, combo, fever: feverT > 0 });
 score += p;
 streak++; streakT = streakWindow(); maxStreak = Math.max(maxStreak, streak);
-combo = Math.min(COMBO_MAX, 1 + Math.floor(streak / 3));
+combo = gameRules.economy.comboAfter(streak);
 time += 3;
 let critMsg = '';
 if(it.crit){
 /* Large tier: hit-stop + ضربة اهتزاز + وميض ذهبي + رقم كبير بارتداد */
-score += CRIT_BONUS; time += 5;
+score += gameRules.economy.critBonus; time += 5;
 snd('fever');
 hitStopNow(.05); addShake(.6); screenFlash('gold');
-spawnFloatTag('+' + CRIT_BONUS + ' ❄️ +5 ث', '#69f0ae', 'big');
-critMsg = I18N.T(' • ❄️ طرد تبريد +',' • ❄️ chilled parcel +') + CRIT_BONUS + I18N.T(' و +5 ث',' and +5s');
+spawnFloatTag('+' + gameRules.economy.critBonus + ' ❄️ +5 ث', '#69f0ae', 'big');
+critMsg = I18N.T(' • ❄️ طرد تبريد +',' • ❄️ chilled parcel +') + gameRules.economy.critBonus + I18N.T(' و +5 ث',' and +5s');
 clearCrit(it);
 }
 /* Medium tier: طرد خطير أو كومبو ≥3 ⇒ اهتزاز خفيف ووميض ذهبي للشارة */
@@ -1620,7 +1614,7 @@ snd('ok', 1 + Math.min(streak, STREAK_MAX) * .05);
 spawnFloatTag(I18N.T('+3 ث ⏱','+3s ⏱'), '#69f0ae');
 let chainMsg = '';
 if(streak > 4){
-const b = Math.min(40, (streak - 4) * 5);
+const b = gameRules.economy.chainBonus(streak);
 score += b; chainMsg = I18N.T(` • سلسلة +${b} 🔥`,` • chain +${b} 🔥`);
 stageEl.classList.remove('flash'); void stageEl.offsetWidth; stageEl.classList.add('flash');
 setTimeout(() => stageEl.classList.remove('flash'), 550);
@@ -1630,12 +1624,12 @@ toast(I18N.T(`✔ فرز متوافق +${p}`,`✔ Compatible sort +${p}`) + chai
 const i = z.hz ? z.items.length : z.n_++ % z.cap;
 if(z.items[i]) rm(z.items[i]);
 z.items[i] = it; it.st = 'placed'; if(z.hz) drawZoneSign(z);
-const P_ = 1.37, rows_ = z.cap / z.cols;
-it.m.position.set(z.x + (i%z.cols - (z.cols-1)/2)*P_, 0.74 + 0.5, -8.6 + (Math.floor(i/z.cols) - (rows_-1)/2)*P_);
+const slot = gameRules.layout.containerSlot(z, i);
+it.m.position.set(slot.x, slot.y, slot.z);
 it.m.rotation.set(0,0,0); it.fall = true; it.vy = 0; it.ty = 0.06 + BH;
 if(z.hz && z.items.length >= z.cap) ship(z);
 } else {
-const pen = conflict ? 35 : 15;
+const pen = gameRules.economy.penalty(conflict);
 const lost = Math.min(score, pen);
 score = Math.max(0, score - pen);
 combo = 1; streak = 0; streakT = 0;
@@ -1947,7 +1941,6 @@ const r = $('rules'), o = r.style.display === 'none';
 r.style.display = o ? 'flex' : 'none';
 if(o){ pz = run; run = false; } else if(pz){ run = true; pz = false; }
 };
-const rbBtn = $('rb'); if(rbBtn) rbBtn.onclick = openRules;
 $('rc').onclick = openRules;
 $('how').onclick = openRules;
 function end(){
@@ -1959,19 +1952,20 @@ document.body.classList.remove('ingame');
 if(FD.on) stopDrive();
 resetFire();
 const o = $('ov'); o.style.display = 'flex';
-const acc = totalProcessed > 0 ? Math.round((sortedCount / totalProcessed) * 100) : 0;
+/* شاشة النتائج تُعيد بناء #ov بالكامل، فنحفظ لوحة الإعدادات (السترة/الصوت/التعليمات) ونُعيد إلحاقها كما هي */
+const dock = $('corner-opts');
+const acc = gameRules.scoreboard.accuracy(sortedCount, totalProcessed);
 const best = bestScore();
 const record = score > best && score > 0;
 if(record) saveBest(score);
 const topList = score > 0 ? pushTop(score) : getTop();
-const grade = (score >= 500 && acc >= 90) ? 's' : (score >= 350 && acc >= 80) ? 'a' : score >= 200 ? 'b' : 'c';
+const grade = gameRules.scoreboard.grade(score, acc);
 const titles = { s:I18N.t('خبير DGR معتمد'), a:I18N.t('مشرف فرز متمكن'), b:I18N.t('فني مستودع واعد'), c:I18N.t('متدرب قيد التأهيل') };
-const stars = { s:5, a:4, b:3, c:2 }[grade];
-const hubStars = Math.max(1, Math.min(3, Math.round((stars * 3) / 5)));
+const stars = gameRules.scoreboard.stars(grade);
+const hubStars = gameRules.scoreboard.hubStars(stars);
 let hub = null;
 try { if(window.GameHub) hub = GameHub.saveGameScore('game1', score, hubStars); } catch(e){}
 const totalScore = hub ? hub.totalScore : score;
-const stageBest = hub ? hub.bestScore : Math.max(best, score);
 const p = stars / 5;
 const dash = (351.86 * (1 - p)).toFixed(2);
 const deg = p * 360;
@@ -2039,6 +2033,7 @@ ${recLine}
 <button id="ex2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>${I18N.t('الغلاف')}</span></button>
 </div>
 </div>`;
+if(dock) o.appendChild(dock);
 $('go').onclick = () => start();
 $('next').onclick = beginExitSequence;
 $('rb2').onclick = openRules;
@@ -2537,8 +2532,7 @@ demo.truckIn = Math.max(0, demo.truckIn - dt);
 if(demo.truckIn <= 0) startTruckDemo();
 }
 }
-if(stage<4 && score >= STAGE_AT[stage+1]) setStage(stage+1);
-if(!fire.active){
+if(stage<4 && score >= STAGE_AT[stage+1]) setStage(gameRules.layout.stageForScore(stage, score));if(!fire.active){
 spawnT -= dt;
 if(spawnT <= 0){
 spawn();
@@ -2781,6 +2775,8 @@ function stop() {
   g.clearRect(0, 0, w, h);
 }
 function sync() {
+  /* بعد end() يُستبدل محتوى #ov فتصبح اللوحة منفصلة عن المستند: لا نرسم في لوحة مهجورة */
+  if (!cv.isConnected) { stop(); return; }
   const shown = getComputedStyle(ov).display !== 'none';
   if (shown) start(); else stop();
 }

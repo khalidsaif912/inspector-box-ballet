@@ -5,6 +5,7 @@ const html = readFileSync("public/game.html", "utf8");
 const index = readFileSync("public/index.html", "utf8");
 const ui = readFileSync("public/game/ui.css", "utf8");
 const game = readFileSync("public/game/game.js", "utf8");
+const rules = readFileSync("public/game/game-rules.js", "utf8");
 
 describe("Game assets and shared rules", () => {
   it("loads Three.js from the local vendor copy", () => {
@@ -67,6 +68,26 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain("function initAmbience");
     expect(game).toContain("setAmb(");
     expect(game).toMatch(/soundEnabled\s*=\s*v/);
+  });
+
+  it("exposes mute toggles as pressed with Arabic accessible names", () => {
+    expect(html).toMatch(/id="amb"[^>]*aria-label="صوت المستودع"[^>]*aria-pressed="true"/);
+    expect(html).toMatch(/id="snd"[^>]*aria-label="المؤثرات الصوتية"[^>]*aria-pressed="true"/);
+    expect(html).toMatch(/data-audio="amb"[^>]*aria-pressed="true"/);
+    expect(html).toMatch(/data-audio="snd"[^>]*aria-pressed="true"/);
+    expect(html).toMatch(/data-tips-toggle[^>]*aria-pressed="true"/);
+    expect(game).toContain("setAttribute('aria-pressed'");
+    expect(html).not.toContain('aria-label="sound"');
+    expect(html).not.toContain('aria-label="warehouse sound"');
+    expect(html).not.toContain('aria-label="pick/place"');
+    expect(html).not.toContain('aria-label="dash"');
+    expect(html).not.toContain('aria-label="exit to game shell"');
+  });
+
+  it("carries the settings dock and dust loop across the shift-end rebuild", () => {
+    expect(game).toMatch(/const dock = \$\('corner-opts'\)/);
+    expect(game).toMatch(/if\(dock\) o\.appendChild\(dock\)/);
+    expect(game).toMatch(/if \(!cv\.isConnected\) \{ stop\(\); return; \}/);
   });
 
   it("offers audio and tip toggles before the game starts", () => {
@@ -169,20 +190,22 @@ describe("Game assets and shared rules", () => {
     expect(game).not.toContain("maxUnlockedStage");
     expect(game).toContain("dgr_tutorial_completed");
     expect(game).toContain("function skipTutorial()");
-    expect(game).toContain("if(stage<4 && score >= STAGE_AT[stage+1]) setStage(stage+1);");
+    expect(game).toContain("setStage(gameRules.layout.stageForScore(stage, score))");
     expect(game).toContain("function safeSpawnPlayer()");
     expect(game).toContain("function findFreeSpot(x, z");
     expect(game).toMatch(/function setStage\(n,silent\)\{[\s\S]{0,500}safeSpawnPlayer\(\)/);
   });
 
   it("matches the arcade scoring economy", () => {
-    expect(game).toContain("const COMBO_MAX = 5;");
+    expect(game).toContain("gameRules.economy.comboAfter(streak)");
     expect(game).toContain("FEVER_TIME = 6");
-    expect(game).toContain("const base = d.isHz ? 25 : 10;");
-    expect(game).toContain("combo = Math.min(COMBO_MAX, 1 + Math.floor(streak / 3));");
+    expect(game).toContain(
+      "gameRules.economy.sortReward({ isHz: !!d.isHz, combo, fever: feverT > 0 })",
+    );
+    expect(game).toContain("gameRules.economy.comboAfter(streak)");
     expect(game).toContain("if(streak >= 10 && streak % 10 === 0) startFever();");
-    expect(game).toContain("const pen = conflict ? 35 : 15;");
-    expect(game).toContain("CRIT_BONUS = 75");
+    expect(game).toContain("const pen = gameRules.economy.penalty(conflict);");
+    expect(rules).toContain("critBonus: CRIT.bonus");
     expect(game).toContain("time += 5;");
     expect(game).toContain("score += 50;");
   });

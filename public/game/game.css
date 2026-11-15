@@ -297,8 +297,6 @@ details.full .tbl{max-width:100%}
 .rank.b{background:radial-gradient(circle at 35% 30%,#fff3b0,#ffc107 58%,#b26a00)}
 .rank.c{background:radial-gradient(circle at 35% 30%,#e8edf2,#84929a 58%,#48525c);color:#fff}
 @keyframes pop{from{transform:scale(.35);opacity:0}}
-.stars{font-size:clamp(17px,4.8vmin,24px);letter-spacing:5px;color:#ffd54a;text-shadow:0 0 12px rgba(255,193,7,.55)}
-.stars .off{color:rgba(255,255,255,.18);text-shadow:none}
 .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:540px}
 .statgrid>div{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:8px 4px;display:flex;flex-direction:column;gap:2px;text-align:center}
 .statgrid b{font-size:clamp(17px,4.8vmin,23px);color:#fff;font-variant-numeric:tabular-nums}
@@ -345,7 +343,6 @@ details.full .tbl{max-width:100%}
 .statgrid>div{padding:6px 2px}
 .statgrid b{font-size:16px}
 .statgrid span{font-size:10px}
-.stars{font-size:16px;letter-spacing:3px}
 }
 
 /* ===== شاشة البداية بأسلوب الألعاب ===== */
@@ -381,15 +378,6 @@ details.full .tbl{max-width:100%}
 #inspect .emo{font-size:24px!important}
 #inspect .dgl{width:36px!important;height:36px!important}
 }
-
-/* ===== ??????? ???? ??????? ===== */
-.settings-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;max-width:min(560px,100%)}
-.ov .settings-row button{display:flex;align-items:center;gap:6px;padding:8px 15px;border-radius:999px;border:2px solid rgba(124,196,255,.5);background:rgba(8,18,32,.75);color:#d6e8fb;font-size:12.5px;font-weight:800;box-shadow:none;animation:none}
-.ov .settings-row button.off{border-color:rgba(255,112,112,.75);color:#ffb3b3;background:rgba(60,16,16,.7)}
-#tips.off{background:radial-gradient(circle at 35% 30%,#5a2a2a,#2a0b0b);border-color:#ff7070;color:#ffb3b3}
-#tips .x{display:none}
-#tips.off .x{display:block}
-@media (max-width:760px){.ov .settings-row button{font-size:11px;padding:6px 11px}}
 
 .cp-warn{margin-top:5px;text-align:center;font-size:clamp(9.5px,2.8vmin,11.5px);font-weight:800;color:#ffb3b3;line-height:1.5}
 .cp-cancel{margin-top:8px;width:100%;height:clamp(34px,9vmin,42px);border-radius:12px;border:1px solid rgba(255,82,82,.55);background:rgba(255,82,82,.14);color:#ffc1c1;font:800 clamp(11px,3.2vmin,13px)/1 system-ui,Tahoma,sans-serif;cursor:pointer;pointer-events:auto}
@@ -513,8 +501,6 @@ details.full .tbl{max-width:100%}
   box-shadow:0 0 8px rgba(70,170,255,.85),inset 0 -1px 2px rgba(0,0,0,.42);
   transition:background .16s,box-shadow .16s;
 }
-#ov.start .opt.off{color:#9db0c4;opacity:.78}
-#ov.start .opt.off .dot{background:radial-gradient(circle at 34% 30%,#93a0ae,#465361);box-shadow:none}
 #ov.start .opt.guide{color:#ffe0a0;border-color:rgba(255,196,90,.32)}
 #ov.start .opt.guide:hover{border-color:rgba(255,205,110,.75);background:linear-gradient(180deg,rgba(74,50,16,.9),rgba(34,23,9,.95))}
 /* دليل سريع: يسار أسفل */

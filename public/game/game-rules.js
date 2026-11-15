@@ -167,5 +167,155 @@
     },
   };
   rules.forklift = forklift;
+  // مراجع الحمل: عند إتلاف طرد يجب ألا يبقى أي مرجع (محمول أو في منتصف الرفع)
+  // يشير إليه، وإلا صار طرداً شبحاً يُسقط أو يشغل خانة حاوية وهو غير مرئي.
+  const hold = {
+    forget(item, state) {
+      const held = state && state.held === item ? null : (state ? state.held : null);
+      const lifting = state && state.lifting === item ? null : (state ? state.lifting : null);
+      return { held, lifting };
+    },
+  };
+  rules.hold = hold;
+  // لوحة المتصدرين المحلية: أي شكل غير متوقع في التخزين يُعامل كلوحة فارغة
+  // بدل إسقاط شاشة النتائج، مع الإبقاء على كل صفوف سليمة موجودة.
+  const board = {
+    top(raw, limit = 5) {
+      if (!Array.isArray(raw)) return [];
+      const clean = [];
+      for (const entry of raw) {
+        const s = Number(entry && entry.s);
+        if (!Number.isFinite(s) || s <= 0) continue;
+        clean.push({ s: Math.round(s), d: entry && typeof entry.d === "string" ? entry.d : "" });
+      }
+      clean.sort((a, b) => b.s - a.s);
+      return clean.slice(0, Math.max(1, limit));
+    },
+  };
+  rules.board = board;
+
+  // ===== اقتصاد الوردية (قيم مطابقة تماماً لما في game.js) =====
+  const COMBO_MAX = 5, CHAIN_FROM = 4, CHAIN_STEP = 5, CHAIN_CAP = 40;
+  const STREAK_WINDOW = 7, STREAK_WINDOW_AFTER = 5.5;
+  const SORT_BASE = { hazardous: 25, regular: 10 };
+  const PENALTY = { conflict: 35, mismatch: 15 };
+  const CRIT = { bonus: 75, penalty: 40, time: 18, chillTimeBonus: 5 };
+  const economy = {
+    comboMax: COMBO_MAX,
+    critBonus: CRIT.bonus,
+    critPenalty: CRIT.penalty,
+    critTime: CRIT.time,
+    streakWindow(stage) {
+      return stage === 1 ? STREAK_WINDOW : STREAK_WINDOW_AFTER;
+    },
+    // الكومبو يتبع السلسلة: كل 3 فرزات متتالية ترفع المضاعف حتى 5
+    comboAfter(streak) {
+      return Math.min(COMBO_MAX, 1 + Math.floor(streak / 3));
+    },
+    // نقاط الفرز الصحيح: أساس المادة الخطرة/العادية × الكومبو × مضاعف الحمّى
+    sortReward(fields) {
+      const base = fields.isHz ? SORT_BASE.hazardous : SORT_BASE.regular;
+      return base * fields.combo * (fields.fever ? 2 : 1);
+    },
+    // مكافأة السلسلة الطويلة تبدأ بعد 4 فرزات متتالية
+    chainBonus(streak) {
+      return streak > CHAIN_FROM ? Math.min(CHAIN_CAP, (streak - CHAIN_FROM) * CHAIN_STEP) : 0;
+    },
+    penalty(conflict) {
+      return conflict ? PENALTY.conflict : PENALTY.mismatch;
+    },
+    // نتيجة صندوق المفاجآت حسب رقم عشوائي في [0,1)
+    mystery(r) {
+      if (r < 0.25) return { kind: "time", amount: 12 };
+      if (r < 0.5) return { kind: "score", amount: 60 };
+      if (r < 0.7) return { kind: "combo", amount: COMBO_MAX };
+      if (r < 0.85) return { kind: "slow", amount: 8 };
+      return { kind: "timeLoss", amount: 6 };
+    },
+  };
+  rules.economy = economy;
+
+  // ===== الهندسة المكانية: الحزام والحاويات والمراحل =====
+  const BH = 0.675, SLOT_PITCH = 1.37, SLOT_Y = 1.24, SLOT_Z = -8.6;
+  const BELT_SPAWN = { x: -22.5, y: 0.74 + BH, z: 12 };
+  const STAGE_AT = [0, 0, 150, 350, 650];
+  const STAGE_BELT = [0, 1.4, 1.8, 2.3, 2.8];
+  const FEVER_BOOST = 1.15;
+  const layout = {
+    beltSpawn() {
+      return { x: BELT_SPAWN.x, y: BELT_SPAWN.y, z: BELT_SPAWN.z };
+    },
+    // سرعة الحزام بحسب المرحلة، مضروبة في مضاعف الحمّى أثناءها
+    beltSpeed(stage, fever) {
+      return STAGE_BELT[stage] * (fever ? FEVER_BOOST : 1);
+    },
+    // موضع الطرد داخل الحاوية رقم i (نفس صفوف/أعمدة الحاوية)
+    containerSlot(zone, i) {
+      const rows = zone.cap / zone.cols;
+      return {
+        x: zone.x + ((i % zone.cols) - (zone.cols - 1) / 2) * SLOT_PITCH,
+        y: SLOT_Y,
+        z: SLOT_Z + (Math.floor(i / zone.cols) - (rows - 1) / 2) * SLOT_PITCH,
+      };
+    },
+    // المرحلة التالية بعد تجاوز عتبة نقاطها
+    stageForScore(stage, score) {
+      return stage < 4 && score >= STAGE_AT[stage + 1] ? stage + 1 : stage;
+    },
+    stageThresholds() {
+      return STAGE_AT.slice();
+    },
+    stageProgress(stage, score) {
+      if (stage >= 4) return { shown: score, cap: score, percent: 100 };
+      const cap = STAGE_AT[stage + 1], base = STAGE_AT[stage];
+      const shown = Math.min(score, cap);
+      return { shown, cap, percent: Math.max(0, Math.min(100, ((shown - base) / (cap - base)) * 100)) };
+    },
+  };
+  rules.layout = layout;
+
+  // ===== قرار وضع الطرد في حاوية (منطق خالص بلا رسائل ولا مشهد) =====
+  const placement = {
+    // يعيد: ok (صحيح) أو conflict (مخالفة جسيمة تستحق العقوبة الكبرى)
+    // أو reject عند وضع مادة خطرة في منطقة شحن عادي.
+    decide(zone, item, placedItems) {
+      const list = placedItems || [];
+      if (zone && zone.hz) {
+        if (!item.isHz) return { ok: false, conflict: true, reason: "hazardous-only" };
+        for (const other of list) {
+          if (rules.conflict(item, other.data || other)) {
+            return { ok: false, conflict: true, reason: "iata-conflict" };
+          }
+        }
+        return { ok: true, conflict: false, reason: "" };
+      }
+      if (zone && zone.k === item.t) return { ok: true, conflict: false, reason: "" };
+      return item.isHz
+        ? { ok: false, conflict: true, reason: "hazardous-in-general" }
+        : { ok: false, conflict: false, reason: "wrong-zone" };
+    },
+  };
+  rules.placement = placement;
+
+  // ===== تقييم نهاية الوردية =====
+  const scoreboard = {
+    accuracy(sorted, processed) {
+      return processed > 0 ? Math.round((sorted / processed) * 100) : 0;
+    },
+    grade(score, accuracy) {
+      if (score >= 500 && accuracy >= 90) return "s";
+      if (score >= 350 && accuracy >= 80) return "a";
+      if (score >= 200) return "b";
+      return "c";
+    },
+    stars(grade) {
+      return { s: 5, a: 4, b: 3, c: 2 }[grade];
+    },
+    hubStars(stars) {
+      return Math.max(1, Math.min(3, Math.round((stars * 3) / 5)));
+    },
+  };
+  rules.scoreboard = scoreboard;
+
   root.WarehouseRules = rules;
 })(globalThis);
