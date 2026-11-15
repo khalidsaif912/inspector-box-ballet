@@ -307,7 +307,9 @@ const amb = new THREE.AmbientLight(0x404a58, 0.25); S.add(amb);
 const sun = new THREE.DirectionalLight(0xdfeaff, 0.95);
 sun.position.set(-14, 34, 18);
 sun.castShadow = true;
-const shadowRes = 1536;
+// 2048: أسرع بنحو 14% من 3072 بنفس الكادر (انظر docs/perf/shadow-steps.md).
+// 1536 جُرّب ورُفض: كسبه على GPU داخل الضجيج مقابل تنعيم ظاهر لنصف الظل على أرضية المستودع.
+const shadowRes = 2048;
 sun.shadow.mapSize.set(shadowRes, shadowRes);
 sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.03;
