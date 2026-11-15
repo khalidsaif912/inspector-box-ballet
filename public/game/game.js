@@ -1544,7 +1544,14 @@ else dv.style.display = 'none';
 dv.classList.toggle('drive', FD.on);
 }
 }
-function rm(it){ clearCrit(it); S.remove(it.m); items = items.filter(i => i !== it); }
+function rm(it){
+clearCrit(it);
+/* تحرير أي مرجع حمل يشير إلى الطرد المُتلف قبل إزالته من المشهد */
+const h = gameRules.hold.forget(it, { held, lifting: liftAnim.toHold });
+held = h.held;
+if(liftAnim.toHold && h.lifting === null){ liftAnim.active = false; liftAnim.t = 0; liftAnim.toHold = null; }
+S.remove(it.m); items = items.filter(i => i !== it);
+}
 function ship(z){
 z.full = true;
 snd('ship');

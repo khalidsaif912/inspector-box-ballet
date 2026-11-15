@@ -167,5 +167,15 @@
     },
   };
   rules.forklift = forklift;
+  // مراجع الحمل: عند إتلاف طرد يجب ألا يبقى أي مرجع (محمول أو في منتصف الرفع)
+  // يشير إليه، وإلا صار طرداً شبحاً يُسقط أو يشغل خانة حاوية وهو غير مرئي.
+  const hold = {
+    forget(item, state) {
+      const held = state && state.held === item ? null : (state ? state.held : null);
+      const lifting = state && state.lifting === item ? null : (state ? state.lifting : null);
+      return { held, lifting };
+    },
+  };
+  rules.hold = hold;
   root.WarehouseRules = rules;
 })(globalThis);
