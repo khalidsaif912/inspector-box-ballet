@@ -192,17 +192,6 @@ const Z = [
 {n:'حاوية خطرة ٣',e:'☣️',c:0x3f7f8c,k:'hz3',x:24.5,w:5.0,cap:6,cols:3,hz:1}
 ];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; z.hw = z.w / 2; z.n = I18N.t(z.n); });
-const HCOL = {
-'1.3':0xff8a1f, '1.4':0xff8a1f,
-'2.1':0xe53935, '2.2':0x2e7d32, '2.3':0xffffff,
-'3':0xe53935,
-'4.1':0xf44336, '4.2':0xffffff, '4.3':0x1976d2,
-'5.1':0xfbc02d, '5.2':0xfbc02d,
-'6.1':0xffffff, '6.2':0xffffff,
-'7':0xfff176,
-'8':0xffffff,
-'9':0xffffff
-};
 const I = [
 ['cold','💉','لقاحات مبردة','COL','REF'],['cold','🐟','أسماك طازجة','PES','COL'],['cold','💊','أنسولين وأدوية','MED','COL'],
 ['perish','🍓','فراولة طازجة','PER','EAT'],['perish','🌹','زهور مقطوفة','PEF','EAT'],['perish','🍞','مخبوزات طازجة','PEM','EAT'],
@@ -1248,7 +1237,6 @@ ctx.strokeStyle='#222'; ctx.lineWidth=8; ctx.strokeRect(34,30,444,452);
 ctx.textAlign='center'; ctx.textBaseline='middle';
 if(it[0][0] === 'h'){
 const div=it[4];
-const colHex=HCOL[div] || HCOL[div.slice(0,3)] || 0xffffff;
 ctx.fillStyle='#24292d'; ctx.fillRect(42,38,428,66);
 ctx.fillStyle='#fff'; ctx.font='bold 27px sans-serif'; ctx.fillText('DANGEROUS GOODS  •  IATA',256,72);
 const lbl = new Image();
@@ -1310,7 +1298,7 @@ R.domElement.addEventListener('pointerdown', e => {
   if(e.pointerType === 'mouse' && e.button === 0) act();
 });
 function mystery(it){
-rm(it); totalProcessed = Math.max(0, totalProcessed);
+rm(it);
 const r = Math.random();
 if(r < 0.25){ time += 12; snd('ship'); spawnFloatTag(I18N.T('+12 ث ⏱','+12s ⏱'),'#64ffda'); toast('🎁 مفاجأة: +12 ثانية','#64ffda'); }
 else if(r < 0.5){ score += 60; snd('ship'); toast('🎁 مفاجأة: +60 نقطة','#ffd54a'); }
@@ -1957,7 +1945,6 @@ const r = $('rules'), o = r.style.display === 'none';
 r.style.display = o ? 'flex' : 'none';
 if(o){ pz = run; run = false; } else if(pz){ run = true; pz = false; }
 };
-const rbBtn = $('rb'); if(rbBtn) rbBtn.onclick = openRules;
 $('rc').onclick = openRules;
 $('how').onclick = openRules;
 function end(){
@@ -1983,7 +1970,6 @@ const hubStars = Math.max(1, Math.min(3, Math.round((stars * 3) / 5)));
 let hub = null;
 try { if(window.GameHub) hub = GameHub.saveGameScore('game1', score, hubStars); } catch(e){}
 const totalScore = hub ? hub.totalScore : score;
-const stageBest = hub ? hub.bestScore : Math.max(best, score);
 const p = stars / 5;
 const dash = (351.86 * (1 - p)).toFixed(2);
 const deg = p * 360;
