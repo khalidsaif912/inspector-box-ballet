@@ -307,7 +307,7 @@ const amb = new THREE.AmbientLight(0x404a58, 0.25); S.add(amb);
 const sun = new THREE.DirectionalLight(0xdfeaff, 0.95);
 sun.position.set(-14, 34, 18);
 sun.castShadow = true;
-const shadowRes = 2048;
+const shadowRes = 1536;
 sun.shadow.mapSize.set(shadowRes, shadowRes);
 sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.03;
