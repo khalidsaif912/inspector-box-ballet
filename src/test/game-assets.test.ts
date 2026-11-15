@@ -187,6 +187,32 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain("score += 50;");
   });
 
+  it("paces stages as sawtooth waves with breathing room and rush hours", () => {
+    expect(game).toContain("const BREATH_SPAWN=[0,5,4.8,4.4,4]");
+    expect(game).toContain("RUSH_EVERY=25, RUSH_COUNT=3");
+    expect(game).toContain("RUSH_GAP=[0,2,1.9,1.7,1.5]");
+    expect(game).toContain("spawnT = BREATH_SPAWN[stage];");
+    expect(game).toContain("rushT = RUSH_EVERY; rushN = RUSH_COUNT; rushDelay = 0;");
+    expect(game).toContain("spawnT = Math.max(spawnT, BREATH_SPAWN[stage] * 1.4);");
+    expect(game).not.toContain("SPAWN_AT");
+  });
+
+  it("bundles three feedback tiers with hit-stop, trauma decay and screen flashes", () => {
+    expect(html).toContain('id="screen-flash"');
+    expect(game).toContain("const TRAUMA_DECAY = 1.2, HITSTOP_LARGE = .05;");
+    expect(game).toContain("function hitStopNow(t = HITSTOP_LARGE)");
+    expect(game).toContain("function screenFlash(kind)");
+    expect(game).toContain("if(hitStop > 0){");
+    expect(game).toContain("hitStop = Math.max(0, hitStop - Math.max(rawDt, 0));");
+    expect(game).toContain("hitStopNow(.05); addShake(.6); screenFlash('gold');");
+    expect(game).toContain("hitStopNow(.05); addShake(.6); screenFlash('red');");
+    expect(game).toContain("if(!it.crit && (d.isHz || combo >= 3)){ addShake(.25); snd('crit'); }");
+    const css = readFileSync("public/game/game.css", "utf8");
+    expect(css).toContain(".float-tag.big");
+    expect(css).toContain("#screen-flash.gold");
+    expect(css).toContain("#screen-flash.red");
+  });
+
   it("keeps the box-type hint between the two touch controls", () => {
     const controls =
       html.match(/<div id="controls-ui">([\s\S]*?)<\/div>\s*<div class="ov/)?.[1] ?? "";

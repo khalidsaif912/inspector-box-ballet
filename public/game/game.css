@@ -18,6 +18,20 @@ canvas{display:block;position:absolute;inset:0}
 .float-tag{position:absolute;font-size:24px;font-weight:900;transform:translate(-50%,-50%);animation:floatUp .85s forwards}
 .float-tag.pos{text-shadow:0 0 10px rgba(64,255,150,.95),0 2px 0 rgba(0,60,25,.65)}
 .float-tag.neg{text-shadow:0 0 10px rgba(255,60,60,.95),0 2px 0 rgba(70,0,0,.7)}
+/* Large tier: قفزة رقمية كبيرة بارتداد Back-ease (تجاوز ثم استقرار) */
+.float-tag.big{font-size:38px;letter-spacing:-.5px;animation:floatUpBig 1s forwards}
+@keyframes floatUpBig{
+0%{opacity:0;transform:translate(-50%,-50%) scale(.35)}
+22%{opacity:1;transform:translate(-50%,-58%) scale(1.32)}
+40%{transform:translate(-50%,-62%) scale(.94)}
+58%{transform:translate(-50%,-66%) scale(1.06)}
+100%{opacity:0;transform:translate(-50%,-120%) scale(1)}
+}
+#screen-flash{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0}
+#screen-flash.on{animation:screenFlash .34s ease-out forwards}
+#screen-flash.gold{background:radial-gradient(ellipse at 50% 45%,rgba(255,214,90,.55),rgba(255,170,0,.18) 55%,transparent 78%)}
+#screen-flash.red{background:radial-gradient(ellipse at 50% 45%,rgba(255,60,40,.62),rgba(190,0,0,.28) 60%,transparent 82%)}
+@keyframes screenFlash{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
 @keyframes floatUp{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-65px)}}
 /* خصم النقاط — شارة واضحة تحت عدّاد النقاط */
 .penalty-tag{

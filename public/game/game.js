@@ -1080,10 +1080,20 @@ pl.position.set(0, 0, 3);
 let items=[], run=false, score=0, combo=1, time=100, spawnT=0, held=null, near=null, stage=1;
 let streak=0, streakT=0, maxStreak=0, rushT=25, rushN=0, rushDelay=0;
 /* ===== إثارة: اندفاع + اهتزاز كاميرا + وضع الحمى ===== */
-let dashT = 0, dashCD = 0, feverT = 0, shakeTrauma = 0;
+let dashT = 0, dashCD = 0, feverT = 0, shakeTrauma = 0, hitStop = 0;
 const DASH_TIME = .8, DASH_CD = 3, DASH_BOOST = 1.6, FEVER_TIME = 6, FEVER_BOOST = 1.15;
+const TRAUMA_DECAY = 1.2, HITSTOP_LARGE = .05;
 function feverOn(){ return feverT > 0; }
 function addShake(a){ shakeTrauma = Math.min(1, shakeTrauma + a); }
+/* وقفة زمنية لحظية تُبرز ثقل الأثر (Large tier) */
+function hitStopNow(t = HITSTOP_LARGE){ hitStop = Math.max(hitStop, t); }
+/* وميض شاشة: ذهبي للمكافآت الكبرى وأحمر للتعارضات */
+function screenFlash(kind){
+const el = $('screen-flash'); if(!el) return;
+el.className = ''; void el.offsetWidth; el.className = 'on ' + kind;
+clearTimeout(screenFlash.t);
+screenFlash.t = setTimeout(() => { el.className = ''; }, 340);
+}
 function setDashButton(){
 const b = $('dash-btn'); if(!b) return;
 b.classList.toggle('cool', dashCD > 0);
@@ -1113,7 +1123,9 @@ const getTop = () => { try { return JSON.parse(localStorage.getItem('acg_top') |
 const pushTop = v => { const t = getTop(); t.push({s:v, d:new Date().toLocaleDateString(I18N.lang === 'en' ? 'en' : 'ar')}); t.sort((a,b)=>b.s-a.s); const r = t.slice(0,5); try { localStorage.setItem('acg_top', JSON.stringify(r)); } catch(e){} return r; };
 const topHTML = t => t.length ? t.slice(0,4).map((e,i) => `<span class="score-chip"><i class="rank-dot r${i+1}"></i> ${e.s} ${I18N.t('نقطة')}</span>`).join('') : `<span class="lb-empty">${I18N.t('العب لتسجّل أول نتيجة')}</span>`;
 function syncMenu(){ const tp = $('top5'); const list = getTop(); if(tp){ tp.innerHTML = topHTML(list); tp.style.display = ''; } const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? I18N.T('أفضل نتيجة: ','Best score: ') + b : I18N.t('كن أول الأبطال'); }
-const STAGE_AT=[0,0,150,350,650], STAGE_BELT=[0,1.4,1.8,2.3,2.8], SPAWN_AT=[0,5,3.2,2.2,1.6];
+const STAGE_AT=[0,0,150,350,650], STAGE_BELT=[0,1.4,1.8,2.3,2.8];
+/* إيقاع أسنان المنشار: نفس هادئ للتنفس + موجة ذروة كل 25 ثانية */
+const BREATH_SPAWN=[0,5,4.8,4.4,4], RUSH_GAP=[0,2,1.9,1.7,1.5], RUSH_EVERY=25, RUSH_COUNT=3;
 const TUTORIAL_KEY = 'dgr_tutorial_completed';
 const tutorialDone = () => { try { return localStorage.getItem(TUTORIAL_KEY) === '1'; } catch(e){ return false; } };
 const saveTutorialDone = () => { try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch(e){} };
@@ -1394,9 +1406,10 @@ const lost = Math.min(score, CRIT_PENALTY);
 score = Math.max(0, score - CRIT_PENALTY);
 streak = 0; streakT = 0; combo = 1;
 totalProcessed++;
-addShake(.65); snd('error');
+addShake(.6); snd('error');
+hitStopNow(.05); screenFlash('red');
 penaltyFx(lost, true);
-spawnFloatTag('-' + CRIT_PENALTY, '#ff5252');
+spawnFloatTag('−' + CRIT_PENALTY, '#ff5252', 'big');
 toast(I18N.T('☠️ انفجر طرد مبرّد قبل فرزه! -', '☠️ A chilled parcel spoiled before sorting! -') + CRIT_PENALTY + I18N.T(' نقطة',' pts'), '#ff5252');
 clearCrit(it); rm(it); hud();
 }
@@ -1446,13 +1459,14 @@ e.style.transform = 'translateX(-50%) scale(1.05)';
 clearTimeout(tt);
 tt = setTimeout(() => { e.style.opacity = 0; e.style.transform = 'translateX(-50%) scale(1)'; }, 1300);
 }
-function spawnFloatTag(txt, col){
+function spawnFloatTag(txt, col, tier){
 const el = document.createElement('div');
 const raw = String(txt).trim();
-el.className = 'float-tag ' + (/^[-−]/.test(raw) ? 'neg' : 'pos'); el.textContent = I18N.t(txt); el.style.color = col;
+el.className = 'float-tag ' + (/^[-−]/.test(raw) ? 'neg' : 'pos') + (tier === 'big' ? ' big' : '');
+el.textContent = I18N.t(txt); el.style.color = col;
 el.style.left = '50%'; el.style.top = '44%';
 $('floating-fx').appendChild(el);
-setTimeout(() => el.remove(), 850);
+setTimeout(() => el.remove(), tier === 'big' ? 1000 : 850);
 }
 /* خصم النقاط: شارة −N تحت عدّاد النقاط + وميض أحمر واضح */
 function penaltyFx(n, hz){
@@ -1591,13 +1605,16 @@ combo = Math.min(COMBO_MAX, 1 + Math.floor(streak / 3));
 time += 3;
 let critMsg = '';
 if(it.crit){
+/* Large tier: hit-stop + ضربة اهتزاز + وميض ذهبي + رقم كبير بارتداد */
 score += CRIT_BONUS; time += 5;
 snd('fever');
-spawnFloatTag('+' + CRIT_BONUS + ' ❄️ +5 ث', '#69f0ae');
+hitStopNow(.05); addShake(.6); screenFlash('gold');
+spawnFloatTag('+' + CRIT_BONUS + ' ❄️ +5 ث', '#69f0ae', 'big');
 critMsg = I18N.T(' • ❄️ طرد تبريد +',' • ❄️ chilled parcel +') + CRIT_BONUS + I18N.T(' و +5 ث',' and +5s');
-addShake(.25);
 clearCrit(it);
 }
+/* Medium tier: طرد خطير أو كومبو ≥3 ⇒ اهتزاز خفيف ووميض ذهبي للشارة */
+if(!it.crit && (d.isHz || combo >= 3)){ addShake(.25); snd('crit'); }
 if(streak >= 10 && streak % 10 === 0) startFever();
 snd('ok', 1 + Math.min(streak, STREAK_MAX) * .05);
 spawnFloatTag(I18N.T('+3 ث ⏱','+3s ⏱'), '#69f0ae');
@@ -1624,9 +1641,10 @@ score = Math.max(0, score - pen);
 combo = 1; streak = 0; streakT = 0;
 snd('error');
 penaltyFx(lost, conflict);
-spawnFloatTag('−' + pen, '#ff5252');
+spawnFloatTag('−' + pen, '#ff5252', conflict ? 'big' : undefined);
 if(conflict){
-addShake(.45);
+/* Large tier: تعارض IATA جسيم — وقفة + صدمة اهتزاز + وميض أحمر */
+hitStopNow(.05); addShake(.6); screenFlash('red');
 stageEl.classList.remove('conflict'); void stageEl.offsetWidth; stageEl.classList.add('conflict');
 setTimeout(() => stageEl.classList.remove('conflict'), 900);
 }
@@ -2418,7 +2436,9 @@ C.position.set(0, 13.2, 15.4);
 function loop(now){
 requestAnimationFrame(loop);
 const rawDt = (now - last) / 1000;
-const dt = document.hidden || rawDt > 1 ? 0 : Math.min(rawDt, .5); last = now;
+let dt = document.hidden || rawDt > 1 ? 0 : Math.min(rawDt, .5); last = now;
+/* Hit-stop: تجميد لحظي لكل المحاكاة لإبراز الأثر الكبير */
+if(hitStop > 0){ hitStop = Math.max(0, hitStop - Math.max(rawDt, 0)); dt = 0; }
 if(!document.hidden && rawDt > 0 && rawDt < 1){
 // حماية الأداء: أقل من 35 إطاراً/ث لعدّتين متتاليتين ⇒ خفض مؤقت للنسبة؛ وعند الاستقرار نعود للنسبة الهدف
 if(perfWarm < 2.5) perfWarm += rawDt;
@@ -2476,7 +2496,7 @@ if(fire.active) updateFire(dt);
 if(dashT > 0){ dashT = Math.max(0, dashT - dt); if(dashT === 0) $('dash-fx').classList.remove('on'); }
 if(dashCD > 0) dashCD = Math.max(0, dashCD - dt);
 if(feverT > 0){ feverT = Math.max(0, feverT - dt); if(feverT === 0) $('stage').classList.remove('fever'); }
-shakeTrauma = Math.max(0, shakeTrauma - dt * 2.5);
+shakeTrauma = Math.max(0, shakeTrauma - dt * TRAUMA_DECAY);
 if(run && !fire.keypad){
 if(!fire.active && (stage>=3 || demo.truck)) updateTruck(dt);
 const sprintOn = !held && !!(key.ShiftLeft || key.ShiftRight);
@@ -2522,19 +2542,23 @@ if(!fire.active){
 spawnT -= dt;
 if(spawnT <= 0){
 spawn();
-spawnT = SPAWN_AT[stage];
+spawnT = BREATH_SPAWN[stage];
 }
 }
-if(stage >= 3 && !fire.active){
+if(stage >= 2 && !fire.active){
 rushT -= dt;
 if(rushT <= 0){
-rushT = 25; rushN = 3; rushDelay = 0;
+rushT = RUSH_EVERY; rushN = RUSH_COUNT; rushDelay = 0;
 snd('horn');
 showIntro(I18N.T('<b class="t">⚡ تدفق سريع!</b>ثلاث شحنات متتابعة على الحزام — ركّز وسرّع الفرز.', '<b class="t">⚡ Rush hour!</b>Three shipments in a row on the belt — focus and sort faster.'), 2600);
 }
 if(rushN > 0){
 rushDelay -= dt;
-if(rushDelay <= 0 && items.length < 14){ spawn(); rushN--; rushDelay = .5; }
+if(rushDelay <= 0 && items.length < 14){
+spawn(); rushN--; rushDelay = RUSH_GAP[stage];
+/* بعد الموجة: استراحة أطول لالتقاط الأنفاس */
+if(rushN === 0) spawnT = Math.max(spawnT, BREATH_SPAWN[stage] * 1.4);
+}
 }
 }
 if(streakT > 0){ streakT -= dt; if(streakT <= 0){ streakT = 0; streak = 0; combo = 1; } }
