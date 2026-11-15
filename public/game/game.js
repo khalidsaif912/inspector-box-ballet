@@ -1567,13 +1567,13 @@ hud();return;
 if(z.k==='fod'){ it.st='floor';it.fall=false;it.m.position.set(z.x,.7,-4);snd('warn');tip('fodonly', 'هذا الصندوق للأجسام الغريبة FOD فقط','#ffd54a');hud();return; }
 if(d.isMys){ mystery(it); return; }
 totalProcessed++;
-let ok = false;
-let conflict = false;
+const verdict = gameRules.placement.decide(z, d, z.items);
+let ok = verdict.ok;
+let conflict = verdict.conflict;
 let conflictReason = '';
-if(z.hz){
-if(!d.isHz){
+if(verdict.reason === 'hazardous-only'){
 conflictReason = I18N.t('هذه الحاوية مخصصة فقط للمواد الخطرة (DGR)!');
-} else {
+} else if(verdict.reason === 'iata-conflict'){
 let hasConflict = false;
 for(const placed of z.items){
 if(gameRules.conflict(d, placed.data)){
@@ -1582,15 +1582,11 @@ conflictReason = I18N.T('تعارض IATA: لا يُخلط [','IATA conflict: nev
 break;
 }
 }
-if(hasConflict) conflict = true; else ok = true;
-}
-} else {
-ok = (z.k === d.t);
-if(!ok && d.isHz){
+if(hasConflict){ conflict = true; ok = false; }
+} else if(!ok && d.isHz){
 conflictReason = I18N.T('ممنوع وضع مادة خطرة (','Never stow a dangerous good (') + `${d.imp} . ${d.div}) ` + I18N.t('في مناطق الشحن العادي! ضعها في إحدى حاويات المواد الخطرة.');
 } else if(!ok){
 conflictReason = 'منطقة فرز غير مطابقة لنوع الشحنة!';
-}
 }
 if(ok){
 sortedCount++;
@@ -1956,15 +1952,15 @@ resetFire();
 const o = $('ov'); o.style.display = 'flex';
 /* شاشة النتائج تُعيد بناء #ov بالكامل، فنحفظ لوحة الإعدادات (السترة/الصوت/التعليمات) ونُعيد إلحاقها كما هي */
 const dock = $('corner-opts');
-const acc = totalProcessed > 0 ? Math.round((sortedCount / totalProcessed) * 100) : 0;
+const acc = gameRules.scoreboard.accuracy(sortedCount, totalProcessed);
 const best = bestScore();
 const record = score > best && score > 0;
 if(record) saveBest(score);
 const topList = score > 0 ? pushTop(score) : getTop();
-const grade = (score >= 500 && acc >= 90) ? 's' : (score >= 350 && acc >= 80) ? 'a' : score >= 200 ? 'b' : 'c';
+const grade = gameRules.scoreboard.grade(score, acc);
 const titles = { s:I18N.t('خبير DGR معتمد'), a:I18N.t('مشرف فرز متمكن'), b:I18N.t('فني مستودع واعد'), c:I18N.t('متدرب قيد التأهيل') };
-const stars = { s:5, a:4, b:3, c:2 }[grade];
-const hubStars = Math.max(1, Math.min(3, Math.round((stars * 3) / 5)));
+const stars = gameRules.scoreboard.stars(grade);
+const hubStars = gameRules.scoreboard.hubStars(stars);
 let hub = null;
 try { if(window.GameHub) hub = GameHub.saveGameScore('game1', score, hubStars); } catch(e){}
 const totalScore = hub ? hub.totalScore : score;

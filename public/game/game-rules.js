@@ -274,5 +274,48 @@
   };
   rules.layout = layout;
 
+  // ===== قرار وضع الطرد في حاوية (منطق خالص بلا رسائل ولا مشهد) =====
+  const placement = {
+    // يعيد: ok (صحيح) أو conflict (مخالفة جسيمة تستحق العقوبة الكبرى)
+    // أو reject عند وضع مادة خطرة في منطقة شحن عادي.
+    decide(zone, item, placedItems) {
+      const list = placedItems || [];
+      if (zone && zone.hz) {
+        if (!item.isHz) return { ok: false, conflict: true, reason: "hazardous-only" };
+        for (const other of list) {
+          if (rules.conflict(item, other.data || other)) {
+            return { ok: false, conflict: true, reason: "iata-conflict" };
+          }
+        }
+        return { ok: true, conflict: false, reason: "" };
+      }
+      if (zone && zone.k === item.t) return { ok: true, conflict: false, reason: "" };
+      return item.isHz
+        ? { ok: false, conflict: true, reason: "hazardous-in-general" }
+        : { ok: false, conflict: false, reason: "wrong-zone" };
+    },
+  };
+  rules.placement = placement;
+
+  // ===== تقييم نهاية الوردية =====
+  const scoreboard = {
+    accuracy(sorted, processed) {
+      return processed > 0 ? Math.round((sorted / processed) * 100) : 0;
+    },
+    grade(score, accuracy) {
+      if (score >= 500 && accuracy >= 90) return "s";
+      if (score >= 350 && accuracy >= 80) return "a";
+      if (score >= 200) return "b";
+      return "c";
+    },
+    stars(grade) {
+      return { s: 5, a: 4, b: 3, c: 2 }[grade];
+    },
+    hubStars(stars) {
+      return Math.max(1, Math.min(3, Math.round((stars * 3) / 5)));
+    },
+  };
+  rules.scoreboard = scoreboard;
+
   root.WarehouseRules = rules;
 })(globalThis);
