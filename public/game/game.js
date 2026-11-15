@@ -1969,6 +1969,8 @@ document.body.classList.remove('ingame');
 if(FD.on) stopDrive();
 resetFire();
 const o = $('ov'); o.style.display = 'flex';
+/* شاشة النتائج تُعيد بناء #ov بالكامل، فنحفظ لوحة الإعدادات (السترة/الصوت/التعليمات) ونُعيد إلحاقها كما هي */
+const dock = $('corner-opts');
 const acc = totalProcessed > 0 ? Math.round((sortedCount / totalProcessed) * 100) : 0;
 const best = bestScore();
 const record = score > best && score > 0;
@@ -2049,6 +2051,7 @@ ${recLine}
 <button id="ex2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>${I18N.t('الغلاف')}</span></button>
 </div>
 </div>`;
+if(dock) o.appendChild(dock);
 $('go').onclick = () => start();
 $('next').onclick = beginExitSequence;
 $('rb2').onclick = openRules;
@@ -2791,6 +2794,8 @@ function stop() {
   g.clearRect(0, 0, w, h);
 }
 function sync() {
+  /* بعد end() يُستبدل محتوى #ov فتصبح اللوحة منفصلة عن المستند: لا نرسم في لوحة مهجورة */
+  if (!cv.isConnected) { stop(); return; }
   const shown = getComputedStyle(ov).display !== 'none';
   if (shown) start(); else stop();
 }

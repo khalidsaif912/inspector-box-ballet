@@ -83,6 +83,12 @@ describe("Game assets and shared rules", () => {
     expect(html).not.toContain('aria-label="exit to game shell"');
   });
 
+  it("carries the settings dock and dust loop across the shift-end rebuild", () => {
+    expect(game).toMatch(/const dock = \$\('corner-opts'\)/);
+    expect(game).toMatch(/if\(dock\) o\.appendChild\(dock\)/);
+    expect(game).toMatch(/if \(!cv\.isConnected\) \{ stop\(\); return; \}/);
+  });
+
   it("offers audio and tip toggles before the game starts", () => {
     expect(html).toMatch(/data-audio="snd"/);
     expect(html).toMatch(/data-audio="amb"/);
