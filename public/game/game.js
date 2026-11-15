@@ -1119,7 +1119,7 @@ const COMBO_MAX = 5;
 const streakWindow = () => stage === 1 ? 7 : 5.5;
 const bestScore = () => { try { return +(localStorage.getItem('acg_best') || 0) || 0; } catch(e){ return 0; } };
 const saveBest = v => { try { localStorage.setItem('acg_best', v); } catch(e){} };
-const getTop = () => { try { return JSON.parse(localStorage.getItem('acg_top') || '[]'); } catch(e){ return []; } };
+const getTop = () => { try { return gameRules.board.top(JSON.parse(localStorage.getItem('acg_top') || '[]')); } catch(e){ return []; } };
 const pushTop = v => { const t = getTop(); t.push({s:v, d:new Date().toLocaleDateString(I18N.lang === 'en' ? 'en' : 'ar')}); t.sort((a,b)=>b.s-a.s); const r = t.slice(0,5); try { localStorage.setItem('acg_top', JSON.stringify(r)); } catch(e){} return r; };
 const topHTML = t => t.length ? t.slice(0,4).map((e,i) => `<span class="score-chip"><i class="rank-dot r${i+1}"></i> ${e.s} ${I18N.t('نقطة')}</span>`).join('') : `<span class="lb-empty">${I18N.t('العب لتسجّل أول نتيجة')}</span>`;
 function syncMenu(){ const tp = $('top5'); const list = getTop(); if(tp){ tp.innerHTML = topHTML(list); tp.style.display = ''; } const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? I18N.T('أفضل نتيجة: ','Best score: ') + b : I18N.t('كن أول الأبطال'); }

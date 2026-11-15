@@ -177,5 +177,21 @@
     },
   };
   rules.hold = hold;
+  // لوحة المتصدرين المحلية: أي شكل غير متوقع في التخزين يُعامل كلوحة فارغة
+  // بدل إسقاط شاشة النتائج، مع الإبقاء على كل صفوف سليمة موجودة.
+  const board = {
+    top(raw, limit = 5) {
+      if (!Array.isArray(raw)) return [];
+      const clean = [];
+      for (const entry of raw) {
+        const s = Number(entry && entry.s);
+        if (!Number.isFinite(s) || s <= 0) continue;
+        clean.push({ s: Math.round(s), d: entry && typeof entry.d === "string" ? entry.d : "" });
+      }
+      clean.sort((a, b) => b.s - a.s);
+      return clean.slice(0, Math.max(1, limit));
+    },
+  };
+  rules.board = board;
   root.WarehouseRules = rules;
 })(globalThis);
