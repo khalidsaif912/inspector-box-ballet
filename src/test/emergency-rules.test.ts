@@ -48,7 +48,7 @@ describe("Emergency evacuation", () => {
     expect(emergency.musterX + emergency.musterHX).toBeLessThan(34);
   });
   it("awards the configured code and position points", () => {
-    expect(emergency.codePoints).toBe(50);
-    expect(emergency.positionPoints).toBe(10);
+    expect(emergency.codePoints).toBe(80);
+    expect(emergency.positionPoints).toBe(20);
   });
 });

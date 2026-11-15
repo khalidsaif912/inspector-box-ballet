@@ -97,12 +97,13 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain("$('cp-cancel').onclick = cancelCodePad");
   });
 
-  it("deducts only 2 points for a missed parcel and 3 for dangerous goods", () => {
-    expect(game).toContain("const miss = it.data.isHz ? 3 : 2;");
+  it("deducts 10 points and 2 seconds for a parcel that falls off the belt", () => {
+    expect(game).toContain("const miss = 10;");
+    expect(game).toContain("time = Math.max(0, time - 2);");
   });
 
   it("adds a fourth stage limited to dangerous goods with three class containers", () => {
-    expect(game).toMatch(/STAGE_AT=\[0,0,100,200,320\]/);
+    expect(game).toMatch(/STAGE_AT=\[0,0,150,350,650\]/);
     expect(game).toContain("stage===4 ? HZ");
     expect(game).toContain("k:'hz3'");
     expect(game.match(/k:'hz\d'/g)?.length).toBe(3);
@@ -161,17 +162,29 @@ describe("Game assets and shared rules", () => {
     expect(html).not.toMatch(/حمل الطرود بالرافعة/);
   });
 
-  it("unlocks stages from the cover and always spawns the player safely", () => {
-    expect(game).toContain('const UNLOCK_KEY = "aircargo_max_stage"');
-    expect(game).toContain("let maxUnlockedStage");
-    expect(game).toContain("function unlockStage(n)");
-    expect(game).toContain("function startGameAt(n)");
+  it("starts from a single play button and persists tutorial completion", () => {
+    expect(html).not.toContain('id="stageSelect"');
+    expect(html).not.toContain('class="stage-select"');
+    expect(game).not.toContain("stageSelectHTML");
+    expect(game).not.toContain("maxUnlockedStage");
+    expect(game).toContain("dgr_tutorial_completed");
+    expect(game).toContain("function skipTutorial()");
+    expect(game).toContain("if(stage<4 && score >= STAGE_AT[stage+1]) setStage(stage+1);");
     expect(game).toContain("function safeSpawnPlayer()");
     expect(game).toContain("function findFreeSpot(x, z");
-    expect(game).toMatch(/function setStage\(n,silent\)\{[\s\S]{0,320}safeSpawnPlayer\(\)/);
-    expect(html).toContain('id="stageSelect"');
-    expect(game).toContain('data-stage="${n}"');
-    expect(readFileSync("public/game/game.css", "utf8")).toContain(".stage-item.locked");
+    expect(game).toMatch(/function setStage\(n,silent\)\{[\s\S]{0,500}safeSpawnPlayer\(\)/);
+  });
+
+  it("matches the arcade scoring economy", () => {
+    expect(game).toContain("const COMBO_MAX = 5;");
+    expect(game).toContain("FEVER_TIME = 6");
+    expect(game).toContain("const base = d.isHz ? 25 : 10;");
+    expect(game).toContain("combo = Math.min(COMBO_MAX, 1 + Math.floor(streak / 3));");
+    expect(game).toContain("if(streak >= 10 && streak % 10 === 0) startFever();");
+    expect(game).toContain("const pen = conflict ? 35 : 15;");
+    expect(game).toContain("CRIT_BONUS = 75");
+    expect(game).toContain("time += 5;");
+    expect(game).toContain("score += 50;");
   });
 
   it("keeps the box-type hint between the two touch controls", () => {

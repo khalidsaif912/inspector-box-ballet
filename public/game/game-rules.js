@@ -128,8 +128,8 @@
     musterZ: 3.2,
     musterHX: 2.4,
     musterHZ: 2,
-    codePoints: 50,
-    positionPoints: 10,
+    codePoints: 80,
+    positionPoints: 20,
     correct(value) {
       return String(value) === emergency.code;
     },

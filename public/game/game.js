@@ -1077,11 +1077,11 @@ sh.scale.set(1 + bob*0.6, 1 + bob*0.6, 1);
 hd.rotation.y = isMoving ? sw * 0.06 : Math.sin(performance.now()*0.0015) * 0.12;
 }
 pl.position.set(0, 0, 3);
-let items=[], run=false, score=0, combo=1, time=100, spawnT=0, held=null, lvl=1, near=null, stage=1;
-let streak=0, streakT=0, maxStreak=0, rushT=30, rushN=0, rushDelay=0;
+let items=[], run=false, score=0, combo=1, time=100, spawnT=0, held=null, near=null, stage=1;
+let streak=0, streakT=0, maxStreak=0, rushT=25, rushN=0, rushDelay=0;
 /* ===== إثارة: اندفاع + اهتزاز كاميرا + وضع الحمى ===== */
 let dashT = 0, dashCD = 0, feverT = 0, shakeTrauma = 0;
-const DASH_TIME = .8, DASH_CD = 3, DASH_BOOST = 1.6, FEVER_TIME = 8, FEVER_BOOST = 1.15;
+const DASH_TIME = .8, DASH_CD = 3, DASH_BOOST = 1.6, FEVER_TIME = 6, FEVER_BOOST = 1.15;
 function feverOn(){ return feverT > 0; }
 function addShake(a){ shakeTrauma = Math.min(1, shakeTrauma + a); }
 function setDashButton(){
@@ -1105,6 +1105,7 @@ setDashButton();
 }
 const fire = {active:false, done:false, phase:'idle', t:0, codeT:0, keypad:false, posAwarded:false, siren:null, buzz:null};
 const STREAK_MAX = 8;
+const COMBO_MAX = 5;
 const streakWindow = () => stage === 1 ? 7 : 5.5;
 const bestScore = () => { try { return +(localStorage.getItem('acg_best') || 0) || 0; } catch(e){ return 0; } };
 const saveBest = v => { try { localStorage.setItem('acg_best', v); } catch(e){} };
@@ -1112,15 +1113,30 @@ const getTop = () => { try { return JSON.parse(localStorage.getItem('acg_top') |
 const pushTop = v => { const t = getTop(); t.push({s:v, d:new Date().toLocaleDateString(I18N.lang === 'en' ? 'en' : 'ar')}); t.sort((a,b)=>b.s-a.s); const r = t.slice(0,5); try { localStorage.setItem('acg_top', JSON.stringify(r)); } catch(e){} return r; };
 const topHTML = t => t.length ? t.slice(0,4).map((e,i) => `<span class="score-chip"><i class="rank-dot r${i+1}"></i> ${e.s} ${I18N.t('نقطة')}</span>`).join('') : `<span class="lb-empty">${I18N.t('العب لتسجّل أول نتيجة')}</span>`;
 function syncMenu(){ const tp = $('top5'); const list = getTop(); if(tp){ tp.innerHTML = topHTML(list); tp.style.display = ''; } const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? I18N.T('أفضل نتيجة: ','Best score: ') + b : I18N.t('كن أول الأبطال'); }
-const STAGE_AT=[0,0,100,200,320], STAGE_BELT=[0,1.5,1.9,2.4,2.7];
+const STAGE_AT=[0,0,150,350,650], STAGE_BELT=[0,1.4,1.8,2.3,2.8], SPAWN_AT=[0,5,3.2,2.2,1.6];
+const TUTORIAL_KEY = 'dgr_tutorial_completed';
+const tutorialDone = () => { try { return localStorage.getItem(TUTORIAL_KEY) === '1'; } catch(e){ return false; } };
+const saveTutorialDone = () => { try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch(e){} };
 let demo={insp:false,truck:false,inspDone:false,truckDone:false,truckIn:0}, introT=null, introHold=false;
 function showIntro(html,ms=7000,hold=false){
 const e=document.getElementById('intro');
-e.innerHTML=html;e.classList.add('on');e.classList.toggle('wait',hold);
+const showSkip = hold && (demo.insp || demo.truck);
+e.innerHTML=html + (showSkip ? `<button class="skip-tutorial" id="skip-tutorial" type="button">${I18N.T('تخطي الإرشادات','Skip tutorial')}</button>` : '');e.classList.add('on');e.classList.toggle('wait',hold);
 placeToastBelowIntro();
 clearTimeout(introT);
 if(hold){ introHold=true; e.onclick=resumeFromIntro; run=false; clearMovement(); introT=setTimeout(resumeFromIntro,20000); }
 else { introHold=false; e.onclick=null; introT=setTimeout(()=>{e.classList.remove('on');placeToastBelowIntro();},ms); }
+const sk = e.querySelector('#skip-tutorial');
+if(sk) sk.onclick = ev => { ev.stopPropagation(); skipTutorial(); };
+}
+function skipTutorial(){
+demo.insp=false; demo.truck=false; demo.inspDone=true; demo.truckDone=true;
+inspector.demo=false; inspector.active=false; inspector.g.visible=false;
+document.getElementById('inspector-badge').classList.remove('on');
+saveTutorialDone(); resetTruck(); hideIntro();
+run=true; pz=false; last=performance.now(); clearMovement();
+try { R.domElement.focus({preventScroll:true}); } catch(e){}
+toast(I18N.T('تم تخطي الإرشادات — بالتوفيق!','Tutorial skipped — good luck!'), '#64ffda');
 }
 function hideIntro(){const e=document.getElementById('intro');if(e){e.classList.remove('on','wait');e.onclick=null;}document.getElementById('stage')?.style.removeProperty('--toast-top');introHold=false;clearTimeout(introT);}
 // نُبعد شريط الرسائل المؤقتة (toast) تحت فقاعة الرسالة حتى لا يظهر جزء منه خلفها
@@ -1148,7 +1164,7 @@ function startTruckDemo(){
 demo.truck=true;truckState=gameRules.reset();truckState.elapsed=gameRules.startAt;snd('horn');
 showIntro(I18N.T('<b class="t">🚜 الرافعة الشوكية</b>تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.<small>جولة تعريفية — لن تصطدم بك</small><span class="hint">⏸ اللعبة متوقفة — اضغط في أي مكان للمتابعة</span>', '<b class="t">🚜 Forklift</b>Drops foreign objects (FOD); collect them and put them in the red bin.<small>Intro round — it won\'t hit you</small><span class="hint">⏸ Game paused — press anywhere to resume</span>'),0,true);
 }
-const beltSpeed=()=>(STAGE_BELT[stage]+(lvl-1)*(stage===1?0.06:0.12)) * (feverT > 0 ? FEVER_BOOST : 1);
+const beltSpeed=()=> STAGE_BELT[stage] * (feverT > 0 ? FEVER_BOOST : 1);
 let sortedCount=0, totalProcessed=0;
 const px = pl.position, key = {}, joy = {x:0, y:0};
 const tc = {};
@@ -1283,7 +1299,7 @@ rm(it); totalProcessed = Math.max(0, totalProcessed);
 const r = Math.random();
 if(r < 0.25){ time += 12; snd('ship'); spawnFloatTag(I18N.T('+12 ث ⏱','+12s ⏱'),'#64ffda'); toast('🎁 مفاجأة: +12 ثانية','#64ffda'); }
 else if(r < 0.5){ score += 60; snd('ship'); toast('🎁 مفاجأة: +60 نقطة','#ffd54a'); }
-else if(r < 0.7){ combo = 8; snd('ship'); toast('🎁 مفاجأة: كومبو ×8 🔥','#ff9800'); }
+else if(r < 0.7){ combo = COMBO_MAX; snd('ship'); toast('🎁 مفاجأة: كومبو ×5 🔥','#ff9800'); }
 else if(r < 0.85){ slowT = 8; snd('ship'); toast('🎁 مفاجأة: الحزام يبطؤ ٨ ثوانٍ 🐢','#80d8ff'); }
 else { time = Math.max(0, time - 6); snd('error'); spawnFloatTag(I18N.T('-6 ث','-6s'),'#ff5252'); toast('💥 مفاجأة سيئة: -6 ثوانٍ','#ff5252'); }
 hud();
@@ -1305,7 +1321,7 @@ items.push(it);
 /* ===== طرد حرج بمؤقت تفجير (15%) ===== */
 /* المؤقت خاص بطرود سلسلة التبريد (❄️) فقط. نسبة الاختيار 45% من طرود التبريد
    ≈ 15% من إجمالي الطرود العادية (التبريد ثلث قائمة الشحن العادي) */
-const CRIT_CHANCE = .45, CRIT_TIME = 18, CRIT_BONUS = 80, CRIT_PENALTY = 40;
+const CRIT_CHANCE = .45, CRIT_TIME = 18, CRIT_BONUS = 75, CRIT_PENALTY = 40;
 const critHaloTex = canvasTex(128, 128, (g, w, h) => {
 const gr = g.createRadialGradient(w/2, h/2, w*.1, w/2, h/2, w/2);
 gr.addColorStop(0, 'rgba(255,70,40,.9)'); gr.addColorStop(.55, 'rgba(255,100,30,.35)'); gr.addColorStop(1, 'rgba(255,40,0,0)');
@@ -1407,7 +1423,7 @@ if(!demo.truck && truckState.active && !truckState.hit && gameRules.touches(befo
 truckState.hit=true;fearT=gameRules.fearDuration;snd('bump');tip('bump', '😨 اصطدام! حركة أبطأ مؤقتًا', '#ffd54a');
 }
 }
-if(demo.truck && truckState.done){ demo.truck=false; demo.truckDone=true; hideIntro(); }
+if(demo.truck && truckState.done){ demo.truck=false; demo.truckDone=true; if(demo.inspDone) saveTutorialDone(); hideIntro(); }
 const pos=gameRules.position(truckState);
 recklessTruck.visible=truckState.active;recklessTruck.position.set(pos.x,0,pos.z);recklessTruck.rotation.y=pos.yaw;
 // اهتزاز كاميرا خفيف عند مرور الرافعة المتهورة قرب اللاعب
@@ -1432,7 +1448,8 @@ tt = setTimeout(() => { e.style.opacity = 0; e.style.transform = 'translateX(-50
 }
 function spawnFloatTag(txt, col){
 const el = document.createElement('div');
-el.className = 'float-tag'; el.textContent = I18N.t(txt); el.style.color = col;
+const raw = String(txt).trim();
+el.className = 'float-tag ' + (/^[-−]/.test(raw) ? 'neg' : 'pos'); el.textContent = I18N.t(txt); el.style.color = col;
 el.style.left = '50%'; el.style.top = '44%';
 $('floating-fx').appendChild(el);
 setTimeout(() => el.remove(), 850);
@@ -1464,10 +1481,23 @@ penaltyFx.v = setTimeout(() => st.classList.remove('penalty'), 900);
 }
 }
 function hud(){
-$('sc').textContent = score;$('stg').textContent = stage<4 ? `${I18N.T('🎓 المرحلة','🎓 Stage')} ${stage} • ${Math.min(score,STAGE_AT[stage+1])}/${STAGE_AT[stage+1]}` : I18N.t('🏁 المرحلة ٤ • الأخيرة — مواد خطرة فقط');
+$('sc').textContent = score;
+const stageIcons = ['','🎓','🚀','⚡','🏁'];
+const stgTxt = $('stgtxt'), stgFill = $('stgfill');
+if(stage < 4){
+const cap = STAGE_AT[stage+1], base = STAGE_AT[stage];
+const shown = Math.min(score, cap);
+if(stgTxt) stgTxt.textContent = `${stageIcons[stage]} ${I18N.T('المرحلة','Stage')} ${stage} • ${shown}/${cap}`;
+if(stgFill) stgFill.style.width = Math.max(0, Math.min(100, ((shown-base)/(cap-base))*100)) + '%';
+$('stg').classList.remove('final');
+} else {
+if(stgTxt) stgTxt.textContent = I18N.t('🏁 المرحلة ٤ • مستوى الخبراء — مواد خطرة فقط');
+if(stgFill) stgFill.style.width = '100%';
+$('stg').classList.add('final');
+}
 $('cb').textContent = '×' + combo;
 setDashButton();
-$('cbbox').classList.toggle('hot', combo > 1);
+$('cbbox').classList.toggle('hot', combo >= 3);
 const stkOn = streak >= 2 && streakT > 0;
 $('streak').classList.toggle('on', stkOn);
 if(stkOn) $('stkbar').style.width = Math.max(0, Math.min(100, (streakT / streakWindow()) * 100)) + '%';
@@ -1508,10 +1538,10 @@ setTimeout(() => {
 if(!z.full) return;
 z.items.forEach(x => rm(x));
 z.items = []; z.full = false; if(z.hz) drawZoneSign(z);
-score += 40;
+score += 50;
 time += 15;
-spawnFloatTag(I18N.T('+15 ثوانٍ ⏱','+15s ⏱'), '#64ffda');
-toast(I18N.T('🚚 شُحنت ','🚚 Shipped ') + z.n + I18N.T(' (+40 و +15 ث)',' (+40 and +15s)'), '#64ffda');
+spawnFloatTag(I18N.T('+50 و +15 ث ⏱','+50 & +15s ⏱'), '#69f0ae');
+toast(I18N.T('🚚 شُحنت ','🚚 Shipped ') + z.n + I18N.T(' (+50 و +15 ث)',' (+50 and +15s)'), '#69f0ae');
 hud();
 }, 900);
 }
@@ -1527,6 +1557,7 @@ if(z.k==='fod'){ it.st='floor';it.fall=false;it.m.position.set(z.x,.7,-4);snd('w
 if(d.isMys){ mystery(it); return; }
 totalProcessed++;
 let ok = false;
+let conflict = false;
 let conflictReason = '';
 if(z.hz){
 if(!d.isHz){
@@ -1540,7 +1571,7 @@ conflictReason = I18N.T('تعارض IATA: لا يُخلط [','IATA conflict: nev
 break;
 }
 }
-if(!hasConflict) ok = true;
+if(hasConflict) conflict = true; else ok = true;
 }
 } else {
 ok = (z.k === d.t);
@@ -1552,26 +1583,27 @@ conflictReason = 'منطقة فرز غير مطابقة لنوع الشحنة!';
 }
 if(ok){
 sortedCount++;
-const p = 10 * combo * (d.isHz ? 2 : 1) * (feverT > 0 ? 2 : 1);
+const base = d.isHz ? 25 : 10;
+const p = base * combo * (feverT > 0 ? 2 : 1);
 score += p;
-combo = Math.min(combo + 1, 8);
 streak++; streakT = streakWindow(); maxStreak = Math.max(maxStreak, streak);
+combo = Math.min(COMBO_MAX, 1 + Math.floor(streak / 3));
 time += 3;
 let critMsg = '';
 if(it.crit){
-score += CRIT_BONUS;
+score += CRIT_BONUS; time += 5;
 snd('fever');
-spawnFloatTag('+' + CRIT_BONUS + ' 🎉', '#ffd54a');
-critMsg = I18N.T(' • ❄️ طرد تبريد +',' • ❄️ chilled parcel +') + CRIT_BONUS;
+spawnFloatTag('+' + CRIT_BONUS + ' ❄️ +5 ث', '#69f0ae');
+critMsg = I18N.T(' • ❄️ طرد تبريد +',' • ❄️ chilled parcel +') + CRIT_BONUS + I18N.T(' و +5 ث',' and +5s');
 addShake(.25);
 clearCrit(it);
 }
-if(streak >= 5 && streak % 5 === 0) startFever();
+if(streak >= 10 && streak % 10 === 0) startFever();
 snd('ok', 1 + Math.min(streak, STREAK_MAX) * .05);
 spawnFloatTag(I18N.T('+3 ث ⏱','+3s ⏱'), '#69f0ae');
 let chainMsg = '';
-if(streak % 4 === 0){
-const b = Math.min(30, streak * 2.5);
+if(streak > 4){
+const b = Math.min(40, (streak - 4) * 5);
 score += b; chainMsg = I18N.T(` • سلسلة +${b} 🔥`,` • chain +${b} 🔥`);
 stageEl.classList.remove('flash'); void stageEl.offsetWidth; stageEl.classList.add('flash');
 setTimeout(() => stageEl.classList.remove('flash'), 550);
@@ -1586,13 +1618,19 @@ it.m.position.set(z.x + (i%z.cols - (z.cols-1)/2)*P_, 0.74 + 0.5, -8.6 + (Math.f
 it.m.rotation.set(0,0,0); it.fall = true; it.vy = 0; it.ty = 0.06 + BH;
 if(z.hz && z.items.length >= z.cap) ship(z);
 } else {
-score = Math.max(0, score - 10);
+const pen = conflict ? 35 : 15;
+const lost = Math.min(score, pen);
+score = Math.max(0, score - pen);
 combo = 1; streak = 0; streakT = 0;
-const tp = stage===1 ? 2 : 5;
-time = Math.max(0, time - tp);
 snd('error');
-spawnFloatTag(I18N.T('-'+tp+' ث','-'+tp+'s'), '#ff5252');
-toast(`✖ ${conflictReason} (-${tp} ` + I18N.T('ث)', 's)'), '#ff5252');
+penaltyFx(lost, conflict);
+spawnFloatTag('−' + pen, '#ff5252');
+if(conflict){
+addShake(.45);
+stageEl.classList.remove('conflict'); void stageEl.offsetWidth; stageEl.classList.add('conflict');
+setTimeout(() => stageEl.classList.remove('conflict'), 900);
+}
+toast(`✖ ${conflictReason} (−${pen} ` + I18N.T('نقطة)', 'pts)'), '#ff5252');
 rm(it);
 }
 hud();
@@ -1679,7 +1717,7 @@ toast(I18N.T('تم الالتقاط: ','Picked up: ') + d.name, '#fff');
 if(lastSecond){
 score += 25;
 snd('ok', 1.4);
-spawnFloatTag('⚡ إنقاذ +25', '#ffd54a');
+spawnFloatTag('⚡ إنقاذ +25', '#69f0ae');
 toast('⚡ التقاط في اللحظة الأخيرة +25', '#ffd54a');
 hud();
 }
@@ -1843,92 +1881,35 @@ addEventListener('pointercancel', e => { if(e.pointerId === jid) je(); });
 $('dash-btn').addEventListener('pointerdown', e => { e.preventDefault(); doDash(); });
 function setStage(n,silent){
 stage=n;
-inspector.demo=false; demo.insp=false; demo.truck=false; hideIntro();
+inspector.demo=false; demo.insp=false; demo.truck=false;
+if(n > 1 && (!demo.inspDone || !demo.truckDone)){ demo.inspDone=true; demo.truckDone=true; saveTutorialDone(); }
+hideIntro();
 if(n===2) resetInspector();
 if(n>=3) resetTruck();
 /* إعادة تموضع آمنة + تصفير كل أقفال الحركة حتى لا يعلق اللاعب في المرحلة الجديدة */
 safeSpawnPlayer();
-if(n>1) unlockStage(n);
 if(!silent){
 snd('ship'); time += 10;
 spawnFloatTag(I18N.T('+10 ث ⏱','+10s ⏱'),'#64ffda');
-tip(n===2?'stage2':n===3?'stage3':'stage4', n===2?'🚀 المرحلة ٢: المواد الخطرة والمفتش! السير أسرع':n===3?'🏁 المرحلة ٣: الرافعة الشوكية تعبر المستودع!':'💥 المرحلة ٤: مواد خطرة فقط — ثلاث حاويات حسب الفئة!','#64ffda');
+tip(n===2?'stage2':n===3?'stage3':'stage4', n===2?'🚀 المرحلة ٢: إيقاع العمل والطرود الباردة':n===3?'⚡ المرحلة ٣: الضغط وساعات الذروة':'💥 المرحلة ٤: مستوى الخبراء — مواد خطرة فقط','#64ffda');
 }
 /* استئناف الإدخال بعد أي نافذة تنبيه علّقت اللعب */
 if(!fire.active && !fire.keypad && !introHold && $('rules').style.display === 'none'){ run = true; pz = false; }
 hud();
 }
-/* ===== فتح المراحل وحفظ التقدم (يبقى بعد إعادة تحميل الصفحة) ===== */
-const UNLOCK_KEY = "aircargo_max_stage";
-let maxUnlockedStage = 1;
-try { maxUnlockedStage = Math.max(1, Math.min(3, parseInt(localStorage.getItem(UNLOCK_KEY) || "1", 10) || 1)); } catch(e){ maxUnlockedStage = 1; }
-function unlockStage(n){
-const v = Math.max(1, Math.min(3, Number(n) || 1));
-if(v <= maxUnlockedStage) return false;
-maxUnlockedStage = v;
-try { localStorage.setItem(UNLOCK_KEY, String(v)); } catch(e){}
-renderStageSelect();
-return true;
-}
-const STAGE_LABELS = {
-1: { ar:'المرحلة ١: فرز الطرود الأساسية', en:'Stage 1: Basic sorting', subAr:'تدريب بلا غرامات', subEn:'Practice, no fines' },
-2: { ar:'المرحلة ٢: تفتيش المواد الخطرة', en:'Stage 2: DGR inspection', subAr:'المفتش والمخالفات', subEn:'Inspector and fines' },
-3: { ar:'المرحلة ٣: طوارئ الإخلاء والحريق', en:'Stage 3: Fire drill', subAr:'إنذار حريق ورقم الطوارئ', subEn:'Alarm and emergency code' }
-};
-function stageSelectHTML(){
-const lang = I18N.lang === 'en' ? 'en' : 'ar';
-let out = '';
-for(let n = 1; n <= 3; n++){
-const unlocked = n === 1 || maxUnlockedStage >= n;
-const label = STAGE_LABELS[n];
-const title = lang === 'en' ? label.en : label.ar;
-const sub = lang === 'en' ? label.subEn : label.subAr;
-const lockMsg = n === 3
-  ? I18N.T('🔒 أكمل المرحلة الثانية للفتح', '🔒 Finish stage 2 to unlock')
-  : I18N.T('🔒 أكمل المرحلة الأولى للفتح', '🔒 Finish stage 1 to unlock');
-const cta = unlocked
-  ? `<span class="si-cta">${I18N.T('ابدأ', 'Start')}</span>`
-  : `<span class="si-cta long">${lockMsg}</span><span class="si-cta short">${I18N.T('🔒 مقفلة', '🔒 Locked')}</span>`;
-out += `<button class="stage-item${unlocked ? '' : ' locked'}${n === 1 ? ' first' : ''}" data-stage="${n}" type="button"${unlocked ? '' : ' disabled aria-disabled="true"'} aria-label="${title}${unlocked ? '' : ' — ' + lockMsg}">
-<span class="si-badge">${unlocked ? n : '🔒'}</span>
-<span class="si-txt"><b>${title}</b><small>${sub}</small></span>
-${cta}
-</button>`;
-}
-return out;
-}
-function renderStageSelect(){
-const lang = I18N.lang === 'en' ? 'en' : 'ar';
-document.querySelectorAll('.stage-select').forEach(box => {
-box.innerHTML = stageSelectHTML();
-box.dir = lang === 'en' ? 'ltr' : 'rtl';
-box.setAttribute('aria-label', I18N.T('اختيار المرحلة', 'Stage select'));
-});
-}
-function startGameAt(n){
-const pick = Math.max(1, Math.min(3, Number(n) || 1));
-if(pick > maxUnlockedStage) return;
-start(pick);
-}
-document.addEventListener('click', e => {
-const btn = e.target && e.target.closest ? e.target.closest('.stage-item') : null;
-if(!btn || btn.disabled) return;
-startGameAt(parseInt(btn.dataset.stage || '1', 10));
-});
-addEventListener('i18n:change', renderStageSelect);
-function start(initialStage){
-const startStageNum = Math.max(1, Math.min(3, Number(initialStage) || 1));
+function start(){
+const td = tutorialDone();
 initAudio();
 stopVib();
 items.forEach(i => { clearCrit(i); S.remove(i.m); }); items = [];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
 slowT = 0; beltSlowT = 0; beltSlowUsed = false; beltBtnMat.color.setHex(0x14e0b0); beltBtnMat.emissiveIntensity = 1; beltBtnHalo.scale.setScalar(1);
-score = 0; combo = 1; time = 100; spawnT = 0; held = null; lvl = 1; stage = 1;
-streak = 0; streakT = 0; maxStreak = 0; rushT = 30; rushN = 0; rushDelay = 0;
+score = 0; combo = 1; time = 100; spawnT = 0; held = null; stage = 1;
+streak = 0; streakT = 0; maxStreak = 0; rushT = 25; rushN = 0; rushDelay = 0;
 $('streak').classList.remove('on');
 dashT = 0; dashCD = 0; feverT = 0; shakeTrauma = 0;
 $('dash-fx').classList.remove('on'); $('stage').classList.remove('fever'); setDashButton();
-demo = {insp:false,truck:false,inspDone:startStageNum>1,truckDone:startStageNum>1,truckIn:0}; inspector.demo = false; hideIntro();
+demo = {insp:false,truck:false,inspDone:td,truckDone:td,truckIn:0}; inspector.demo = false; hideIntro();
 sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false;
 $('rules').style.display = 'none';
 resetExitGate();
@@ -1937,12 +1918,11 @@ px.set(SAFE_SPAWN.x, 0, SAFE_SPAWN.z); curRotY = 0; liftAnim.active = false; res
 FD.on = false; FD.left = 60; FD.near = false; rig.visible = true; forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = Math.PI/2;
 clearMovement(); last = performance.now();
 run = true; document.body.classList.add('ingame'); $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true});
-setStage(startStageNum, true);
+setStage(1, true);
 hud();
-if(startStageNum === 1) tip('stage1', '🎓 المرحلة ١: التدريب — التقط وافرز', '#64ffda');
-else tip('stage' + startStageNum, startStageNum === 2 ? '🚀 المرحلة ٢: المواد الخطرة والمفتش!' : '🏁 المرحلة ٣: الرافعة الشوكية تعبر المستودع!', '#64ffda');
+tip('stage1', '🎓 المرحلة ١: التعريف والأساسيات — التقط وافرز', '#64ffda');
 }
-$('go').onclick = () => startGameAt(1);
+$('go').onclick = () => start();
 let pz = false;
 const openRules = () => {
 const r = $('rules'), o = r.style.display === 'none';
@@ -2034,7 +2014,6 @@ ${recLine}
 <div class="leaderboard-wrap"><span>${I18N.T('لوحة المتصدرين:','Leaderboard:')}</span><div class="lb-chips">${topHTML(topList)}</div></div>
 </div>
 <p class="tip-msg">${totalProcessed === 0 ? I18N.t('لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!') : acc >= 80 ? I18N.t('أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.') : I18N.t('راجع دليل الفرز السريع ثم عُد لكسر رقمك.')}</p>
-<div class="stage-select compact">${stageSelectHTML()}</div>
 <div class="actions-row">
 <button id="next" class="btn btn-primary" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M3 12h18"/><path d="M15 6l6 6-6 6"/></svg><span>${I18N.T('الانتقال للمرحلة التالية','Next stage')}</span></button>
 <button id="go" class="btn btn-secondary" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg><span>${I18N.T('إعادة المحاولة','Replay level')}</span></button>
@@ -2042,7 +2021,7 @@ ${recLine}
 <button id="ex2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>${I18N.t('الغلاف')}</span></button>
 </div>
 </div>`;
-$('go').onclick = () => startGameAt(stage);
+$('go').onclick = () => start();
 $('next').onclick = beginExitSequence;
 $('rb2').onclick = openRules;
 $('ex2').onclick = exitToShell;
@@ -2420,13 +2399,13 @@ if(Math.abs(it.m.position.z - I_.z) < 5.5 && (prevX - bx) * (I_.x - bx) <= 0){
 it.fined = true;
 score = Math.max(0, score - 15); combo = 1; time = Math.max(0, time - 4);
 snd('whistle');
-spawnFloatTag('🦺 مخالفة -15', '#ffb020');
+spawnFloatTag('−15 🦺 مخالفة', '#ff5252');
 tip('fine', '📋 المفتش: طرد متروك خارج المنطقة المخصصة! (-15 و -4 ث)', '#ffb020');
 it.m.material.emissive && it.m.material.emissive.setHex(0x552200);
 hud();
 }
 }
-if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.done = true; I_.cooldown = 14; I_.elapsed = 0; if(I_.demo){ I_.demo = false; demo.insp = false; demo.inspDone = true; demo.truckIn = 6; hideIntro(); } $('inspector-badge').classList.remove('on'); }
+if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.done = true; I_.cooldown = 14; I_.elapsed = 0; if(I_.demo){ I_.demo = false; demo.insp = false; demo.inspDone = true; if(demo.truckDone) saveTutorialDone(); demo.truckIn = 6; hideIntro(); } $('inspector-badge').classList.remove('on'); }
 }
 let last = performance.now();
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.12, 40), new THREE.MeshBasicMaterial({color:0xffc94d, transparent:true, opacity:0.85, depthWrite:false}));
@@ -2531,7 +2510,6 @@ if(warnTicker > 1){ snd('warn'); warnTicker = 0; }
 }
 if(time <= 0){ time = 0; hud(); end(); }
 if(!fire.active && !fire.done && time > 0 && time <= 30) startFireDrill();
-lvl = 1 + Math.floor(score / 120);
 if(stage===1){
 if(!demo.inspDone){ if(!demo.insp && (score >= 20 || time <= 90)) startInspDemo(); }
 else if(!demo.truckDone && !demo.truck){
@@ -2539,18 +2517,18 @@ demo.truckIn = Math.max(0, demo.truckIn - dt);
 if(demo.truckIn <= 0) startTruckDemo();
 }
 }
-if(stage<4 && score >= STAGE_AT[stage+1] && (stage!==1 || (demo.inspDone && demo.truckDone))) setStage(stage+1);
+if(stage<4 && score >= STAGE_AT[stage+1]) setStage(stage+1);
 if(!fire.active){
 spawnT -= dt;
 if(spawnT <= 0){
 spawn();
-spawnT = stage===1 ? 5.4 : stage===2 ? Math.max(1.8, 3.4 - lvl * 0.22) : stage===4 ? Math.max(1.5, 2.9 - lvl * 0.2) : Math.max(1.4, 2.8 - lvl * 0.2);
+spawnT = SPAWN_AT[stage];
 }
 }
-if(stage >= 2 && !fire.active){
+if(stage >= 3 && !fire.active){
 rushT -= dt;
 if(rushT <= 0){
-rushT = 24 + Math.random() * 12; rushN = 3; rushDelay = 0;
+rushT = 25; rushN = 3; rushDelay = 0;
 snd('horn');
 showIntro(I18N.T('<b class="t">⚡ تدفق سريع!</b>ثلاث شحنات متتابعة على الحزام — ركّز وسرّع الفرز.', '<b class="t">⚡ Rush hour!</b>Three shipments in a row on the belt — focus and sort faster.'), 2600);
 }
@@ -2559,7 +2537,7 @@ rushDelay -= dt;
 if(rushDelay <= 0 && items.length < 14){ spawn(); rushN--; rushDelay = .5; }
 }
 }
-if(streakT > 0){ streakT -= dt; if(streakT <= 0){ streakT = 0; streak = 0; } }
+if(streakT > 0){ streakT -= dt; if(streakT <= 0){ streakT = 0; streak = 0; combo = 1; } }
 for(const it of items.slice()){
 if(it.st !== 'floor' || it.fall) continue;
 const zz = Z.find(z => (it.data.isFod ? z.k==='fod' : z.k!=='fod') && Math.abs(it.m.position.x - z.x) < z.hw && it.m.position.z < -5.6 && !z.full);
@@ -2584,16 +2562,17 @@ if(it.st === 'belt'){
 it.m.position.x += beltSpeed() * beltK * dt;
 if(it.m.position.x > 23.5){
 if(it.data.isMys){ rm(it); continue; }
-const miss = it.data.isHz ? 3 : 2;
+const miss = 10;
 totalProcessed++;
 rm(it);
 const lost = Math.min(score, miss);
 score = Math.max(0, score - miss);
-streak = 0; streakT = 0;
-if(stage >= 2) combo = 1;
+time = Math.max(0, time - 2);
+streak = 0; streakT = 0; combo = 1;
 snd('error');
 penaltyFx(lost, it.data.isHz);
-toast((it.data.isHz ? I18N.T('⚠️ فاتتك مادة خطرة! ','⚠️ You missed a dangerous good! ') : I18N.T('فاتك طرد! ','Parcel missed! ')) + (lost ? '−' + lost + I18N.T(' نقاط',' pts') : I18N.t('بدون خصم')), '#ff8a5c'); hud(); continue;
+spawnFloatTag('−10 −2 ث', '#ff5252');
+toast((it.data.isHz ? I18N.T('⚠️ فاتتك مادة خطرة! ','⚠️ You missed a dangerous good! ') : I18N.T('فاتك طرد! ','Parcel missed! ')) + (lost ? '−' + lost + I18N.T(' نقاط و −2 ث',' pts and −2s') : I18N.t('بدون خصم')), '#ff8a5c'); hud(); continue;
 }
 }
 if(it.st === 'held'){
@@ -2699,7 +2678,6 @@ R.render(S, C);
 if(!loadingDone){ loadingDone = true; loading.finish(); }
 }
 syncMenu();
-renderStageSelect();
 const shellBtn = $('shell'); if(shellBtn) shellBtn.onclick = e => { e.stopPropagation(); exitToShell(); };
 let loadingDone = false;
 loading.phase(88, I18N.t('تسخين الشيدرات والمؤثرات...'));
