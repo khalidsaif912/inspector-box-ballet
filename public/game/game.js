@@ -650,29 +650,68 @@ rr(8,8,W-16,H-16,32); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 12; 
 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 if(z.hz){
 ctx.direction = I18N.lang === 'en' ? 'ltr' : 'rtl';
-// شريط العنوان
-ctx.fillStyle = 'rgba(0,0,0,.45)'; rr(24,20,W-48,92,20); ctx.fill();
-ctx.fillStyle = '#fff'; fit(ctx, z.e + '  ' + z.n, W-90, 48); ctx.fillText(z.e + '  ' + z.n, W/2, 66);
-// قائمة المحتويات: بطاقة لكل طرد مع شريحة فئة وشريحة كود
-const listTop = 126, listBottom = H - 76;
-ctx.fillStyle = 'rgba(0,0,0,.38)'; rr(24, listTop, W-48, listBottom-listTop, 18); ctx.fill();
-if(!z.items.length){ ctx.fillStyle = 'rgba(255,255,255,.78)'; ctx.font = 'bold 34px sans-serif'; ctx.fillText(I18N.t('— فارغة —'), W/2, (listTop+listBottom)/2); }
+// لون كل عائلة خطر: الشريحة المصبوغة تجعل محتوى الحاوية مقروءاً من بعيد
+const classInk = div => {
+const c = String(div)[0];
+if(c === '1') return ['#ff9f45','#241000'];
+if(c === '2') return ['#57c96a','#06210c'];
+if(c === '3') return ['#ff5a5a','#2a0505'];
+if(c === '4') return ['#4aa3f0','#04182b'];
+if(c === '5') return ['#ffd54a','#1a1200'];
+if(c === '6') return ['#c26ad8','#210d26'];
+if(c === '7') return ['#ffe066','#241c00'];
+if(c === '8') return ['#3fc7b8','#04211e'];
+if(c === '9') return ['#dfe6ee','#111820'];
+return ['#ffd54a','#1a1200'];
+};
+const filled = z.items.filter(Boolean);
+const cnt = filled.length;
+// شريط العنوان: رقم الحاوية + اسمها + عدّاد السعة
+ctx.fillStyle = 'rgba(0,0,0,.58)'; rr(18,16,W-36,96,22); ctx.fill();
+ctx.strokeStyle = 'rgba(255,255,255,.30)'; ctx.lineWidth = 3; rr(18,16,W-36,96,22); ctx.stroke();
+ctx.beginPath(); ctx.arc(72,64,31,0,Math.PI*2); ctx.fillStyle = '#0e151b'; ctx.fill();
+ctx.strokeStyle = '#ffd54a'; ctx.lineWidth = 4; ctx.stroke();
+ctx.fillStyle = '#ffd54a'; ctx.font = '900 42px monospace'; ctx.fillText(z.k.slice(2), 72, 65);
+ctx.fillStyle = '#fff'; fit(ctx, z.n, W-330, 40); ctx.fillText(z.n, W/2, 64);
+// العدّاد: رقم كبير + ستة مقاطع تُظهر السعة المتبقية بنظرة
+ctx.fillStyle = cnt ? '#ffd54a' : 'rgba(255,255,255,.55)';
+ctx.font = '900 46px monospace'; ctx.fillText(cnt + '/' + z.cap, W-96, 58);
+for(let s = 0; s < z.cap; s++){
+ctx.fillStyle = s < cnt ? '#ffd54a' : 'rgba(255,255,255,.22)';
+rr(W-152 + s*20, 88, 14, 11, 4); ctx.fill();
+}
+// المحتويات: ستة مواضع ظاهرة دائماً، الفارغ منها بحدّ متقطّع
+const listTop = 126, listBottom = H - 66;
 const rows = Math.max(1, Math.min(6, z.cap));
-const rowH = (listBottom - listTop - 14) / rows;
-const divW = 104, impW = 92;
-z.items.forEach((it, i) => {
-if(!it) return;
-const y = listTop + 7 + i*rowH, mid = y + rowH/2, cardH = rowH - 8;
-ctx.fillStyle = i % 2 ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.20)';
-rr(30, y+4, W-60, cardH, 10); ctx.fill();
-ctx.fillStyle = '#ffd54a'; rr(W-30-divW-6, mid-cardH/2, divW, cardH, 8); ctx.fill();
-ctx.fillStyle = '#1a1200'; ctx.font = '900 28px monospace'; ctx.fillText(it.data.div, W-30-divW/2-6, mid+1);
-ctx.fillStyle = 'rgba(255,255,255,.16)'; rr(36, mid-cardH/2, impW, cardH, 8); ctx.fill();
-ctx.fillStyle = '#eaf2fb'; ctx.font = '800 24px monospace'; ctx.fillText(it.data.imp, 36+impW/2, mid+1);
-ctx.fillStyle = '#fff'; fit(ctx, it.data.name, W-60-divW-impW-34, 28); ctx.fillText(it.data.name, W/2, mid+1);
-});
-ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.font = '800 27px sans-serif';
-ctx.fillText(I18N.T('المحتوى ','Contents ') + z.items.length + I18N.T(' من ',' of ') + z.cap, W/2, H-38);
+const rowH = (listBottom - listTop) / rows;
+const divW = 118, impW = 92;
+for(let i = 0; i < rows; i++){
+const it = z.items[i];
+const y = listTop + i*rowH, mid = y + rowH/2, cardH = rowH - 10;
+if(!it){
+ctx.save(); ctx.setLineDash([11,9]); ctx.lineWidth = 3;
+ctx.strokeStyle = 'rgba(255,255,255,.15)'; rr(24, y+5, W-48, cardH, 12); ctx.stroke(); ctx.restore();
+ctx.fillStyle = 'rgba(255,255,255,.20)'; ctx.font = '900 28px sans-serif'; ctx.fillText('+', W/2, mid+1);
+continue;
+}
+ctx.fillStyle = i % 2 ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.24)';
+rr(24, y+5, W-48, cardH, 12); ctx.fill();
+const ink = classInk(it.data.div);
+ctx.fillStyle = ink[0]; rr(W-24-divW, mid-cardH/2, divW, cardH, 10); ctx.fill();
+ctx.fillStyle = ink[1]; ctx.font = '900 31px monospace'; ctx.fillText(it.data.div, W-24-divW/2, mid+1);
+ctx.fillStyle = 'rgba(255,255,255,.18)'; rr(32, mid-cardH/2, impW, cardH, 10); ctx.fill();
+ctx.fillStyle = '#eaf2fb'; ctx.font = '900 26px monospace'; ctx.fillText(it.data.imp, 32+impW/2, mid+1);
+ctx.fillStyle = '#fff'; fit(ctx, it.data.name, W-48-divW-impW-44, 30); ctx.fillText(it.data.name, W/2+4, mid+1);
+}
+// التذييل: الفئات الموجودة فعلاً — جواب مباشر عن «ماذا داخل الحاوية»
+const classes = [...new Set(filled.map(it => it.data.div))];
+if(classes.length){
+ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.font = '900 28px monospace';
+ctx.fillText(I18N.t('الفئات: ','Classes: ') + classes.slice(0,4).join(' · ') + (classes.length > 4 ? ' …' : ''), W/2, H-34);
+} else {
+ctx.fillStyle = 'rgba(255,255,255,.62)'; ctx.font = '800 28px sans-serif';
+ctx.fillText(I18N.t('فارغة — لا مواد خطرة بعد','Empty — no dangerous goods yet'), W/2, H-34);
+}
 } else {
 ctx.fillStyle = '#111'; ctx.font = '96px sans-serif'; ctx.fillText(z.e, 256, 80);
 fit(ctx, z.n, 440, 75); ctx.fillText(z.n, 256, 185);
@@ -684,7 +723,9 @@ const cv = document.createElement('canvas'); cv.width = z.hz ? 1280 : 512; cv.he
 z.signCv = cv; z.signTex = rawTex(cv);
 drawZoneSign(z);
 const spr = new THREE.Sprite(new THREE.SpriteMaterial({map:z.signTex, fog:false, toneMapped:false}));
-spr.scale.set(z.w*0.95, z.w*0.95*(cv.height/cv.width), 1);
+// لوحات الحاويات الخطرة أكبر قليلاً لأنها تحمل قائمة محتويات تُقرأ من مسافة اللعب
+const sw = z.w * (z.hz ? 1.03 : 0.95);
+spr.scale.set(sw, sw*(cv.height/cv.width), 1);
 return spr;
 }
 function buildFodBox(z){

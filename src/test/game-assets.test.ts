@@ -151,8 +151,21 @@ describe("Game assets and shared rules", () => {
   it("draws the hazard board at double resolution with readable parcel rows", () => {
     expect(game).toContain("cv.width = z.hz ? 1280 : 512");
     expect(game).toContain("const k = z.hz ? 2 : 1");
-    expect(game).toContain("rr(W-30-divW-6, mid-cardH/2, divW, cardH, 8)");
     expect(game).toContain("minFilter = THREE.LinearMipmapLinearFilter");
+  });
+
+  it("shows what each DGR container holds, with capacity and class colours", () => {
+    // عدّاد السعة ومقاطعه ظاهرة دائماً، والمواضع الفارغة لا تختفي
+    expect(game).toContain("ctx.fillText(cnt + '/' + z.cap, W-96, 58)");
+    expect(game).toContain("for(let s = 0; s < z.cap; s++)");
+    expect(game).toContain("ctx.setLineDash([11,9])");
+    // لون شريحة الفئة يتبع عائلة الخطر، وتذييل يعرض الفئات الموجودة
+    expect(game).toContain("const classInk = div =>");
+    expect(game).toContain("I18N.t('الفئات: ','Classes: ')");
+    expect(game).toContain("I18N.t('فارغة — لا مواد خطرة بعد','Empty — no dangerous goods yet')");
+    // كلاهما يعيد الرسم عند التغيير
+    expect(game).toContain("z.items[i] = it; it.st = 'placed'; if(z.hz) drawZoneSign(z);");
+    expect(game).toContain("z.items = []; z.full = false; if(z.hz) drawZoneSign(z);");
   });
 
   it("lays the start and shift-end screens out for landscape phones", () => {
