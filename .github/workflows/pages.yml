@@ -27,12 +27,28 @@ jobs:
           mkdir _site
           cp -R public/. _site/
           touch _site/.nojekyll
+          # كل ملف JS/CSS محلي يجب أن يحمل نسخة، وإلا خدمه الـ service worker من الكاش
+          # القديم بجانب bundles جديدة (game.js جديد مع game-rules.js قديم).
           V="${GITHUB_SHA::8}"
-          for f in _site/game.html _site/index.html; do
-            sed -i "s|game/game.css|game/game.css?v=$V|g; s|game/game.js|game/game.js?v=$V|g; s|game/ui.css|game/ui.css?v=$V|g; s|sw.js|sw.js?v=$V|g" "$f"
+          for f in _site/game.html _site/index.html _site/m1/pairs.html; do
+            sed -i "s|game/game.css|game/game.css?v=$V|g; s|game/game.js|game/game.js?v=$V|g; s|game/game-rules.js|game/game-rules.js?v=$V|g; s|game/game-hub.js|game/game-hub.js?v=$V|g; s|game/i18n.js|game/i18n.js?v=$V|g; s|vendor/three.min.js|vendor/three.min.js?v=$V|g; s|game/ui.css|game/ui.css?v=$V|g; s|theme.js|theme.js?v=$V|g; s|sw.js|sw.js?v=$V|g" "$f"
           done
-          grep -o 'game/game\.\(css\|js\)?v=[a-f0-9]*' _site/game.html
+          # غيّر اسم الكاش كي يمسح activate الكاش القديم بدل أن يتراكم بلا حد.
+          sed -i -E "s|const VERSION = \"([^\"]+)\"|const VERSION = \"\1-$V\"|" _site/sw.js
+          # حارس: أي مرجع محلي بلا ?v= يعني نشراً غير آمن.
+          for f in _site/game.html _site/index.html _site/m1/pairs.html; do
+            left=$(grep -Eo '(src|href)="[^":]*\.(js|css)"' "$f" || true)
+            if [ -n "$left" ]; then
+              echo "unversioned asset reference in $f:" >&2
+              echo "$left" >&2
+              exit 1
+            fi
+          done
           test -f _site/index.html
+          test -f _site/m1/pairs.html
+          grep -o 'game/game\.\(css\|js\)?v=[a-f0-9]*' _site/game.html
+          grep -o 'game/game-rules\.js?v=[a-f0-9]*' _site/game.html
+          grep -o 'const VERSION = "[^"]*"' _site/sw.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
