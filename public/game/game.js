@@ -161,12 +161,15 @@ document.getElementById('amb').onclick = () => { initAudio(); setAmb(!ambEnabled
 const tipsBtn = document.getElementById('tips'); if(tipsBtn) tipsBtn.onclick = () => { setTips(!tipsEnabled); };
 function syncAudioUI(){
 const s = document.getElementById('snd'), a = document.getElementById('amb');
+const pressed = (el, on) => el.setAttribute('aria-pressed', on ? 'true' : 'false');
 if(s) s.classList.toggle('off', !soundEnabled);
 if(a) a.classList.toggle('off', !ambEnabled);
-document.querySelectorAll('[data-audio="snd"]').forEach(b => b.classList.toggle('off', !soundEnabled));
-document.querySelectorAll('[data-audio="amb"]').forEach(b => b.classList.toggle('off', !ambEnabled));
-document.querySelectorAll('[data-tips-toggle]').forEach(b => b.classList.toggle('off', !tipsEnabled));
-const t = document.getElementById('tips'); if(t) t.classList.toggle('off', !tipsEnabled);
+if(s) pressed(s, soundEnabled);
+if(a) pressed(a, ambEnabled);
+document.querySelectorAll('[data-audio="snd"]').forEach(b => { b.classList.toggle('off', !soundEnabled); pressed(b, soundEnabled); });
+document.querySelectorAll('[data-audio="amb"]').forEach(b => { b.classList.toggle('off', !ambEnabled); pressed(b, ambEnabled); });
+document.querySelectorAll('[data-tips-toggle]').forEach(b => { b.classList.toggle('off', !tipsEnabled); pressed(b, tipsEnabled); });
+const t = document.getElementById('tips'); if(t) { t.classList.toggle('off', !tipsEnabled); pressed(t, tipsEnabled); }
 }
 document.querySelectorAll('[data-audio="snd"]').forEach(b => b.onclick = () => { initAudio(); setSnd(!soundEnabled); });
 document.querySelectorAll('[data-audio="amb"]').forEach(b => b.onclick = () => { initAudio(); setAmb(!ambEnabled); });

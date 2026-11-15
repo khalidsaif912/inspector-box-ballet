@@ -69,6 +69,20 @@ describe("Game assets and shared rules", () => {
     expect(game).toMatch(/soundEnabled\s*=\s*v/);
   });
 
+  it("exposes mute toggles as pressed with Arabic accessible names", () => {
+    expect(html).toMatch(/id="amb"[^>]*aria-label="صوت المستودع"[^>]*aria-pressed="true"/);
+    expect(html).toMatch(/id="snd"[^>]*aria-label="المؤثرات الصوتية"[^>]*aria-pressed="true"/);
+    expect(html).toMatch(/data-audio="amb"[^>]*aria-pressed="true"/);
+    expect(html).toMatch(/data-audio="snd"[^>]*aria-pressed="true"/);
+    expect(html).toMatch(/data-tips-toggle[^>]*aria-pressed="true"/);
+    expect(game).toContain("setAttribute('aria-pressed'");
+    expect(html).not.toContain('aria-label="sound"');
+    expect(html).not.toContain('aria-label="warehouse sound"');
+    expect(html).not.toContain('aria-label="pick/place"');
+    expect(html).not.toContain('aria-label="dash"');
+    expect(html).not.toContain('aria-label="exit to game shell"');
+  });
+
   it("offers audio and tip toggles before the game starts", () => {
     expect(html).toMatch(/data-audio="snd"/);
     expect(html).toMatch(/data-audio="amb"/);
