@@ -568,7 +568,7 @@ wallSign(I18N.t('✈️ مخرج الطيران'),'AIRSIDE GATE B','#1b6b3a', -3
 wallSign(I18N.t('🚚 رصيف التحميل'),'LOADING DOCK 4','#204f8c', 34.65, 7.5, -6, -Math.PI/2, 3.4);
 /* ===== لوحة جدول الفرز IATA: بين حاويات المواد الخطرة والحاويات الأخرى، خلف صندوق FOD =====
    الوقوف أمامها يفتح مراجعة مجانية مجموعها ١٠ ثوانٍ تُقسَّم على أي عدد من الزيارات. */
-const STUDY = { total: 10, left: 10, on: false, inZone: false, box: { x: 7.0, z: -10.4, hx: 2.9, hz: 1.2 } };
+const STUDY = { total: 10, left: 10, on: false, inZone: false, box: { x: 6.4, z: -10.2, hx: 2.5, hz: 1.2 } };
 const STUDY_ROWS = [
   ['RFL 3', 'ROX 5.1 · RCM 8 · RLI 9 · 1'],
   ['RFS 4.1', 'ROX 5.1 · RLI 9 · 1'],
@@ -582,37 +582,49 @@ const STUDY_ROWS = [
   ['RXS 1.4S', '1.3G · 1.4B · 1.4D']
 ];
 (function buildStudyBoard(){
-const BW = 6.8, BH = 5.2, BX = 7.0, BY = 6.4, BZ = -17.04;
+/* لوحة مائلة (منضدة قراءة) بين مجموعتَي الحاويات وخلف FOD — مقروءة من كاميرا اللعب العلوية */
+const BW = 6.0, BH = 4.6, BX = 6.4, BY = 2.62, BZ = -13.0, TILT = -50 * Math.PI / 180;
 const tex = canvasTex(1400, 1080, (g, w, h) => {
-g.fillStyle = '#08160f'; g.fillRect(0, 0, w, h);
-g.strokeStyle = '#2fbf6a'; g.lineWidth = 18; g.strokeRect(14, 14, w - 28, h - 28);
-g.fillStyle = '#12452e'; g.fillRect(24, 24, w - 48, 108);
+/* ورقة بيضاء كجدول IATA الرسمي: أعلى تباين وأسهل قراءة من خلفية داكنة */
+g.fillStyle = '#f6faf7'; g.fillRect(0, 0, w, h);
+g.strokeStyle = '#0f3f2a'; g.lineWidth = 20; g.strokeRect(12, 12, w - 24, h - 24);
+g.fillStyle = '#0f3f2a'; g.fillRect(24, 24, w - 48, 132);
 g.textAlign = 'center'; g.textBaseline = 'middle';
 /* سطران منفصلان بلا خلط اتجاهات: عربي صافٍ ثم إنجليزي صافٍ */
 g.direction = I18N.lang === 'en' ? 'ltr' : 'rtl';
-g.fillStyle = '#eafff2'; g.font = '900 44px system-ui,Tahoma,sans-serif';
-g.fillText(I18N.t('جدول فرز المواد الخطرة', 'DANGEROUS GOODS SEGREGATION'), w / 2, 56);
-g.direction = 'ltr'; g.fillStyle = '#9fe6c0'; g.font = '900 34px ui-monospace,Menlo,Consolas,monospace';
-g.fillText('IATA DGR 9.3.A', w / 2, 104);
-const top = 150, rowH = (h - top - 96) / STUDY_ROWS.length;
+g.fillStyle = '#ffffff'; g.font = '900 56px system-ui,Tahoma,sans-serif';
+g.fillText(I18N.t('جدول فرز المواد الخطرة', 'DANGEROUS GOODS SEGREGATION'), w / 2, 62);
+g.direction = 'ltr'; g.fillStyle = '#8ff0b8'; g.font = '900 40px ui-monospace,Menlo,Consolas,monospace';
+g.fillText('IATA DGR 9.3.A', w / 2, 122);
+const top = 170, rowH = (h - top - 104) / STUDY_ROWS.length;
 STUDY_ROWS.forEach((r, i) => {
 const y = top + i * rowH, mid = y + rowH / 2;
-if(i % 2 === 0){ g.fillStyle = 'rgba(255,255,255,.055)'; g.fillRect(28, y, w - 56, rowH); }
+g.fillStyle = i % 2 === 0 ? '#ffffff' : '#e7f1ea'; g.fillRect(24, y, w - 48, rowH);
 g.direction = 'ltr';
-g.textAlign = 'left'; g.font = '900 52px ui-monospace,Menlo,Consolas,monospace'; g.fillStyle = '#ffd54a';
+g.textAlign = 'left'; g.font = '900 60px ui-monospace,Menlo,Consolas,monospace'; g.fillStyle = '#0b2c1d';
 g.fillText(r[0], 52, mid + 2);
-g.fillStyle = '#ff5252'; g.font = '900 46px system-ui,sans-serif'; g.fillText('✕', 400, mid + 2);
-g.fillStyle = '#dff7ea'; g.font = '900 46px ui-monospace,Menlo,Consolas,monospace';
-g.fillText(r[1], 470, mid + 2);
-if(i) { g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 2; g.beginPath(); g.moveTo(32, y); g.lineTo(w - 32, y); g.stroke(); }
+g.fillStyle = '#c62828'; g.font = '900 54px system-ui,sans-serif'; g.fillText('✕', 402, mid + 2);
+g.fillStyle = '#173a2b'; g.font = '900 52px ui-monospace,Menlo,Consolas,monospace';
+g.fillText(r[1], 466, mid + 2);
+g.strokeStyle = 'rgba(15,63,42,.22)'; g.lineWidth = 2; g.beginPath(); g.moveTo(24, y); g.lineTo(w - 24, y); g.stroke();
 });
-g.textAlign = 'center'; g.direction = I18N.lang === 'en' ? 'ltr' : 'rtl'; g.fillStyle = '#9fe6c0'; g.font = '800 34px system-ui,Tahoma,sans-serif';
-g.fillText(I18N.t('قف في المنطقة الخضراء أمام اللوحة لتقرأها — ١٠ ثوانٍ مجانية', 'Stand on the green pad to read it — 10 free seconds'), w / 2, h - 46);
+g.strokeStyle = '#0f3f2a'; g.lineWidth = 3; g.beginPath(); g.moveTo(24, h - 104); g.lineTo(w - 24, h - 104); g.stroke();
+g.textAlign = 'center'; g.direction = I18N.lang === 'en' ? 'ltr' : 'rtl'; g.fillStyle = '#0f3f2a'; g.font = '900 36px system-ui,Tahoma,sans-serif';
+g.fillText(I18N.t('قف في المنطقة الخضراء أمام اللوحة لتقرأها — ١٠ ثوانٍ مجانية', 'Stand on the green pad to read it — 10 free seconds'), w / 2, h - 56);
 });
-const mat = new THREE.MeshStandardMaterial({map:tex, roughness:.75, metalness:.1, emissive:0x0d2b1c, emissiveIntensity:.55});
+/* اللوحة مضيئة بذاتها: تُقرأ من أي مسافة بلا اعتماد على إضاءة المستودع */
+const mat = new THREE.MeshBasicMaterial({map:tex, toneMapped:false});
 const board = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), mat);
-board.position.set(BX, BY, BZ); S.add(board);
-const spill = new THREE.PointLight(0x8effc2, 1.1, 16, 2); spill.position.set(BX, BY + 1.2, BZ + 2.4); S.add(spill);
+board.position.set(BX, BY, BZ); board.rotation.x = TILT; S.add(board);
+/* ظهر وإطار اللوحة (يُزاح على محور العمودي تماماً كي لا يغطي الوجه) */
+const back = B(BW + .24, BH + .24, .16, 0x14361f, BX, BY - 0.766 * .14, BZ - 0.643 * .14, S, .7, .35);
+back.rotation.x = TILT;
+/* قاعدة وساقان وحامل خلفي */
+B(BW + .4, .16, .5, 0x1d2b24, BX, .08, -11.6, S, .5, .5);
+[-1, 1].forEach(s => B(.22, 1.05, .22, 0x1d2b24, BX + s * (BW / 2 - .5), .55, -11.72, S, .5, .5));
+[-1, 1].forEach(s => { const leg = B(.18, 3.0, .18, 0x1d2b24, BX + s * (BW / 2 - .5), 1.95, -14.1, S, .5, .5); leg.rotation.x = .38; });
+/* كشاف يبرز اللوحة في الممر */
+const spill = new THREE.PointLight(0xa8ffd4, 1.4, 18, 2); spill.position.set(BX, BY + 3.2, BZ + 2.6); S.add(spill);
 /* بساط أرضي يحدد منطقة القراءة */
 const padTex = canvasTex(512, 192, (g, w, h) => {
 g.fillStyle = 'rgba(8,30,20,.92)'; g.fillRect(0, 0, w, h);
@@ -620,7 +632,7 @@ g.setLineDash([26, 16]); g.strokeStyle = '#3ce08a'; g.lineWidth = 8; g.strokeRec
 g.fillStyle = '#baffd6'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 52px system-ui,Tahoma,sans-serif';
 g.fillText(I18N.t('منطقة المراجعة', 'REVIEW AREA'), w / 2, h / 2 + 2);
 });
-const pad = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 2.1), new THREE.MeshBasicMaterial({map:padTex, transparent:true, opacity:.92, depthWrite:false}));
+const pad = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 2.0), new THREE.MeshBasicMaterial({map:padTex, transparent:true, opacity:.92, depthWrite:false}));
 pad.rotation.x = -Math.PI / 2; pad.position.set(BX, .014, STUDY.box.z); S.add(pad);
 })();
 // خطوط الأرضية: ممرات المشاة + حدود الحزام
@@ -997,6 +1009,8 @@ const STATIC_OBSTACLES = [
 Z.filter(z => z.hz).forEach(z => [-1,1].forEach(q => STATIC_OBSTACLES.push({minX:z.x+q*z.w/2-0.1, maxX:z.x+q*z.w/2+0.1, minZ:-11.7, maxZ:-5.5})));
 Z.filter(z=>z.k!=='fod').forEach(z => STATIC_OBSTACLES.push({minX:z.x-(z.w+0.1)/2, maxX:z.x+(z.w+0.1)/2, minZ:-11.925, maxZ:-11.675}));
 STATIC_OBSTACLES.push({minX:gameRules.fodZoneX-1.0,maxX:gameRules.fodZoneX+1.0,minZ:-9.6,maxZ:-7.6});
+/* قاعدة منضدة القراءة المائلة: صلبة كي لا يمرّ اللاعب من خلالها */
+STATIC_OBSTACLES.push({minX:3.3,maxX:9.5,minZ:-14.6,maxZ:-11.35});
 let bumpCD = 0, lastBump = 0;
 // دفع دائرة اللاعب خارج مستطيل مع انزلاق ناعم على الحواف بدل القفز للمحور الأقرب
 // دفع اللاعب خارج مستطيل مع الانزلاق على السطح: نُصحّح المحور الأقل اختراقاً فقط
@@ -1635,6 +1649,9 @@ let studyKey = '';
 function openStudy(){
 const el = $('study'); if(!el) return;
 el.classList.add('on'); el.setAttribute('aria-hidden', 'false');
+document.body.classList.add('study-mode');
+/* منظور أول: إخفاء الموظف كي لا يحجب اللوحة أثناء القراءة */
+rig.visible = false;
 if(studyKey !== I18N.lang){
 studyKey = I18N.lang;
 $('study-title').textContent = I18N.T('جدول الفرز — IATA DGR 9.3.A', 'Segregation table — IATA DGR 9.3.A');
@@ -1645,11 +1662,13 @@ snd('ok', 1.1);
 function closeStudy(){
 const el = $('study'); if(!el) return;
 el.classList.remove('on'); el.setAttribute('aria-hidden', 'true');
+document.body.classList.remove('study-mode');
+if(!FD.on && !EXIT_GATE.active) rig.visible = true;
 }
 function updateStudy(dt){
-const B = STUDY.box;
+const ZB = STUDY.box;
 const inZone = run && !fire.active && !fire.keypad && !EXIT_GATE.active && !introHold && !FD.on &&
-Math.abs(px.x - B.x) <= B.hx && Math.abs(px.z - B.z) <= B.hz;
+Math.abs(px.x - ZB.x) <= ZB.hx && Math.abs(px.z - ZB.z) <= ZB.hz;
 STUDY.inZone = inZone;
 if(!STUDY.inZone && STUDY.on){ STUDY.on = false; closeStudy(); }
 if(!STUDY.on && inZone && STUDY.left > 0){
@@ -2918,11 +2937,12 @@ if(hudTicker >= .1){ hudTicker = 0; hud(); }
 const evacView = fire.active && fire.phase !== 'done' ? -Math.max(0, -px.x) * 0.3 : 0;
 if(STUDY.on){
 // تقريب الكاميرا إلى اللوحة أثناء المراجعة حتى يُقرأ الجدول بوضوح
-const halfH = 2.95, halfW = 3.85, tHalf = Math.tan(C.fov * Math.PI / 360);
-const d = Math.max(halfH / tHalf, halfW / (tHalf * Math.max(.35, C.aspect))) * 1.18;
+const halfH = 2.35, halfW = 3.1, tHalf = Math.tan(C.fov * Math.PI / 360);
+const d = Math.max(halfH / tHalf, halfW / (tHalf * Math.max(.35, C.aspect))) * 1.06;
 const k = 1 - Math.exp(-dt * 6);
-C.position.lerp(camTarget.set(STUDY.box.x, 6.4, -17.04 + d), k);
-camLook.lerp(camLookT.set(STUDY.box.x, 6.4, -17.04), 1 - Math.exp(-dt * 7));
+/* الكاميرا على محور عمودي اللوحة المائلة (٥٠°) تماماً: الجدول يملأ الشاشة بلا ميل */
+C.position.lerp(camTarget.set(6.4, 2.62 + 0.766 * d, -13.0 + 0.643 * d), k);
+camLook.lerp(camLookT.set(6.4, 2.62, -13.0), 1 - Math.exp(-dt * 7));
 C.lookAt(camLook);
 } else if(EXIT_GATE.active){
 // توجيه الكاميرا نحو بوابة الخروج على اليسار أثناء تسلسل الانتقال
