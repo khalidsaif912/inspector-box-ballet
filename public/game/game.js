@@ -427,7 +427,7 @@ dl.position.set(s*34.3, 6.5, z + 2.0); S.add(dl);
 });
 });
 // ===== بوابة الخروج إلى اللعبة التالية على الجدار الأيسر (رصيف الطيران B) =====
-const EXIT_GATE = { x:-34.1, z:-6, targetX:-32.95, targetZ:-6, active:false, phase:'idle', t:0, open:0, warped:false, trail:[] };
+const EXIT_GATE = { x:-34.1, z:-6, targetX:-32.95, targetZ:-6, active:false, phase:'idle', t:0, open:0, warped:false, trail:[], route:[], wp:0, stuckT:0, lastX:0, lastZ:0, limit:20 };
 const gateGroup = new THREE.Group();
 gateGroup.position.set(EXIT_GATE.x, 0, EXIT_GATE.z);
 S.add(gateGroup);
@@ -530,8 +530,8 @@ CY(0.185, 0.185, 0.16, 0x151515, x, 0.75, z, S, 0.6, 0.1);
 BOLLARDS.push({x, z, r:0.2});
 });
 // زر إبطاء الحزام عمود ثابت: لا يمكن للاعب المرور من خلاله
-BOLLARDS.push({x:-22.8, z:9.95, r:0.22});
-const fk = new THREE.Group(); fk.position.set(-30.8, 0, 9.2); fk.rotation.y = Math.PI/2; S.add(fk);
+BOLLARDS.push({x:22.8, z:9.95, r:0.22});
+const fk = new THREE.Group(); fk.position.set(30.8, 0, 9.2); fk.rotation.y = -Math.PI/2; S.add(fk);
 B(1.5, 0.9, 2.2, 0xf2a900, 0, 0.75, 0, fk, 0.45, 0.3);
 B(1.3, 0.5, 0.9, 0x222, 0, 1.4, -0.6, fk, 0.7, 0.2);
 [-0.6,0.6].forEach(s => B(0.08, 2.2, 0.08, 0x333, s, 1.8, 0.2, fk, 0.5, 0.6));
@@ -555,7 +555,7 @@ const boot = B(.22,.4,.24,0x243240,side*.2,1.23,.2,truckDriver); boot.rotation.x
 const steering = M(new THREE.TorusGeometry(.23,.035,6,16),0x181c20);
 steering.position.set(0,1.85,.2); steering.rotation.x=-.65; truckDriver.add(steering);
 let truckState = gameRules.reset(), fearT = 0;
-const FD = { on:false, left:60, near:false, home:{x:-30.8, z:9.2} };
+const FD = { on:false, left:60, near:false, home:{x:30.8, z:9.2} };
 // لافتات حائطية
 function wallSign(txt, sub, bg, x, y, z, ry=0, w=4){
 const t = canvasTex(512, 256, (g)=>{ g.fillStyle=bg; g.fillRect(0,0,512,256); g.strokeStyle='#fff'; g.lineWidth=10; g.strokeRect(12,12,488,232); g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle'; g.font='bold 74px sans-serif'; g.fillText(txt,256,100); g.font='bold 38px sans-serif'; g.fillText(sub,256,185); });
@@ -583,7 +583,7 @@ B(2.6, 3.8, 3.6, 0x324454, -25.8, 1.9, 12, S, 0.4, 0.4);
 B(2.6, 3.8, 3.6, 0x324454, 25.8, 1.9, 12, S, 0.4, 0.4);
 // زر إبطاء الحزام: سر مخفي — عمود قصير أمام حافة الحزام، خارج مسار العمل (بلا أي نص)
 const beltBtnGroup = new THREE.Group();
-beltBtnGroup.position.set(-22.8, 0, 9.95);
+beltBtnGroup.position.set(22.8, 0, 9.95);
 S.add(beltBtnGroup);
 const beltBtnBase = new THREE.Mesh(
   new THREE.CylinderGeometry(0.15, 0.19, 0.1, 18),
@@ -1321,7 +1321,7 @@ const t = rawTex(cv); return t;
 }
 let slowT = 0;
 /* إبطاء الحزام: زر فيزيائي بجوار الحزام، يُستخدم مرّة واحدة، يبطئ ٣٠ ثانية */
-const BELT_BTN_XZ = { x: -22.8, z: 9.95 };
+const BELT_BTN_XZ = { x: 22.8, z: 9.95 };
 let beltSlowT = 0, beltSlowUsed = false;
 function useBeltSlow(){
   if(beltSlowUsed || !run || fire.active) return;
@@ -1968,7 +1968,7 @@ $('rules').style.display = 'none';
 resetExitGate();
 resetFire();
 px.set(SAFE_SPAWN.x, 0, SAFE_SPAWN.z); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
-FD.on = false; FD.left = 60; FD.near = false; rig.visible = true; forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = Math.PI/2;
+FD.on = false; FD.left = 60; FD.near = false; rig.visible = true; forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = -Math.PI/2;
 clearMovement(); last = performance.now();
 run = true; document.body.classList.add('ingame'); $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true});
 setStage(1, true);
@@ -2098,8 +2098,22 @@ arrow.userData.delay = i * 0.08;
 });
 gateTrailGroup.visible = true;
 }
+/* مسار الخروج: الممر الأمامي (أعلى الحواجز) ثم محاذاة البوابة بعيداً عن عمود الجدار */
+function buildExitRoute(){
+  return [
+    { x: px.x, z: -4.0 },
+    { x: -30.6, z: -4.0 },
+    { x: EXIT_GATE.targetX, z: EXIT_GATE.targetZ },
+  ];
+}
+function exitRouteLength(){
+  let len = 0, ax = px.x, az = px.z;
+  for(const p of EXIT_GATE.route){ len += Math.hypot(p.x - ax, p.z - az); ax = p.x; az = p.z; }
+  return len;
+}
 function resetExitGate(){
 EXIT_GATE.active = false; EXIT_GATE.phase = 'idle'; EXIT_GATE.t = 0; EXIT_GATE.open = 0; EXIT_GATE.warped = false;
+EXIT_GATE.route = []; EXIT_GATE.wp = 0; EXIT_GATE.stuckT = 0;
 gateDoorL.position.z = -1.36; gateDoorR.position.z = 1.36;
 portalMat.opacity = 0; gatePadMat.opacity = 0; gateLight.intensity = 0; gateMarkerMat.opacity = 0;
 EXIT_GATE.trail.forEach(arrow => { arrow.visible = false; arrow.material.opacity = 0; });
@@ -2119,6 +2133,8 @@ document.body.classList.add('exit-mode');
 const ov = $('ov');
 if(ov){ ov.classList.add('fade-out'); setTimeout(() => { ov.style.display = 'none'; ov.classList.remove('fade-out'); }, 460); }
 buildExitTrail();
+EXIT_GATE.route = buildExitRoute(); EXIT_GATE.wp = 0; EXIT_GATE.stuckT = 0; EXIT_GATE.lastX = px.x; EXIT_GATE.lastZ = px.z;
+EXIT_GATE.limit = 4 + exitRouteLength() / 5.4 * 1.6;
 snd('gate');
 toast(I18N.T('🚪 البوابة على يسارك — اتبع مسار الإرشاد','🚪 The gate is on your left — follow the trail'), '#64ffda');
 try { if(window.GameHub) GameHub.setActiveGame('game1'); } catch(e){}
@@ -2158,19 +2174,38 @@ arrow.material.opacity = 0.25 + 0.75 * wave * wave;
 arrow.scale.setScalar(0.82 + 0.18 * wave);
 });
 if(EXIT_GATE.phase === 'guide' && t > 0.9){
-const dx = EXIT_GATE.targetX - px.x, dz = EXIT_GATE.targetZ - px.z;
+const route = EXIT_GATE.route;
+const lastWp = Math.max(0, route.length - 1);
+const wp = route[Math.min(EXIT_GATE.wp, lastWp)] || { x: EXIT_GATE.targetX, z: EXIT_GATE.targetZ };
+const dx = wp.x - px.x, dz = wp.z - px.z;
 const dist = Math.hypot(dx, dz);
-if(dist <= 0.4){ startPortalWarp(); return; }
+const final = EXIT_GATE.wp >= lastWp;
+if(dist <= (final ? 0.4 : 0.5)){
+if(final){ startPortalWarp(); return; }
+EXIT_GATE.wp++; EXIT_GATE.stuckT = 0;
+} else {
 const ux = dx / dist, uz = dz / dist, spd = 5.4;
 const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
 for(let i = 0; i < steps; i++){
 const c = resolvePlayerCollisions(px.x + ux * spd * stepDt, px.z + uz * spd * stepDt, ux, uz, stepDt);
 px.x = c.x; px.z = c.z;
 }
+/* إن حاصر عائقٌ اللاعب: تجاوز المحطة، وعلى المحطة الأخيرة انتقل فوراً بدل تعليق اللعبة */
+const moved = Math.hypot(px.x - EXIT_GATE.lastX, px.z - EXIT_GATE.lastZ);
+EXIT_GATE.stuckT = moved < 0.02 ? EXIT_GATE.stuckT + dt : 0;
+if(EXIT_GATE.stuckT > 1.1){
+EXIT_GATE.stuckT = 0;
+if(!final){ EXIT_GATE.wp++; }
+else { px.set(EXIT_GATE.targetX, 0, EXIT_GATE.targetZ); startPortalWarp(); return; }
+}
 const targetRot = Math.atan2(ux, uz);
 curRotY += Math.atan2(Math.sin(targetRot - curRotY), Math.cos(targetRot - curRotY)) * Math.min(1, dt * 10);
 rig.rotation.y = curRotY;
 anim(dt, 8.2, ux, uz);
+}
+EXIT_GATE.lastX = px.x; EXIT_GATE.lastZ = px.z;
+/* حماية نهائية: لا يبقى الانتقال معلقاً مهما حدث */
+if(EXIT_GATE.t > EXIT_GATE.limit){ px.set(EXIT_GATE.targetX, 0, EXIT_GATE.targetZ); startPortalWarp(); return; }
 }
 }
 // ===== إنذار الحريق: إيقاف الحزام، إخلاء إلى منطقة التجمع، ورقم الطوارئ =====

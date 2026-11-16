@@ -75,7 +75,7 @@
     '٣. لا تخلط': '3. Never mix',
     'الفئات المتعارضة تُفصل في حاويتين مختلفتين.': 'Conflicting classes go into two different containers.',
     '٤. الرافعة الشوكية': '4. The forklift',
-    'اقترب من الرافعة يسار المستودع واضغط ✋ لقيادتها — مجموع ٦٠ ثانية في الوردية.': 'Approach the forklift on the left and press ✋ to drive it — 60 seconds per shift.',
+    'اقترب من الرافعة يمين المستودع واضغط ✋ لقيادتها — مجموع ٦٠ ثانية في الوردية.': 'Approach the forklift on the right and press ✋ to drive it — 60 seconds per shift.',
     'الشحن العادي': 'General cargo',
     'تبريد ❄️ • قابل للتلف 🍓 • عام 📦 → منطقتها الملوّنة فقط': 'Chilled ❄️ • perishable 🍓 • general 📦 → its own coloured zone only',
     'ثلاث حاويات للمواد الخطرة': 'Three dangerous goods containers',
