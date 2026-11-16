@@ -561,10 +561,67 @@ function wallSign(txt, sub, bg, x, y, z, ry=0, w=4){
 const t = canvasTex(512, 256, (g)=>{ g.fillStyle=bg; g.fillRect(0,0,512,256); g.strokeStyle='#fff'; g.lineWidth=10; g.strokeRect(12,12,488,232); g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle'; g.font='bold 74px sans-serif'; g.fillText(txt,256,100); g.font='bold 38px sans-serif'; g.fillText(sub,256,185); });
 const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w/2), new THREE.MeshStandardMaterial({map:t, roughness:0.6})); m.position.set(x,y,z); m.rotation.y = ry; S.add(m);
 }
-wallSign(I18N.t('🚭 ممنوع التدخين'),'NO SMOKING • DGR AREA','#b3261e', 8.5, 8.6, -17.15);
+wallSign(I18N.t('🚭 ممنوع التدخين'),'NO SMOKING • DGR AREA','#b3261e', 11.5, 8.6, -17.15);
 wallSign(I18N.t('⚠️ منطقة مواد خطرة'),'IATA DGR CLASS 1–9','#c77800', 26, 8.6, -17.15);
 wallSign(I18N.t('✈️ مخرج الطيران'),'AIRSIDE GATE B','#1b6b3a', -34.65, 7.5, -12.3, Math.PI/2, 3.4);
 wallSign(I18N.t('🚚 رصيف التحميل'),'LOADING DOCK 4','#204f8c', 34.65, 7.5, -6, -Math.PI/2, 3.4);
+/* ===== لوحة جدول الفرز IATA: بين حاويات المواد الخطرة والحاويات الأخرى، خلف صندوق FOD =====
+   الوقوف أمامها يفتح مراجعة مجانية مجموعها ١٠ ثوانٍ تُقسَّم على أي عدد من الزيارات. */
+const STUDY = { total: 10, left: 10, on: false, inZone: false, box: { x: 3.6, z: -10.5, hx: 2.9, hz: 1.2 } };
+const STUDY_ROWS = [
+  ['RFL 3', 'ROX 5.1 · RCM 8 · RLI 9 · 1'],
+  ['RFS 4.1', 'ROX 5.1 · RLI 9 · 1'],
+  ['RSC 4.2', 'ROX 5.1 · 1'],
+  ['RWR 4.3', 'RCM 8 · 1'],
+  ['ROX 5.1', 'RFL 3 · RFS 4.1 · RSC 4.2 · RCM 8 · RLI 9 · 1'],
+  ['ROP 5.2', 'RLI 9 · 1'],
+  ['RCM 8', 'RFL 3 · RWR 4.3 · ROX 5.1 · 1'],
+  ['RFG 2.1', 'RLI 9 · 1'],
+  ['RCX 1.3G', '1 · 2 · 3 · 4 · 5 · 8 · 9'],
+  ['RXS 1.4S', '1.3G · 1.4B · 1.4D']
+];
+(function buildStudyBoard(){
+const BW = 7, BH = 5.4, BX = 3.6, BY = 6.6, BZ = -17.04;
+const tex = canvasTex(1400, 1080, (g, w, h) => {
+g.fillStyle = '#08160f'; g.fillRect(0, 0, w, h);
+g.strokeStyle = '#2fbf6a'; g.lineWidth = 18; g.strokeRect(14, 14, w - 28, h - 28);
+g.fillStyle = '#12452e'; g.fillRect(24, 24, w - 48, 108);
+g.textAlign = 'center'; g.textBaseline = 'middle';
+/* سطران منفصلان بلا خلط اتجاهات: عربي صافٍ ثم إنجليزي صافٍ */
+g.direction = I18N.lang === 'en' ? 'ltr' : 'rtl';
+g.fillStyle = '#eafff2'; g.font = '900 44px system-ui,Tahoma,sans-serif';
+g.fillText(I18N.t('جدول فرز المواد الخطرة', 'DANGEROUS GOODS SEGREGATION'), w / 2, 56);
+g.direction = 'ltr'; g.fillStyle = '#9fe6c0'; g.font = '900 34px ui-monospace,Menlo,Consolas,monospace';
+g.fillText('IATA DGR 9.3.A', w / 2, 104);
+const top = 150, rowH = (h - top - 96) / STUDY_ROWS.length;
+STUDY_ROWS.forEach((r, i) => {
+const y = top + i * rowH, mid = y + rowH / 2;
+if(i % 2 === 0){ g.fillStyle = 'rgba(255,255,255,.055)'; g.fillRect(28, y, w - 56, rowH); }
+g.direction = 'ltr';
+g.textAlign = 'left'; g.font = '900 52px ui-monospace,Menlo,Consolas,monospace'; g.fillStyle = '#ffd54a';
+g.fillText(r[0], 52, mid + 2);
+g.fillStyle = '#ff5252'; g.font = '900 46px system-ui,sans-serif'; g.fillText('✕', 400, mid + 2);
+g.fillStyle = '#dff7ea'; g.font = '900 46px ui-monospace,Menlo,Consolas,monospace';
+g.fillText(r[1], 470, mid + 2);
+if(i) { g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 2; g.beginPath(); g.moveTo(32, y); g.lineTo(w - 32, y); g.stroke(); }
+});
+g.textAlign = 'center'; g.direction = I18N.lang === 'en' ? 'ltr' : 'rtl'; g.fillStyle = '#9fe6c0'; g.font = '800 34px system-ui,Tahoma,sans-serif';
+g.fillText(I18N.t('قف في المنطقة الخضراء أمام اللوحة لتقرأها — ١٠ ثوانٍ مجانية', 'Stand on the green pad to read it — 10 free seconds'), w / 2, h - 46);
+});
+const mat = new THREE.MeshStandardMaterial({map:tex, roughness:.75, metalness:.1, emissive:0x0d2b1c, emissiveIntensity:.55});
+const board = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), mat);
+board.position.set(BX, BY, BZ); S.add(board);
+const spill = new THREE.PointLight(0x8effc2, 1.1, 16, 2); spill.position.set(BX, BY + 1.2, BZ + 2.4); S.add(spill);
+/* بساط أرضي يحدد منطقة القراءة */
+const padTex = canvasTex(512, 192, (g, w, h) => {
+g.fillStyle = 'rgba(8,30,20,.92)'; g.fillRect(0, 0, w, h);
+g.setLineDash([26, 16]); g.strokeStyle = '#3ce08a'; g.lineWidth = 8; g.strokeRect(10, 10, w - 20, h - 20);
+g.fillStyle = '#baffd6'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 52px system-ui,Tahoma,sans-serif';
+g.fillText(I18N.t('منطقة المراجعة', 'REVIEW AREA'), w / 2, h / 2 + 2);
+});
+const pad = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 2.1), new THREE.MeshBasicMaterial({map:padTex, transparent:true, opacity:.92, depthWrite:false}));
+pad.rotation.x = -Math.PI / 2; pad.position.set(BX, .014, STUDY.box.z); S.add(pad);
+})();
 // خطوط الأرضية: ممرات المشاة + حدود الحزام
 B(64, 0.02, 0.3, 0xffc107, 0, 0.012, -4.4, S, 0.4, 0.05).castShadow = false;
 B(64, 0.02, 0.3, 0xffc107, 0, 0.012, 9.4, S, 0.4, 0.05).castShadow = false;
@@ -649,68 +706,35 @@ ctx.fillStyle = '#' + z.c.toString(16).padStart(6,'0');
 rr(8,8,W-16,H-16,32); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 12; ctx.stroke();
 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 if(z.hz){
-ctx.direction = I18N.lang === 'en' ? 'ltr' : 'rtl';
-// لون كل عائلة خطر: الشريحة المصبوغة تجعل محتوى الحاوية مقروءاً من بعيد
-const classInk = div => {
-const c = String(div)[0];
-if(c === '1') return ['#ff9f45','#241000'];
-if(c === '2') return ['#57c96a','#06210c'];
-if(c === '3') return ['#ff5a5a','#2a0505'];
-if(c === '4') return ['#4aa3f0','#04182b'];
-if(c === '5') return ['#ffd54a','#1a1200'];
-if(c === '6') return ['#c26ad8','#210d26'];
-if(c === '7') return ['#ffe066','#241c00'];
-if(c === '8') return ['#3fc7b8','#04211e'];
-if(c === '9') return ['#dfe6ee','#111820'];
-return ['#ffd54a','#1a1200'];
-};
-const filled = z.items.filter(Boolean);
-const cnt = filled.length;
-// شريط العنوان: رقم الحاوية + اسمها + عدّاد السعة
-ctx.fillStyle = 'rgba(0,0,0,.58)'; rr(18,16,W-36,96,22); ctx.fill();
-ctx.strokeStyle = 'rgba(255,255,255,.30)'; ctx.lineWidth = 3; rr(18,16,W-36,96,22); ctx.stroke();
-ctx.beginPath(); ctx.arc(72,64,31,0,Math.PI*2); ctx.fillStyle = '#0e151b'; ctx.fill();
-ctx.strokeStyle = '#ffd54a'; ctx.lineWidth = 4; ctx.stroke();
-ctx.fillStyle = '#ffd54a'; ctx.font = '900 42px monospace'; ctx.fillText(z.k.slice(2), 72, 65);
-ctx.fillStyle = '#fff'; fit(ctx, z.n, W-330, 40); ctx.fillText(z.n, W/2, 64);
-// العدّاد: رقم كبير + ستة مقاطع تُظهر السعة المتبقية بنظرة
-ctx.fillStyle = cnt ? '#ffd54a' : 'rgba(255,255,255,.55)';
-ctx.font = '900 46px monospace'; ctx.fillText(cnt + '/' + z.cap, W-96, 58);
-for(let s = 0; s < z.cap; s++){
-ctx.fillStyle = s < cnt ? '#ffd54a' : 'rgba(255,255,255,.22)';
-rr(W-152 + s*20, 88, 14, 11, 4); ctx.fill();
-}
-// المحتويات: ستة مواضع ظاهرة دائماً، الفارغ منها بحدّ متقطّع
-const listTop = 126, listBottom = H - 66;
+/* لوحة الحاوية الخطرة: الكود ورقم الفئة فقط، بخط كبير وواضح — بلا أسماء أو تفاصيل */
+ctx.direction = 'ltr';
+ctx.fillStyle = 'rgba(6,11,16,.96)';
+rr(6, 6, W-12, H-12, 26); ctx.fill();
+ctx.strokeStyle = '#' + z.c.toString(16).padStart(6,'0'); ctx.lineWidth = 9;
+rr(6, 6, W-12, H-12, 26); ctx.stroke();
 const rows = Math.max(1, Math.min(6, z.cap));
-const rowH = (listBottom - listTop) / rows;
-const divW = 118, impW = 92;
+const top = 26, bot = H - 26, rowH = (bot - top) / rows;
 for(let i = 0; i < rows; i++){
+const y = top + i * rowH, mid = y + rowH / 2;
+if(i){
+ctx.strokeStyle = 'rgba(255,255,255,.13)'; ctx.lineWidth = 2;
+ctx.beginPath(); ctx.moveTo(30, y); ctx.lineTo(W - 30, y); ctx.stroke();
+}
 const it = z.items[i];
-const y = listTop + i*rowH, mid = y + rowH/2, cardH = rowH - 10;
 if(!it){
-ctx.save(); ctx.setLineDash([11,9]); ctx.lineWidth = 3;
-ctx.strokeStyle = 'rgba(255,255,255,.15)'; rr(24, y+5, W-48, cardH, 12); ctx.stroke(); ctx.restore();
-ctx.fillStyle = 'rgba(255,255,255,.20)'; ctx.font = '900 28px sans-serif'; ctx.fillText('+', W/2, mid+1);
+ctx.fillStyle = 'rgba(255,255,255,.16)';
+ctx.font = '900 ' + Math.round(rowH * .5) + 'px monospace';
+ctx.fillText('—', W/2, mid + 2);
 continue;
 }
-ctx.fillStyle = i % 2 ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.24)';
-rr(24, y+5, W-48, cardH, 12); ctx.fill();
-const ink = classInk(it.data.div);
-ctx.fillStyle = ink[0]; rr(W-24-divW, mid-cardH/2, divW, cardH, 10); ctx.fill();
-ctx.fillStyle = ink[1]; ctx.font = '900 31px monospace'; ctx.fillText(it.data.div, W-24-divW/2, mid+1);
-ctx.fillStyle = 'rgba(255,255,255,.18)'; rr(32, mid-cardH/2, impW, cardH, 10); ctx.fill();
-ctx.fillStyle = '#eaf2fb'; ctx.font = '900 26px monospace'; ctx.fillText(it.data.imp, 32+impW/2, mid+1);
-ctx.fillStyle = '#fff'; fit(ctx, it.data.name, W-48-divW-impW-44, 30); ctx.fillText(it.data.name, W/2+4, mid+1);
+const code = (it.data.imp + ' - ' + it.data.div).toUpperCase();
+let fs = Math.round(rowH * .72);
+ctx.font = '900 ' + fs + 'px ui-monospace,Menlo,Consolas,monospace';
+while(fs > 18 && ctx.measureText(code).width > W - 90){
+fs -= 2; ctx.font = '900 ' + fs + 'px ui-monospace,Menlo,Consolas,monospace';
 }
-// التذييل: الفئات الموجودة فعلاً — جواب مباشر عن «ماذا داخل الحاوية»
-const classes = [...new Set(filled.map(it => it.data.div))];
-if(classes.length){
-ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.font = '900 28px monospace';
-ctx.fillText(I18N.t('الفئات: ','Classes: ') + classes.slice(0,4).join(' · ') + (classes.length > 4 ? ' …' : ''), W/2, H-34);
-} else {
-ctx.fillStyle = 'rgba(255,255,255,.62)'; ctx.font = '800 28px sans-serif';
-ctx.fillText(I18N.t('فارغة — لا مواد خطرة بعد','Empty — no dangerous goods yet'), W/2, H-34);
+ctx.fillStyle = '#ffffff';
+ctx.fillText(code, W/2, mid + 3);
 }
 } else {
 ctx.fillStyle = '#111'; ctx.font = '96px sans-serif'; ctx.fillText(z.e, 256, 80);
@@ -1605,6 +1629,41 @@ dv.setAttribute('aria-label', I18N.T('قيادة الرافعة — المتبق
 }
 }
 }
+/* ===== مراجعة جدول الفرز: ١٠ ثوانٍ مجانية تُستهلك فقط أثناء الوقوف أمام اللوحة ===== */
+let studyKey = '';
+function openStudy(){
+const el = $('study'); if(!el) return;
+el.classList.add('on'); el.setAttribute('aria-hidden', 'false');
+if(studyKey !== I18N.lang){
+studyKey = I18N.lang;
+$('study-title').textContent = I18N.T('جدول الفرز — IATA DGR 9.3.A', 'Segregation table — IATA DGR 9.3.A');
+$('study-foot').textContent = I18N.T('🚶 تراجع خطوة للعودة إلى اللعبة', '🚶 Step back to resume the shift');
+}
+snd('ok', 1.1);
+}
+function closeStudy(){
+const el = $('study'); if(!el) return;
+el.classList.remove('on'); el.setAttribute('aria-hidden', 'true');
+}
+function updateStudy(dt){
+const B = STUDY.box;
+const inZone = run && !fire.active && !fire.keypad && !EXIT_GATE.active && !introHold && !FD.on &&
+Math.abs(px.x - B.x) <= B.hx && Math.abs(px.z - B.z) <= B.hz;
+STUDY.inZone = inZone;
+if(!STUDY.inZone && STUDY.on){ STUDY.on = false; closeStudy(); }
+if(!STUDY.on && inZone && STUDY.left > 0){
+STUDY.on = true; openStudy();
+tip('iataBoard', '📋 لوحة جدول الفرز — مراجعة مجانية ١٠ ثوانٍ', '#64ffda');
+}
+if(!STUDY.on) return;
+STUDY.left = Math.max(0, STUDY.left - dt);
+const tm = $('study-time');
+if(tm) tm.textContent = '⏱ ' + Math.ceil(STUDY.left) + I18N.T(' ث', 's');
+if(STUDY.left <= 0){
+STUDY.on = false; closeStudy();
+toast(I18N.T('⏱ انتهى وقت المراجعة — عُد إلى الوردية', '⏱ Review time is over — back to the shift'), '#ffd54a');
+}
+}
 function rm(it){
 clearCrit(it);
 /* تحرير أي مرجع حمل يشير إلى الطرد المُتلف قبل إزالته من المشهد */
@@ -1997,6 +2056,7 @@ resetExitGate();
 resetFire();
 px.set(SAFE_SPAWN.x, 0, SAFE_SPAWN.z); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
 FD.on = false; FD.left = 60; FD.near = false; rig.visible = true; forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = -Math.PI/2;
+STUDY.left = STUDY.total; STUDY.on = false; closeStudy();
 clearMovement(); last = performance.now();
 run = true; document.body.classList.add('ingame'); $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true});
 setStage(1, true);
@@ -2015,6 +2075,7 @@ $('how').onclick = openRules;
 function end(){
 run = false;
 stopVib();
+if(STUDY.on){ STUDY.on = false; closeStudy(); }
 feverT = 0; dashT = 0; dashCD = 0; shakeTrauma = 0;
 $('stage').classList.remove('fever'); $('dash-fx').classList.remove('on'); setDashButton();
 document.body.classList.remove('ingame');
@@ -2232,6 +2293,7 @@ if(EXIT_GATE.active) return;
 initAudio();
 EXIT_GATE.active = true; EXIT_GATE.phase = 'guide'; EXIT_GATE.t = 0; EXIT_GATE.open = 0; EXIT_GATE.warped = false;
 run = false; clearMovement(); stopVib();
+if(STUDY.on){ STUDY.on = false; closeStudy(); }
 if(FD.on) stopDrive();
 resetFire();
 document.body.classList.remove('ingame');
@@ -2669,8 +2731,10 @@ if(dashT > 0){ dashT = Math.max(0, dashT - dt); if(dashT === 0) $('dash-fx').cla
 if(dashCD > 0) dashCD = Math.max(0, dashCD - dt);
 if(feverT > 0){ feverT = Math.max(0, feverT - dt); if(feverT === 0) $('stage').classList.remove('fever'); }
 shakeTrauma = Math.max(0, shakeTrauma - dt * TRAUMA_DECAY);
+/* لوحة الفرز: تُحسب قبل حركة هذا الإطار حتى تُجمّد الساعة فور الوقوف أمامها */
+updateStudy(dt);
 if(run && !fire.keypad){
-if(!fire.active && (stage>=3 || demo.truck)) updateTruck(dt);
+if(!fire.active && !STUDY.on && (stage>=3 || demo.truck)) updateTruck(dt);
 const sprintOn = !held && !!(key.ShiftLeft || key.ShiftRight);
 const sprintK = (dashT > 0 ? DASH_BOOST : 1) * (feverT > 0 ? FEVER_BOOST : 1) * (sprintOn ? 1.35 : 1);
 const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultiplier(fearT) * sprintK;
@@ -2696,7 +2760,8 @@ px.x = correctedPos.x; px.z = correctedPos.z;
 }
 if(!FD.on) anim(dt, liftAnim.active ? 0 : animSpd, vx, vz);
 FD.near = !FD.on && FD.left > 0 && Math.hypot(px.x - fk.position.x, px.z - fk.position.z) < 2.6;
-if(!fire.active) time -= dt;
+/* المراجعة أمام اللوحة تجمّد ساعة الوردية والأحداث كلها */
+if(!fire.active && !STUDY.on) time -= dt;
 if(time <= 20){
 warnTicker += dt;
 if(warnTicker > 1){ snd('warn'); warnTicker = 0; }
@@ -2710,14 +2775,14 @@ demo.truckIn = Math.max(0, demo.truckIn - dt);
 if(demo.truckIn <= 0) startTruckDemo();
 }
 }
-if(stage<4 && score >= STAGE_AT[stage+1]) setStage(gameRules.layout.stageForScore(stage, score));if(!fire.active){
+if(stage<4 && score >= STAGE_AT[stage+1]) setStage(gameRules.layout.stageForScore(stage, score));if(!fire.active && !STUDY.on){
 spawnT -= dt;
 if(spawnT <= 0){
 spawn();
 spawnT = BREATH_SPAWN[stage];
 }
 }
-if(stage >= 2 && !fire.active){
+if(stage >= 2 && !fire.active && !STUDY.on){
 rushT -= dt;
 if(rushT <= 0){
 rushT = RUSH_EVERY; rushN = RUSH_COUNT; rushDelay = 0;
@@ -2733,23 +2798,23 @@ if(rushN === 0) spawnT = Math.max(spawnT, BREATH_SPAWN[stage] * 1.4);
 }
 }
 }
-if(streakT > 0){ streakT -= dt; if(streakT <= 0){ streakT = 0; streak = 0; combo = 1; } }
+if(streakT > 0 && !STUDY.on){ streakT -= dt; if(streakT <= 0){ streakT = 0; streak = 0; combo = 1; } }
 for(const it of items.slice()){
 if(it.st !== 'floor' || it.fall) continue;
 const zz = Z.find(z => (it.data.isFod ? z.k==='fod' : z.k!=='fod') && Math.abs(it.m.position.x - z.x) < z.hw && it.m.position.z < -5.6 && !z.full);
 if(zz){ it.st = 'sorting'; resolvePlacement(zz, it); }
 }
 separateBoxes();
-if(!fire.active && (stage>=2 || demo.insp)) updateInspector(dt);
+if(!fire.active && !STUDY.on && (stage>=2 || demo.insp)) updateInspector(dt);
 if(jy){
   const tp2 = gameRules.position(truckState);
   const nearTruck = truckState.active && tp2.x < px.x + 4 && Math.abs(tp2.x - px.x) < 14;
   const nearInsp = inspector.active && Math.abs(inspector.x - px.x) < 12;
   jy.classList.toggle('warn', run && !fire.active && (nearTruck || nearInsp));
 }
-slowT = Math.max(0, slowT - dt);
-beltSlowT = Math.max(0, beltSlowT - dt);
-const beltK = fire.active ? 0 : (slowT > 0 ? 0.35 : (beltSlowT > 0 ? 0.6 : 1));
+slowT = STUDY.on ? slowT : Math.max(0, slowT - dt);
+beltSlowT = STUDY.on ? beltSlowT : Math.max(0, beltSlowT - dt);
+const beltK = (fire.active || STUDY.on) ? 0 : (slowT > 0 ? 0.35 : (beltSlowT > 0 ? 0.6 : 1));
 let best = null, bd = 2.8;
 for(const it of items.slice()){
 it.csh.visible = it.st !== 'held' && it.st !== 'lifting';
@@ -2807,7 +2872,7 @@ if(it.m.material.emissive) it.m.material.emissive.setHex(0);
 if(it.data.isMys && it.m.material.emissive){ it.m.material.emissive.setHex(0x4a3000); it.m.material.emissiveIntensity = 0.5 + Math.sin(now*0.006)*0.4; }
 if(it.crit){
 if(it.st === 'belt' || it.st === 'floor' || it.st === 'held'){
-it.crit.t -= dt;
+if(!STUDY.on) it.crit.t -= dt;
 const sec = Math.max(0, Math.ceil(it.crit.t));
 if(sec !== it.crit.tag.sec) drawCritTag(it.crit.tag, sec);
 const pl = 1 + Math.sin(now * 0.012) * 0.16;
@@ -2850,7 +2915,15 @@ hudTicker += dt;
 if(hudTicker >= .1){ hudTicker = 0; hud(); }
 }
 const evacView = fire.active && fire.phase !== 'done' ? -Math.max(0, -px.x) * 0.3 : 0;
-if(EXIT_GATE.active){
+if(STUDY.on){
+// تقريب الكاميرا إلى اللوحة أثناء المراجعة حتى يُقرأ الجدول بوضوح
+const halfH = 3.05, halfW = 3.95, tHalf = Math.tan(C.fov * Math.PI / 360);
+const d = Math.max(halfH / tHalf, halfW / (tHalf * Math.max(.35, C.aspect))) * 1.18;
+const k = 1 - Math.exp(-dt * 6);
+C.position.lerp(camTarget.set(STUDY.box.x, 6.6, -17.04 + d), k);
+camLook.lerp(camLookT.set(STUDY.box.x, 6.6, -17.04), 1 - Math.exp(-dt * 7));
+C.lookAt(camLook);
+} else if(EXIT_GATE.active){
 // توجيه الكاميرا نحو بوابة الخروج على اليسار أثناء تسلسل الانتقال
 const gateK = 1 - Math.exp(-dt * 2.2);
 C.position.lerp(camTarget.set(px.x + 10.6, 8.4, px.z + 5.2), gateK);

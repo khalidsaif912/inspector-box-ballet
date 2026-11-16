@@ -154,18 +154,34 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain("minFilter = THREE.LinearMipmapLinearFilter");
   });
 
-  it("shows what each DGR container holds, with capacity and class colours", () => {
-    // عدّاد السعة ومقاطعه ظاهرة دائماً، والمواضع الفارغة لا تختفي
-    expect(game).toContain("ctx.fillText(cnt + '/' + z.cap, W-96, 58)");
-    expect(game).toContain("for(let s = 0; s < z.cap; s++)");
-    expect(game).toContain("ctx.setLineDash([11,9])");
-    // لون شريحة الفئة يتبع عائلة الخطر، وتذييل يعرض الفئات الموجودة
-    expect(game).toContain("const classInk = div =>");
-    expect(game).toContain("I18N.t('الفئات: ','Classes: ')");
-    expect(game).toContain("I18N.t('فارغة — لا مواد خطرة بعد','Empty — no dangerous goods yet')");
+  it("shows only the IMP code and class number on each DGR container", () => {
+    // الكود ورقم الفئة فقط، بخط كبير يتقلص تلقائياً حتى يتسع للعرض
+    expect(game).toContain("const code = (it.data.imp + ' - ' + it.data.div).toUpperCase();");
+    expect(game).toContain("while(fs > 18 && ctx.measureText(code).width > W - 90){");
+    expect(game).toContain("ctx.fillText(code, W/2, mid + 3);");
+    // المواضع الفارغة تظل ظاهرة كشرطة باهتة
+    expect(game).toContain("ctx.fillText('—', W/2, mid + 2);");
+    // لا أسماء ولا عدّادات ولا تذييل فئات
+    expect(game).not.toContain("ctx.fillText(cnt + '/' + z.cap, W-96, 58)");
+    expect(game).not.toContain("const classInk = div =>");
     // كلاهما يعيد الرسم عند التغيير
     expect(game).toContain("z.items[i] = it; it.st = 'placed'; if(z.hz) drawZoneSign(z);");
     expect(game).toContain("z.items = []; z.full = false; if(z.hz) drawZoneSign(z);");
+  });
+
+  it("adds a 10-second IATA segregation study board behind the FOD pad", () => {
+    // لوحة في العالم بين مجموعتَي الحاويات، وخلف صندوق FOD
+    expect(game).toContain("const STUDY = { total: 10, left: 10");
+    expect(game).toContain("I18N.t('قف في المنطقة الخضراء أمام اللوحة لتقرأها — ١٠ ثوانٍ مجانية'");
+    expect(game).toContain("STUDY.left = Math.max(0, STUDY.left - dt);");
+    // الوقت يُستهلك فقط أثناء الوقوف أمام اللوحة، وساعة الوردية تتجمد
+    expect(game).toContain("const inZone = run && !fire.active && !fire.keypad && !EXIT_GATE.active && !introHold && !FD.on &&");
+    expect(game).toContain("if(!fire.active && !STUDY.on) time -= dt;");
+    expect(game).toContain("const beltK = (fire.active || STUDY.on) ? 0");
+    // المراجعة تُعاد ضبطها مع كل جولة
+    expect(game).toContain("STUDY.left = STUDY.total; STUDY.on = false; closeStudy();");
+    expect(html).toContain('id="study"');
+    expect(html).toContain('id="study-time"');
   });
 
   it("lays the start and shift-end screens out for landscape phones", () => {
