@@ -511,7 +511,8 @@ for(let i=0;i<n;i++){ const b = new THREE.Mesh(new THREE.BoxGeometry(0.66,0.5,0.
 if(n>2){ const w = new THREE.Mesh(new THREE.BoxGeometry(1.48, 1.05, 1.18), wrapMat); w.position.y = 0.7; pg.add(w); }
 return pg;
 }
-[-28, -14, 2, 16].forEach(x => {
+/* فراغ مقصود عند x≈٧ خلف FOD: يفسح مجال لوحة جدول الفرز بلا رفوف تحجبها */
+[-28, -14, -3, 17].forEach(x => {
 [-5, 5].forEach(o => B(0.16, 8.0, 0.16, 0x1f5fa8, x+o, 4.0, -15.0, S, 0.4, 0.6));
 [-5, 5].forEach(o => B(0.16, 8.0, 0.16, 0x1f5fa8, x+o, 4.0, -16.7, S, 0.4, 0.6));
 for(let dy=0.2; dy<=7.4; dy+=2.4){
@@ -561,13 +562,13 @@ function wallSign(txt, sub, bg, x, y, z, ry=0, w=4){
 const t = canvasTex(512, 256, (g)=>{ g.fillStyle=bg; g.fillRect(0,0,512,256); g.strokeStyle='#fff'; g.lineWidth=10; g.strokeRect(12,12,488,232); g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle'; g.font='bold 74px sans-serif'; g.fillText(txt,256,100); g.font='bold 38px sans-serif'; g.fillText(sub,256,185); });
 const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w/2), new THREE.MeshStandardMaterial({map:t, roughness:0.6})); m.position.set(x,y,z); m.rotation.y = ry; S.add(m);
 }
-wallSign(I18N.t('🚭 ممنوع التدخين'),'NO SMOKING • DGR AREA','#b3261e', 11.5, 8.6, -17.15);
+wallSign(I18N.t('🚭 ممنوع التدخين'),'NO SMOKING • DGR AREA','#b3261e', 16, 8.6, -17.15);
 wallSign(I18N.t('⚠️ منطقة مواد خطرة'),'IATA DGR CLASS 1–9','#c77800', 26, 8.6, -17.15);
 wallSign(I18N.t('✈️ مخرج الطيران'),'AIRSIDE GATE B','#1b6b3a', -34.65, 7.5, -12.3, Math.PI/2, 3.4);
 wallSign(I18N.t('🚚 رصيف التحميل'),'LOADING DOCK 4','#204f8c', 34.65, 7.5, -6, -Math.PI/2, 3.4);
 /* ===== لوحة جدول الفرز IATA: بين حاويات المواد الخطرة والحاويات الأخرى، خلف صندوق FOD =====
    الوقوف أمامها يفتح مراجعة مجانية مجموعها ١٠ ثوانٍ تُقسَّم على أي عدد من الزيارات. */
-const STUDY = { total: 10, left: 10, on: false, inZone: false, box: { x: 3.6, z: -10.5, hx: 2.9, hz: 1.2 } };
+const STUDY = { total: 10, left: 10, on: false, inZone: false, box: { x: 7.0, z: -10.4, hx: 2.9, hz: 1.2 } };
 const STUDY_ROWS = [
   ['RFL 3', 'ROX 5.1 · RCM 8 · RLI 9 · 1'],
   ['RFS 4.1', 'ROX 5.1 · RLI 9 · 1'],
@@ -581,7 +582,7 @@ const STUDY_ROWS = [
   ['RXS 1.4S', '1.3G · 1.4B · 1.4D']
 ];
 (function buildStudyBoard(){
-const BW = 7, BH = 5.4, BX = 3.6, BY = 6.6, BZ = -17.04;
+const BW = 6.8, BH = 5.2, BX = 7.0, BY = 6.4, BZ = -17.04;
 const tex = canvasTex(1400, 1080, (g, w, h) => {
 g.fillStyle = '#08160f'; g.fillRect(0, 0, w, h);
 g.strokeStyle = '#2fbf6a'; g.lineWidth = 18; g.strokeRect(14, 14, w - 28, h - 28);
@@ -2917,11 +2918,11 @@ if(hudTicker >= .1){ hudTicker = 0; hud(); }
 const evacView = fire.active && fire.phase !== 'done' ? -Math.max(0, -px.x) * 0.3 : 0;
 if(STUDY.on){
 // تقريب الكاميرا إلى اللوحة أثناء المراجعة حتى يُقرأ الجدول بوضوح
-const halfH = 3.05, halfW = 3.95, tHalf = Math.tan(C.fov * Math.PI / 360);
+const halfH = 2.95, halfW = 3.85, tHalf = Math.tan(C.fov * Math.PI / 360);
 const d = Math.max(halfH / tHalf, halfW / (tHalf * Math.max(.35, C.aspect))) * 1.18;
 const k = 1 - Math.exp(-dt * 6);
-C.position.lerp(camTarget.set(STUDY.box.x, 6.6, -17.04 + d), k);
-camLook.lerp(camLookT.set(STUDY.box.x, 6.6, -17.04), 1 - Math.exp(-dt * 7));
+C.position.lerp(camTarget.set(STUDY.box.x, 6.4, -17.04 + d), k);
+camLook.lerp(camLookT.set(STUDY.box.x, 6.4, -17.04), 1 - Math.exp(-dt * 7));
 C.lookAt(camLook);
 } else if(EXIT_GATE.active){
 // توجيه الكاميرا نحو بوابة الخروج على اليسار أثناء تسلسل الانتقال
