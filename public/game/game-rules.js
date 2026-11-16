@@ -147,6 +147,8 @@
     forkOffset: 1.95,
     carryY: 0.88,
     driveSpeed: 9.8,
+    halfX: 1.15,
+    halfZ: 0.78,
     nearest(list, x, z) {
       let best = null,
         bd = forklift.reach;

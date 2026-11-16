@@ -195,13 +195,13 @@ canvas{display:block;position:absolute;inset:0}
 @keyframes alarmFlash{0%{opacity:0}50%{opacity:.55}100%{opacity:0}}
 #code-pad{position:absolute;inset:0;z-index:12;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(4,10,16,.55);backdrop-filter:blur(4px)}
 #code-pad.on{display:flex}
-.cp{width:min(100%,340px);background:linear-gradient(180deg,rgba(16,40,32,.98),rgba(6,18,14,.98));border:2px solid #2fbf6a;border-radius:20px;padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.7)}
+.cp{width:min(100%,340px);transform:translateX(clamp(0px,2.2vw,20px));background:linear-gradient(180deg,rgba(16,40,32,.98),rgba(6,18,14,.98));border:2px solid #2fbf6a;border-radius:20px;padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.7)}
 .cp-t{font-weight:900;color:#eafff2;font-size:clamp(15px,4.4vmin,19px);text-align:center}
 .cp-sub{font-size:clamp(10px,3vmin,12px);color:#9fd8b8;text-align:center;margin-top:2px}
 .cp-disp{margin:8px auto 2px;background:#08170f;border:1px solid rgba(47,191,106,.45);border-radius:10px;padding:6px 10px;font:900 clamp(17px,5vmin,22px) ui-monospace,Menlo,Consolas,monospace;color:#baffd6;letter-spacing:4px;direction:ltr;text-align:center;min-height:1.5em}
 .cp-err{min-height:1.1em;text-align:center;font-size:clamp(10px,3vmin,12px);font-weight:800;color:#ff8a80}
-.cp-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
-.cp-keys button{height:clamp(38px,11vmin,50px);border-radius:12px;border:1px solid rgba(47,191,106,.5);background:rgba(47,191,106,.14);color:#eafff2;font:900 clamp(16px,4.6vmin,20px)/1 system-ui,Tahoma,sans-serif;cursor:pointer;pointer-events:auto}
+.cp-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:6px;max-width:min(100%,216px);margin-inline:auto}
+.cp-keys button{aspect-ratio:1;height:auto;border-radius:50%;border:1px solid rgba(47,191,106,.5);background:rgba(47,191,106,.14);color:#eafff2;font:900 clamp(15px,4.4vmin,19px)/1 system-ui,Tahoma,sans-serif;cursor:pointer;pointer-events:auto}
 .cp-keys button:active{background:rgba(47,191,106,.4);transform:scale(.95)}
 .cp-keys button.ok{background:#2fbf6a;color:#052e16;border-color:#baffd6}
 .cp-keys button.del{background:rgba(255,82,82,.18);border-color:rgba(255,82,82,.55);color:#ffc1c1}
@@ -227,6 +227,13 @@ canvas{display:block;position:absolute;inset:0}
 .tbl{font-size:11px}
 .tbl th,.tbl td{padding:6px 7px}
 }
+/* أثناء الخروج الموجّه تختفي شارات اللعب (المفتش وغيره) حتى لا تحجب لوحة المخرج */
+body.exit-mode #inspector-badge,
+body.exit-mode #stg,
+body.exit-mode #cbbox,
+body.exit-mode #drv,
+body.exit-mode #inspect{display:none!important}
+
 /* ===== واجهة القوائم بأسلوب الألعاب ===== */
 .cbwrap{display:flex;flex-direction:column;align-items:center;gap:5px}
 #streak{width:calc(var(--hh)*1.9);height:5px;border-radius:4px;background:rgba(255,255,255,.16);overflow:hidden;opacity:0;transition:opacity .2s;box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
@@ -380,14 +387,18 @@ details.full .tbl{max-width:100%}
 }
 
 .cp-warn{margin-top:5px;text-align:center;font-size:clamp(9.5px,2.8vmin,11.5px);font-weight:800;color:#ffb3b3;line-height:1.5}
-.cp-cancel{margin-top:8px;width:100%;height:clamp(34px,9vmin,42px);border-radius:12px;border:1px solid rgba(255,82,82,.55);background:rgba(255,82,82,.14);color:#ffc1c1;font:800 clamp(11px,3.2vmin,13px)/1 system-ui,Tahoma,sans-serif;cursor:pointer;pointer-events:auto}
+.cp-cancel{margin-top:8px;width:100%;height:clamp(34px,9vmin,42px);border-radius:999px;border:1px solid rgba(255,82,82,.55);background:rgba(255,82,82,.14);color:#ffc1c1;font:800 clamp(11px,3.2vmin,13px)/1 system-ui,Tahoma,sans-serif;cursor:pointer;pointer-events:auto}
 .cp-cancel:active{background:rgba(255,82,82,.35);transform:scale(.97)}
 
 /* ===== ???? ????? ??????? ===== */
-#drv{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 140px);z-index:6;display:none;pointer-events:none;color:#ffd54a;border-color:rgba(255,213,74,.6);background:rgba(38,26,4,.9);font-size:clamp(10px,3.1vmin,13px);padding:6px 14px;text-align:center;white-space:normal;max-width:88vw;line-height:1.45}
-@media (max-width:760px){#drv{bottom:calc(env(safe-area-inset-bottom,0px) + 118px)}}
-
-#drv.drive{pointer-events:auto;cursor:pointer;border-color:rgba(255,213,74,.9);box-shadow:0 0 14px rgba(255,213,74,.35)}
+/* مؤشر بطارية قيادة الرافعة: أعلى الشاشة بجانب العدادات، لا يحجب الرؤية ولا نصوص وسط الشاشة */
+#drv{position:absolute;z-index:7;inset-inline-start:max(14px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.28 + 14px);display:none;align-items:center;gap:5px;padding:4px 7px;border-radius:10px;border:1px solid rgba(255,213,74,.55);background:rgba(12,20,30,.85);color:#ffd54a;pointer-events:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#drv .bat{position:relative;display:block;width:calc(var(--hh)*1.55);height:calc(var(--hh)*.62);border:2px solid #cfe3ff;border-radius:5px;padding:2px}
+#drv .bat::after{content:"";position:absolute;top:50%;transform:translateY(-50%);inset-inline-end:-5px;width:3px;height:42%;background:#cfe3ff;border-radius:2px}
+#drv .bat b{display:block;height:100%;width:100%;border-radius:2px;background:#3ddc84;transition:width .25s linear,background .3s}
+#drv.drive{pointer-events:auto;cursor:pointer;border-color:rgba(255,213,74,.95);box-shadow:0 0 12px rgba(255,213,74,.3)}
+#drv.low{border-color:rgba(255,90,82,.9)}
+#drv.low .bat{animation:pulse .6s infinite alternate}
 
 
 /* ================================================================
@@ -595,11 +606,12 @@ body:not(.ingame) #dash-btn{display:none}
   #intro{top:clamp(74px,18%,140px);max-width:min(84%,440px);font-size:clamp(11.5px,2.4vmin,14px);padding:10px 14px 9px}
   #fire-banner{top:calc(env(safe-area-inset-top,0px) + var(--hh) + 6px);width:min(72%,520px);padding:6px 12px}
   #fire-hint{top:46%;padding:9px 14px}
-  #stg{top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.2 + 6px)}
-  #drv{bottom:calc(env(safe-area-inset-bottom,0px) + var(--js) + 12px);max-width:min(74vw,420px);font-size:clamp(11px,2.7vmin,15px);padding:7px 16px}
+  #drv{top:calc(env(safe-area-inset-top,0px) + var(--hh)*1.25 + 8px)}
   #code-pad{padding:8px}
-  .cp{width:min(100%,420px);padding:10px 12px}
-  .cp-keys button{height:clamp(32px,8.4vmin,44px)}
+  .cp{width:min(100%,300px);padding:10px 12px}
+  .cp-keys{max-width:min(100%,172px);gap:5px}
+  .cp-keys button{font-size:clamp(13px,3vmin,17px)}
+  .cp-cancel{height:clamp(30px,7vmin,38px)}
   .ov{padding:10px;gap:9px;justify-content:center}
   .ov h1{font-size:clamp(19px,4.4vmin,28px)}
   .ov p{font-size:12.5px;line-height:1.6;max-width:min(70ch,100%)}
@@ -662,7 +674,7 @@ html[lang="en"] .hero{text-align:left}
 }
 .hud-start{grid-area:start;justify-self:start;display:flex;align-items:flex-start;gap:8px;min-width:0}
 .hud-end{grid-area:end;justify-self:end;display:flex;align-items:flex-start;gap:8px;min-width:0}
-.hud-end .hud-side{order:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.hud-end .hud-side{order:1;display:flex;flex-direction:row;align-items:flex-start;gap:10px;min-width:0}
 .hud-end .top-btns{
   order:2;position:static;inset:auto;top:auto;left:auto;right:auto;
   flex-direction:column;align-items:center;gap:calc(var(--hh)*.2);
@@ -671,7 +683,7 @@ html[lang="en"] .hero{text-align:left}
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
   box-shadow:0 6px 16px rgba(0,0,0,.45);z-index:1;
 }
-#stg{position:static;inset:auto;right:auto;top:auto;left:auto;max-width:100%;text-align:center;line-height:1.3;align-items:center}
+#stg{position:static;inset:auto;right:auto;top:auto;left:auto;max-width:100%;text-align:start;line-height:1.3;align-items:flex-start;padding:5px 10px 6px}
 #stgbar{width:100%}
 html:has(#inspector-badge.on) #stg{opacity:0}
 @media (orientation:landscape){
@@ -696,9 +708,12 @@ html[lang="en"] .table{
   font-family:"Segoe UI",Inter,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
 }
 html[lang="en"] .top-btns .rbtn,html[lang="en"] .pill b{font-family:inherit}
-/* شاشات ضيقة: شارة المرحلة تنزل تحت شريط النقاط بدل مزاحمة الأزرار */
+/* شاشات ضيقة: تبقى شارة المرحلة بجانب الكومبو لكنها تضيق بدل مزاحمة الأزرار */
 @media (max-width:520px){
-  #stg{position:absolute;inset-inline-start:0;inset-inline-end:auto;top:calc(env(safe-area-inset-top,0px) + var(--hh) + 12px);max-width:calc(100% - 110px)}
+  .hud-end .hud-side{gap:6px}
+  #stg{max-width:min(42vw,168px);padding:4px 8px;font-size:clamp(9px,2.7vmin,12px)}
+  #stgbar{display:none}
+  #stgtxt{overflow:hidden;text-overflow:ellipsis;max-width:100%}
 }/* كبسولات النقاط/الوقت: لا تنكسر ولا تنضغط عند الأرقام الطويلة أو الإنجليزية */
 .hud-start{flex-wrap:nowrap}
 .hgrp{flex:0 0 auto;min-width:0}

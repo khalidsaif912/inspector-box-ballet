@@ -470,7 +470,7 @@ g.fillText(I18N.T('المخرج إلى اللعبة التالية', 'Exit to th
 }, 1, 1);
 const gateMarkerMat = new THREE.SpriteMaterial({map:gateMarkerTex, transparent:true, depthWrite:false, opacity:0});
 const gateMarker = new THREE.Sprite(gateMarkerMat);
-gateMarker.scale.set(7.6, 1.9, 1); gateMarker.position.set(0, 8.15, 0); gateGroup.add(gateMarker);
+gateMarker.scale.set(6.9, 1.62, 1); gateMarker.position.set(0, 6.6, 0); gateGroup.add(gateMarker);
 const gateTrailGroup = new THREE.Group(); gateTrailGroup.visible = false; S.add(gateTrailGroup);
 const chevronTex = canvasTex(128, 128, (g, w, h) => {
 g.clearRect(0, 0, w, h);
@@ -531,7 +531,7 @@ BOLLARDS.push({x, z, r:0.2});
 });
 // زر إبطاء الحزام عمود ثابت: لا يمكن للاعب المرور من خلاله
 BOLLARDS.push({x:22.8, z:9.95, r:0.22});
-const fk = new THREE.Group(); fk.position.set(30.8, 0, 9.2); fk.rotation.y = -Math.PI/2; S.add(fk);
+const fk = new THREE.Group(); fk.position.set(30.8, 0, 8.4); fk.rotation.y = -Math.PI/2; S.add(fk);
 B(1.5, 0.9, 2.2, 0xf2a900, 0, 0.75, 0, fk, 0.45, 0.3);
 B(1.3, 0.5, 0.9, 0x222, 0, 1.4, -0.6, fk, 0.7, 0.2);
 [-0.6,0.6].forEach(s => B(0.08, 2.2, 0.08, 0x333, s, 1.8, 0.2, fk, 0.5, 0.6));
@@ -555,7 +555,7 @@ const boot = B(.22,.4,.24,0x243240,side*.2,1.23,.2,truckDriver); boot.rotation.x
 const steering = M(new THREE.TorusGeometry(.23,.035,6,16),0x181c20);
 steering.position.set(0,1.85,.2); steering.rotation.x=-.65; truckDriver.add(steering);
 let truckState = gameRules.reset(), fearT = 0;
-const FD = { on:false, left:60, near:false, home:{x:30.8, z:9.2} };
+const FD = { on:false, left:60, near:false, home:{x:30.8, z:8.4} };
 // لافتات حائطية
 function wallSign(txt, sub, bg, x, y, z, ry=0, w=4){
 const t = canvasTex(512, 256, (g)=>{ g.fillStyle=bg; g.fillRect(0,0,512,256); g.strokeStyle='#fff'; g.lineWidth=10; g.strokeRect(12,12,488,232); g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle'; g.font='bold 74px sans-serif'; g.fillText(txt,256,100); g.font='bold 38px sans-serif'; g.fillText(sub,256,185); });
@@ -563,7 +563,7 @@ const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w/2), new THREE.MeshStandard
 }
 wallSign(I18N.t('🚭 ممنوع التدخين'),'NO SMOKING • DGR AREA','#b3261e', 8.5, 8.6, -17.15);
 wallSign(I18N.t('⚠️ منطقة مواد خطرة'),'IATA DGR CLASS 1–9','#c77800', 26, 8.6, -17.15);
-wallSign(I18N.t('✈️ مخرج الطيران'),'AIRSIDE GATE B','#1b6b3a', -34.65, 7.5, -6, Math.PI/2, 3.4);
+wallSign(I18N.t('✈️ مخرج الطيران'),'AIRSIDE GATE B','#1b6b3a', -34.65, 7.5, -12.3, Math.PI/2, 3.4);
 wallSign(I18N.t('🚚 رصيف التحميل'),'LOADING DOCK 4','#204f8c', 34.65, 7.5, -6, -Math.PI/2, 3.4);
 // خطوط الأرضية: ممرات المشاة + حدود الحزام
 B(64, 0.02, 0.3, 0xffc107, 0, 0.012, -4.4, S, 0.4, 0.05).castShadow = false;
@@ -955,6 +955,10 @@ const forkWheel = M(new THREE.TorusGeometry(0.24, 0.035, 8, 20), 0x181c20);
 forkWheel.position.set(0, 1.36, 0.46); forkWheel.rotation.x = -1.15; forkDriver.add(forkWheel);
 B(0.08, 0.5, 0.08, 0x2a2a2a, 0, 1.12, 0.58, forkDriver, 0.5, 0.4);
 const PLAYER_RADIUS = 0.45;
+/* حدود الأرضية القابلة للمشي: تُستخدم في دفع التصادم أيضاً حتى لا يُقذف اللاعب خارج المستودع */
+const WALK = { minX: -33.6, maxX: 33.6, minZ: -11.5, maxZ: 10.1 };
+/* صندوق تصادم الرافعة المتوقفة: نصف الأبعاد من قواعد اللعبة (نفس الشكل المرئي بعد الدوران) */
+const FK_HX = gameRules.forklift.halfX, FK_HZ = gameRules.forklift.halfZ;
 const STATIC_OBSTACLES = [
 { minX: -26.0, maxX: 26.0, minZ: 10.6, maxZ: 13.6 },
 { minX: -27.1, maxX: -24.5, minZ: 10.2, maxZ: 13.8 },
@@ -976,13 +980,25 @@ function pushOutAABB(p, minX, maxX, minZ, maxZ, r){
 if(p.x + r <= minX || p.x - r >= maxX || p.z + r <= minZ || p.z - r >= maxZ) return false;
 const penL = (p.x + r) - minX, penR = maxX - (p.x - r);
 const penT = (p.z + r) - minZ, penB = maxZ - (p.z - r);
-const px = Math.min(penL, penR), pz = Math.min(penT, penB);
-if(px <= pz) p.x += penL < penR ? -px : px;
-else p.z += penT < penB ? -pz : pz;
+/* نجرّب الاتجاهات الأقل اختراقاً أولاً، ونتجاهل أي اتجاه يُخرج اللاعب من الأرضية.
+   سابقاً كان أصغر اختراق هو المختار دائماً؛ فإذا كان صوب الجدار بقي اللاعب محصوراً
+   بين الجدار والصندوق (تعليق تام عند الرافعة المتوقفة). */
+const cands = [
+{c:'x', v:minX - r, d:penL}, {c:'x', v:maxX + r, d:penR},
+{c:'z', v:minZ - r, d:penT}, {c:'z', v:maxZ + r, d:penB}
+].sort((a, b) => a.d - b.d);
+for(const o of cands){
+const nx = o.c === 'x' ? o.v : p.x, nz = o.c === 'z' ? o.v : p.z;
+if(nx < WALK.minX || nx > WALK.maxX || nz < WALK.minZ || nz > WALK.maxZ) continue;
+p.x = nx; p.z = nz; return true;
+}
+const best = cands[0];
+if(best.c === 'x') p.x = Math.max(WALK.minX, Math.min(WALK.maxX, best.v));
+else p.z = Math.max(WALK.minZ, Math.min(WALK.maxZ, best.v));
 return true;
 }
 function resolvePlayerCollisions(targetX, targetZ, mvx=0, mvz=0, dt=0.016) {
-const p = { x: Math.max(-33.6, Math.min(33.6, targetX)), z: Math.max(-11.5, Math.min(10.1, targetZ)) };
+const p = { x: Math.max(WALK.minX, Math.min(WALK.maxX, targetX)), z: Math.max(WALK.minZ, Math.min(WALK.maxZ, targetZ)) };
 let hit = false;
 for(let iter=0; iter<3; iter++){
 for (const o of STATIC_OBSTACLES) if(pushOutAABB(p, o.minX, o.maxX, o.minZ, o.maxZ, PLAYER_RADIUS)) hit = true;
@@ -991,7 +1007,9 @@ const dx = p.x - b.x, dz = p.z - b.z, d = Math.hypot(dx, dz), m = PLAYER_RADIUS 
 if(d < m && d > 1e-6){ p.x += dx/d*(m-d); p.z += dz/d*(m-d); hit = true; }
 }
 // الرافعة المتوقفة جسم صلب ما دام اللاعب لا يقودها
-if(!FD.on && pushOutAABB(p, fk.position.x-1.15, fk.position.x+1.15, fk.position.z-0.85, fk.position.z+0.85, PLAYER_RADIUS)) hit = true;
+if(!FD.on && pushOutAABB(p, fk.position.x-FK_HX, fk.position.x+FK_HX, fk.position.z-FK_HZ, fk.position.z+FK_HZ, PLAYER_RADIUS)) hit = true;
+p.x = Math.max(WALK.minX, Math.min(WALK.maxX, p.x));
+p.z = Math.max(WALK.minZ, Math.min(WALK.maxZ, p.z));
 for (const it of items) {
 if (it.st === 'held' || it.st === 'lifting' || it.st === 'belt') continue;
 const h = 0.68, bx = it.m.position.x, bz = it.m.position.z;
@@ -1142,7 +1160,7 @@ snd('fever');
 toast('🔥 وضع الحمى! النقاط مضاعفة ×2', '#ffd54a');
 }
 function doDash(){
-if(dashCD > 0 || dashT > 0 || !run || introHold || fire.keypad || FD.on) return;
+if(dashCD > 0 || dashT > 0 || !run || introHold || fire.keypad) return;
 dashT = DASH_TIME; dashCD = DASH_CD;
 addShake(.22); snd('dash');
 $('dash-fx').classList.add('on');
@@ -1572,9 +1590,19 @@ insp.classList.add('fade');
 $('act').classList.toggle('held', !!held);
 const dv = $('drv');
 if(dv){
-if(FD.on){ dv.textContent = I18N.T('🚜 القيادة: ','🚜 Driving: ') + Math.ceil(FD.left) + I18N.T(' ث • اضغط هنا للنزول','s • tap to get off'); dv.style.display = 'block'; }
-else dv.style.display = 'none';
+dv.style.display = FD.on ? 'flex' : 'none';
 dv.classList.toggle('drive', FD.on);
+if(FD.on){
+/* بطارية تنتهي مع مهلة القيادة بدل رسالة في منتصف الشاشة */
+const pct = Math.max(0, Math.min(1, FD.left / 60));
+const fill = $('drvfill');
+if(fill){
+fill.style.width = (pct * 100).toFixed(1) + '%';
+fill.style.background = pct > .5 ? '#3ddc84' : pct > .2 ? '#ffc93c' : '#ff5a52';
+}
+dv.classList.toggle('low', FD.left <= 12);
+dv.setAttribute('aria-label', I18N.T('قيادة الرافعة — المتبقي ','Forklift — left: ') + Math.ceil(FD.left) + I18N.T(' ث (اضغط للنزول)','s (tap to get off)'));
+}
 }
 }
 function rm(it){
@@ -1694,7 +1722,7 @@ FD.on = true; FD.near = false;
 fk.visible = true; rig.visible = false; forkDriver.visible = true;
 px.set(fk.position.x, 0, fk.position.z);
 snd('horn');
-toast(I18N.T('🚜 قُد الرافعة الشوكية — المتبقي ','🚜 Driving the forklift — left: ') + Math.ceil(FD.left) + I18N.T(' ث','s'), '#ffd54a');
+toast(I18N.T('🚜 قُد الرافعة الشوكية','🚜 Driving the forklift'), '#ffd54a');
 hud();
 }
 function stopDrive(msg){
@@ -1830,12 +1858,12 @@ function clearMovement(){ for(const code in key) key[code] = 0; je(); inX = inZ 
 /* ===== نقطة البداية الآمنة: لا يقف اللاعب داخل جدار أو صندوق عند انتقال المرحلة ===== */
 const SAFE_SPAWN = {x:0, z:3};
 function blockedAt(x, z, r = PLAYER_RADIUS){
-  if(x < -33.6 + r || x > 33.6 - r || z < -11.5 + r || z > 10.1 - r) return true;
+  if(x < WALK.minX + r || x > WALK.maxX - r || z < WALK.minZ + r || z > WALK.maxZ - r) return true;
   for(const o of STATIC_OBSTACLES)
     if(x + r > o.minX && x - r < o.maxX && z + r > o.minZ && z - r < o.maxZ) return true;
   for(const b of BOLLARDS)
     if(Math.hypot(x - b.x, z - b.z) < r + b.r) return true;
-  if(!FD.on && Math.abs(x - fk.position.x) < 1.15 + r && Math.abs(z - fk.position.z) < 0.85 + r) return true;
+  if(!FD.on && Math.abs(x - fk.position.x) < FK_HX + r && Math.abs(z - fk.position.z) < FK_HZ + r) return true;
   return false;
 }
 function findFreeSpot(x, z, r = PLAYER_RADIUS){
@@ -1844,8 +1872,8 @@ function findFreeSpot(x, z, r = PLAYER_RADIUS){
     const d = ring * 0.6;
     for(let i = 0; i < 16; i++){
       const a = (i / 16) * Math.PI * 2;
-      const nx = Math.max(-33.6, Math.min(33.6, x + Math.cos(a) * d));
-      const nz = Math.max(-11.5, Math.min(10.1, z + Math.sin(a) * d));
+      const nx = Math.max(WALK.minX, Math.min(WALK.maxX, x + Math.cos(a) * d));
+      const nz = Math.max(WALK.minZ, Math.min(WALK.maxZ, z + Math.sin(a) * d));
       if(!blockedAt(nx, nz, r)) return {x:nx, z:nz};
     }
   }
@@ -2098,18 +2126,96 @@ arrow.userData.delay = i * 0.08;
 });
 gateTrailGroup.visible = true;
 }
-/* مسار الخروج: الممر الأمامي (أعلى الحواجز) ثم محاذاة البوابة بعيداً عن عمود الجدار */
+/* مسار الخروج: بحث شبكي (BFS) يتفادى كل العوائق الحقيقية — الرافعة المتوقفة، الأعمدة،
+   أقفاص المواد الخطرة، الجدران — بدل خط مستقيم قد يعلق الموظف في عائق. */
 function buildExitRoute(){
-  return [
-    { x: px.x, z: -4.0 },
-    { x: -30.6, z: -4.0 },
-    { x: EXIT_GATE.targetX, z: EXIT_GATE.targetZ },
-  ];
+const CELL = .5;
+const walkable = (x, z) => !blockedAt(x, z, PLAYER_RADIUS + .12);
+const gKey = (x, z) => x + ',' + z;
+const goalW = { x: EXIT_GATE.targetX, z: EXIT_GATE.targetZ };
+const findFree = (cx, cz) => {
+for(let r = 0; r <= 8; r++) for(let dx = -r; dx <= r; dx++) for(let dz = -r; dz <= r; dz++){
+const x = (cx + dx) * CELL, z = (cz + dz) * CELL;
+if(!walkable(x, z)) continue;
+return { x: cx + dx, z: cz + dz };
+}
+return null;
+};
+const start = findFree(Math.round(px.x / CELL), Math.round(px.z / CELL));
+const goal = findFree(Math.round(goalW.x / CELL), Math.round(goalW.z / CELL));
+if(!start || !goal) return [{ x: goalW.x, z: goalW.z }];
+const prev = new Map(), seen = new Set([gKey(start.x, start.z)]);
+const q = [start];
+let found = false;
+while(q.length){
+const cur = q.shift();
+if(cur.x === goal.x && cur.z === goal.z){ found = true; break; }
+for(const [dx, dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
+const nx = cur.x + dx, nz = cur.z + dz, k = gKey(nx, nz);
+if(seen.has(k)) continue;
+const wx = nx * CELL, wz = nz * CELL;
+if(wx < WALK.minX || wx > WALK.maxX || wz < WALK.minZ || wz > WALK.maxZ) continue;
+if(!walkable(wx, wz)) continue;
+seen.add(k); prev.set(k, { x: cur.x, z: cur.z }); q.push({ x: nx, z: nz });
+}
+}
+if(!found) return [{ x: goalW.x, z: goalW.z }];
+const cells = [];
+for(let c = goal; c; c = prev.get(gKey(c.x, c.z))){ cells.push(c); if(c.x === start.x && c.z === start.z) break; }
+cells.reverse();
+let pts = cells.map(c => ({ x: c.x * CELL, z: c.z * CELL }));
+/* تنعيم المسار: نقفز لأبعد نقطة يصلها خط نظر سالك */
+const los = (a, b) => {
+const n = Math.max(2, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / .25));
+for(let i = 1; i < n; i++){ const t = i / n; if(!walkable(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t)) return false; }
+return true;
+};
+const out = [pts[0]];
+for(let i = 1; i < pts.length; i++){
+let j = i;
+while(j + 1 < pts.length && los(out[out.length - 1], pts[j + 1])) j++;
+out.push(pts[j]); i = j;
+}
+out.push({ x: goalW.x, z: goalW.z });
+/* إزالة النقاط المتطابقة (مركز الخلية الأخيرة = البوابة تقريباً) */
+const clean = [out[0]];
+for(let i = 1; i < out.length; i++){
+const prevP = clean[clean.length - 1];
+if(Math.hypot(out[i].x - prevP.x, out[i].z - prevP.z) > .3) clean.push(out[i]);
+}
+if(clean.length > 1) clean[clean.length - 1] = { x: goalW.x, z: goalW.z };
+else clean.push({ x: goalW.x, z: goalW.z });
+return clean;
 }
 function exitRouteLength(){
   let len = 0, ax = px.x, az = px.z;
   for(const p of EXIT_GATE.route){ len += Math.hypot(p.x - ax, p.z - az); ax = p.x; az = p.z; }
   return len;
+}
+/* مشي تلقائي ذكي: إن سدّ عائقٌ الاتجاه المطلوب (رافعة، عمود، جدار قفص) نجرّب زوايا بديلة
+   حوله بدل الاصطدام المتكرر والتوقف — ثم نكمل نحو البوابة. */
+function autoWalkStep(ux, uz, spd, dt){
+  const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
+  const want = spd * dt;
+  const tryDir = (vx, vz) => {
+    let x = px.x, z = px.z;
+    for(let i = 0; i < steps; i++){
+      const r = resolvePlayerCollisions(x + vx * spd * stepDt, z + vz * spd * stepDt, vx, vz, stepDt);
+      x = r.x; z = r.z;
+    }
+    return { x, z, moved: Math.hypot(x - px.x, z - px.z) };
+  };
+  let best = tryDir(ux, uz);
+  best.vx = ux; best.vz = uz;
+  if(best.moved > want * 0.6) { px.x = best.x; px.z = best.z; return best; }
+  for(const off of [.35, -.35, .7, -.7, 1.05, -1.05, 1.4, -1.4, Math.PI/2, -Math.PI/2]){
+    const c = Math.cos(off), s = Math.sin(off);
+    const vx = ux * c - uz * s, vz = ux * s + uz * c;
+    const r = tryDir(vx, vz);
+    if(r.moved > best.moved){ r.vx = vx; r.vz = vz; best = r; }
+  }
+  px.x = best.x; px.z = best.z;
+  return best;
 }
 function resetExitGate(){
 EXIT_GATE.active = false; EXIT_GATE.phase = 'idle'; EXIT_GATE.t = 0; EXIT_GATE.open = 0; EXIT_GATE.warped = false;
@@ -2164,7 +2270,7 @@ portalMat.opacity = open * (0.55 + 0.35 * pulse);
 gatePadMat.opacity = open * (0.22 + 0.18 * pulse);
 gateLight.intensity = open * (2.2 + pulse * 1.6);
 gateMarkerMat.opacity = Math.min(1, t / 0.6);
-gateMarker.position.y = 8.15 + Math.sin(now * 0.0026) * 0.16;
+gateMarker.position.y = 6.6 + Math.sin(now * 0.0026) * 0.12;
 gateNeon.emissiveIntensity = 1.4 + pulse * 1.3;
 EXIT_GATE.trail.forEach(arrow => {
 if(!arrow.visible) return;
@@ -2184,24 +2290,19 @@ if(dist <= (final ? 0.4 : 0.5)){
 if(final){ startPortalWarp(); return; }
 EXIT_GATE.wp++; EXIT_GATE.stuckT = 0;
 } else {
-const ux = dx / dist, uz = dz / dist, spd = 5.4;
-const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
-for(let i = 0; i < steps; i++){
-const c = resolvePlayerCollisions(px.x + ux * spd * stepDt, px.z + uz * spd * stepDt, ux, uz, stepDt);
-px.x = c.x; px.z = c.z;
-}
+const walk = autoWalkStep(dx / dist, dz / dist, 5.4, dt);
 /* إن حاصر عائقٌ اللاعب: تجاوز المحطة، وعلى المحطة الأخيرة انتقل فوراً بدل تعليق اللعبة */
-const moved = Math.hypot(px.x - EXIT_GATE.lastX, px.z - EXIT_GATE.lastZ);
+const moved = walk.moved;
 EXIT_GATE.stuckT = moved < 0.02 ? EXIT_GATE.stuckT + dt : 0;
 if(EXIT_GATE.stuckT > 1.1){
 EXIT_GATE.stuckT = 0;
 if(!final){ EXIT_GATE.wp++; }
 else { px.set(EXIT_GATE.targetX, 0, EXIT_GATE.targetZ); startPortalWarp(); return; }
 }
-const targetRot = Math.atan2(ux, uz);
+const targetRot = Math.atan2(walk.vx, walk.vz);
 curRotY += Math.atan2(Math.sin(targetRot - curRotY), Math.cos(targetRot - curRotY)) * Math.min(1, dt * 10);
 rig.rotation.y = curRotY;
-anim(dt, 8.2, ux, uz);
+anim(dt, 8.2, walk.vx, walk.vz);
 }
 EXIT_GATE.lastX = px.x; EXIT_GATE.lastZ = px.z;
 /* حماية نهائية: لا يبقى الانتقال معلقاً مهما حدث */
@@ -2577,7 +2678,8 @@ const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultipl
 const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
 if(FD.on){
 FD.left = Math.max(0, FD.left - dt);
-const dSpd = gameRules.forklift.driveSpeed;
+/* الاندفاع يسرّع الرافعة أيضاً */
+const dSpd = gameRules.forklift.driveSpeed * sprintK;
 if(l > .001) fk.rotation.y = Math.atan2(vx, vz);
 for(let step=0; step<steps; step++){
 const c = resolvePlayerCollisions(fk.position.x + vx * dSpd * stepDt, fk.position.z + vz * dSpd * stepDt, vx, vz, stepDt);
