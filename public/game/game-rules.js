@@ -282,6 +282,8 @@
     // أو reject عند وضع مادة خطرة في منطقة شحن عادي.
     decide(zone, item, placedItems) {
       const list = placedItems || [];
+      // طرد CAO لا يُحمّل على أي رحلة في هذه اللعبة (كل الرحلات ركاب)
+      if (item && item.cao) return { ok: false, conflict: true, reason: "cao-pax" };
       if (zone && zone.hz) {
         if (!item.isHz) return { ok: false, conflict: true, reason: "hazardous-only" };
         for (const other of list) {
@@ -298,6 +300,43 @@
     },
   };
   rules.placement = placement;
+
+  // ===== شحنة CAO (Cargo Aircraft Only): طائرات الشحن فقط =====
+  // جدول الرحلات في اللعبة كله ركاب، لذلك أي طرد يحمل ملصق CAO ممنوع تحميله
+  // ويجب رفضه عند الفحص. القرار والسبب يُحسبان هنا فقط، والواجهة تعرضهما.
+  const cao = {
+    label: "CAO",
+    // أكواد IATA التي لا تُشحن على طائرات الركاب
+    codes: ["RPG", "ROX", "RRY", "RLI"],
+    flights: [
+      { id: "WY412", from: "MCT", to: "DXB", pax: true },
+      { id: "WY608", from: "MCT", to: "KHI", pax: true },
+      { id: "WY231", from: "MCT", to: "BOM", pax: true },
+    ],
+    answer: "reject",
+    reward: 45,
+    penalty: 30,
+    isCao(imp) {
+      return cao.codes.indexOf(imp) >= 0;
+    },
+    flightFor(seed) {
+      const n = Math.abs(Math.floor(Number(seed) || 0));
+      return cao.flights[n % cao.flights.length];
+    },
+    // قبول/رفض الطرد على رحلة محددة: رحلة ركاب ⇒ رفض إلزامي
+    decide(item, flight) {
+      if (!item || !item.cao) return { accept: true, code: "ok", reason: "" };
+      if (flight && !flight.pax) return { accept: true, code: "cao-cargo", reason: "cargo-aircraft" };
+      return { accept: false, code: "cao-pax", reason: "cargo-aircraft-only" };
+    },
+    correct(option) {
+      return option === cao.answer;
+    },
+    hasCargoFlights() {
+      return cao.flights.some((f) => !f.pax);
+    },
+  };
+  rules.cao = cao;
 
   // ===== جدول الفرز IATA DGR 9.3.A: صفوف اللوحة تُشتق من نفس قاعدة conflict =====
   // فيستحيل أن تختلف اللوحة المعروضة عن منطق الفرز الفعلي.

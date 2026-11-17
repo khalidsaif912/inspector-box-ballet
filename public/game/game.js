@@ -1372,7 +1372,8 @@ return _dgc[k] || (_dgc[k] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComp
 }
 let _inspK = null, _inspT = 0;
 function tex(it){
-const k = it[2] + '_' + it[3];
+const isCao = it[0][0] === 'h' && gameRules.cao.isCao(it[3]);
+const k = it[2] + '_' + it[3] + (isCao ? '_CAO' : '');
 if(tc[k]) return tc[k];
 if(it === MYS) return tc[k] = mysTex();
 const cv = document.createElement('canvas'); cv.width = cv.height = 512;
@@ -1388,11 +1389,12 @@ ctx.fillStyle='#caa77b'; ctx.fillRect(238,0,36,512);
 ctx.fillStyle='rgba(65,43,26,.35)'; ctx.fillRect(238,0,4,512); ctx.fillRect(270,0,4,512);
 ctx.fillStyle='#f5f2e8'; ctx.fillRect(34,30,444,452);
 ctx.strokeStyle='#222'; ctx.lineWidth=8; ctx.strokeRect(34,30,444,452);
+if(isCao){ ctx.strokeStyle='#c99b00'; ctx.lineWidth=12; ctx.strokeRect(44,40,424,432); }
 ctx.textAlign='center'; ctx.textBaseline='middle';
 if(it[0][0] === 'h'){
 const div=it[4];
-ctx.fillStyle='#24292d'; ctx.fillRect(42,38,428,66);
-ctx.fillStyle='#fff'; ctx.font='bold 27px sans-serif'; ctx.fillText('DANGEROUS GOODS  •  IATA',256,72);
+ctx.fillStyle= isCao ? '#c99b00' : '#24292d'; ctx.fillRect(42,38,428,66);
+ctx.fillStyle= isCao ? '#1b1300' : '#fff'; ctx.font='bold 27px sans-serif'; ctx.fillText(isCao ? 'CAO · CARGO AIRCRAFT ONLY' : 'DANGEROUS GOODS  •  IATA',256,72);
 const lbl = new Image();
 lbl.onload = () => { ctx.drawImage(lbl, 131, 108, 250, 250); if(tc[k]) tc[k].needsUpdate = true; };
 lbl.src = dgURL(div, it[3]);
@@ -1443,7 +1445,7 @@ function useBeltSlow(){
 }
 const beltRay = new THREE.Raycaster(), beltNdc = new THREE.Vector2();
 R.domElement.addEventListener('pointerdown', e => {
-  if(!run || fire.active || introHold) return;
+  if(!run || fire.active || introHold || caoQ.active) return;
   const r = R.domElement.getBoundingClientRect();
   beltNdc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   beltRay.setFromCamera(beltNdc, C);
@@ -1464,7 +1466,7 @@ hud();
 function spawn(){
 const list = stage===4 ? HZ : ((stage>=2 && Math.random() < (stage===3?0.6:0.45)) ? HZ : I);
 const raw = (stage>=2 && stage<4 && Math.random() < 0.13 && !items.some(i => i.data.isMys)) ? MYS : list[Math.random()*list.length | 0];
-const itObj = { t:raw[0], emoji:raw[1], name:raw[2], imp:raw[3], div:raw[4], isHz:raw[0][0]==='h', isMys:raw===MYS };
+const itObj = { t:raw[0], emoji:raw[1], name:raw[2], imp:raw[3], div:raw[4], isHz:raw[0][0]==='h', isMys:raw===MYS, cao: raw[0][0]==='h' && gameRules.cao.isCao(raw[3]) };
 const m = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({map:tex(raw), roughness:0.5, metalness:0.05}));
 m.castShadow = true; m.receiveShadow = true; const bs = gameRules.layout.beltSpawn(); m.position.set(bs.x, bs.y, bs.z);
 m.add(new THREE.LineSegments(EDGEG, EDGEM));
@@ -1776,7 +1778,9 @@ const verdict = gameRules.placement.decide(z, d, z.items);
 let ok = verdict.ok;
 let conflict = verdict.conflict;
 let conflictReason = '';
-if(verdict.reason === 'hazardous-only'){
+if(verdict.reason === 'cao-pax'){
+conflictReason = I18N.T('طرد CAO — طائرة شحن فقط! لا يُحمّل على رحلة ركاب: ارفضه عند الفحص.','CAO parcel — cargo aircraft only! Never load it on a passenger flight: refuse it at the check.');
+} else if(verdict.reason === 'hazardous-only'){
 conflictReason = I18N.t('هذه الحاوية مخصصة فقط للمواد الخطرة (DGR)!');
 } else if(verdict.reason === 'iata-conflict'){
 let hasConflict = false;
@@ -1885,6 +1889,8 @@ const found = gameRules.forklift.nearest(pool, fk.position.x, fk.position.z);
 return found ? found.it : null;
 }
 function forkLoad(it){
+/* طرد CAO: لا يُحمّل بالرافعة قبل فحص القبول/الرفض */
+if(it.data.cao && !it.caoChecked){ caoOpen(it); return; }
 held = it; it.st = 'held';
 it.fall = false; it.vy = 0;
 cargoSmoothPos.copy(it.m.position);
@@ -1905,7 +1911,7 @@ const _drvEl = $('drv');
 if(_drvEl) _drvEl.onclick = () => { if(FD.on) stopDrive(I18N.t('🚜 نزلت من الرافعة')); };
 function act(){
 initAudio();
-if(!run || liftAnim.active) return;
+if(!run || liftAnim.active || caoQ.active) return;
 if(FD.on){
 if(held) forkUnload();
 else { const it = forkCargo(); if(it) forkLoad(it); else stopDrive(); }
@@ -1917,6 +1923,8 @@ if(!held && !near && !beltSlowUsed && Math.hypot(px.x - BELT_BTN_XZ.x, px.z - BE
 if(!held){
 if(!near) return;
 const targetItem = near;
+/* طرد CAO: يُفتح فحص القبول/الرفض قبل أي تحميل */
+if(targetItem.data.cao && !targetItem.caoChecked){ caoOpen(targetItem); return; }
 const lastSecond = targetItem.st === 'belt' && targetItem.m.position.x > 18.5;
 liftAnim.active = true; liftAnim.t = 0;
 liftAnim.fromPos.copy(targetItem.m.position);
@@ -1968,6 +1976,7 @@ clearTimeout(introT);
 addEventListener('keydown', e => {
 if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyQ','KeyX'].includes(e.code)) e.preventDefault();
 if(introHold){ if(['Space','KeyE','KeyF','Enter','NumpadEnter','Escape','KeyP'].includes(e.code)){ e.preventDefault(); if(!e.repeat) resumeFromIntro(); } return; }
+if(caoQ.active){ e.preventDefault(); return; }
 if(fire.keypad){ handlePadKey(e); return; }
 key[e.code] = 1;
 /* Esc / P = إيقاف مؤقت أو متابعة */
@@ -2734,6 +2743,128 @@ hud();
 }
 if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.done = true; I_.cooldown = 14; I_.elapsed = 0; if(I_.demo){ I_.demo = false; demo.insp = false; demo.inspDone = true; if(demo.truckDone) saveTutorialDone(); demo.truckIn = 6; hideIntro(); } $('inspector-badge').classList.remove('on'); }
 }
+/* ===== فحص شحنة CAO قبل التحميل: قرار قبول/رفض بسبب ===== */
+const CAO_PANEL = $('cao-panel');
+const CAO_BUBBLE = $('cao-bubble');
+const CAO_SAY = $('cao-say');
+const caoQ = { active:false, answered:false, it:null, flight:null, v:new THREE.Vector3() };
+const caoV = new THREE.Vector3();
+/* فقاعة الحوار تُثبَّت فوق رأس المفتش: إسقاط موضعه ثلاثي الأبعاد إلى الشاشة */
+function caoAnchor(el, lift){
+caoV.set(inspector.x, 2.64, inspector.z).project(C);
+const w = el.offsetWidth || 320, h = el.offsetHeight || 220;
+let sx = (caoV.x * 0.5 + 0.5) * innerWidth;
+let sy = (-caoV.y * 0.5 + 0.5) * innerHeight - (lift || 0);
+sx = Math.max(w / 2 + 8, Math.min(innerWidth - w / 2 - 8, sx));
+sy = Math.max(h + 26, Math.min(innerHeight - 12, sy));
+el.style.left = sx + 'px';
+el.style.top = sy + 'px';
+}
+function caoPlace(){
+if(!caoQ.active) return;
+caoAnchor(CAO_BUBBLE, 0);
+caoAnchor(CAO_SAY, 0);
+}
+/* المشهد المجمّد: المفتش يمشي حتى يقف أمامك ثم تُفتح فقاعته */
+function updateCaoScene(r){
+const I_ = inspector;
+I_.t += r;
+if(I_.x > I_.toX) I_.x = Math.max(I_.toX, I_.x - 6.4 * r);
+const walking = I_.x > I_.toX + .01;
+const sw = Math.sin(I_.t * 7) * (walking ? .5 : .06);
+I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw;
+I_.arms[0].rotation.x = -sw * .7; I_.arms[1].rotation.x = sw * .4 - .62;
+I_.g.position.set(I_.x, walking ? Math.abs(Math.sin(I_.t * 7)) * .05 : 0, I_.z);
+if(!walking && !caoQ.answered) CAO_BUBBLE.classList.add('in');
+caoPlace();
+}
+function caoOpen(it){
+const f = gameRules.cao.flightFor(Math.round(it.m.position.x) + totalProcessed);
+caoQ.active = true; caoQ.answered = false; caoQ.it = it; caoQ.flight = f;
+$('cao-item').textContent = it.data.name + ' • ' + it.data.imp + ' / ' + it.data.div;
+$('cao-flight').textContent = I18N.T('الرحلة ','Flight ') + (f.id + ' · ' + f.from + ' ✈ ' + f.to) + I18N.T(' — طائرة ركاب',' — passenger aircraft');
+/* المفتش يحضر بنفسه: يقف أمام اللاعب مواجهاً له ويطلب القرار */
+const I_ = inspector;
+const z0 = Math.max(-4.2, Math.min(8.4, px.z - 2.2));
+const x0 = Math.max(-31, Math.min(31, px.x + 1.7));
+I_.active = true; I_.demo = false; I_.done = false; I_.t = 0;
+I_.g.visible = true;
+I_.z = z0;
+I_.toX = x0;
+I_.x = Math.min(32, x0 + 7.4);
+I_.g.rotation.y = 0;
+I_.g.position.set(I_.x, 0, I_.z);
+CAO_BUBBLE.classList.remove('in');
+CAO_SAY.classList.remove('in');
+CAO_PANEL.classList.add('on');
+CAO_PANEL.setAttribute('aria-hidden','false');
+caoPlace();
+snd('whistle'); snd('warn');
+}
+/* رد المفتش: فقاعة بيضاء واضحة تبقى معروضة حتى تُقرأ */
+let caoHoldT = null;
+function caoSay(text, ok){
+$('cao-say-text').textContent = text;
+CAO_SAY.classList.remove('good', 'bad');
+CAO_SAY.classList.add(ok ? 'good' : 'bad');
+CAO_SAY.classList.remove('in');
+/* إعادة تدفق متزامنة بدل rAF: الفقاعة تظهر حتى لو كان التبويب في الخلفية */
+void CAO_SAY.offsetWidth;
+caoPlace();
+CAO_SAY.classList.add('in');
+}
+function caoEnd(){
+clearTimeout(caoHoldT);
+caoQ.active = false; caoQ.answered = false; caoQ.it = null;
+CAO_PANEL.classList.remove('on');
+CAO_PANEL.setAttribute('aria-hidden','true');
+CAO_BUBBLE.classList.remove('in');
+CAO_SAY.classList.remove('in');
+const I_ = inspector;
+I_.active = false; I_.g.visible = false; I_.done = false; I_.cooldown = 8; I_.elapsed = 0;
+}
+function caoAnswer(opt){
+const it = caoQ.it;
+if(!it) return;
+const ok = gameRules.cao.correct(opt);
+it.caoChecked = true;
+caoQ.answered = true;
+totalProcessed++;
+CAO_BUBBLE.classList.remove('in');
+if(ok){
+sortedCount++;
+const p = gameRules.cao.reward;
+score += p; time += 2;
+streak++; streakT = streakWindow(); maxStreak = Math.max(maxStreak, streak);
+combo = gameRules.economy.comboAfter(streak);
+snd('ok', 1.3); screenFlash('gold');
+spawnFloatTag('+' + p + ' 🚫', '#69f0ae');
+caoSay(I18N.T('قرار صحيح. هذا الطرد CAO لا يُحمَّل إلا على طائرة شحن، وكل رحلاتنا ركاب — رفضته في مكانه. +','Correct call. A CAO parcel may only fly on a cargo aircraft, and every flight here is passenger — you refused it. +') + p + I18N.T(' نقطة.',' pts.'), true);
+rm(it);
+} else {
+const lost = Math.min(score, gameRules.cao.penalty);
+score = Math.max(0, score - gameRules.cao.penalty);
+time = Math.max(0, time - 4);
+streak = 0; streakT = 0; combo = 1;
+snd('error'); penaltyFx(lost, true);
+spawnFloatTag('−' + gameRules.cao.penalty + ' −4 ث', '#ff5252');
+caoSay(I18N.T('قرار خاطئ. الطرد يحمل ملصق CAO — Cargo Aircraft Only — ورحلتنا ركاب، فتحميله مخالفة. أوقفه وأعد تصديره على طائرة شحن. −','Wrong call. The parcel is labelled CAO — Cargo Aircraft Only — and this is a passenger flight, so loading it is a violation. Hold it and re-route it on a freighter. −') + gameRules.cao.penalty + I18N.T(' نقطة و −4 ثوانٍ.',' pts and −4s.'), false);
+it.st = 'belt';
+}
+/* الرسالة تبقى معروضة بوقت كافٍ للقراءة ثم ينسحب المفتش */
+clearTimeout(caoHoldT);
+caoHoldT = setTimeout(caoEnd, ok ? 4600 : 5600);
+hud();
+}
+if(CAO_PANEL){
+/* نفس نمط لوحة الطوارئ المجرَّب: تفويض النقر على الحاوية مع closest */
+CAO_PANEL.addEventListener('click', e => {
+const b = e.target.closest && e.target.closest('button[data-a]');
+if(!b) return;
+e.preventDefault(); e.stopPropagation();
+caoAnswer(b.dataset.a);
+});
+}
 let last = performance.now();
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.12, 40), new THREE.MeshBasicMaterial({color:0xffc94d, transparent:true, opacity:0.85, depthWrite:false}));
 ring.rotation.x = -Math.PI/2; ring.visible = false; S.add(ring);
@@ -2746,6 +2877,8 @@ function loop(now){
 requestAnimationFrame(loop);
 const rawDt = (now - last) / 1000;
 let dt = document.hidden || rawDt > 1 ? 0 : Math.min(rawDt, .5); last = now;
+/* نافذة قرار CAO تجمّد الوردية كلها حتى يُحسم القبول أو الرفض */
+if(caoQ.active){ dt = 0; updateCaoScene(Math.min(rawDt, .05)); }
 /* Hit-stop: تجميد لحظي لكل المحاكاة لإبراز الأثر الكبير */
 if(hitStop > 0){ hitStop = Math.max(0, hitStop - Math.max(rawDt, 0)); dt = 0; }
 if(!document.hidden && rawDt > 0 && rawDt < 1){
@@ -2880,7 +3013,7 @@ const zz = Z.find(z => (it.data.isFod ? z.k==='fod' : z.k!=='fod') && Math.abs(i
 if(zz){ it.st = 'sorting'; resolvePlacement(zz, it); }
 }
 separateBoxes();
-if(!fire.active && !STUDY.on && (stage>=2 || demo.insp)) updateInspector(dt);
+if(!fire.active && !STUDY.on && !caoQ.active && (stage>=2 || demo.insp)) updateInspector(dt);
 if(jy){
   const tp2 = gameRules.position(truckState);
   const nearTruck = truckState.active && tp2.x < px.x + 4 && Math.abs(tp2.x - px.x) < 14;
@@ -2896,6 +3029,8 @@ it.csh.visible = it.st !== 'held' && it.st !== 'lifting';
 if(it.fall){ it.vy -= 32 * dt; it.m.position.y += it.vy * dt; if(it.m.position.y <= it.ty){ it.m.position.y = it.ty; it.fall = false; if(it.st === 'floor'){ snd('bump'); const dd = Math.hypot(it.m.position.x - px.x, it.m.position.z - px.z); if(dd < 9) addShake(.45 * (1 - dd / 9)); } } }
 if(it.st === 'belt'){
 it.m.position.x += beltSpeed() * beltK * dt;
+/* نقطة تفتيش CAO: تُوقف الشحنة قبل التحميل لطلب قرار القبول/الرفض */
+if(it.data.cao && !it.caoChecked && !caoQ.active && it.m.position.x > 8) caoOpen(it);
 if(it.m.position.x > 23.5){
 if(it.data.isMys){ rm(it); continue; }
 const miss = 10;
