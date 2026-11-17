@@ -6,7 +6,12 @@ type Row = { imp: string; cls: string; x: string[] };
 
 type Rules = {
   conflict(a: { div: string; imp: string }, b: { div: string; imp: string }): boolean;
-  segregation: { edition: string; table: string; codes: { imp: string; cls: string }[]; rows: Row[] };
+  segregation: {
+    edition: string;
+    table: string;
+    codes: { imp: string; cls: string }[];
+    rows: Row[];
+  };
 };
 
 const context: Record<string, unknown> = {};

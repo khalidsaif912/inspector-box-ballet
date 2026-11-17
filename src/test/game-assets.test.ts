@@ -172,10 +172,14 @@ describe("Game assets and shared rules", () => {
   it("adds a 10-second IATA segregation study board behind the FOD pad", () => {
     // لوحة في العالم بين مجموعتَي الحاويات، وخلف صندوق FOD
     expect(game).toContain("const STUDY = { total: 10, left: 10");
-    expect(game).toContain("I18N.t('قف في المنطقة الخضراء أمام اللوحة — المراجعة بـ ١٠ نقاط مجانية'");
+    expect(game).toContain(
+      "I18N.t('قف في المنطقة الخضراء أمام اللوحة — المراجعة بـ ١٠ نقاط مجانية'",
+    );
     expect(game).toContain("STUDY.left = Math.max(0, STUDY.left - dt);");
     // الوقت يُستهلك فقط أثناء الوقوف أمام اللوحة، وساعة الوردية تتجمد
-    expect(game).toContain("const inZone = run && !fire.active && !fire.keypad && !EXIT_GATE.active && !introHold && !FD.on &&");
+    expect(game).toContain(
+      "const inZone = run && !fire.active && !fire.keypad && !EXIT_GATE.active && !introHold && !FD.on &&",
+    );
     expect(game).toContain("if(!fire.active && !STUDY.on) time -= dt;");
     expect(game).toContain("const beltK = (fire.active || STUDY.on) ? 0");
     // المراجعة تُعاد ضبطها مع كل جولة
@@ -186,7 +190,9 @@ describe("Game assets and shared rules", () => {
 
   it("keeps the last chart row inside the board above the footer", () => {
     expect(game).toContain("const squeeze = total > avail ? avail / total : 1;");
-    expect(game).toContain("const lh = (fs + 10) * squeeze, rh = lines.length * lh + 10 * squeeze;");
+    expect(game).toContain(
+      "const lh = (fs + 10) * squeeze, rh = lines.length * lh + 10 * squeeze;",
+    );
     expect(game).toContain("const footTop = h - 132, avail = footTop - top - 8, maxW = R - cList;");
   });
 
