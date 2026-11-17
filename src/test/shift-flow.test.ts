@@ -157,7 +157,7 @@ describe("A full shift, driven only by the shared rules", () => {
     shift.streak = 5;
     shift.combo = 2;
 
-    const verdict = dropInto(hz, { isHz: true, t: "h1", imp: "RCX", div: "1.3G" });
+    const verdict = dropInto(hz, { isHz: true, t: "h1", imp: "RGX", div: "1.3G" });
 
     expect(verdict.conflict).toBe(true);
     expect(shift.score).toBe(65);

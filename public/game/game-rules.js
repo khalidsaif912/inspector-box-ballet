@@ -3,8 +3,8 @@
   const is1_4S = (division) => division === "1.4S";
   const isLithium = (item) => item.imp === "RLI";
 
-  // X pairs from IATA DGR Table 9.3.A (2023). Class 1 (except 1.4S) and lithium
-  // batteries (UN 3480/3090) are handled separately because their rows have exceptions.
+  // مصدر واحد: صفوف لوحة الرسم تُشتق من conflict نفسها فلا تختلف عنها أبداً.
+  // X pairs حسب جدول الفرز التعليمي المبني على IATA DGR Table 9.3.A / 9.3.2.
   const segregationPairs = new Set([
     "2.1+9",
     "3+5.1",
@@ -36,7 +36,7 @@
     speed: 12,
     turnDuration: 1.5,
     turnRadius: 2,
-    fodZoneX: 4.5,
+    fodZoneX: 1.7,
     fodReward: 50,
     fearDuration: 4,
     fearSpeed: 0.6,
@@ -298,6 +298,41 @@
     },
   };
   rules.placement = placement;
+
+  // ===== جدول الفرز IATA DGR 9.3.A: صفوف اللوحة تُشتق من نفس قاعدة conflict =====
+  // فيستحيل أن تختلف اللوحة المعروضة عن منطق الفرز الفعلي.
+  const hazardCodes = [
+    { imp: "RGX", cls: "1.3G" },
+    { imp: "RXS", cls: "1.4S" },
+    { imp: "RFG", cls: "2.1" },
+    { imp: "RNG", cls: "2.2" },
+    { imp: "RPG", cls: "2.3" },
+    { imp: "RFL", cls: "3" },
+    { imp: "RFS", cls: "4.1" },
+    { imp: "RSC", cls: "4.2" },
+    { imp: "RFW", cls: "4.3" },
+    { imp: "ROX", cls: "5.1" },
+    { imp: "ROP", cls: "5.2" },
+    { imp: "RPB", cls: "6.1" },
+    { imp: "RIS", cls: "6.2" },
+    { imp: "RRY", cls: "7" },
+    { imp: "RCM", cls: "8" },
+    { imp: "RLI", cls: "9" },
+    { imp: "RMD", cls: "9" }
+  ];
+  const segregation = {
+    edition: "IATA DGR 67th Edition — 2026",
+    table: "Table 9.3.A · 9.3.2",
+    codes: hazardCodes,
+    rows: hazardCodes.map((c) => ({
+      imp: c.imp,
+      cls: c.cls,
+      x: hazardCodes
+        .filter((o) => o.imp !== c.imp && rules.conflict({ div: c.cls, imp: c.imp }, { div: o.cls, imp: o.imp }))
+        .map((o) => o.imp)
+    }))
+  };
+  rules.segregation = segregation;
 
   // ===== تقييم نهاية الوردية =====
   const scoreboard = {

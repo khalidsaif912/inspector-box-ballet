@@ -199,7 +199,7 @@ const I = [
 ];
 const HZ = [
 ['h1','🧨','ذخائر خفيفة','RXS','1.4S'],
-['h1','🎆','ألعاب نارية','RCX','1.3G'],
+['h1','🎆','ألعاب نارية','RGX','1.3G'],
 ['h2','⛽','غاز البترول المسال','RFG','2.1'],
 ['h2','🧯','غاز الهيليوم المضغوط','RNG','2.2'],
 ['h2','☣️','غاز الكلور السام','RPG','2.3'],
@@ -207,7 +207,7 @@ const HZ = [
 ['h3','🎨','دهانات ومذيبات نفطية','RFL','3'],
 ['h4','🔥','أعواد فسفور وكبريت','RFS','4.1'],
 ['h4','✨','فحم نباتي منشط','RSC','4.2'],
-['h4','⚡','كاربيد الكالسيوم','RWR','4.3'],
+['h4','⚡','كاربيد الكالسيوم','RFW','4.3'],
 ['h5','🌱','نترات الأمونيوم المؤكسدة','ROX','5.1'],
 ['h5','🧴','بيروكسيد عضوي مثبت','ROP','5.2'],
 ['h6','☠️','مبيدات زرنيخية سامة','RPB','6.1'],
@@ -489,6 +489,7 @@ gateTrailGroup.add(arrow); EXIT_GATE.trail.push(arrow);
 const lampMat = new THREE.MeshStandardMaterial({color:0xfff3d6, emissive:0xffe2a8, emissiveIntensity:2.2});
 [-24, -8, 8, 24].forEach(x => {
 [-12.6, 15].forEach(z => {
+if(x === 8 && z === -12.6) return; // العمود الذي كان يخترق لوحة جدول الفرز
 B(0.9, 4.6, 0.9, 0x3d4652, x, 2.3, z, S, 0.4, 0.5);
 B(1.05, 1.0, 1.05, 0xf5c400, x, 0.5, z, S, 0.5, 0.1);
 });
@@ -568,63 +569,117 @@ wallSign(I18N.t('✈️ مخرج الطيران'),'AIRSIDE GATE B','#1b6b3a', -3
 wallSign(I18N.t('🚚 رصيف التحميل'),'LOADING DOCK 4','#204f8c', 34.65, 7.5, -6, -Math.PI/2, 3.4);
 /* ===== لوحة جدول الفرز IATA: بين حاويات المواد الخطرة والحاويات الأخرى، خلف صندوق FOD =====
    الوقوف أمامها يفتح مراجعة مجانية مجموعها ١٠ ثوانٍ تُقسَّم على أي عدد من الزيارات. */
-const STUDY = { total: 10, left: 10, on: false, inZone: false, box: { x: 6.4, z: -10.2, hx: 2.5, hz: 1.2 } };
-const STUDY_ROWS = [
-  ['RFL 3', 'ROX 5.1 · RCM 8 · RLI 9 · 1'],
-  ['RFS 4.1', 'ROX 5.1 · RLI 9 · 1'],
-  ['RSC 4.2', 'ROX 5.1 · 1'],
-  ['RWR 4.3', 'RCM 8 · 1'],
-  ['ROX 5.1', 'RFL 3 · RFS 4.1 · RSC 4.2 · RCM 8 · RLI 9 · 1'],
-  ['ROP 5.2', 'RLI 9 · 1'],
-  ['RCM 8', 'RFL 3 · RWR 4.3 · ROX 5.1 · 1'],
-  ['RFG 2.1', 'RLI 9 · 1'],
-  ['RCX 1.3G', '1 · 2 · 3 · 4 · 5 · 8 · 9'],
-  ['RXS 1.4S', '1.3G · 1.4B · 1.4D']
-];
+const STUDY = { total: 10, left: 10, on: false, inZone: false, box: { x: 5.9, z: -10.2, hx: 2.5, hz: 1.2 } };
+/* صفوف اللوحة مشتقة من gameRules.segregation: نفس مصدر منطق الفرز تماماً */
+const STUDY_ROWS = (gameRules.segregation && gameRules.segregation.rows) || [];
 (function buildStudyBoard(){
-/* لوحة مائلة (منضدة قراءة) بين مجموعتَي الحاويات وخلف FOD — مقروءة من كاميرا اللعب العلوية */
-const BW = 6.0, BH = 4.6, BX = 6.4, BY = 2.62, BZ = -13.0, TILT = -50 * Math.PI / 180;
-const tex = canvasTex(1400, 1080, (g, w, h) => {
+/* لوحة IATA قائمة على الأرض في الفراغ بين مجموعتَي الحاويات، خلف FOD مباشرة.
+   تُقرأ من مخطط المستودع، والقراءة التفصيلية تحصل في نافذة الجدول على الشاشة. */
+const BW = 5.2, BH = BW * 1240 / 1400, BX = 5.9, BY = 0.95 + BH / 2, BZ = -13.0;
+STUDY.bx = BX; STUDY.by = BY; STUDY.bz = BZ; STUDY.bw = BW; STUDY.bh = BH;
+const tex = canvasTex(1400, 1240, (g, w, h) => {
 /* ورقة بيضاء كجدول IATA الرسمي: أعلى تباين وأسهل قراءة من خلفية داكنة */
+const MONO = 'ui-monospace,Menlo,Consolas,monospace', SANS = 'system-ui,Tahoma,sans-serif';
+const R = w - 26;
 g.fillStyle = '#f6faf7'; g.fillRect(0, 0, w, h);
-g.strokeStyle = '#0f3f2a'; g.lineWidth = 20; g.strokeRect(12, 12, w - 24, h - 24);
-g.fillStyle = '#0f3f2a'; g.fillRect(24, 24, w - 48, 132);
-g.textAlign = 'center'; g.textBaseline = 'middle';
-/* سطران منفصلان بلا خلط اتجاهات: عربي صافٍ ثم إنجليزي صافٍ */
+g.strokeStyle = '#0f3f2a'; g.lineWidth = 18; g.strokeRect(9, 9, w - 18, h - 18);
+g.textBaseline = 'middle';
+/* ===== ترويسة مدمجة: عنوان عربي + عنوان إنجليزي + المرجع في ثلاثة أسطر ===== */
+const HEAD = 158;
+g.fillStyle = '#0f3f2a'; g.fillRect(18, 18, w - 36, HEAD);
+g.textAlign = 'center';
 g.direction = I18N.lang === 'en' ? 'ltr' : 'rtl';
-g.fillStyle = '#ffffff'; g.font = '900 56px system-ui,Tahoma,sans-serif';
-g.fillText(I18N.t('جدول فرز المواد الخطرة', 'DANGEROUS GOODS SEGREGATION'), w / 2, 62);
-g.direction = 'ltr'; g.fillStyle = '#8ff0b8'; g.font = '900 40px ui-monospace,Menlo,Consolas,monospace';
-g.fillText('IATA DGR 9.3.A', w / 2, 122);
-const top = 170, rowH = (h - top - 104) / STUDY_ROWS.length;
-STUDY_ROWS.forEach((r, i) => {
-const y = top + i * rowH, mid = y + rowH / 2;
-g.fillStyle = i % 2 === 0 ? '#ffffff' : '#e7f1ea'; g.fillRect(24, y, w - 48, rowH);
-g.direction = 'ltr';
-g.textAlign = 'left'; g.font = '900 60px ui-monospace,Menlo,Consolas,monospace'; g.fillStyle = '#0b2c1d';
-g.fillText(r[0], 52, mid + 2);
-g.fillStyle = '#c62828'; g.font = '900 54px system-ui,sans-serif'; g.fillText('✕', 402, mid + 2);
-g.fillStyle = '#173a2b'; g.font = '900 52px ui-monospace,Menlo,Consolas,monospace';
-g.fillText(r[1], 466, mid + 2);
-g.strokeStyle = 'rgba(15,63,42,.22)'; g.lineWidth = 2; g.beginPath(); g.moveTo(24, y); g.lineTo(w - 24, y); g.stroke();
+g.fillStyle = '#ffffff'; g.font = '900 46px ' + SANS;
+g.fillText(I18N.t('جدول فرز المواد الخطرة', 'DANGEROUS GOODS SEGREGATION CHART'), w / 2, 60);
+g.direction = 'ltr'; g.fillStyle = '#eaffef'; g.font = '900 27px ' + MONO;
+g.fillText('DANGEROUS GOODS SEGREGATION CHART', w / 2, 105);
+g.fillStyle = '#8ff0b8'; g.font = '900 23px ' + MONO;
+g.fillText('IATA DGR 67th Edition — 2026  ·  Table 9.3.A  ·  Section 9.3.2', w / 2, 143);
+/* ===== رؤوس الأعمدة ===== */
+const CH = 34, hTop = 18 + HEAD, top = hTop + CH;
+g.fillStyle = '#0f3f2a'; g.fillRect(18, hTop, w - 36, CH);
+const cImp = 48, cCls = 170, cX = 282, cList = 330;
+g.textAlign = 'left'; g.fillStyle = '#bfe8cd'; g.font = '900 20px ' + MONO;
+g.fillText('IMP', cImp, hTop + CH / 2 + 1);
+g.fillText('CLASS', cCls, hTop + CH / 2 + 1);
+g.fillStyle = '#ff9b8f'; g.fillText('✕', cX + 8, hTop + CH / 2 + 1);
+g.fillStyle = '#bfe8cd'; g.fillText('MUST NOT BE STOWED WITH', cList, hTop + CH / 2 + 1);
+/* ===== الصفوف: قياس النص أولاً ثم توزيع الارتفاع المتبقي (بلا اقتطاع) ===== */
+const footTop = h - 132, avail = footTop - top - 8, maxW = R - cList;
+const SEP = '  ·  ', listOf = r => r.x.join(SEP) || '—';
+let fs = 48, rows = [];
+const buildRows = () => {
+rows = STUDY_ROWS.map(r => {
+g.font = '900 ' + fs + 'px ' + MONO;
+const words = listOf(r).split(SEP), lines = [];
+let line = '';
+for(const t of words){
+const next = line ? line + SEP + t : t;
+if(!line || g.measureText(next).width <= maxW) line = next;
+else { lines.push(line); line = t; }
+}
+if(line) lines.push(line);
+return { r, lines };
 });
-g.strokeStyle = '#0f3f2a'; g.lineWidth = 3; g.beginPath(); g.moveTo(24, h - 104); g.lineTo(w - 24, h - 104); g.stroke();
-g.textAlign = 'center'; g.direction = I18N.lang === 'en' ? 'ltr' : 'rtl'; g.fillStyle = '#0f3f2a'; g.font = '900 36px system-ui,Tahoma,sans-serif';
-g.fillText(I18N.t('قف في المنطقة الخضراء أمام اللوحة لتقرأها — ١٠ ثوانٍ مجانية', 'Stand on the green pad to read it — 10 free seconds'), w / 2, h - 56);
+return rows.reduce((s, o) => s + o.lines.length * (fs + 10) + 10, 0);
+};
+let total = buildRows();
+while(total > avail && fs > 16){ fs -= 1; total = buildRows(); }
+/* سياج أخير: لو بقي تجاوز عند أصغر خط نضغط التباعد بنسبة رياضية، فلا يمكن أن يخرج صف تحت التذييل */
+const squeeze = total > avail ? avail / total : 1;
+let y = top + 3;
+rows.forEach(({ r, lines }, i) => {
+const lh = (fs + 10) * squeeze, rh = lines.length * lh + 10 * squeeze;
+g.fillStyle = i % 2 === 0 ? '#ffffff' : '#e9f2ec'; g.fillRect(18, y, w - 36, rh);
+g.direction = 'ltr'; g.textAlign = 'left';
+const mid = y + rh / 2;
+/* كود IMP في خانة مستقلة تماماً عن رقم الفئة */
+g.fillStyle = '#0b2c1d'; g.font = '900 ' + Math.round(fs * 1.04) + 'px ' + MONO;
+g.fillText(r.imp, cImp, mid + 1);
+/* رقم الفئة/القسم في خانة مستقلة بلون مختلف */
+g.fillStyle = r.cls.startsWith('1.') ? '#8a2f2f' : '#1d5c3d';
+g.font = '900 ' + Math.round(fs * .92) + 'px ' + MONO;
+g.fillText(r.cls, cCls, mid + 1);
+/* علامة الفصل الحمراء: فارغة إن لم يكن هناك اشتراط فصل */
+const hasX = r.x.length > 0;
+g.fillStyle = '#c62828'; g.font = '900 ' + Math.round(fs * 1.1) + 'px ' + SANS;
+g.fillText(hasX ? '✕' : '', cX + 8, mid + 1);
+/* قائمة الأكواد مع الالتفاف بدل الاقتطاع */
+g.fillStyle = hasX ? '#1b3f2c' : '#7d8f85'; g.font = '900 ' + fs + 'px ' + MONO;
+const startY = mid - (lines.length - 1) * lh / 2;
+lines.forEach((ln, k) => g.fillText(ln, cList, startY + k * lh + 1));
+g.strokeStyle = 'rgba(15,63,42,.20)'; g.lineWidth = 2;
+g.beginPath(); g.moveTo(18, y); g.lineTo(R, y); g.stroke();
+y += rh;
+});
+/* فواصل الأعمدة */
+g.strokeStyle = 'rgba(15,63,42,.35)'; g.lineWidth = 2;
+[cCls - 10, cX + 2, cList - 10].forEach(x => { g.beginPath(); g.moveTo(x, top); g.lineTo(x, footTop - 6); g.stroke(); });
+/* ===== تذييل السلامة: أداة مساعدة لا تحل محل النسخة الرسمية ===== */
+g.fillStyle = '#eef6f0'; g.fillRect(18, footTop, w - 36, h - 18 - footTop);
+g.strokeStyle = '#0f3f2a'; g.lineWidth = 4;
+g.beginPath(); g.moveTo(18, footTop); g.lineTo(w - 18, footTop); g.stroke();
+g.textAlign = 'center'; g.direction = I18N.lang === 'en' ? 'ltr' : 'rtl';
+g.fillStyle = '#0f3f2a'; g.font = '900 23px ' + SANS;
+g.fillText(I18N.t('أداة مرجعية مساعدة — لا تغني عن نسخة IATA DGR الرسمية ولا عن إجراءات المشغل المعتمدة', 'Reference aid only — does not replace the official IATA DGR or approved operator procedures'), w / 2, footTop + 22);
+g.direction = 'ltr'; g.fillStyle = '#1d5c3d'; g.font = '700 19px ' + MONO;
+g.fillText('✕ = must not be stowed together   ·   blank = no segregation requirement', w / 2, footTop + 50);
+g.direction = I18N.lang === 'en' ? 'ltr' : 'rtl'; g.fillStyle = '#7a3b2a'; g.font = '800 20px ' + SANS;
+g.fillText(I18N.t('قف في المنطقة الخضراء أمام اللوحة — المراجعة بـ ١٠ نقاط مجانية', 'Stand on the green pad — 10 free review points'), w / 2, footTop + 80);
+/* حالة التحقق: لا ندّعي مطابقة خلية‑بخلية؛ اللوحة مبسّطة للتدريب */
+g.direction = I18N.lang === 'en' ? 'ltr' : 'rtl'; g.fillStyle = '#8a2f2f'; g.font = '800 18px ' + SANS;
+g.fillText(I18N.t('حالة التحقق: الرموز مراجَعة — جدول مبسّط لأغراض التدريب فقط، دون مطابقة خلية بخلية للنص الرسمي', 'Verification: codes reviewed — simplified training chart, not cell-by-cell matched to the official text'), w / 2, footTop + 108);
 });
 /* اللوحة مضيئة بذاتها: تُقرأ من أي مسافة بلا اعتماد على إضاءة المستودع */
 const mat = new THREE.MeshBasicMaterial({map:tex, toneMapped:false});
 const board = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), mat);
-board.position.set(BX, BY, BZ); board.rotation.x = TILT; S.add(board);
-/* ظهر وإطار اللوحة (يُزاح على محور العمودي تماماً كي لا يغطي الوجه) */
-const back = B(BW + .24, BH + .24, .16, 0x14361f, BX, BY - 0.766 * .14, BZ - 0.643 * .14, S, .7, .35);
-back.rotation.x = TILT;
-/* قاعدة وساقان وحامل خلفي */
-B(BW + .4, .16, .5, 0x1d2b24, BX, .08, -11.6, S, .5, .5);
-[-1, 1].forEach(s => B(.22, 1.05, .22, 0x1d2b24, BX + s * (BW / 2 - .5), .55, -11.72, S, .5, .5));
-[-1, 1].forEach(s => { const leg = B(.18, 3.0, .18, 0x1d2b24, BX + s * (BW / 2 - .5), 1.95, -14.1, S, .5, .5); leg.rotation.x = .38; });
+board.position.set(BX, BY, BZ); S.add(board);
+/* ظهر اللوحة وساقان وقاعدة: كلها خلف الوجه تماماً فلا تحجب أي صف */
+B(BW + .26, BH + .26, .12, 0x0f3f2a, BX, BY, BZ - .12, S, .8, .2);
+[-1, 1].forEach(s => B(.16, 1.0, .16, 0x1d2b24, BX + s * (BW / 2 - .4), .5, BZ - .12, S, .5, .3));
+B(BW + .5, .16, .9, 0x1d2b24, BX, .08, BZ, S, .5, .3);
 /* كشاف يبرز اللوحة في الممر */
-const spill = new THREE.PointLight(0xa8ffd4, 1.4, 18, 2); spill.position.set(BX, BY + 3.2, BZ + 2.6); S.add(spill);
+const spill = new THREE.PointLight(0xa8ffd4, 1.2, 16, 2); spill.position.set(BX, BY + 2.4, BZ + 3.0); S.add(spill);
 /* بساط أرضي يحدد منطقة القراءة */
 const padTex = canvasTex(512, 192, (g, w, h) => {
 g.fillStyle = 'rgba(8,30,20,.92)'; g.fillRect(0, 0, w, h);
@@ -633,7 +688,7 @@ g.fillStyle = '#baffd6'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fo
 g.fillText(I18N.t('منطقة المراجعة', 'REVIEW AREA'), w / 2, h / 2 + 2);
 });
 const pad = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 2.0), new THREE.MeshBasicMaterial({map:padTex, transparent:true, opacity:.92, depthWrite:false}));
-pad.rotation.x = -Math.PI / 2; pad.position.set(BX, .014, STUDY.box.z); S.add(pad);
+pad.rotation.x = -Math.PI / 2; pad.position.set(BX, .03, STUDY.box.z); pad.renderOrder = 3; S.add(pad);
 })();
 // خطوط الأرضية: ممرات المشاة + حدود الحزام
 B(64, 0.02, 0.3, 0xffc107, 0, 0.012, -4.4, S, 0.4, 0.05).castShadow = false;
@@ -1650,8 +1705,8 @@ function openStudy(){
 const el = $('study'); if(!el) return;
 el.classList.add('on'); el.setAttribute('aria-hidden', 'false');
 document.body.classList.add('study-mode');
-/* منظور أول: إخفاء الموظف كي لا يحجب اللوحة أثناء القراءة */
-rig.visible = false;
+/* منظور أول: إخفاء الموظف كاملاً (بما فيه الخوذة) كي لا يحجب اللوحة أثناء القراءة */
+pl.visible = false;
 if(studyKey !== I18N.lang){
 studyKey = I18N.lang;
 $('study-title').textContent = I18N.T('جدول الفرز — IATA DGR 9.3.A', 'Segregation table — IATA DGR 9.3.A');
@@ -1663,7 +1718,7 @@ function closeStudy(){
 const el = $('study'); if(!el) return;
 el.classList.remove('on'); el.setAttribute('aria-hidden', 'true');
 document.body.classList.remove('study-mode');
-if(!FD.on && !EXIT_GATE.active) rig.visible = true;
+if(!FD.on && !EXIT_GATE.active) pl.visible = true;
 }
 function updateStudy(dt){
 const ZB = STUDY.box;
@@ -2936,13 +2991,15 @@ if(hudTicker >= .1){ hudTicker = 0; hud(); }
 }
 const evacView = fire.active && fire.phase !== 'done' ? -Math.max(0, -px.x) * 0.3 : 0;
 if(STUDY.on){
-// تقريب الكاميرا إلى اللوحة أثناء المراجعة حتى يُقرأ الجدول بوضوح
-const halfH = 2.35, halfW = 3.1, tHalf = Math.tan(C.fov * Math.PI / 360);
-const d = Math.max(halfH / tHalf, halfW / (tHalf * Math.max(.35, C.aspect))) * 1.06;
+/* منظور أول: إخفاء الموظف والخوذة كل إطار حتى لا يحجبا اللوحة */
+pl.visible = false;
+/* تقريب الكاميرا إلى اللوحة القائمة أثناء المراجعة: الجدول يُقرأ داخل اللعبة بلا نافذة منبثقة */
+const tHalf = Math.tan(C.fov * Math.PI / 360);
+/* اللوحة داخل 80% ارتفاعاً و86% عرضاً: هوامش ظاهرة من كل جهة فلا يُغطّى الصف الأخير */
+const d = Math.max(STUDY.bh / (2 * tHalf * 0.80), STUDY.bw / (2 * tHalf * Math.max(.35, C.aspect) * 0.86));
 const k = 1 - Math.exp(-dt * 6);
-/* الكاميرا على محور عمودي اللوحة المائلة (٥٠°) تماماً: الجدول يملأ الشاشة بلا ميل */
-C.position.lerp(camTarget.set(6.4, 2.62 + 0.766 * d, -13.0 + 0.643 * d), k);
-camLook.lerp(camLookT.set(6.4, 2.62, -13.0), 1 - Math.exp(-dt * 7));
+C.position.lerp(camTarget.set(STUDY.bx, STUDY.by, STUDY.bz + d), k);
+camLook.lerp(camLookT.set(STUDY.bx, STUDY.by, STUDY.bz), 1 - Math.exp(-dt * 7));
 C.lookAt(camLook);
 } else if(EXIT_GATE.active){
 // توجيه الكاميرا نحو بوابة الخروج على اليسار أثناء تسلسل الانتقال
@@ -2956,6 +3013,7 @@ const camX = Math.max(-camMaxX, Math.min(camMaxX, px.x));
 C.position.lerp(camTarget.set(camX + evacView, 13.2, px.z + 12.4), 1 - Math.exp(-dt*9));
 camLook.lerp(camLookT.set(px.x + evacView, 0.9, px.z - 2.2), 1 - Math.exp(-dt*10));
 C.lookAt(camLook);
+if(!FD.on && !EXIT_GATE.active && !STUDY.on) pl.visible = true;
 }
 // اهتزاز الكاميرا (Trauma): يُطبَّق بعد lookAt حتى يهتز المنظور فعلاً
 const shake = shakeTrauma * shakeTrauma;

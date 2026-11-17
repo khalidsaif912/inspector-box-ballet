@@ -44,7 +44,7 @@ const hzZone: Zone = { k: "hz1", hz: 1, x: 11.5, cap: 6, cols: 3 };
 const coldParcel: Item = { isHz: false, t: "cold", imp: "COL", div: "REF" };
 const perishableParcel: Item = { isHz: false, t: "perish", imp: "PER", div: "EAT" };
 const explosive: Item = { isHz: true, t: "h1", imp: "RXS", div: "1.4S" };
-const fireworks: Item = { isHz: true, t: "h1", imp: "RCX", div: "1.3G" };
+const fireworks: Item = { isHz: true, t: "h1", imp: "RGX", div: "1.3G" };
 
 describe("Scoring economy (values the game loop uses)", () => {
   it("pays 10 for a regular parcel and 25 for a hazardous one", () => {

@@ -172,7 +172,7 @@ describe("Game assets and shared rules", () => {
   it("adds a 10-second IATA segregation study board behind the FOD pad", () => {
     // لوحة في العالم بين مجموعتَي الحاويات، وخلف صندوق FOD
     expect(game).toContain("const STUDY = { total: 10, left: 10");
-    expect(game).toContain("I18N.t('قف في المنطقة الخضراء أمام اللوحة لتقرأها — ١٠ ثوانٍ مجانية'");
+    expect(game).toContain("I18N.t('قف في المنطقة الخضراء أمام اللوحة — المراجعة بـ ١٠ نقاط مجانية'");
     expect(game).toContain("STUDY.left = Math.max(0, STUDY.left - dt);");
     // الوقت يُستهلك فقط أثناء الوقوف أمام اللوحة، وساعة الوردية تتجمد
     expect(game).toContain("const inZone = run && !fire.active && !fire.keypad && !EXIT_GATE.active && !introHold && !FD.on &&");
@@ -182,6 +182,22 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain("STUDY.left = STUDY.total; STUDY.on = false; closeStudy();");
     expect(html).toContain('id="study"');
     expect(html).toContain('id="study-time"');
+  });
+
+  it("keeps the last chart row inside the board above the footer", () => {
+    expect(game).toContain("const squeeze = total > avail ? avail / total : 1;");
+    expect(game).toContain("const lh = (fs + 10) * squeeze, rh = lines.length * lh + 10 * squeeze;");
+    expect(game).toContain("const footTop = h - 132, avail = footTop - top - 8, maxW = R - cList;");
+  });
+
+  it("does not claim certified compliance with the official chart", () => {
+    expect(game).toContain("جدول مبسّط لأغراض التدريب فقط");
+    expect(game).not.toContain("مطابقة للنص الرسمي");
+  });
+
+  it("wraps the segregation list inside the board width", () => {
+    expect(game).toContain("if(!line || g.measureText(next).width <= maxW) line = next;");
+    expect(game).toContain("const hasX = r.x.length > 0;");
   });
 
   it("lays the start and shift-end screens out for landscape phones", () => {

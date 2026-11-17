@@ -63,7 +63,7 @@ describe("Reckless forklift", () => {
     expect(rules.movementMultiplier(0)).toBe(1);
   });
   it("places the FOD collection area at its configured position", () => {
-    expect(rules.fodZoneX).toBe(4.5);
+    expect(rules.fodZoneX).toBe(1.7);
   });
   it("keeps the reckless crossing slow enough to react", () => {
     expect(rules.speed).toBeLessThanOrEqual(12);

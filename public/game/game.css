@@ -234,17 +234,11 @@ body.exit-mode #cbbox,
 body.exit-mode #drv,
 body.exit-mode #inspect{display:none!important}
 
-/* أثناء مراجعة جدول الفرز تختفي أزرار اللعب حتى تبقى اللوحة مكشوفة بالكامل */
-body.study-mode #controls-ui,
-body.study-mode #cbbox,
-body.study-mode #stg,
-body.study-mode #drv,
-body.study-mode #inspect,
-body.study-mode #dash-btn,
+/* أثناء مراجعة جدول الفرز تختفي شارات اللعب الوسطى كي لا تزاحم النافذة */
 body.study-mode #inspector-badge{display:none!important}
 
-/* ===== شريط مراجعة جدول الفرز: يظهر فقط أثناء الوقوف أمام اللوحة ===== */
-#study{position:absolute;z-index:9;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);display:none;align-items:center;gap:10px;padding:7px 14px;border-radius:999px;border:2px solid #2fbf6a;background:rgba(6,22,16,.93);box-shadow:0 12px 30px rgba(0,0,0,.6);color:#eafff2;font-size:clamp(10.5px,2.6vmin,13.5px);white-space:nowrap;pointer-events:none;max-width:94vw}
+/* ===== شريط مراجعة جدول الفرز: أسفل الشاشة في الهامش المتروك تحت اللوحة ===== */
+#study{position:absolute;z-index:9;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 6px);display:none;align-items:center;gap:10px;padding:6px 13px;border-radius:999px;border:2px solid #2fbf6a;background:rgba(6,22,16,.9);box-shadow:0 12px 30px rgba(0,0,0,.6);color:#eafff2;font-size:clamp(11px,2.7vmin,14px);white-space:nowrap;pointer-events:none;max-width:94vw}
 #study.on{display:flex}
 #study b{font-weight:900;color:#baffd6;overflow:hidden;text-overflow:ellipsis}
 #study i{font-style:normal;font-weight:900;color:#ffd54a;font-variant-numeric:tabular-nums;background:rgba(255,213,74,.14);border-radius:999px;padding:2px 9px}
