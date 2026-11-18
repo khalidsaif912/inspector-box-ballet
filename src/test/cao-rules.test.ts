@@ -117,7 +117,9 @@ describe("CAO wiring in the game", () => {
 
   it("marks spawned hazardous parcels through the shared rule", () => {
     expect(game).toContain("gameRules.cao.isCao(");
-    expect(game).toMatch(/const caoParcel = raw\[0\]\[0\]==='h' && gameRules\.cao\.isCao\(raw\[3\]\);/);
+    expect(game).toMatch(
+      /const caoParcel = raw\[0\]\[0\]==='h' && gameRules\.cao\.isCao\(raw\[3\]\);/,
+    );
     expect(game).toMatch(/cao: caoParcel,/);
   });
 
