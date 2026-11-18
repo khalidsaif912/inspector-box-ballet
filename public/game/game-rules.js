@@ -316,6 +316,8 @@
     answer: "reject",
     reward: 45,
     penalty: 30,
+    // المفتش يسأل عن شحنات CAO ثلاث مرات فقط في الوردية الواحدة
+    maxAsks: 3,
     isCao(imp) {
       return cao.codes.indexOf(imp) >= 0;
     },

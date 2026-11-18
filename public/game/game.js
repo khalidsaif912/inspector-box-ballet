@@ -940,7 +940,7 @@ const rig = new THREE.Group(); pl.add(rig);
 const sh = new THREE.Mesh(new THREE.CircleGeometry(0.7, 32), new THREE.MeshBasicMaterial({color:0x000, transparent:true, opacity:0.28, depthWrite:false}));
 sh.rotation.x = -Math.PI/2; sh.position.y = 0.02; pl.add(sh);
 const G = (par,x,y,z) => { const g = new THREE.Group(); g.position.set(x,y,z); par.add(g); return g; };
-const C_SKIN = 0xe2b492, C_VEST = 0xd4ff00, C_VEST_SEC = 0xff6d00, C_PANTS = 0x243240, C_BOOTS = 0x1b1614, C_HELMET = 0xffb700, C_GLOVE = 0x37474f;
+const C_SKIN = 0xe2b492, C_VEST = 0xd4ff00, C_REFL = 0xb8c1c7, C_PANTS = 0x22325a, C_BOOTS = 0x1b1614, C_CAP = 0x2f5fa8, C_SHIRT = 0xf4f6f8, C_TIE = 0x141a21, C_GLOVE = 0x37474f;
 // ===== موظف بأشكال ناعمة مستديرة بدل المكعبات =====
 const cap = (r, len, c, x, y, z, p, seg=18) => {
 const g = new THREE.Group(); g.position.set(x,y,z); p.add(g);
@@ -967,7 +967,14 @@ new THREE.Vector2(0.315, 0.69), new THREE.Vector2(0.23, 0.79), new THREE.Vector2
 new THREE.Vector2(0.001, 0.85)
 ], 28), C_VEST, 0.6, 0.06);
 vest.scale.z = 0.64; tor.add(vest);
-band(0.285, 0.03, C_VEST_SEC, 0.055, tor);
+/* قميص أبيض وكرافة سوداء يظهران من فتحة السترة (مرجع الشخصية) */
+const shirtV = M(new THREE.SphereGeometry(0.1, 18, 14), C_SHIRT, 0.6, 0.05);
+shirtV.scale.set(1.45, 1.5, 0.42); shirtV.position.set(0, 0.66, 0.178); tor.add(shirtV);
+const tie = M(new THREE.BoxGeometry(0.055, 0.34, 0.028), C_TIE, 0.5, 0.1);
+tie.position.set(0, 0.47, 0.222); tor.add(tie);
+const tieKnot = M(new THREE.SphereGeometry(0.046, 12, 10), C_TIE, 0.5, 0.1);
+tieKnot.scale.set(1.1, 1, 0.75); tieKnot.position.set(0, 0.655, 0.232); tor.add(tieKnot);
+band(0.285, 0.03, C_REFL, 0.055, tor);
 band(0.291, 0.011, 0xe9eef2, 0.3, tor);
 band(0.303, 0.011, 0xe9eef2, 0.475, tor);
 const strip = (pts, c, rad, p) => {
@@ -994,10 +1001,11 @@ nose.scale.set(0.9, 1.1, 0.9); nose.position.set(0, 0.265, 0.235); hd.add(nose);
 const beard = M(new THREE.SphereGeometry(0.252, 24, 14, 0, Math.PI*2, Math.PI*0.52, Math.PI*0.42), 0x2a1d15, 0.8, 0);
 beard.position.set(0, 0.275, 0.012); beard.scale.set(0.95, 1.05, 0.97); hd.add(beard);
 const helmet = G(hd, 0, 0.35, 0);
-const helmetCap = M(new THREE.SphereGeometry(0.265, 26, 16, 0, Math.PI*2, 0, Math.PI*0.56), C_HELMET, 0.45, 0.1);
+const helmetCap = M(new THREE.SphereGeometry(0.265, 26, 16, 0, Math.PI*2, 0, Math.PI*0.56), C_CAP, 0.45, 0.1);
 helmetCap.position.y = 0.05; helmet.add(helmetCap);
-const hRim = M(new THREE.TorusGeometry(0.255, 0.028, 12, 40), C_HELMET, 0.45, 0.1);
-hRim.rotation.x = Math.PI/2; hRim.position.y = 0.05; helmet.add(hRim);
+/* كاب بقبعة زرقاء: حافة أمامية بيضاوية بدل طوق الخوذة الدائري */
+const hRim = M(new THREE.CylinderGeometry(0.26, 0.26, 0.03, 30, 1, false), C_CAP, 0.45, 0.1);
+hRim.scale.z = 1.45; hRim.position.set(0, 0.045, 0.1); helmet.add(hRim);
 const legs = [-1, 1].map(s => {
 const hip = G(pelvis, s*0.19, 0, 0);
 const hipBall = M(new THREE.SphereGeometry(0.115, 16, 12), C_PANTS, 0.65, 0.05); hip.add(hipBall);
@@ -1020,12 +1028,17 @@ const arms = [-1, 1].map(s => {
 const shld = G(tor, s*0.4, 0.71, 0);
 shld.add(M(new THREE.SphereGeometry(0.115, 18, 14), C_VEST, 0.62, 0.05));
 const uArm = G(shld, 0, 0, 0);
-cap(0.09, 0.32, C_VEST, 0, -0.15, 0, uArm);
+cap(0.09, 0.32, C_SHIRT, 0, -0.15, 0, uArm);
+const cuff = M(new THREE.CylinderGeometry(0.076, 0.076, 0.055, 16, 1, true), C_SHIRT, 0.6, 0.05);
+cuff.position.y = -0.3; uArm.add(cuff);
 const elbow = G(uArm, 0, -0.32, 0);
 elbow.add(M(new THREE.SphereGeometry(0.08, 14, 12), C_SKIN, 0.62, 0.02));
 cap(0.075, 0.3, C_SKIN, 0, -0.15, 0, elbow);
+/* ساعة يد سوداء كما في المرجع */
+const watch = M(new THREE.CylinderGeometry(0.082, 0.082, 0.045, 16, 1, true), 0x1b1f24, 0.55, 0.1);
+watch.position.y = -0.29; elbow.add(watch);
 const hand = G(elbow, 0, -0.32, 0);
-const glove = M(new THREE.SphereGeometry(0.088, 16, 12), C_GLOVE, 0.75, 0.05);
+const glove = M(new THREE.SphereGeometry(0.088, 16, 12), C_SKIN, 0.72, 0.05);
 glove.scale.set(1, 1.15, 0.9); glove.position.y = -0.03; hand.add(glove);
 return {shld, uArm, elbow, hand};
 });
@@ -1039,10 +1052,10 @@ B(0.16, 0.46, 0.17, C_SKIN, s * 0.35, 1.55, 0.2, forkDriver, 0.6, 0.1).rotation.
 B(0.15, 0.15, 0.15, C_GLOVE, s * 0.24, 1.32, 0.44, forkDriver, 0.8, 0.05);
 });
 const forkVest = B(0.62, 0.7, 0.44, C_VEST, 0, 1.62, -0.2, forkDriver, 0.55, 0.15);
-B(0.5, 0.16, 0.46, C_VEST_SEC, 0, 1.46, -0.2, forkDriver, 0.55, 0.15);
+B(0.5, 0.16, 0.46, C_REFL, 0, 1.46, -0.2, forkDriver, 0.55, 0.15);
 const forkHead = M(new THREE.SphereGeometry(0.25, 16, 12), C_SKIN);
 forkHead.position.set(0, 2.14, -0.18); forkHead.scale.set(0.94, 1.06, 0.96); forkDriver.add(forkHead);
-CY(0.28, 0.28, 0.16, C_HELMET, 0, 2.37, -0.18, forkDriver);
+CY(0.28, 0.28, 0.16, C_CAP, 0, 2.37, -0.18, forkDriver);
 const forkWheel = M(new THREE.TorusGeometry(0.24, 0.035, 8, 20), 0x181c20);
 forkWheel.position.set(0, 1.36, 0.46); forkWheel.rotation.x = -1.15; forkDriver.add(forkWheel);
 B(0.08, 0.5, 0.08, 0x2a2a2a, 0, 1.12, 0.58, forkDriver, 0.5, 0.4);
@@ -1371,8 +1384,57 @@ const k = div + '|' + imp;
 return _dgc[k] || (_dgc[k] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(dgLabelSVG(div, imp)));
 }
 let _inspK = null, _inspT = 0;
-function tex(it){
+/* ملصق CAO الحقيقي (DANGER — DO NOT LOAD IN PASSENGER AIRCRAFT) بدقة عالية:
+   كانفاس 1024 مع تنعيم عالي، ويُستخدم لشحنة واحدة فقط في الوردية. */
+let _placardImg = null, _placardCv = null, _placardSig = null;
+function placardTex(imp, div){
+  const k = '_CAO_PLACARD';
+  const sig = (imp || '') + '/' + (div || '');
+  if(!_placardCv){ _placardCv = document.createElement('canvas'); _placardCv.width = _placardCv.height = 1024; }
+  const ctx = _placardCv.getContext('2d');
+  /* يُعاد الرسم عند تبديل الشحنة بين الورديات بدل تكديس خامات 1024² في ذاكرة الـGPU */
+  const paint = () => {
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.fillStyle = '#a67c52'; ctx.fillRect(0, 0, 1024, 1024);
+    for(let i = 0; i < 2600; i++){
+      const x = Math.random()*1024, y = Math.random()*1024;
+      ctx.fillStyle = Math.random() > .5 ? 'rgba(50,30,15,.07)' : 'rgba(255,235,190,.08)';
+      ctx.fillRect(x, y, Math.random()*34 + 4, 1.5);
+    }
+    ctx.strokeStyle = '#6c4e33'; ctx.lineWidth = 18; ctx.strokeRect(14, 14, 996, 996);
+    ctx.fillStyle = '#caa77b'; ctx.fillRect(478, 0, 68, 1024);
+    ctx.fillStyle = 'rgba(65,43,26,.35)'; ctx.fillRect(478, 0, 7, 1024); ctx.fillRect(539, 0, 7, 1024);
+    ctx.fillStyle = '#f5f2e8'; ctx.fillRect(62, 54, 900, 914);
+    ctx.strokeStyle = '#111'; ctx.lineWidth = 14; ctx.strokeRect(62, 54, 900, 914);
+    ctx.imageSmoothingQuality = 'high';
+    if(_placardImg && _placardImg.complete) ctx.drawImage(_placardImg, 96, 78, 832, 726);
+    else { ctx.fillStyle = '#e9a13a'; ctx.fillRect(96, 78, 832, 726); }
+    ctx.fillStyle = '#c99b00'; ctx.fillRect(96, 812, 832, 62);
+    ctx.fillStyle = '#1b1300'; ctx.font = '900 38px ui-monospace,monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('CAO · CARGO AIRCRAFT ONLY', 512, 845);
+    ctx.fillStyle = '#20272c'; ctx.fillRect(96, 882, 832, 58);
+    ctx.fillStyle = '#ffd54a'; ctx.font = '900 34px ui-monospace,monospace';
+    ctx.fillText((imp || 'CAO') + '  ·  CLASS ' + (div || '—'), 512, 913);
+    if(tc[k]) tc[k].needsUpdate = true;
+  };
+  if(sig !== _placardSig){
+    _placardSig = sig;
+    paint();
+    if(!_placardImg || !_placardImg.complete){
+      if(!_placardImg){
+        _placardImg = new Image();
+        _placardImg.decoding = 'async';
+        _placardImg.src = 'game/images/cao-placard.png';
+      }
+      _placardImg.addEventListener('load', paint, { once: true });
+    }
+  }
+  return tc[k] || (tc[k] = rawTex(_placardCv));
+}
+function tex(it, placard){
 const isCao = it[0][0] === 'h' && gameRules.cao.isCao(it[3]);
+if(placard && isCao) return placardTex(it[3], it[4]);
 const k = it[2] + '_' + it[3] + (isCao ? '_CAO' : '');
 if(tc[k]) return tc[k];
 if(it === MYS) return tc[k] = mysTex();
@@ -1463,11 +1525,28 @@ else if(r < 0.85){ slowT = 8; snd('ship'); toast('🎁 مفاجأة: الحزا�
 else { time = Math.max(0, time - 6); snd('error'); spawnFloatTag(I18N.T('-6 ث','-6s'),'#ff5252'); toast('💥 مفاجأة سيئة: -6 ثوانٍ','#ff5252'); }
 hud();
 }
+/* المفتش يسأل عن شحنات CAO ثلاث مرات فقط في الوردية.
+   لذلك نحدّ ظهور شحنات CAO بنفس العدد: لا شحنة تُمرّ بلا سؤال ولا سؤال زائد. */
+const caoRun = { spawned: 0, placardUsed: false };
+function caoSwap(raw){
+  const pool = HZ.filter(h => !gameRules.cao.isCao(h[3]));
+  return pool[Math.random() * pool.length | 0] || raw;
+}
+function resetCaoRun(){
+  caoRun.spawned = 0; caoRun.placardUsed = false;
+}
 function spawn(){
 const list = stage===4 ? HZ : ((stage>=2 && Math.random() < (stage===3?0.6:0.45)) ? HZ : I);
-const raw = (stage>=2 && stage<4 && Math.random() < 0.13 && !items.some(i => i.data.isMys)) ? MYS : list[Math.random()*list.length | 0];
-const itObj = { t:raw[0], emoji:raw[1], name:raw[2], imp:raw[3], div:raw[4], isHz:raw[0][0]==='h', isMys:raw===MYS, cao: raw[0][0]==='h' && gameRules.cao.isCao(raw[3]) };
-const m = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({map:tex(raw), roughness:0.5, metalness:0.05}));
+let raw = (stage>=2 && stage<4 && Math.random() < 0.13 && !items.some(i => i.data.isMys)) ? MYS : list[Math.random()*list.length | 0];
+/* سقف أسئلة المفتش: أي شحنة CAO بعد الحد الأقصى تُستبدل بشحنة خطرة عادية */
+const isCaoRaw = raw[0][0]==='h' && gameRules.cao.isCao(raw[3]);
+if(isCaoRaw && caoRun.spawned >= gameRules.cao.maxAsks) raw = caoSwap(raw);
+const caoParcel = raw[0][0]==='h' && gameRules.cao.isCao(raw[3]);
+/* الشحنة الأولى فقط تحمل لوحة DANGER الحقيقية بدقة عالية */
+const placard = caoParcel && !caoRun.placardUsed;
+if(caoParcel){ caoRun.spawned++; if(placard) caoRun.placardUsed = true; }
+const itObj = { t:raw[0], emoji:raw[1], name:raw[2], imp:raw[3], div:raw[4], isHz:raw[0][0]==='h', isMys:raw===MYS, cao: caoParcel, placard };
+const m = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({map:tex(raw, placard), roughness:0.5, metalness:0.05}));
 m.castShadow = true; m.receiveShadow = true; const bs = gameRules.layout.beltSpawn(); m.position.set(bs.x, bs.y, bs.z);
 m.add(new THREE.LineSegments(EDGEG, EDGEM));
 const csh = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 2.1), SHM);
@@ -2094,6 +2173,8 @@ dashT = 0; dashCD = 0; feverT = 0; shakeTrauma = 0;
 $('dash-fx').classList.remove('on'); $('stage').classList.remove('fever'); setDashButton();
 demo = {insp:false,truck:false,inspDone:td,truckDone:td,truckIn:0}; inspector.demo = false; hideIntro();
 sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false;
+/* كل وردية جديدة تبدأ بحصة ٣ أسئلة للمفتش وشحنة ملصق واحدة */
+resetCaoRun();
 $('rules').style.display = 'none';
 resetExitGate();
 resetFire();
@@ -2706,6 +2787,13 @@ if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.done = true
 const CAO_PANEL = $('cao-panel');
 const CAO_BUBBLE = $('cao-bubble');
 const CAO_SAY = $('cao-say');
+/* أزرار القرار: نصوصها الأصلية محفوظة لاستعادتها بعد سؤال الملصق (نعم/لا) */
+const caoAccept = CAO_BUBBLE && CAO_BUBBLE.querySelector('button[data-a="accept"]');
+const caoStow = CAO_BUBBLE && CAO_BUBBLE.querySelector('button[data-a="stow"]');
+const caoReject = CAO_BUBBLE && CAO_BUBBLE.querySelector('button[data-a="reject"]');
+[caoAccept, caoStow, caoReject].forEach(b => { if(b) b.setAttribute('data-t', b.textContent); });
+const CAO_Q = $('cao-q');
+const CAO_Q_DEFAULT = CAO_Q ? CAO_Q.textContent : '';
 const caoQ = { active:false, answered:false, it:null, flight:null, v:new THREE.Vector3() };
 const caoV = new THREE.Vector3();
 /* فقاعة الحوار تُثبَّت فوق رأس المفتش: إسقاط موضعه ثلاثي الأبعاد إلى الشاشة */
@@ -2740,8 +2828,18 @@ caoPlace();
 function caoOpen(it){
 const f = gameRules.cao.flightFor(Math.round(it.m.position.x) + totalProcessed);
 caoQ.active = true; caoQ.answered = false; caoQ.it = it; caoQ.flight = f;
+const placardQ = !!it.data.placard;
 $('cao-item').textContent = it.data.name + ' • ' + it.data.imp + ' / ' + it.data.div;
 $('cao-flight').textContent = I18N.T('الرحلة ','Flight ') + (f.id + ' · ' + f.from + ' ✈ ' + f.to) + I18N.T(' — طائرة ركاب',' — passenger aircraft');
+/* شحنة الملصق عالي الدقة: سؤال نعم/لا مباشر بدل خيارات التحميل الثلاثة */
+CAO_BUBBLE.classList.toggle('placard', placardQ);
+if(CAO_Q) CAO_Q.textContent = placardQ
+  ? I18N.T('هل يُسمح بشحن هذه الشحنة على طائرة ركاب؟','Is this shipment allowed on a passenger aircraft?')
+  : CAO_Q_DEFAULT;
+if(caoAccept) caoAccept.hidden = false;
+if(caoStow) caoStow.hidden = placardQ;
+if(caoAccept) caoAccept.textContent = placardQ ? I18N.T('✅ نعم، مسموح','✅ Yes, allowed') : caoAccept.getAttribute('data-t');
+if(caoReject) caoReject.textContent = placardQ ? I18N.T('🚫 لا، غير مسموح','🚫 No, not allowed') : caoReject.getAttribute('data-t');
 /* المفتش يحضر بنفسه: يقف أمام اللاعب مواجهاً له ويطلب القرار */
 const I_ = inspector;
 const z0 = Math.max(-4.2, Math.min(8.4, px.z - 2.2));
@@ -2777,6 +2875,11 @@ clearTimeout(caoHoldT);
 caoQ.active = false; caoQ.answered = false; caoQ.it = null;
 CAO_PANEL.classList.remove('on');
 CAO_PANEL.setAttribute('aria-hidden','true');
+CAO_BUBBLE.classList.remove('placard');
+if(CAO_Q) CAO_Q.textContent = CAO_Q_DEFAULT;
+if(caoStow) caoStow.hidden = false;
+if(caoAccept) caoAccept.textContent = caoAccept.getAttribute('data-t');
+if(caoReject) caoReject.textContent = caoReject.getAttribute('data-t');
 CAO_BUBBLE.classList.remove('in');
 CAO_SAY.classList.remove('in');
 const I_ = inspector;

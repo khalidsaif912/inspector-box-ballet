@@ -10,6 +10,7 @@ type Cao = {
   answer: string;
   reward: number;
   penalty: number;
+  maxAsks: number;
   isCao(imp: string): boolean;
   flightFor(seed: number): Flight;
   decide(
@@ -116,7 +117,21 @@ describe("CAO wiring in the game", () => {
 
   it("marks spawned hazardous parcels through the shared rule", () => {
     expect(game).toContain("gameRules.cao.isCao(");
-    expect(game).toMatch(/cao:\s*raw\[0\]\[0\]==='h'\s*&&\s*gameRules\.cao\.isCao\(raw\[3\]\)/);
+    expect(game).toMatch(/const caoParcel = raw\[0\]\[0\]==='h' && gameRules\.cao\.isCao\(raw\[3\]\);/);
+    expect(game).toMatch(/cao: caoParcel,/);
+  });
+
+  it("asks the inspector at most three times per shift", () => {
+    expect(cao.maxAsks).toBe(3);
+    expect(game).toMatch(/caoRun\.spawned >= gameRules\.cao\.maxAsks/);
+    expect(game).toContain("resetCaoRun();");
+  });
+
+  it("ships one high-resolution CARGO ONLY placard per shift", () => {
+    expect(game).toContain("game/images/cao-placard.png");
+    expect(game).toMatch(/_placardCv\.width = _placardCv\.height = 1024/);
+    expect(html).toContain('id="cao-q"');
+    expect(game).toContain("هل يُسمح بشحن هذه الشحنة على طائرة ركاب؟");
   });
 
   it("opens the accept/refuse check before any lift", () => {

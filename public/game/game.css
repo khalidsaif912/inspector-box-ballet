@@ -227,6 +227,18 @@ canvas{display:block;position:absolute;inset:0}
 .cq-item{font:800 clamp(11px,3.1vmin,13px) ui-monospace,monospace;color:#8a5a00;margin-top:7px}
 .cq-fl{font-size:clamp(10px,3vmin,12px);color:#4a5160;margin-top:3px}
 .cq-q{font-size:clamp(12px,3.6vmin,15px);font-weight:900;color:#101318;margin:8px 0 6px;line-height:1.5}
+/* لوحة CAO الحقيقية: تُعرض فقط في شحنة الملصق عالي الدقة */
+#cao-placard{display:none;width:100%;max-width:210px;margin:8px auto 2px;border-radius:8px;border:2px solid #1b1300;box-shadow:0 4px 12px rgba(0,0,0,.28);image-rendering:auto}
+#cao-bubble.placard #cao-placard{display:block}
+#cao-bubble.placard .cq-q{color:#8a1c14;font-size:clamp(13px,4vmin,16px)}
+/* الشاشات الأفقية القصيرة: تُصغَّر اللوحة كي تبقى النافذة داخل الشاشة */
+@media (orientation:landscape) and (max-height:480px){
+  #cao-placard{height:92px;width:auto;max-width:45%;margin:4px auto 0;border-width:1.5px}
+  #cao-bubble.placard .cq-q{margin:5px 0 3px;font-size:clamp(11px,3.4vmin,14px);line-height:1.35}
+  #cao-bubble.placard{padding:7px 10px 9px}
+  #cao-bubble.placard .cq-b{padding:7px 9px;margin-top:5px}
+}
+.cq-b[hidden]{display:none}
 .cq-b{display:block;width:100%;margin-top:7px;padding:11px 12px;border-radius:12px;border:1px solid #cfd4da;background:#f2f4f6;color:#14161b;font:800 clamp(12px,3.4vmin,14px) system-ui,Tahoma,sans-serif;cursor:pointer;text-align:start;pointer-events:auto;transition:background .15s,transform .1s}
 .cq-b:active{transform:scale(.985);background:#e6e9ed}
 .cq-b.good{background:#e6f8ee;border-color:#8ed6ab}

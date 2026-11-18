@@ -1,5 +1,5 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v38";
+const VERSION = "v39";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
@@ -21,6 +21,7 @@ const SHELL = [
   "./vendor/fonts/cairo-latin.woff2",
   "./game/images/start-bg.jpg",
   "./game/images/start-glow.png",
+  "./game/images/cao-placard.png",
   "./favicon.ico",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
