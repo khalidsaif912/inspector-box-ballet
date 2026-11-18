@@ -953,7 +953,8 @@ function loadCrewGLB(){
   if(CREW.tried || CREW.mode !== 'glb' || !window.CrewRig) return;
   CREW.tried = true;
   CrewRig.load('game/models/airport-crew.glb').then(o => {
-    CREW.obj = o; CREW.ready = true; pl.add(o); applyCrewMode();
+    CREW.obj = o.root; CREW.inst = o; CREW.ready = true; pl.add(o.root); applyCrewMode();
+    loadSeatCrew();
     console.log('[crew] skinned glb ready, parts:', CrewRig.state.parts);
   }).catch(err => { CREW.mode = 'rig'; CREW.ready = false; applyCrewMode(); console.warn('[crew] glb failed, using procedural rig', err); });
 }
@@ -1081,8 +1082,40 @@ forkHead.position.set(0, 2.14, -0.18); forkHead.scale.set(0.94, 1.06, 0.96); for
 CY(0.28, 0.28, 0.16, C_CAP, 0, 2.37, -0.18, forkDriver);
 const forkWheel = M(new THREE.TorusGeometry(0.24, 0.035, 8, 20), 0x181c20);
 forkWheel.position.set(0, 1.36, 0.46); forkWheel.rotation.x = -1.15; forkDriver.add(forkWheel);
-B(0.08, 0.5, 0.08, 0x2a2a2a, 0, 1.12, 0.58, forkDriver, 0.5, 0.4);
+forkWheel.userData.keep = true;
+B(0.08, 0.5, 0.08, 0x2a2a2a, 0, 1.12, 0.58, forkDriver, 0.5, 0.4).userData.keep = true;
 const PLAYER_RADIUS = 0.45;
+/* ===== سائق الرافعة: نفس شخصية اللاعب المجسّمة بدل المجسّمات الإجرائية =====
+   نسخة مستقلة (هيكل عظمي ومواد خاصة بها) جالسة على المقعد: ساقان للأمام
+   وذراعان إلى المقود. تُركّب داخل forkDriver حتى تبقى ظهورها/إخفاءها كما هي. */
+const HIP_REF = 1.824;             // ارتفاع الحوض في قالب الشخصية (3.6م)
+const SEAT = { s: 0.82, hips: 1.33, z: 0.08 };
+const SEAT_CREW = { fork: null, truck: null, tried: false };
+function seatCrewInto(parent, at) {
+  const g = new THREE.Group();
+  // نرفع/نخفض المجموعة بحيث يستقر الحوض على وسادة المقعد بعد التكبير
+  g.position.set(at[0], at[1] - HIP_REF * SEAT.s, at[2]);
+  g.rotation.y = at[3] || 0;
+  parent.add(g);
+  return CrewRig.load('game/models/airport-crew.glb').then(o => {
+    g.scale.setScalar(SEAT.s);
+    g.add(o.root);
+    o.pose({ dt: 0.016, sit: true });
+    return o;
+  });
+}
+function loadSeatCrew() {
+  if (SEAT_CREW.tried || !window.CrewRig) return;
+  SEAT_CREW.tried = true;
+  seatCrewInto(forkDriver, [0, SEAT.hips, SEAT.z]).then(o => {
+    SEAT_CREW.fork = o;
+    forkDriver.children.forEach(c => { if (c !== o.root.parent && !c.userData.keep) c.visible = false; });
+  });
+  seatCrewInto(truckDriver, [0, SEAT.hips, SEAT.z]).then(o => {
+    SEAT_CREW.truck = o;
+    truckDriver.children.forEach(c => { if (c !== o.root.parent && !c.userData.keep) c.visible = false; });
+  });
+}
 /* حدود الأرضية القابلة للمشي: تُستخدم في دفع التصادم أيضاً حتى لا يُقذف اللاعب خارج المستودع */
 const WALK = { minX: -33.6, maxX: 33.6, minZ: -11.5, maxZ: 10.1 };
 /* صندوق تصادم الرافعة المتوقفة: نصف الأبعاد من قواعد اللعبة (نفس الشكل المرئي بعد الدوران) */
@@ -1188,7 +1221,7 @@ const isMoving = spd > 0.08;
 const isHeld = !!held;
 const sprinting = !isHeld && !!(key.ShiftLeft || key.ShiftRight);
 if(isMoving){
-walk += dt * (isHeld ? 9.2 : 13.5) * (sprinting ? 1.35 : 1) * gameRules.movementMultiplier(fearT);
+walk += dt * (isHeld ? 13 : 15.5) * (sprinting ? 1.35 : 1) * gameRules.movementMultiplier(fearT);
 const targetRot = Math.atan2(vx, vz);
 const diff = Math.atan2(Math.sin(targetRot - curRotY), Math.cos(targetRot - curRotY));
 const turnK = Math.min(1, dt * (18 + Math.abs(diff) * 12));
@@ -1208,6 +1241,8 @@ o.rotation.y = curRotY;
 o.rotation.z = turnLean * .55;
 window.CrewRig.pose({ dt, phase: walk, moving: isMoving, sprint: sprinting, held: isHeld, lift: liftAnim.active ? Math.sin(liftAnim.t * Math.PI) : 0 });
 }
+if(SEAT_CREW.fork) SEAT_CREW.fork.pose({ dt, sit: true });
+if(SEAT_CREW.truck) SEAT_CREW.truck.pose({ dt, sit: true });
 const sw = Math.sin(walk);
 const cw = Math.cos(walk);
 let target = {};
@@ -3150,11 +3185,12 @@ const lX = Math.cos(rig.rotation.y), lZ = -Math.sin(rig.rotation.y);
 const sway = l > 0.08 ? Math.sin(walk) * 0.06 : 0;
 const bnc = l > 0.08 ? Math.sin(walk * 2) * 0.04 : 0;
 cargoInertiaY += (bnc - cargoInertiaY) * Math.min(1, dt * 14);
-const targetPos = cargoTarget.set(
-px.x + fX * 0.78 + lX * sway,
-1.38 + bob * 0.55 + cargoInertiaY,
-px.z + fZ * 0.78 + lZ * sway
-);
+        const bodyH = (CREW.ready && CREW.obj && CREW.obj.visible && window.CrewRig && window.CrewRig.height) ? window.CrewRig.height : 0;
+        const targetPos = cargoTarget.set(
+          px.x + fX * 0.78 + lX * sway,
+          (bodyH ? bodyH * 0.5 : 1.38) + bob * 0.55 + cargoInertiaY,
+          px.z + fZ * 0.78 + lZ * sway
+        );
 cargoSmoothPos.lerp(targetPos, Math.min(1, dt * 22));
 it.m.position.copy(cargoSmoothPos);
 it.m.rotation.y = rig.rotation.y;
@@ -3237,8 +3273,8 @@ C.lookAt(camLook);
 } else {
 // الكاميرا تتبع الموظف كاملاً (مع سقف عند جدران المستودع) فلا يصل إلى حافة الشاشة
 const camX = Math.max(-camMaxX, Math.min(camMaxX, px.x));
-C.position.lerp(camTarget.set(camX + evacView, 13.2, px.z + 12.4), 1 - Math.exp(-dt*9));
-camLook.lerp(camLookT.set(px.x + evacView, 0.9, px.z - 2.2), 1 - Math.exp(-dt*10));
+C.position.lerp(camTarget.set(camX + evacView, 9.6, px.z + 11.0), 1 - Math.exp(-dt*9));
+camLook.lerp(camLookT.set(px.x + evacView, 1.15, px.z - 2.0), 1 - Math.exp(-dt*10));
 C.lookAt(camLook);
 if(!FD.on && !EXIT_GATE.active && !STUDY.on) pl.visible = true;
 }
