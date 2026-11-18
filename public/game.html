@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="screen-orientation" content="landscape">
+<meta name="x5-orientation" content="landscape">
 <title>مستودع الشحن الجوي 3D - نظام المواد الخطرة IATA DGR HD</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a121c">
@@ -216,11 +218,46 @@
 <div id="portal-warp" aria-hidden="true">
   <div class="pw-label">✈️ إلى المرحلة التالية...</div>
 </div>
+<div id="rotate-gate" role="status" aria-live="polite">
+  <div class="rg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2" width="11" height="20" rx="2.6"/><path d="M10.5 18.6h3"/></svg></div>
+  <div class="rg-t">أدر جهازك إلى الوضع الأفقي للمتابعة</div>
+  <div class="rg-s">Rotate your device to landscape</div>
+</div>
+<script>
+(function(){
+  var gate = document.getElementById('rotate-gate');
+  var mq = window.matchMedia('(orientation: portrait)');
+  function isMobile(){
+    return window.matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 900;
+  }
+  function sync(){ gate.classList.toggle('show', isMobile() && mq.matches); }
+  function lock(){
+    if(!isMobile()) return;
+    var so = screen.orientation;
+    if(!so || typeof so.lock !== 'function' || so.type.indexOf('landscape') === 0) return;
+    so.lock('landscape').catch(function(){});
+  }
+  function enterAndLock(){
+    if(!isMobile()) return;
+    var el = document.documentElement;
+    if(document.fullscreenElement || document.webkitFullscreenElement) return lock();
+    var req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if(!req) return lock();
+    Promise.resolve(req.call(el)).then(lock, lock);
+  }
+  addEventListener('pointerdown', enterAndLock, {once:true, passive:true});
+  document.addEventListener('fullscreenchange', function(){ if(document.fullscreenElement) lock(); });
+  addEventListener('orientationchange', function(){ setTimeout(function(){ lock(); sync(); }, 250); });
+  if(mq.addEventListener) mq.addEventListener('change', sync); else if(mq.addListener) mq.addListener(sync);
+  sync();
+})();
+</script>
 <script src="vendor/three.min.js"></script>
 <script src="game/game-rules.js"></script>
 <script src="game/game-hub.js"></script>
 <script src="game/i18n.js"></script>
 <script src="game/game.js"></script>
+<script src="game/touch-ui.js"></script>
 <script>if('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

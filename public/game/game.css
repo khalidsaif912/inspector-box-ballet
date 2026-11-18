@@ -762,3 +762,146 @@ html[lang="en"] .top-btns .rbtn,html[lang="en"] .pill b{font-family:inherit}
 @keyframes conflictFlash{50%{opacity:.15}}
 #intro .skip-tutorial{display:block;margin:12px auto 0;padding:8px 18px;border-radius:999px;border:1px solid rgba(124,196,255,.5);background:rgba(12,26,44,.92);color:#9fd7ff;font:800 13px/1.2 inherit;cursor:pointer;pointer-events:auto}
 #intro .skip-tutorial:hover{background:rgba(20,48,80,.96);color:#fff}
+#rotate-gate{position:fixed;inset:0;z-index:2147483647;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:26px;text-align:center;color:#dbe7f5;background:linear-gradient(180deg,#070d16,#0a1522 55%,#060a11)}
+#rotate-gate.show{display:flex}
+#rotate-gate .rg-icon{width:96px;height:96px;border-radius:26px;border:2px solid rgba(140,200,255,.35);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 40px rgba(58,160,255,.18);animation:rgTilt 1.8s ease-in-out infinite}
+#rotate-gate .rg-icon svg{width:58px;height:58px;color:#7cc4ff}
+#rotate-gate .rg-t{font-size:clamp(17px,4.6vmin,22px);font-weight:900}
+#rotate-gate .rg-s{font-size:clamp(12px,3vmin,14px);color:#8fa7c0;direction:ltr}
+@keyframes rgTilt{0%,100%{transform:rotate(0)}50%{transform:rotate(-90deg)}}
+/* ================================================================
+   طبقة لمس الموبايل (Touch UI) — تُضبط القيم من game/touch-ui.js
+   الجويستيك أسفل اليسار • الإجراءات في قوس أسفل اليمين •
+   الشريط العلوي مصغّر على الحواف • الوسط خالٍ لمناطق الفرز
+   ================================================================ */
+:root{
+  --tui-joy:clamp(120px,21vmin,140px);
+  --tui-knob:45%;
+  --tui-act:clamp(68px,12.5vmin,80px);
+  --tui-dash:clamp(52px,9vmin,64px);
+  --tui-gap:16px;
+  --tui-margin:16px;
+  --tui-menu:48px;
+  --tui-press:.92;
+  --tui-idle:.62;
+  --tui-sab:env(safe-area-inset-bottom,0px);
+  --tui-sal:env(safe-area-inset-left,0px);
+  --tui-sar:env(safe-area-inset-right,0px);
+  --tui-sat:env(safe-area-inset-top,0px);
+}
+html,body{overscroll-behavior:none}
+#stage{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#stage>canvas{touch-action:none}
+#hud,#controls-ui,#controls-ui *,#tui-menu,#tui-menu-panel{touch-action:none}
+button{-webkit-tap-highlight-color:transparent}
+/* الشريط العلوي: أصغر ونحو الحواف */
+#hud{
+  padding:calc(var(--tui-sat) + 6px) max(8px,var(--tui-sar)) 0 max(8px,var(--tui-sal));
+  gap:6px;
+}
+.hud-start{gap:6px}
+.hud-end{gap:8px;align-items:center}
+.hud-end .hud-side{gap:8px;align-items:center}
+.pill{height:calc(var(--hh)*.92);min-width:calc(var(--hh)*2.3);padding:0 calc(var(--hh)*.34) 0 calc(var(--hh)*.95);border-width:1.5px}
+.pill b{font-size:calc(var(--hh)*.58)}
+#stg{max-width:min(34vw,158px);font-size:clamp(9.5px,2.6vmin,12px);padding:4px 8px 5px;border-radius:10px}
+#stgbar{width:100%;height:3px}
+.cbadge{width:calc(var(--hh)*1.25);height:calc(var(--hh)*1.25)}
+/* زر القائمة الوحيد (خروج/كتم/خريطة تُجمع داخله) */
+#tui-menu{
+  order:3;display:none;place-items:center;flex:0 0 auto;
+  width:var(--tui-menu);height:var(--tui-menu);min-width:48px;min-height:48px;padding:0;
+  border-radius:15px;border:1.5px solid rgba(124,196,255,.6);color:#cfe8ff;
+  background:linear-gradient(180deg,rgba(24,52,92,.92),rgba(8,20,42,.92));
+  box-shadow:0 4px 14px rgba(0,0,0,.5),inset 0 0 10px rgba(58,160,255,.18);
+  cursor:pointer;transition:transform .12s ease,background .2s ease;opacity:.82;
+  pointer-events:auto;
+}
+#tui-menu svg{width:52%;height:52%}
+#tui-menu:active{transform:scale(var(--tui-press));opacity:1}
+#tui-menu[aria-expanded="true"]{opacity:1;border-color:rgba(255,213,74,.85);box-shadow:0 0 0 3px rgba(255,213,74,.16),0 4px 14px rgba(0,0,0,.5)}
+body.ingame #tui-menu{display:grid}
+#stage.fire #tui-menu{opacity:0;pointer-events:none}
+body.exit-mode #tui-menu{display:none!important}
+/* لوحة القائمة المنسدلة: تجمع الأزرار الثانوية */
+body.ingame .hud-end .top-btns{display:none}
+body.ingame.tui-menu-open .hud-end .top-btns{
+  display:flex;position:fixed;inset:auto;
+  top:calc(var(--tui-sat) + var(--tui-menu) + 8px);
+  left:max(8px,var(--tui-sal));right:auto;
+  flex-direction:row;align-items:center;gap:16px;padding:6px;
+  width:auto;border-radius:18px;background:rgba(8,20,42,.92);
+  border:1px solid rgba(124,196,255,.4);z-index:13;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  box-shadow:0 12px 32px rgba(0,0,0,.6);
+  pointer-events:auto;
+}
+body.ingame.tui-menu-open .hud-end .top-btns .rbtn,
+body.ingame.tui-menu-open .hud-end .top-btns #how{
+  width:48px;height:48px;min-width:48px;min-height:48px;border-radius:14px;
+  display:grid;place-items:center;padding:0;border:1.5px solid rgba(124,196,255,.55);
+  background:linear-gradient(180deg,rgba(30,62,104,.95),rgba(10,24,44,.95));color:#cfe8ff;
+}
+body.ingame.tui-menu-open .hud-end .top-btns .rbtn svg,
+body.ingame.tui-menu-open .hud-end .top-btns #how svg{width:52%;height:52%}
+body.ingame.tui-menu-open .hud-end .top-btns .rbtn:active,
+body.ingame.tui-menu-open .hud-end .top-btns #how:active{transform:scale(var(--tui-press))}
+body.ingame.tui-menu-open .hud-end .top-btns .rbtn.off{color:#ff8a80;border-color:rgba(255,120,110,.55)}
+body.ingame.tui-menu-open .hud-end .top-btns #how{color:#ffd54a}
+body.ingame.tui-menu-open .hud-end .top-btns #how span{display:none}
+body.ingame.tui-menu-open .hud-end .top-btns .rbtn,
+body.ingame.tui-menu-open .hud-end .top-btns #how{pointer-events:auto}
+/* شريحة الفحص: قريبة من الحافة السفلية ولا تحجب الوسط */
+#inspect{position:fixed;inset:auto;left:50%;bottom:calc(var(--tui-sab) + 10px);transform:translateX(-50%);margin:0;z-index:6;max-width:min(52vw,360px)}
+/* حاوية التحكم: طبقة كاملة فوق الكانفاس، بدون أي صندوق مركزي */
+#controls-ui{position:absolute;inset:0;bottom:0;display:block;padding:0;margin:0;pointer-events:none;direction:ltr;z-index:7}
+/* الجويستيك: أسفل اليسار، عائم، 120–140px */
+#joy{
+  position:absolute;left:max(var(--tui-margin),var(--tui-sal));right:auto;
+  top:auto;bottom:calc(var(--tui-sab) + var(--tui-margin));
+  width:var(--tui-joy);height:var(--tui-joy);
+  opacity:var(--tui-idle);pointer-events:auto;
+  transition:transform .16s ease-out,opacity .18s ease,box-shadow .18s ease;
+  z-index:2;
+}
+#joy.active,#joy.floating{opacity:1}
+#joy.floating{transition:opacity .12s ease,box-shadow .18s ease}
+#knob{
+  width:var(--tui-knob);height:var(--tui-knob);left:calc((100% - var(--tui-knob))/2);top:calc((100% - var(--tui-knob))/2);
+  transition:transform .08s ease-out;will-change:transform;
+}
+#joy.active #knob{transition:none}
+/* قوس أزرار الإجراءات أسفل اليمين: الالتقاط أكبر وأقرب للإبهام */
+#tui-actions{
+  position:absolute;right:max(var(--tui-margin),var(--tui-sar));left:auto;
+  bottom:calc(var(--tui-sab) + var(--tui-margin));
+  width:var(--tui-act);height:var(--tui-act);pointer-events:none;z-index:3;
+}
+#tui-actions #act{
+  position:absolute;right:0;left:auto;bottom:0;top:auto;
+  width:var(--tui-act);height:var(--tui-act);min-width:64px;min-height:64px;
+  opacity:.9;touch-action:none;transform-origin:50% 50%;
+  transition:transform .1s ease,box-shadow .2s ease,opacity .2s ease;
+}
+#tui-actions #act.pressed,#tui-actions #act:active{transform:scale(var(--tui-press));opacity:1}
+#tui-actions #dash-btn{
+  position:absolute;right:calc(var(--tui-act)*.42);left:auto;
+  bottom:calc(var(--tui-act) + var(--tui-gap));top:auto;
+  width:var(--tui-dash);height:var(--tui-dash);min-width:52px;min-height:52px;
+  opacity:.72;touch-action:none;transform-origin:50% 50%;
+  transition:transform .1s ease,opacity .2s ease,filter .2s ease;
+}
+#tui-actions #dash-btn.pressed,#tui-actions #dash-btn:active{transform:scale(var(--tui-press));opacity:1}
+#tui-actions #dash-btn.cool{opacity:.42}
+#tui-actions #dash-btn.cool:active{opacity:.6}
+/* وضع اليد اليسرى: انعكاس كامل لمواضع التحكم */
+body.tui-left #joy{left:auto;right:max(var(--tui-margin),var(--tui-sar))}
+body.tui-left #tui-actions{right:auto;left:max(var(--tui-margin),var(--tui-sal))}
+body.tui-left #tui-actions #act{right:auto;left:0}
+body.tui-left #tui-actions #dash-btn{right:auto;left:calc(var(--tui-act)*.42)}
+/* لا مساحة ميتة أسفل الشاشة: لوحات اللعب تبقى ظاهرة */
+@media (orientation:landscape) and (max-height:430px){
+  #joy{bottom:max(12px,calc(var(--tui-sab) + 8px))}
+  #tui-actions{bottom:max(12px,calc(var(--tui-sab) + 8px))}
+  #inspect{bottom:calc(var(--tui-sab) + 6px);max-width:min(46vw,300px);padding:5px 10px}
+}

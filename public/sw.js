@@ -1,5 +1,5 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v36";
+const VERSION = "v38";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
@@ -8,6 +8,7 @@ const SHELL = [
   "./game/game.css",
   "./game/ui.css",
   "./game/game.js",
+  "./game/touch-ui.js",
   "./game/game-rules.js",
   "./game/game-hub.js",
   "./m1/pairs.html",

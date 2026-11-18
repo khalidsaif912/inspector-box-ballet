@@ -1997,7 +1997,7 @@ if(e.code === 'KeyQ' || e.code === 'KeyX'){
 if(['Space','KeyE','KeyF'].includes(e.code)){ e.preventDefault(); if(!e.repeat) act(); }
 });
 addEventListener('keyup', e => key[e.code] = 0);
-function clearMovement(){ for(const code in key) key[code] = 0; je(); inX = inZ = animSpd = 0; }
+function clearMovement(){ for(const code in key) key[code] = 0; if(window.__joyReset) window.__joyReset(); inX = inZ = animSpd = 0; }
 /* ===== نقطة البداية الآمنة: لا يقف اللاعب داخل جدار أو صندوق عند انتقال المرحلة ===== */
 const SAFE_SPAWN = {x:0, z:3};
 function blockedAt(x, z, r = PLAYER_RADIUS){
@@ -2056,52 +2056,11 @@ const b = e.target.closest('button[data-k]');
 if(!b) return;
 e.preventDefault(); codePress(b.dataset.k);
 });
-const jy = $('joy'), kn = $('knob');
-let jid = null, joyBaseR = null;
-function jm(e){
-const r = jy.getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.height/2;
-let dx = e.clientX - cx, dy = e.clientY - cy;
-const d = Math.hypot(dx, dy), m = r.width * 0.3;
-if(d > m){ dx *= m/d; dy *= m/d; }
-let jx = dx / m, jv = dy / m;
-const mag = Math.hypot(jx, jv), dead = .12;
-if(mag < dead){ jx = jv = 0; }
-else { const s = (mag - dead) / (1 - dead) / mag; jx = Math.max(-1, Math.min(1, jx * s)); jv = Math.max(-1, Math.min(1, jv * s)); }
-joy.x = jx; joy.y = jv;
-kn.style.transform = `translate(${dx}px,${dy}px)`;
-}
-/* الجويستيك العائم: ينتقل إلى مركز اللمسة في النصف الأيسر ثم يعود لمكانه */
-function joyFloatTo(cx, cy){
-  if(!joyBaseR) joyBaseR = jy.getBoundingClientRect();
-  const st = stageEl.getBoundingClientRect(), r = joyBaseR.width / 2;
-  const tx = Math.max(st.left + r, Math.min(st.right - r, cx));
-  const ty = Math.max(st.top + r, Math.min(st.bottom - r, cy));
-  jy.style.transform = `translate(${tx - (joyBaseR.left + r)}px,${ty - (joyBaseR.top + r)}px)`;
-  jy.classList.add('floating');
-}
-function joyFloatEnd(){ jy.classList.remove('floating'); jy.style.transform = ''; joyBaseR = null; }
-jy.addEventListener('pointerdown', e => { initAudio(); jid = e.pointerId; jy.setPointerCapture(jid); jm(e); });
-jy.addEventListener('pointermove', e => { if(e.pointerId === jid) jm(e); });
-const je = () => { jid = null; joy.x = joy.y = 0; kn.style.transform = ''; joyFloatEnd(); };
-jy.addEventListener('pointerup', je); jy.addEventListener('pointercancel', je);
-/* لمس النصف الأيسر من الشاشة يبدأ الجويستيك العائم فوراً (بدل تفويت اللمسة) */
-stageEl.addEventListener('pointerdown', e => {
-  if(jid !== null || !run || introHold || fire.keypad || FD.on) return;
-  if(e.pointerType === 'mouse') return;
-  if(e.clientX > innerWidth * 0.48) return;
-  if(e.target.closest && e.target.closest('#controls-ui, .top-btns, .ov, #code-pad')) return;
-  initAudio();
-  jid = e.pointerId; joyBaseR = jy.getBoundingClientRect();
-  joyFloatTo(e.clientX, e.clientY);
-  jm(e);
-});
-addEventListener('pointermove', e => {
-  if(e.pointerId !== jid || !jy.classList.contains('floating')) return;
-  e.preventDefault();
-  jm(e);
-}, { passive:false });
-addEventListener('pointerup', e => { if(e.pointerId === jid) je(); });
-addEventListener('pointercancel', e => { if(e.pointerId === jid) je(); });
+/* جويستيك اللمس يُدار بالكامل من game/touch-ui.js
+   ونكتفي هنا بكشف متجه الحركة الحالي حتى يكتب فيه (نفس joy.x/joy.y المستخدم أدناه) */
+const jy = $('joy');
+window.__gameJoy = joy;
+window.__initAudio = initAudio;
 $('dash-btn').addEventListener('pointerdown', e => { e.preventDefault(); doDash(); });
 function setStage(n,silent){
 stage=n;

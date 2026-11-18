@@ -31,7 +31,7 @@ jobs:
           # القديم بجانب bundles جديدة (game.js جديد مع game-rules.js قديم).
           V="${GITHUB_SHA::8}"
           for f in _site/game.html _site/index.html _site/m1/pairs.html; do
-            sed -i "s|game/game.css|game/game.css?v=$V|g; s|game/game.js|game/game.js?v=$V|g; s|game/game-rules.js|game/game-rules.js?v=$V|g; s|game/game-hub.js|game/game-hub.js?v=$V|g; s|game/i18n.js|game/i18n.js?v=$V|g; s|vendor/three.min.js|vendor/three.min.js?v=$V|g; s|game/ui.css|game/ui.css?v=$V|g; s|theme.js|theme.js?v=$V|g; s|sw.js|sw.js?v=$V|g" "$f"
+            sed -i "s|game/game.css|game/game.css?v=$V|g; s|game/touch-ui.js|game/touch-ui.js?v=$V|g; s|game/game.js|game/game.js?v=$V|g; s|game/game-rules.js|game/game-rules.js?v=$V|g; s|game/game-hub.js|game/game-hub.js?v=$V|g; s|game/i18n.js|game/i18n.js?v=$V|g; s|vendor/three.min.js|vendor/three.min.js?v=$V|g; s|game/ui.css|game/ui.css?v=$V|g; s|theme.js|theme.js?v=$V|g; s|sw.js|sw.js?v=$V|g" "$f"
           done
           # غيّر اسم الكاش كي يمسح activate الكاش القديم بدل أن يتراكم بلا حد.
           sed -i -E "s|const VERSION = \"([^\"]+)\"|const VERSION = \"\1-$V\"|" _site/sw.js
