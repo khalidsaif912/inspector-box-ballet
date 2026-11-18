@@ -1,5 +1,5 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v39";
+const VERSION = "v40";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
@@ -8,6 +8,7 @@ const SHELL = [
   "./game/game.css",
   "./game/ui.css",
   "./game/game.js",
+  "./game/crew-rig.js",
   "./game/touch-ui.js",
   "./game/game-rules.js",
   "./game/game-hub.js",
@@ -17,6 +18,8 @@ const SHELL = [
   "./games.json",
   "./game/i18n.js",
   "./vendor/three.min.js",
+  "./vendor/GLTFLoader.js",
+  "./game/models/airport-crew.glb",
   "./vendor/fonts/cairo-arabic.woff2",
   "./vendor/fonts/cairo-latin.woff2",
   "./game/images/start-bg.jpg",

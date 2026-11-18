@@ -937,6 +937,29 @@ a.rotation.set(-Math.PI/2, 0, 0); a.position.set(x, 0.03, EM.musterZ); S.add(a);
 });
 const pl = new THREE.Group(); S.add(pl);
 const rig = new THREE.Group(); pl.add(rig);
+/* ===== شخصية GLB اختيارية: game/models/airport-crew.glb =====
+   القالب ثابت (بلا هيكل عظمي أو حركات)، فيُحرَّك ككتلة واحدة: لف الاتجاه،
+   ميل الجري، وتردد خطوات عمودي. عند فشل التحميل نعود تلقائياً للـrig الإجرائي.
+   للمقارنة: game.html?crew=rig */
+const CREW = { mode: 'glb', obj: null, ready: false, tried: false };
+try { if(new URLSearchParams(location.search).get('crew') === 'rig') CREW.mode = 'rig'; } catch(e){}
+function crewShow(v){
+  const glb = v && CREW.ready && CREW.mode === 'glb';
+  if(CREW.obj) CREW.obj.visible = glb;
+  rig.visible = v && !glb;
+}
+function applyCrewMode(){ crewShow(true); }
+function loadCrewGLB(){
+  if(CREW.tried || CREW.mode !== 'glb' || !window.CrewRig) return;
+  CREW.tried = true;
+  CrewRig.load('game/models/airport-crew.glb').then(o => {
+    CREW.obj = o; CREW.ready = true; pl.add(o); applyCrewMode();
+    console.log('[crew] skinned glb ready, parts:', CrewRig.state.parts);
+  }).catch(err => { CREW.mode = 'rig'; CREW.ready = false; applyCrewMode(); console.warn('[crew] glb failed, using procedural rig', err); });
+}
+window.__crew = CREW;
+window.__setCrew = m => { CREW.mode = m === 'rig' ? 'rig' : 'glb'; if(m !== 'rig') loadCrewGLB(); applyCrewMode(); return CREW.ready; };
+loadCrewGLB();
 const sh = new THREE.Mesh(new THREE.CircleGeometry(0.7, 32), new THREE.MeshBasicMaterial({color:0x000, transparent:true, opacity:0.28, depthWrite:false}));
 sh.rotation.x = -Math.PI/2; sh.position.y = 0.02; pl.add(sh);
 const G = (par,x,y,z) => { const g = new THREE.Group(); g.position.set(x,y,z); par.add(g); return g; };
@@ -1178,6 +1201,13 @@ turnLean += (leanTarget * (isHeld ? .6 : 1) - turnLean) * Math.min(1, dt * 10);
 turnLean += (0 - turnLean) * Math.min(1, dt * 8);
 }
 rig.rotation.z = turnLean;
+/* الشخصية المجسّمة تُقلّد اتجاه الـrig، وحركة الجسد تأتي من الهيكل العظمي */
+if(CREW.ready && CREW.obj && CREW.obj.visible && window.CrewRig){
+const o = CREW.obj;
+o.rotation.y = curRotY;
+o.rotation.z = turnLean * .55;
+window.CrewRig.pose({ dt, phase: walk, moving: isMoving, sprint: sprinting, held: isHeld, lift: liftAnim.active ? Math.sin(liftAnim.t * Math.PI) : 0 });
+}
 const sw = Math.sin(walk);
 const cw = Math.cos(walk);
 let target = {};
@@ -1936,7 +1966,7 @@ hud();
 function mountDrive(){
 if(FD.on || FD.left <= 0 || held || liftAnim.active) return;
 FD.on = true; FD.near = false;
-fk.visible = true; rig.visible = false; forkDriver.visible = true;
+fk.visible = true; crewShow(false); forkDriver.visible = true;
 px.set(fk.position.x, 0, fk.position.z);
 snd('horn');
 toast(I18N.T('🚜 قُد الرافعة الشوكية','🚜 Driving the forklift'), '#ffd54a');
@@ -1944,7 +1974,7 @@ hud();
 }
 function stopDrive(msg){
 if(!FD.on) return;
-FD.on = false; rig.visible = true; forkDriver.visible = false;
+FD.on = false; crewShow(true); forkDriver.visible = false;
 const ox = Math.cos(fk.rotation.y) * 2.1, oz = -Math.sin(fk.rotation.y) * 2.1;
 px.set(Math.max(-33, Math.min(33, fk.position.x + ox)), 0, Math.max(-11, Math.min(9.7, fk.position.z + oz)));
 if(held){
@@ -2179,7 +2209,7 @@ $('rules').style.display = 'none';
 resetExitGate();
 resetFire();
 px.set(SAFE_SPAWN.x, 0, SAFE_SPAWN.z); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
-FD.on = false; FD.left = 60; FD.near = false; rig.visible = true; forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = -Math.PI/2;
+FD.on = false; FD.left = 60; FD.near = false; crewShow(true); forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = -Math.PI/2;
 STUDY.left = STUDY.total; STUDY.on = false; closeStudy();
 clearMovement(); last = performance.now();
 run = true; document.body.classList.add('ingame'); $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true});
