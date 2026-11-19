@@ -9,6 +9,7 @@ const SHELL = [
   "./game/ui.css",
   "./game/game.js",
   "./game/crew-rig.js",
+  "./game/character-rig.js",
   "./game/touch-ui.js",
   "./game/game-rules.js",
   "./game/game-hub.js",

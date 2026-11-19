@@ -941,14 +941,27 @@ const rig = new THREE.Group(); pl.add(rig);
    القالب ثابت (بلا هيكل عظمي أو حركات)، فيُحرَّك ككتلة واحدة: لف الاتجاه،
    ميل الجري، وتردد خطوات عمودي. عند فشل التحميل نعود تلقائياً للـrig الإجرائي.
    للمقارنة: game.html?crew=rig */
-const CREW = { mode: 'glb', obj: null, ready: false, tried: false };
+const CREW = { mode: 'glb', obj: null, inst: null, ready: false, tried: false };
+/* شخصية ثانية مجهّزة بهيكل عظمي: تُحمّل عند اختيارها فقط (11MB). */
+const HERO = { obj: null, inst: null, ready: false, loading: false, err: null };
+window.__hero = HERO;
+const CHAR = { id: 'crew' };
+try { if(localStorage.getItem('acg_char') === 'hero') CHAR.id = 'hero'; } catch(e){}
 try { if(new URLSearchParams(location.search).get('crew') === 'rig') CREW.mode = 'rig'; } catch(e){}
-function crewShow(v){
-  const glb = v && CREW.ready && CREW.mode === 'glb';
-  if(CREW.obj) CREW.obj.visible = glb;
-  rig.visible = v && !glb;
+function activeCharRig(){
+  if(CHAR.id === 'hero') return HERO.ready ? HERO.inst : null;
+  return (CREW.ready && CREW.mode === 'glb') ? CREW.inst : null;
 }
-function applyCrewMode(){ crewShow(true); }
+function crewShow(v){
+  const hero = CHAR.id === 'hero', act = activeCharRig();
+  if(CREW.obj) CREW.obj.visible = v && !hero && !!act;
+  if(HERO.obj) HERO.obj.visible = v && hero && !!act;
+  rig.visible = v && !act;
+}
+function applyCrewMode(){
+  if(CHAR.id === 'hero') loadHero(); else loadCrewGLB();
+  crewShow(true);
+}
 function loadCrewGLB(){
   if(CREW.tried || CREW.mode !== 'glb' || !window.CrewRig) return;
   CREW.tried = true;
@@ -958,9 +971,34 @@ function loadCrewGLB(){
     console.log('[crew] skinned glb ready, parts:', CrewRig.state.parts);
   }).catch(err => { CREW.mode = 'rig'; CREW.ready = false; applyCrewMode(); console.warn('[crew] glb failed, using procedural rig', err); });
 }
+function loadHero(){
+  if(HERO.loading || HERO.ready || !window.Character3D) return;
+  HERO.loading = true;
+  Character3D.load('game/models/character-3d.glb').then(o => {
+    HERO.obj = o.root; HERO.inst = o; HERO.ready = true; HERO.loading = false;
+    pl.add(o.root); applyCrewMode();
+    loadSeatCrew();
+    console.log('[hero] rigged glb ready');
+  }).catch(err => {
+    HERO.loading = false; HERO.err = String(err && err.message || err); console.warn('[hero] glb failed', err);
+    if(CHAR.id === 'hero'){
+      CHAR.id = 'crew';
+      try { localStorage.setItem('acg_char', 'crew'); } catch(e){}
+      document.querySelectorAll('#chars button').forEach(b => b.classList.toggle('on', b.dataset.char === 'crew'));
+      applyCrewMode();
+    }
+  });
+}
 window.__crew = CREW;
 window.__setCrew = m => { CREW.mode = m === 'rig' ? 'rig' : 'glb'; if(m !== 'rig') loadCrewGLB(); applyCrewMode(); return CREW.ready; };
-loadCrewGLB();
+window.__setCharacter = id => {
+  CHAR.id = id === 'hero' ? 'hero' : 'crew';
+  try { localStorage.setItem('acg_char', CHAR.id); } catch(e){}
+  applyCrewMode();
+  document.querySelectorAll('#chars button').forEach(b => b.classList.toggle('on', b.dataset.char === CHAR.id));
+  return CHAR.id;
+};
+window.__setCharacter(CHAR.id);
 const sh = new THREE.Mesh(new THREE.CircleGeometry(0.7, 32), new THREE.MeshBasicMaterial({color:0x000, transparent:true, opacity:0.28, depthWrite:false}));
 sh.rotation.x = -Math.PI/2; sh.position.y = 0.02; pl.add(sh);
 const G = (par,x,y,z) => { const g = new THREE.Group(); g.position.set(x,y,z); par.add(g); return g; };
@@ -1209,6 +1247,7 @@ return p;
 let bob=0, walk=0, turnLean=0, curRotY=0, inX=0, inZ=0, animSpd=0;
 let liftAnim = {active:false, t:0, dur:0.32, fromPos:new THREE.Vector3(), toHold:null};
 const cargoSmoothPos = new THREE.Vector3();
+const cargoHold = new THREE.Vector3();
 let cargoInertiaY = 0;
 const pose = {
 lHip:0, rHip:0, lKnee:0, rKnee:0,
@@ -1235,11 +1274,11 @@ turnLean += (0 - turnLean) * Math.min(1, dt * 8);
 }
 rig.rotation.z = turnLean;
 /* الشخصية المجسّمة تُقلّد اتجاه الـrig، وحركة الجسد تأتي من الهيكل العظمي */
-if(CREW.ready && CREW.obj && CREW.obj.visible && window.CrewRig){
-const o = CREW.obj;
-o.rotation.y = curRotY;
-o.rotation.z = turnLean * .55;
-window.CrewRig.pose({ dt, phase: walk, moving: isMoving, sprint: sprinting, held: isHeld, lift: liftAnim.active ? Math.sin(liftAnim.t * Math.PI) : 0 });
+const ac = activeCharRig();
+if(ac && ac.root.visible){
+ac.root.rotation.y = curRotY;
+ac.root.rotation.z = turnLean * .55;
+ac.pose({ dt, phase: walk, moving: isMoving, sprint: sprinting, held: isHeld, lift: liftAnim.active ? Math.sin(liftAnim.t * Math.PI) : 0 });
 }
 if(SEAT_CREW.fork) SEAT_CREW.fork.pose({ dt, sit: true });
 if(SEAT_CREW.truck) SEAT_CREW.truck.pose({ dt, sit: true });
@@ -3185,11 +3224,14 @@ const lX = Math.cos(rig.rotation.y), lZ = -Math.sin(rig.rotation.y);
 const sway = l > 0.08 ? Math.sin(walk) * 0.06 : 0;
 const bnc = l > 0.08 ? Math.sin(walk * 2) * 0.04 : 0;
 cargoInertiaY += (bnc - cargoInertiaY) * Math.min(1, dt * 14);
-        const bodyH = (CREW.ready && CREW.obj && CREW.obj.visible && window.CrewRig && window.CrewRig.height) ? window.CrewRig.height : 0;
+        const acr = activeCharRig();
+        const bodyH = (acr && acr.root.visible && acr.height) ? acr.height : 0;
+        /* إن كانت الشخصية تكشف كفّيها نحمل الصندوق بينهما بدل ارتفاع تقديري */
+        const hp = (acr && acr.root.visible && acr.holdPoint) ? acr.holdPoint(cargoHold) : null;
         const targetPos = cargoTarget.set(
-          px.x + fX * 0.78 + lX * sway,
-          (bodyH ? bodyH * 0.5 : 1.38) + bob * 0.55 + cargoInertiaY,
-          px.z + fZ * 0.78 + lZ * sway
+          hp ? hp.x + lX * sway : px.x + fX * 0.78 + lX * sway,
+          (hp ? hp.y : (bodyH ? bodyH * 0.5 : 1.38) + bob * 0.55) + cargoInertiaY,
+          hp ? hp.z + lZ * sway : px.z + fZ * 0.78 + lZ * sway
         );
 cargoSmoothPos.lerp(targetPos, Math.min(1, dt * 22));
 it.m.position.copy(cargoSmoothPos);
@@ -3307,6 +3349,18 @@ const row = document.getElementById('skins'); if(!row) return;
 COLORS.forEach(([c,n]) => { const b = document.createElement('button'); b.dataset.c = c; b.style.background = '#' + c.toString(16).padStart(6,'0'); b.setAttribute('aria-label', n); b.title = n; b.onclick = e => { e.stopPropagation(); apply(c); }; row.appendChild(b); });
 let saved = COLORS[0][0]; try { saved = +(localStorage.getItem('acg_vest') || COLORS[0][0]); } catch(e){}
 apply(COLORS.some(([c]) => c === saved) ? saved : COLORS[0][0]);
+})();
+
+// ===== اختيار الشخصية =====
+(() => {
+const row = document.getElementById('chars'); if(!row) return;
+const LIST = [['crew', I18N.t('طاقم أرضي')], ['hero', I18N.t('شخصية 3D')]];
+LIST.forEach(([id, n]) => {
+  const b = document.createElement('button'); b.type = 'button'; b.dataset.char = id; b.textContent = n;
+  b.onclick = e => { e.stopPropagation(); window.__setCharacter(id); };
+  row.appendChild(b);
+});
+row.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.char === CHAR.id));
 })();
 
 // ===== ذرات غبار خفيفة في شاشة البداية (بدون مكتبات خارجية) =====

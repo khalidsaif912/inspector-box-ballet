@@ -229,6 +229,15 @@
 }
 #ov .vest-colors button:hover{transform:scale(1.1)}
 #ov .vest-colors button.on{border-color:#fff;box-shadow:0 0 8px rgba(255,255,255,.65)}
+#ov.start .char-row{display:flex;gap:5px}
+#ov .char-row button{
+  padding:2px 8px;border-radius:999px;cursor:pointer;line-height:1.5;white-space:nowrap;
+  border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);
+  color:#dbe6f2;font:inherit;font-size:10px;font-weight:800;animation:none;
+  transition:background .16s,border-color .16s,color .16s;
+}
+#ov .char-row button:hover{background:rgba(255,255,255,.12);color:#fff}
+#ov .char-row button.on{border-color:#fff;background:rgba(255,255,255,.2);color:#fff;box-shadow:0 0 8px rgba(255,255,255,.35)}
 #ov.start .toggle{
   width:36px;height:20px;flex:0 0 auto;border-radius:999px;position:relative;
   background:rgba(56,189,248,.35);border:1px solid rgba(56,189,248,.6);
