@@ -146,6 +146,54 @@ body.ios .ios-note{display:inline}
 }
 /* English (LTR) */
 html[lang="en"] .help-card{text-align:left}
+
+/* ===== شريط اختيار الشخصية: واضح وسريع فوق الملعب ===== */
+.char-picker{
+  position:relative;z-index:2;width:min(1680px,96vw);
+  display:flex;align-items:center;gap:12px;
+  padding:9px 14px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(26,45,66,.94),rgba(11,21,33,.94));
+  border:1px solid rgba(150,205,255,.22);
+  box-shadow:0 16px 38px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.char-picker .cp-title{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:900;color:#9fc0dd;white-space:nowrap}
+.char-picker .cp-title svg{width:16px;height:16px;color:#ffd05a}
+.char-opts{display:flex;gap:8px;flex-wrap:wrap;flex:1;min-width:0}
+.char-opt{
+  position:relative;display:flex;align-items:center;gap:9px;cursor:pointer;
+  padding:7px 12px;border-radius:12px;font-family:inherit;
+  border:1px solid rgba(150,205,255,.22);background:rgba(255,255,255,.045);color:#dbe7f5;
+  transition:border-color .16s,background .16s,transform .16s,box-shadow .16s;
+}
+.char-opt:hover{background:rgba(255,255,255,.1);border-color:rgba(150,205,255,.5);transform:translateY(-1px)}
+.char-opt .ico{font-size:18px;line-height:1}
+.char-opt .txt{display:flex;flex-direction:column;line-height:1.22;text-align:start;font-size:12.5px;font-weight:800}
+.char-opt .txt small{font-size:9.5px;font-weight:700;color:#8ba4bd}
+.char-opt .tick{font-size:12px;font-weight:900;color:#ffd05a;opacity:0;transition:opacity .16s}
+.char-opt.on{
+  border-color:rgba(255,208,90,.85);
+  background:linear-gradient(180deg,rgba(255,208,90,.24),rgba(255,167,38,.09));
+  box-shadow:0 0 0 1px rgba(255,208,90,.4),0 8px 22px rgba(255,167,38,.2);
+}
+.char-opt.on .txt small{color:#ffd88a}
+.char-opt.on .tick{opacity:1}
+.char-opt:focus-visible{outline:2px solid #8fd0ff;outline-offset:2px}
+@media (max-width:900px){
+  .char-picker{width:100%;border-radius:0;border-inline:0;margin-top:52px;padding:6px 8px;gap:6px}
+  .char-picker .cp-title{display:none}
+  .char-opts{flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none}
+  .char-opts::-webkit-scrollbar{display:none}
+  .char-opt{flex:0 0 auto;padding:5px 9px;gap:6px}
+  .char-opt .ico{font-size:15px}
+  .char-opt .txt{font-size:11px;white-space:nowrap}
+  .char-opt .txt small{display:none}
+  .char-opt .tick{font-size:11px}
+  body>.frame-wrap{height:auto;flex:1 1 auto;min-height:0}
+  .frame{height:100%}
+}
+@media (max-height:560px) and (orientation:landscape){
+  .char-picker{margin-top:0;padding:4px 8px}
+}
 </style>
 </head>
 <body>
@@ -176,6 +224,14 @@ html[lang="en"] .help-card{text-align:left}
     </button>
   </div>
 </header>
+
+<section class="char-picker" id="char-picker" aria-label="اختيار الشخصية">
+  <span class="cp-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
+    <span data-t="الشخصية">الشخصية</span>
+  </span>
+  <div class="char-opts" id="char-opts" role="group" aria-label="اختيار الشخصية"></div>
+</section>
 
 <div class="frame-wrap">
   <div class="frame" id="frame">
@@ -241,12 +297,53 @@ function toggleLang(){
   const next = I18N.lang === 'en' ? 'ar' : 'en';
   I18N.setLang(next);
   syncLangBtn();
+  renderChars();
   game.src = 'game.html?lang=' + next;
 }
 document.addEventListener('click', (e) => {
   const btn = e.target && e.target.closest ? e.target.closest('#lang') : null;
   if (btn) toggleLang();
 });
+
+/* ===== اختيار الشخصية: الأساسية 3D + الشخصيتان السابقتان ===== */
+const CHARS = [
+  { id: 'hero', ico: '🧍', name: 'شخصية 3D', hint: 'الأساسية' },
+  { id: 'crew', ico: '🧑‍✈️', name: 'طاقم أرضي', hint: 'مجسّم واقعي' },
+  { id: 'rig', ico: '🧑‍🔧', name: 'موظف كلاسيكي', hint: 'خفيف وسريع' }
+];
+const CHAR_KEY = 'acg_char';
+const charOpts = document.getElementById('char-opts');
+const charTitle = document.querySelector('#char-picker .cp-title [data-t]');
+function charSaved(){
+  try { const v = localStorage.getItem(CHAR_KEY); return CHARS.some((c) => c.id === v) ? v : 'hero'; } catch(e){ return 'hero'; }
+}
+let charNow = charSaved();
+function renderChars(){
+  if (!charOpts) return;
+  if (charTitle) charTitle.textContent = I18N.t('الشخصية');
+  charOpts.setAttribute('aria-label', I18N.t('اختيار الشخصية'));
+  charOpts.innerHTML = '';
+  CHARS.forEach((c) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'char-opt' + (c.id === charNow ? ' on' : '');
+    b.dataset.char = c.id;
+    b.setAttribute('aria-pressed', c.id === charNow ? 'true' : 'false');
+    b.title = I18N.t(c.name) + ' — ' + I18N.t(c.hint);
+    b.innerHTML = '<span class="ico" aria-hidden="true">' + c.ico + '</span>' +
+      '<span class="txt"><span>' + I18N.t(c.name) + '</span><small>' + I18N.t(c.hint) + '</small></span>' +
+      '<span class="tick" aria-hidden="true">✔</span>';
+    b.addEventListener('click', () => pickChar(c.id));
+    charOpts.appendChild(b);
+  });
+}
+function pickChar(id){
+  charNow = CHARS.some((c) => c.id === id) ? id : 'hero';
+  try { localStorage.setItem(CHAR_KEY, charNow); } catch(e){}
+  renderChars();
+  try { game.contentWindow.postMessage({ type: 'acg-character', id: charNow }, location.origin); } catch(e){}
+}
+renderChars();
 
 document.getElementById('full').addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();
@@ -295,6 +392,8 @@ addEventListener('keydown', (e) => {
 });
 /* لعبة داخل الإطار: زر التحكم في الهاتف/الكمبيوتر يبقى ظاهراً خارج الملعب */
 game.addEventListener('load', () => {  try { game.contentWindow.focus(); } catch (e) {}
+  /* مزامنة الشخصية المختارة في الغلاف مع اللعبة داخل الإطار */
+  try { game.contentWindow.postMessage({ type: 'acg-character', id: charNow }, location.origin); } catch (e) {}
 });
 
 if ('serviceWorker' in navigator) {

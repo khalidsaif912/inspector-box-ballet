@@ -942,24 +942,27 @@ const rig = new THREE.Group(); pl.add(rig);
    ميل الجري، وتردد خطوات عمودي. عند فشل التحميل نعود تلقائياً للـrig الإجرائي.
    للمقارنة: game.html?crew=rig */
 const CREW = { mode: 'glb', obj: null, inst: null, ready: false, tried: false };
-/* شخصية ثانية مجهّزة بهيكل عظمي: تُحمّل عند اختيارها فقط (11MB). */
+/* الشخصية الأساسية: مجسّم مجهّز بهيكل عظمي (11MB) — تُحمّل عند اختيارها فقط. */
 const HERO = { obj: null, inst: null, ready: false, loading: false, err: null };
 window.__hero = HERO;
-const CHAR = { id: 'crew' };
-try { if(localStorage.getItem('acg_char') === 'hero') CHAR.id = 'hero'; } catch(e){}
+/* ثلاث شخصيات: hero (الأساسية) · crew (المجسّم الثابت) · rig (الإجرائي) */
+const CHAR_IDS = ['hero', 'crew', 'rig'];
+const CHAR = { id: 'hero' };
+try { const saved = localStorage.getItem('acg_char'); if(CHAR_IDS.indexOf(saved) >= 0) CHAR.id = saved; } catch(e){}
 try { if(new URLSearchParams(location.search).get('crew') === 'rig') CREW.mode = 'rig'; } catch(e){}
 function activeCharRig(){
   if(CHAR.id === 'hero') return HERO.ready ? HERO.inst : null;
-  return (CREW.ready && CREW.mode === 'glb') ? CREW.inst : null;
+  if(CHAR.id === 'crew') return (CREW.ready && CREW.mode === 'glb') ? CREW.inst : null;
+  return null; // الإجرائي: يحل محلّه rig المجسّم
 }
 function crewShow(v){
-  const hero = CHAR.id === 'hero', act = activeCharRig();
-  if(CREW.obj) CREW.obj.visible = v && !hero && !!act;
-  if(HERO.obj) HERO.obj.visible = v && hero && !!act;
+  const act = activeCharRig();
+  if(CREW.obj) CREW.obj.visible = v && CHAR.id === 'crew' && !!act;
+  if(HERO.obj) HERO.obj.visible = v && CHAR.id === 'hero' && !!act;
   rig.visible = v && !act;
 }
 function applyCrewMode(){
-  if(CHAR.id === 'hero') loadHero(); else loadCrewGLB();
+  if(CHAR.id === 'hero') loadHero(); else if(CHAR.id === 'crew') loadCrewGLB();
   crewShow(true);
 }
 function loadCrewGLB(){
@@ -981,23 +984,27 @@ function loadHero(){
     console.log('[hero] rigged glb ready');
   }).catch(err => {
     HERO.loading = false; HERO.err = String(err && err.message || err); console.warn('[hero] glb failed', err);
-    if(CHAR.id === 'hero'){
-      CHAR.id = 'crew';
-      try { localStorage.setItem('acg_char', 'crew'); } catch(e){}
-      document.querySelectorAll('#chars button').forEach(b => b.classList.toggle('on', b.dataset.char === 'crew'));
-      applyCrewMode();
-    }
+    if(CHAR.id === 'hero') setCharacter('rig');
   });
+}
+function setCharacter(id){
+  CHAR.id = CHAR_IDS.indexOf(id) >= 0 ? id : 'hero';
+  try { localStorage.setItem('acg_char', CHAR.id); } catch(e){}
+  applyCrewMode();
+  syncCharButtons();
+  return CHAR.id;
+}
+function syncCharButtons(){
+  document.querySelectorAll('#chars button').forEach(b => b.classList.toggle('on', b.dataset.char === CHAR.id));
 }
 window.__crew = CREW;
 window.__setCrew = m => { CREW.mode = m === 'rig' ? 'rig' : 'glb'; if(m !== 'rig') loadCrewGLB(); applyCrewMode(); return CREW.ready; };
-window.__setCharacter = id => {
-  CHAR.id = id === 'hero' ? 'hero' : 'crew';
-  try { localStorage.setItem('acg_char', CHAR.id); } catch(e){}
-  applyCrewMode();
-  document.querySelectorAll('#chars button').forEach(b => b.classList.toggle('on', b.dataset.char === CHAR.id));
-  return CHAR.id;
-};
+window.__setCharacter = setCharacter;
+/* الغلاف يتحكم بالشخصية فوراً دون إعادة تحميل اللعبة */
+addEventListener('message', e => {
+  const d = e.data;
+  if(d && d.type === 'acg-character' && d.id) setCharacter(d.id);
+});
 window.__setCharacter(CHAR.id);
 const sh = new THREE.Mesh(new THREE.CircleGeometry(0.7, 32), new THREE.MeshBasicMaterial({color:0x000, transparent:true, opacity:0.28, depthWrite:false}));
 sh.rotation.x = -Math.PI/2; sh.position.y = 0.02; pl.add(sh);
@@ -3354,7 +3361,7 @@ apply(COLORS.some(([c]) => c === saved) ? saved : COLORS[0][0]);
 // ===== اختيار الشخصية =====
 (() => {
 const row = document.getElementById('chars'); if(!row) return;
-const LIST = [['crew', I18N.t('طاقم أرضي')], ['hero', I18N.t('شخصية 3D')]];
+const LIST = [['hero', I18N.t('شخصية 3D')], ['crew', I18N.t('طاقم أرضي')], ['rig', I18N.t('موظف كلاسيكي')]];
 LIST.forEach(([id, n]) => {
   const b = document.createElement('button'); b.type = 'button'; b.dataset.char = id; b.textContent = n;
   b.onclick = e => { e.stopPropagation(); window.__setCharacter(id); };
