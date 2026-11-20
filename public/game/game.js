@@ -2803,52 +2803,68 @@ pa.x = Math.max(-33, Math.min(33, pa.x)); pa.z = Math.max(-11.9, Math.min(9.6, p
 // ===== المفتش: يمر بسرعة مرة واحدة ويخالف الطرود المتروكة خارج المناطق =====
 const inspector = (() => {
 const g = new THREE.Group();
+const procMesh = new THREE.Group();
+g.add(procMesh);
 const M = (c, r=0.6, m=0.05) => new THREE.MeshStandardMaterial({color:c, roughness:r, metalness:m});
 const shirt = M(0xeef3f8), vest = M(0xff7a00, .55), skin = M(0xe0b08a, .7), pants = M(0x1f2d42), boot = M(0x1a1410, .5), helm = M(0xffffff, .35, .1), refl = new THREE.MeshStandardMaterial({color:0xf4f8fb, emissive:0x9aa4ad, roughness:.3}), dark = M(0x111111, .4), hair = M(0x3b2a20, .8);
-const add = (geo, mat, x, y, z, par=g) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); par.add(m); return m; };
+const add = (geo, mat, x, y, z, par=procMesh) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); par.add(m); return m; };
 const limb = (r, len, mat, par) => { add(new THREE.CylinderGeometry(r, r*0.92, len, 14), mat, 0, -len/2, 0, par); add(new THREE.SphereGeometry(r, 14, 10), mat, 0, 0, 0, par); add(new THREE.SphereGeometry(r*0.92, 14, 10), mat, 0, -len, 0, par); };
-// جذع ممتلئ بقميص وسترة عاكسة
+// جذع ممتلئ بقميص وسترة عاكسة (احتياطي عند بطء التحميل)
 const body = add(new THREE.CylinderGeometry(0.36, 0.3, 0.72, 22), shirt, 0, 1.28, 0); body.scale.z = 0.78;
 const vst = add(new THREE.CylinderGeometry(0.375, 0.315, 0.66, 22, 1, true), vest, 0, 1.26, 0); vst.scale.z = 0.8; vst.material.side = THREE.DoubleSide;
 [1.12, 1.32].forEach(y => { const r = add(new THREE.CylinderGeometry(0.38 - (1.32-y)*0.2, 0.38 - (1.32-y)*0.2, 0.06, 22, 1, true), refl, 0, y, 0); r.scale.z = 0.81; });
 const shoulders = add(new THREE.SphereGeometry(0.36, 22, 12, 0, Math.PI*2, 0, Math.PI/2), shirt, 0, 1.62, 0); shoulders.scale.set(1, .45, .78);
-add(new THREE.BoxGeometry(0.1, 0.12, 0.02), M(0x1565c0), 0.17, 1.42, 0.29); // شارة
-add(new THREE.CylinderGeometry(0.1, 0.11, 0.1, 14), skin, 0, 1.72, 0); // رقبة
-// رأس بوجه واضح
+add(new THREE.BoxGeometry(0.1, 0.12, 0.02), M(0x1565c0), 0.17, 1.42, 0.29);
+add(new THREE.CylinderGeometry(0.1, 0.11, 0.1, 14), skin, 0, 1.72, 0);
 const head = add(new THREE.SphereGeometry(0.23, 22, 18), skin, 0, 1.95, 0); head.scale.set(1, 1.08, 1);
 [-1,1].forEach(sx => {
 add(new THREE.SphereGeometry(0.035, 10, 8), M(0xffffff, .2), sx*0.08, 1.99, 0.2);
 add(new THREE.SphereGeometry(0.02, 8, 6), dark, sx*0.08, 1.99, 0.225);
 const brow = add(new THREE.BoxGeometry(0.09, 0.02, 0.02), hair, sx*0.08, 2.05, 0.215); brow.rotation.z = -sx*0.25;
-add(new THREE.SphereGeometry(0.05, 10, 8), skin, sx*0.235, 1.95, 0); // أذن
+add(new THREE.SphereGeometry(0.05, 10, 8), skin, sx*0.235, 1.95, 0);
 const lens = add(new THREE.TorusGeometry(0.045, 0.01, 6, 16), dark, sx*0.08, 1.99, 0.225);
 });
 add(new THREE.BoxGeometry(0.06, 0.01, 0.01), dark, 0, 1.99, 0.235);
 const nose = add(new THREE.SphereGeometry(0.04, 10, 8), skin, 0, 1.93, 0.23); nose.scale.z = 1.3;
 const mus = add(new THREE.SphereGeometry(0.075, 12, 8), hair, 0, 1.875, 0.2); mus.scale.set(1.5, .35, .5);
-// خوذة سلامة بيضاء مع حافة
 const hat = add(new THREE.SphereGeometry(0.255, 22, 12, 0, Math.PI*2, 0, Math.PI/2), helm, 0, 2.02, 0);
 add(new THREE.CylinderGeometry(0.3, 0.3, 0.025, 24), helm, 0, 2.03, 0.03);
 add(new THREE.BoxGeometry(0.05, 0.08, 0.38), helm, 0, 2.24, 0);
 const legs = [], arms = [];
 for(const sx of [-0.15, 0.15]){
-const lp = new THREE.Group(); lp.position.set(sx, 0.92, 0); g.add(lp);
+const lp = new THREE.Group(); lp.position.set(sx, 0.92, 0); procMesh.add(lp);
 limb(0.13, 0.76, pants, lp);
 const bt = add(new THREE.BoxGeometry(0.22, 0.14, 0.34), boot, 0, -0.84, 0.05, lp); legs.push(lp);
-const ap = new THREE.Group(); ap.position.set(sx*2.6, 1.58, 0); g.add(ap);
+const ap = new THREE.Group(); ap.position.set(sx*2.6, 1.58, 0); procMesh.add(ap);
 limb(0.085, 0.56, shirt, ap);
 add(new THREE.SphereGeometry(0.08, 12, 10), skin, 0, -0.64, 0, ap); arms.push(ap);
 }
-// لوح الملاحظات مع ورقة
 const clip = new THREE.Group(); clip.position.set(0, -0.6, 0.12); arms[1].add(clip);
 add(new THREE.BoxGeometry(0.28, 0.36, 0.025), M(0x8d6e63), 0, 0, 0, clip);
 add(new THREE.BoxGeometry(0.24, 0.28, 0.01), M(0xffffff, .9), 0, -0.02, 0.016, clip);
 add(new THREE.BoxGeometry(0.1, 0.04, 0.03), M(0xb0bec5, .3, .8), 0, 0.17, 0.01, clip);
-// حزام وصفارة
 add(new THREE.CylinderGeometry(0.305, 0.305, 0.06, 22), dark, 0, 0.94, 0).scale.z = 0.8;
-g.traverse(o => { if(o.isMesh) o.castShadow = true; });
+procMesh.traverse(o => { if(o.isMesh) o.castShadow = true; });
+
+const I_ = { g, legs, arms, procMesh, rig:null, glbRoot:null, active:false, x:0, z:0, dir:1, t:0, cooldown:0 };
+
+// تحميل وتحريك مجسم المفتش الجديد ثلاثي الأبعاد GLB
+if(window.InspectorRig && window.InspectorRig.create){
+  const rig = window.InspectorRig.create();
+  I_.rig = rig;
+  rig.load('game/models/inspector.glb').then(root => {
+    I_.glbRoot = root;
+    root.scale.setScalar(1.12);
+    g.add(root);
+    procMesh.visible = false;
+    console.log('[inspector] 3D GLB inspector character loaded and rigged');
+  }).catch(err => {
+    console.warn('[inspector] 3D GLB load fallback to procedural:', err);
+  });
+}
+
 g.scale.setScalar(1.25); g.visible = false; S.add(g);
-return { g, legs, arms, active:false, x:0, z:0, dir:1, t:0, cooldown:0 };
+return I_;
 })();
 function resetInspector(){ inspector.active = false; inspector.g.visible = false; inspector.cooldown = 6; inspector.done = false; inspector.elapsed = 0; $('inspector-badge').classList.remove('on'); }
 function updateInspector(dt){
@@ -2876,8 +2892,9 @@ const prevX = I_.x;
 I_.x += I_.dir * (I_.demo ? 6 : 3.6) * dt;
 const sw = Math.sin(I_.t * 5) * 0.4;
 I_.g.rotation.z = Math.sin(I_.t * 5) * 0.09;
-I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw;
-I_.arms[0].rotation.x = -sw * 0.8; I_.arms[1].rotation.x = sw * 0.4 - 0.5;
+if(I_.legs && I_.legs.length >= 2){ I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw; }
+if(I_.arms && I_.arms.length >= 2){ I_.arms[0].rotation.x = -sw * 0.8; I_.arms[1].rotation.x = sw * 0.4 - 0.5; }
+if(I_.rig && I_.rig.pose){ I_.rig.pose({ dt, phase: I_.t * 5, moving: true }); }
 I_.g.position.set(I_.x, Math.abs(Math.sin(I_.t * 5)) * 0.04, I_.z);
 for(const it of items){
 if(I_.demo || it.st !== 'floor' || it.data.isFod || it.fined) continue;
@@ -2930,8 +2947,9 @@ I_.t += r;
 if(I_.x > I_.toX) I_.x = Math.max(I_.toX, I_.x - 6.4 * r);
 const walking = I_.x > I_.toX + .01;
 const sw = Math.sin(I_.t * 7) * (walking ? .5 : .06);
-I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw;
-I_.arms[0].rotation.x = -sw * .7; I_.arms[1].rotation.x = sw * .4 - .62;
+if(I_.legs && I_.legs.length >= 2){ I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw; }
+if(I_.arms && I_.arms.length >= 2){ I_.arms[0].rotation.x = -sw * .7; I_.arms[1].rotation.x = sw * .4 - .62; }
+if(I_.rig && I_.rig.pose){ I_.rig.pose({ dt: r, phase: I_.t * 7, moving: walking }); }
 I_.g.position.set(I_.x, walking ? Math.abs(Math.sin(I_.t * 7)) * .05 : 0, I_.z);
 if(!walking && !caoQ.answered) CAO_BUBBLE.classList.add('in');
 caoPlace();
