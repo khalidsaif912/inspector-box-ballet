@@ -10,6 +10,8 @@ const SHELL = [
   "./game/game.js",
   "./game/crew-rig.js",
   "./game/character-rig.js",
+  "./game/inspector-rig.js",
+  "./game/models/inspector.glb",
   "./game/touch-ui.js",
   "./game/game-rules.js",
   "./game/game-hub.js",
