@@ -2852,7 +2852,7 @@ const I_ = { g, legs, arms, procMesh, rig:null, glbRoot:null, active:false, x:0,
 if(window.InspectorRig && window.InspectorRig.create){
   const rig = window.InspectorRig.create();
   I_.rig = rig;
-  rig.load('game/models/inspector.glb').then(root => {
+  rig.load('game/models/inspector.glb?v=2').then(root => {
     I_.glbRoot = root;
     root.scale.setScalar(1.12);
     g.add(root);

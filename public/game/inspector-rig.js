@@ -86,17 +86,69 @@
             var flat = [];
             src.traverse(function (o) { if (o.isMesh) flat.push(o); });
 
+            // مواد PBR ملونة ومفصلة لشخصية المفتش العربي الرسمي
+            var matVest = new THREE.MeshStandardMaterial({
+              color: 0x1b2838, // سديرية كحلية رسمية
+              roughness: 0.60,
+              metalness: 0.05,
+              skinning: true
+            });
+            var matThobe = new THREE.MeshStandardMaterial({
+              color: 0xf5f7fb, // ثوب أبيض ناصع وغترة بيضاء
+              roughness: 0.65,
+              metalness: 0.02,
+              skinning: true
+            });
+            var matSkin = new THREE.MeshStandardMaterial({
+              color: 0xc88054, // بشرة عربية حنطية دافئة
+              roughness: 0.55,
+              metalness: 0.02,
+              skinning: true
+            });
+            var matGold = new THREE.MeshStandardMaterial({
+              color: 0xfbbf24, // نجمة التفتيش الذهبية اللامعة والكركوشة
+              roughness: 0.20,
+              metalness: 0.85,
+              skinning: true
+            });
+            var matHair = new THREE.MeshStandardMaterial({
+              color: 0x241710, // الشارب والحاجبين بلون بني داكن
+              roughness: 0.70,
+              metalness: 0.02,
+              skinning: true
+            });
+            var matSandals = new THREE.MeshStandardMaterial({
+              color: 0x321d14, // صندل جلدي بني داكن
+              roughness: 0.65,
+              metalness: 0.05,
+              skinning: true
+            });
+
             for (var i = 0; i < flat.length; i++) {
               var part = flat[i];
               var geo = part.geometry;
               if (!skinAttribs(geo)) continue;
-              var mat = Array.isArray(part.material) ? part.material[0] : part.material;
-              if (mat) {
-                mat = mat.clone();
-                mat.skinning = true;
-                mat.roughness = Math.max(0.4, mat.roughness || 0.6);
-                mat.metalness = Math.max(0.05, mat.metalness || 0.1);
+
+              var mat;
+              var n = part.name || "";
+              if (n === "root1") {
+                mat = matThobe;
+              } else if (n === "root2" || n === "root3") {
+                mat = matSandals;
+              } else if (n === "root4" || n === "root5") {
+                mat = matSkin;
+              } else if (n === "root0" || (geo.index && geo.index.count === 365040)) {
+                geo.clearGroups();
+                geo.addGroup(0, 151161, 0);     // 0: Vest (Navy)
+                geo.addGroup(151161, 126285, 1); // 1: Thobe (Turban, sleeves, placket)
+                geo.addGroup(277446, 68196, 2);  // 2: Skin (Face, head, neck)
+                geo.addGroup(345642, 17847, 3);  // 3: Gold (Star badge, tassel)
+                geo.addGroup(363489, 1551, 4);   // 4: Hair (Mustache, eyebrows)
+                mat = [matVest, matThobe, matSkin, matGold, matHair];
+              } else {
+                mat = matThobe;
               }
+
               var sm = new THREE.SkinnedMesh(geo, mat);
               sm.castShadow = true;
               sm.receiveShadow = true;
