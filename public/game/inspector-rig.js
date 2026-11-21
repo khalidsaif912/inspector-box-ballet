@@ -183,29 +183,170 @@
       var dt = Math.min(p.dt || 0.016, 0.05);
       var k = Math.min(1, dt * 14);
       S.t += dt;
-      var ph = p.phase || (S.t * 5);
-      var sw = Math.sin(ph), cw = Math.cos(ph);
-      var amp = p.sprint ? 0.75 : 0.55;
-      var mv = p.moving ? 1 : 0;
-      var idle = Math.sin(S.t * 2.0) * 0.03;
+      var mode = p.mode || (p.moving ? "walk" : "idle");
+      var t = p.timer !== undefined ? p.timer : S.t;
 
-      var tgt = {
-        hipsY: mv ? -Math.abs(cw) * 0.03 * (0.6 + amp) : idle * 0.3,
-        hipsRotY: mv ? sw * 0.08 : 0,
-        torsoY: mv ? -sw * 0.12 : idle * 0.2,
-        torsoX: mv ? 0.04 : 0,
-        headY: mv ? sw * 0.05 : idle * 0.5,
-        headX: 0,
-        // أذرع مسترخية محاذية للجسم وتتأرجح للأمام والخلف بانسيابية
-        armLX: mv ? -sw * amp * 0.50 : idle * 0.25,
-        armRX: mv ? sw * amp * 0.50 : -idle * 0.25,
-        armLZ: 0.02,
-        armRZ: -0.02,
-        legLX: mv ? sw * amp : 0,
-        legRX: mv ? -sw * amp : 0,
-        shinLX: mv ? Math.max(0, -cw) * amp * 1.3 + 0.04 : 0.02,
-        shinRX: mv ? Math.max(0, cw) * amp * 1.3 + 0.04 : 0.02,
-      };
+      var tgt;
+
+      if (mode === "inspect") {
+        // حركة تفتيش احترافية ودقيقة عند فحص الصندوق
+        var lean = 0.18 + Math.sin(t * 2.5) * 0.03;
+        var lookDown = 0.36 + Math.sin(t * 3.0) * 0.05;
+        var scanY = Math.sin(t * 2.2) * 0.18;
+
+        // يد يسرى مرفوعة كأنه يحمل حافظة التفتيش / البلاغ
+        var aLX = 0.70 + Math.sin(t * 1.8) * 0.04;
+        var aLY = 0.22;
+        var aLZ = -0.16;
+
+        // يد يمنى تقوم بإيماءات الفحص والإشارة والتدوين
+        var aRX, aRY, aRZ;
+        if (t < 0.8) {
+          // إشارة باليد نحو الصندوق وبطاقة الشحن
+          aRX = 0.85 + Math.sin(t * 5.0) * 0.08;
+          aRY = -0.28;
+          aRZ = 0.16;
+        } else if (t < 1.6) {
+          // تدوين على الحافظة والتحقق من البيانات
+          aRX = 0.72 + Math.sin(t * 10.0) * 0.06;
+          aRY = 0.18;
+          aRZ = -0.12;
+        } else {
+          // إشارة حاسمة وتأكيد المخالفة / الفحص
+          aRX = 0.92 + Math.sin(t * 4.0) * 0.04;
+          aRY = -0.25;
+          aRZ = 0.20;
+        }
+
+        tgt = {
+          hipsY: 0,
+          hipsRotY: 0,
+          torsoY: Math.sin(t * 1.5) * 0.05,
+          torsoX: lean,
+          headY: scanY,
+          headX: lookDown,
+          armLX: aLX,
+          armLY: aLY,
+          armLZ: aLZ,
+          armRX: aRX,
+          armRY: aRY,
+          armRZ: aRZ,
+          legLX: 0.03,
+          legRX: -0.03,
+          shinLX: 0.02,
+          shinRX: 0.02,
+        };
+      } else if (mode === "verdict_pause") {
+        // وقفة حاسمة ورسمية وتوقف واضح بعد انتهاء الفحص
+        var nod = Math.sin(Math.min(1.0, t * 4.0) * Math.PI) * 0.12;
+        var settle = Math.min(1.0, t / 0.6);
+        tgt = {
+          hipsY: 0,
+          hipsRotY: 0,
+          torsoY: 0,
+          torsoX: -0.04, // انتصاب القامة الرسمي
+          headY: 0,
+          headX: -0.06 + nod, // إيماءة رأس رسمية وحاسمة
+          armLX: lrp(0.35, 0.02, settle),
+          armLY: 0,
+          armLZ: 0.02,
+          armRX: lrp(0.45, -0.02, settle),
+          armRY: 0,
+          armRZ: -0.02,
+          legLX: 0,
+          legRX: 0,
+          shinLX: 0.02,
+          shinRX: 0.02,
+        };
+      } else if (mode === "cao_inspect") {
+        // فحص شحنة الطائرة / البضائع الخطرة CAO
+        tgt = {
+          hipsY: 0,
+          hipsRotY: 0,
+          torsoY: 0.02,
+          torsoX: 0.06,
+          headY: Math.sin(S.t * 1.8) * 0.06,
+          headX: 0.12,
+          armLX: 0.35,
+          armLY: 0.15,
+          armLZ: -0.10,
+          armRX: 0.60 + Math.sin(S.t * 2.5) * 0.06,
+          armRY: -0.20,
+          armRZ: 0.14,
+          legLX: 0,
+          legRX: 0,
+          shinLX: 0.02,
+          shinRX: 0.02,
+        };
+      } else if (mode === "cao_approved") {
+        // موافقة وقرار صحيح: إيماءة رأس متكررة بالرضا وإشارة يد داعمة
+        var nodOk = Math.sin(S.t * 7.0) * 0.14;
+        tgt = {
+          hipsY: 0,
+          hipsRotY: 0,
+          torsoY: 0,
+          torsoX: -0.03,
+          headY: 0,
+          headX: -0.04 + nodOk,
+          armLX: 0.05,
+          armLY: 0,
+          armLZ: 0.02,
+          armRX: 0.70 + Math.sin(S.t * 3.0) * 0.04,
+          armRY: -0.15,
+          armRZ: 0.10,
+          legLX: 0,
+          legRX: 0,
+          shinLX: 0.02,
+          shinRX: 0.02,
+        };
+      } else if (mode === "cao_rejected") {
+        // مخالفة وقرار خاطئ: هز الرأس يميناً ويساراً مع إشارة يد صارمة بالمنع
+        var shakeNo = Math.sin(S.t * 8.0) * 0.22;
+        tgt = {
+          hipsY: 0,
+          hipsRotY: 0,
+          torsoY: 0,
+          torsoX: 0.06,
+          headY: shakeNo,
+          headX: 0.08,
+          armLX: 0.10,
+          armLY: 0,
+          armLZ: 0.02,
+          armRX: 0.78 + Math.sin(S.t * 2.5) * 0.05,
+          armRY: 0.30,
+          armRZ: 0.18,
+          legLX: 0,
+          legRX: 0,
+          shinLX: 0.02,
+          shinRX: 0.02,
+        };
+      } else {
+        // المشي والوقوف الطبيعي (walk & idle)
+        var ph = p.phase || (S.t * 5);
+        var sw = Math.sin(ph), cw = Math.cos(ph);
+        var amp = p.sprint ? 0.75 : 0.55;
+        var mv = (mode === "walk" || p.moving) ? 1 : 0;
+        var idle = Math.sin(S.t * 2.0) * 0.03;
+
+        tgt = {
+          hipsY: mv ? -Math.abs(cw) * 0.03 * (0.6 + amp) : idle * 0.3,
+          hipsRotY: mv ? sw * 0.08 : 0,
+          torsoY: mv ? -sw * 0.12 : idle * 0.2,
+          torsoX: mv ? 0.04 : 0,
+          headY: mv ? sw * 0.05 : idle * 0.5,
+          headX: 0,
+          armLX: mv ? -sw * amp * 0.50 : idle * 0.25,
+          armLY: 0,
+          armLZ: 0.02,
+          armRX: mv ? sw * amp * 0.50 : -idle * 0.25,
+          armRY: 0,
+          armRZ: -0.02,
+          legLX: mv ? sw * amp : 0,
+          legRX: mv ? -sw * amp : 0,
+          shinLX: mv ? Math.max(0, -cw) * amp * 1.3 + 0.04 : 0.02,
+          shinRX: mv ? Math.max(0, cw) * amp * 1.3 + 0.04 : 0.02,
+        };
+      }
 
       var c = S.cur || (S.cur = {});
       for (var key in tgt) c[key] = c[key] === undefined ? tgt[key] : lrp(c[key], tgt[key], k);
@@ -215,14 +356,13 @@
       b[B.hips].rotation.set(0, c.hipsRotY, 0);
       b[B.torso].rotation.set(c.torsoX, c.torsoY, 0);
       b[B.head].rotation.set(c.headX, c.headY, 0);
-      b[B.armL].rotation.set(c.armLX, 0, c.armLZ);
-      b[B.armR].rotation.set(c.armRX, 0, c.armRZ);
+      b[B.armL].rotation.set(c.armLX, c.armLY || 0, c.armLZ);
+      b[B.armR].rotation.set(c.armRX, c.armRY || 0, c.armRZ);
       b[B.legL].rotation.set(c.legLX, 0, 0);
       b[B.legR].rotation.set(c.legRX, 0, 0);
       b[B.shinL].rotation.set(c.shinLX, 0, 0);
       b[B.shinR].rotation.set(c.shinRX, 0, 0);
     }
-
     return { load: load, pose: pose, state: S, height: 1.905, bones: B };
   }
 

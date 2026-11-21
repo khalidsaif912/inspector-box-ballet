@@ -2846,13 +2846,20 @@ add(new THREE.BoxGeometry(0.1, 0.04, 0.03), M(0xb0bec5, .3, .8), 0, 0.17, 0.01, 
 add(new THREE.CylinderGeometry(0.305, 0.305, 0.06, 22), dark, 0, 0.94, 0).scale.z = 0.8;
 procMesh.traverse(o => { if(o.isMesh) o.castShadow = true; });
 
-const I_ = { g, legs, arms, procMesh, rig:null, glbRoot:null, active:false, x:0, z:0, dir:1, t:0, cooldown:0 };
+const scanRingGeo = new THREE.RingGeometry(0.75, 0.95, 32);
+const scanRingMat = new THREE.MeshBasicMaterial({ color: 0xffa000, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+const scanRing = new THREE.Mesh(scanRingGeo, scanRingMat);
+scanRing.rotation.x = -Math.PI / 2;
+scanRing.visible = false;
+S.add(scanRing);
+
+const I_ = { g, legs, arms, procMesh, scanRing, rig:null, glbRoot:null, active:false, state:"walk", targetItem:null, inspectT:0, pauseT:0, x:0, z:0, dir:1, t:0, cooldown:0 };
 
 // تحميل وتحريك مجسم المفتش الجديد ثلاثي الأبعاد GLB
 if(window.InspectorRig && window.InspectorRig.create){
   const rig = window.InspectorRig.create();
   I_.rig = rig;
-  rig.load('game/models/inspector.glb?v=3').then(root => {
+  rig.load('game/models/inspector.glb?v=4').then(root => {
     I_.glbRoot = root;
     root.scale.setScalar(1.55);
     g.add(root);
@@ -2866,7 +2873,19 @@ if(window.InspectorRig && window.InspectorRig.create){
 g.scale.setScalar(1.25); g.visible = false; S.add(g);
 return I_;
 })();
-function resetInspector(){ inspector.active = false; inspector.g.visible = false; inspector.cooldown = 6; inspector.done = false; inspector.elapsed = 0; $('inspector-badge').classList.remove('on'); }
+function resetInspector(){
+  inspector.active = false;
+  inspector.g.visible = false;
+  inspector.cooldown = 6;
+  inspector.done = false;
+  inspector.elapsed = 0;
+  inspector.state = "walk";
+  inspector.targetItem = null;
+  inspector.inspectT = 0;
+  inspector.pauseT = 0;
+  if(inspector.scanRing) inspector.scanRing.visible = false;
+  $('inspector-badge').classList.remove('on');
+}
 function updateInspector(dt){
 const I_ = inspector;
 if(!I_.active){
@@ -2882,34 +2901,106 @@ for(const c of cand){ const n = cand.filter(o => Math.abs(o.m.position.z - c.m.p
 I_.dir = Math.random() < 0.5 ? 1 : -1;
 I_.x = -36 * I_.dir; I_.z = Math.max(-11, Math.min(9, tgt.m.position.z + 1.6));
 I_.active = true; I_.g.visible = true; I_.t = 0;
+I_.state = 'walk';
+I_.targetItem = null;
+I_.inspectT = 0;
+I_.pauseT = 0;
 I_.g.rotation.y = I_.dir > 0 ? Math.PI/2 : -Math.PI/2;
 $('inspector-badge').classList.add('on');
 snd('whistle');
 return;
 }
+
+// 1. مرحلة التفتيش الدقيق مع إيماءات اليدين وحلقة المسح الضوئي
+if(I_.state === 'inspect'){
+  I_.inspectT += dt;
+  const it = I_.targetItem;
+  if(!it || it.st !== 'floor' || it.fall){
+    if(I_.scanRing) I_.scanRing.visible = false;
+    I_.state = 'verdict_pause';
+    I_.pauseT = 0.8;
+    return;
+  }
+  const dx = it.m.position.x - I_.x;
+  const dz = it.m.position.z - I_.z;
+  const faceAngle = Math.atan2(dx, dz);
+  I_.g.rotation.y = lrp(I_.g.rotation.y, faceAngle, Math.min(1, dt * 10));
+
+  if(I_.scanRing){
+    I_.scanRing.visible = true;
+    I_.scanRing.position.set(it.m.position.x, 0.04, it.m.position.z);
+    const pulse = 1.0 + Math.sin(I_.inspectT * 7.0) * 0.12;
+    I_.scanRing.scale.set(pulse, pulse, 1);
+  }
+
+  if(I_.rig && I_.rig.pose){
+    I_.rig.pose({ dt, mode: 'inspect', timer: I_.inspectT });
+  }
+
+  if(I_.inspectT >= 2.0){
+    it.fined = true;
+    score = Math.max(0, score - 15);
+    combo = 1;
+    time = Math.max(0, time - 4);
+    snd('whistle');
+    spawnFloatTag('−15 🦺 مخالفة', '#ff5252');
+    tip('fine', '📋 المفتش: طرد متروك خارج المنطقة المخصصة! (-15 و -4 ث)', '#ffb020');
+    if(it.m.material.emissive) it.m.material.emissive.setHex(0x552200);
+    hud();
+
+    if(I_.scanRing) I_.scanRing.visible = false;
+    I_.state = 'verdict_pause';
+    I_.pauseT = 1.3; // توقف واضح لمدة 1.3 ثانية
+  }
+  return;
+}
+
+// 2. مرحلة التوقف الواضح والحاسم بعد انتهاء الفحص
+if(I_.state === 'verdict_pause'){
+  I_.pauseT -= dt;
+  if(I_.scanRing) I_.scanRing.visible = false;
+  if(I_.rig && I_.rig.pose){
+    I_.rig.pose({ dt, mode: 'verdict_pause', timer: 1.3 - I_.pauseT });
+  }
+  if(I_.pauseT <= 0){
+    I_.state = 'walk';
+    I_.targetItem = null;
+  }
+  return;
+}
+
+// 3. مرحلة المشي والدورية (walk)
 I_.t += dt;
 const prevX = I_.x;
 I_.x += I_.dir * (I_.demo ? 6 : 3.6) * dt;
+const targetWalkAngle = I_.dir > 0 ? Math.PI/2 : -Math.PI/2;
+I_.g.rotation.y = lrp(I_.g.rotation.y, targetWalkAngle, Math.min(1, dt * 10));
+I_.g.rotation.z = Math.sin(I_.t * 5) * 0.05;
+
 const sw = Math.sin(I_.t * 5) * 0.4;
-I_.g.rotation.z = Math.sin(I_.t * 5) * 0.09;
 if(I_.legs && I_.legs.length >= 2){ I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw; }
 if(I_.arms && I_.arms.length >= 2){ I_.arms[0].rotation.x = -sw * 0.8; I_.arms[1].rotation.x = sw * 0.4 - 0.5; }
 if(I_.rig && I_.rig.pose){ I_.rig.pose({ dt, phase: I_.t * 5, moving: true }); }
 I_.g.position.set(I_.x, Math.abs(Math.sin(I_.t * 5)) * 0.04, I_.z);
+
 for(const it of items){
-if(I_.demo || it.st !== 'floor' || it.data.isFod || it.fined) continue;
-const bx = it.m.position.x;
-if(Math.abs(it.m.position.z - I_.z) < 5.5 && (prevX - bx) * (I_.x - bx) <= 0){
-it.fined = true;
-score = Math.max(0, score - 15); combo = 1; time = Math.max(0, time - 4);
-snd('whistle');
-spawnFloatTag('−15 🦺 مخالفة', '#ff5252');
-tip('fine', '📋 المفتش: طرد متروك خارج المنطقة المخصصة! (-15 و -4 ث)', '#ffb020');
-it.m.material.emissive && it.m.material.emissive.setHex(0x552200);
-hud();
+  if(I_.demo || it.st !== 'floor' || it.data.isFod || it.fined) continue;
+  const dx = it.m.position.x - I_.x;
+  const dz = it.m.position.z - I_.z;
+  if(Math.abs(dz) < 4.2 && dx * I_.dir >= -0.4 && Math.abs(dx) <= 2.2){
+    I_.state = 'inspect';
+    I_.targetItem = it;
+    I_.inspectT = 0;
+    break;
+  }
 }
+
+if(Math.abs(I_.x) > 37){
+  I_.active = false; I_.g.visible = false; I_.done = true; I_.cooldown = 14; I_.elapsed = 0;
+  if(I_.scanRing) I_.scanRing.visible = false;
+  if(I_.demo){ I_.demo = false; demo.insp = false; demo.inspDone = true; if(demo.truckDone) saveTutorialDone(); demo.truckIn = 6; hideIntro(); }
+  $('inspector-badge').classList.remove('on');
 }
-if(Math.abs(I_.x) > 37){ I_.active = false; I_.g.visible = false; I_.done = true; I_.cooldown = 14; I_.elapsed = 0; if(I_.demo){ I_.demo = false; demo.insp = false; demo.inspDone = true; if(demo.truckDone) saveTutorialDone(); demo.truckIn = 6; hideIntro(); } $('inspector-badge').classList.remove('on'); }
 }
 /* ===== فحص شحنة CAO قبل التحميل: قرار قبول/رفض بسبب ===== */
 const CAO_PANEL = $('cao-panel');
@@ -2949,7 +3040,15 @@ const walking = I_.x > I_.toX + .01;
 const sw = Math.sin(I_.t * 7) * (walking ? .5 : .06);
 if(I_.legs && I_.legs.length >= 2){ I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw; }
 if(I_.arms && I_.arms.length >= 2){ I_.arms[0].rotation.x = -sw * .7; I_.arms[1].rotation.x = sw * .4 - .62; }
-if(I_.rig && I_.rig.pose){ I_.rig.pose({ dt: r, phase: I_.t * 7, moving: walking }); }
+if(I_.rig && I_.rig.pose){
+  if(walking){
+    I_.rig.pose({ dt: r, phase: I_.t * 7, moving: true });
+  } else if(!caoQ.answered){
+    I_.rig.pose({ dt: r, mode: 'cao_inspect', timer: I_.t });
+  } else {
+    I_.rig.pose({ dt: r, mode: caoQ.lastOk ? 'cao_approved' : 'cao_rejected', timer: I_.t });
+  }
+}
 I_.g.position.set(I_.x, walking ? Math.abs(Math.sin(I_.t * 7)) * .05 : 0, I_.z);
 if(!walking && !caoQ.answered) CAO_BUBBLE.classList.add('in');
 caoPlace();
@@ -3020,6 +3119,7 @@ if(!it) return;
 const ok = gameRules.cao.correct(opt);
 it.caoChecked = true;
 caoQ.answered = true;
+caoQ.lastOk = ok;
 totalProcessed++;
 CAO_BUBBLE.classList.remove('in');
 if(ok){
