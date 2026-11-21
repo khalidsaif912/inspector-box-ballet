@@ -1437,7 +1437,10 @@ hideIntro(); run=true; pz=false; last=performance.now(); clearMovement();
 try { R.domElement.focus({preventScroll:true}); } catch(e){}
 }
 function startInspDemo(){
-const I_=inspector;demo.insp=true;I_.demo=true;I_.dir=Math.random()<.5?1:-1;I_.x=-36*I_.dir;I_.z=4;I_.active=true;I_.g.visible=true;I_.t=0;
+const I_=inspector;demo.insp=true;I_.demo=true;I_.dir=Math.random()<.5?1:-1;
+I_.z=INSP_SAFE.zebraZ; I_.targetZ=INSP_SAFE.zebraZ; I_.x=-INSP_SAFE.maxX*I_.dir;
+I_.active=true;I_.g.visible=true;I_.t=0;
+I_.g.position.set(I_.x,0,I_.z);
 I_.g.rotation.y=I_.dir>0?Math.PI/2:-Math.PI/2;
 document.getElementById('inspector-badge').classList.add('on');snd('whistle');
 showIntro(I18N.T('<b class="t">🦺 المفتش</b>يغرّم كل طرد متروك خارج مناطق الفرز.<small>جولة تعريفية — بلا غرامات</small><span class="hint">⏸ اللعبة متوقفة — اضغط في أي مكان للمتابعة</span>', '<b class="t">🦺 Inspector</b>Fines every parcel left outside the sorting zones.<small>Intro round — no fines</small><span class="hint">⏸ Game paused — press anywhere to resume</span>'),0,true);
@@ -2853,7 +2856,10 @@ scanRing.rotation.x = -Math.PI / 2;
 scanRing.visible = false;
 S.add(scanRing);
 
-const I_ = { g, legs, arms, procMesh, scanRing, rig:null, glbRoot:null, active:false, state:"walk", targetItem:null, inspectT:0, pauseT:0, x:0, z:0, dir:1, t:0, cooldown:0 };
+// ممرات المشاة الطبيعية للمفتش: تمنعه تماماً من السير داخل أقفاص الحاويات أو فوق الحزام أو عبر الرافعة والجدران
+const INSP_SAFE = { minZ: -2.2, maxZ: 5.8, zebraZ: 2.5, minX: -33.2, maxX: 33.2 };
+
+const I_ = { g, legs, arms, procMesh, scanRing, rig:null, glbRoot:null, active:false, state:"walk", targetItem:null, inspectT:0, pauseT:0, x:0, z:INSP_SAFE.zebraZ, targetZ:INSP_SAFE.zebraZ, dir:1, t:0, cooldown:0 };
 
 // تحميل وتحريك مجسم المفتش الجديد ثلاثي الأبعاد GLB
 if(window.InspectorRig && window.InspectorRig.create){
@@ -2883,6 +2889,8 @@ function resetInspector(){
   inspector.targetItem = null;
   inspector.inspectT = 0;
   inspector.pauseT = 0;
+  inspector.targetZ = INSP_SAFE.zebraZ;
+  inspector.z = INSP_SAFE.zebraZ;
   if(inspector.scanRing) inspector.scanRing.visible = false;
   $('inspector-badge').classList.remove('on');
 }
@@ -2898,13 +2906,30 @@ if(!bad.length && I_.elapsed < 30) return;
 const cand = bad.length ? bad : items.filter(i => i.st === 'floor' && !i.data.isFod && !i.fall && !i.fined);
 let tgt = {m:{position:{z:px.z - 1.6}}}, bn = -1;
 for(const c of cand){ const n = cand.filter(o => Math.abs(o.m.position.z - c.m.position.z) < 5.5).length; if(n > bn){ bn = n; tgt = c; } }
+
+// اختيار ممر دورية طبيعي في المساحة المفتوحة دون دخول الحاويات أو الحزام
+let patrolZ = INSP_SAFE.zebraZ;
+if(tgt && tgt.m && tgt.m.position){
+  const tz = tgt.m.position.z;
+  if(tz <= 0.5){
+    patrolZ = Math.max(INSP_SAFE.minZ, Math.min(0.5, tz + 2.2));
+  } else if(tz >= 3.5){
+    patrolZ = Math.min(INSP_SAFE.maxZ, Math.max(3.0, tz - 2.2));
+  } else {
+    patrolZ = tz > 2.0 ? Math.max(INSP_SAFE.minZ, tz - 1.6) : Math.min(INSP_SAFE.maxZ, tz + 1.6);
+  }
+}
+
 I_.dir = Math.random() < 0.5 ? 1 : -1;
-I_.x = -36 * I_.dir; I_.z = Math.max(-11, Math.min(9, tgt.m.position.z + 1.6));
+I_.z = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, patrolZ));
+I_.targetZ = I_.z;
+I_.x = -INSP_SAFE.maxX * I_.dir; // البداية من عتبة باب المستودع داخل المبنى
 I_.active = true; I_.g.visible = true; I_.t = 0;
 I_.state = 'walk';
 I_.targetItem = null;
 I_.inspectT = 0;
 I_.pauseT = 0;
+I_.g.position.set(I_.x, 0, I_.z);
 I_.g.rotation.y = I_.dir > 0 ? Math.PI/2 : -Math.PI/2;
 $('inspector-badge').classList.add('on');
 snd('whistle');
@@ -2964,17 +2989,46 @@ if(I_.state === 'verdict_pause'){
   }
   if(I_.pauseT <= 0){
     I_.state = 'walk';
+    // تفادي الصندوق الذي تم فحصه عند استئناف المشي حتى لا يمر من خلاله
+    if(I_.targetItem && I_.targetItem.m){
+      const bz = I_.targetItem.m.position.z;
+      if(Math.abs(bz - I_.z) < 1.1){
+        const detour = bz >= I_.z ? -1.2 : 1.2;
+        I_.targetZ = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, I_.z + detour));
+      }
+    }
     I_.targetItem = null;
   }
   return;
 }
 
-// 3. مرحلة المشي والدورية (walk)
+// 3. مرحلة المشي والدورية في ممرات المستودع الطبيعية (walk)
 I_.t += dt;
-const prevX = I_.x;
-I_.x += I_.dir * (I_.demo ? 6 : 3.6) * dt;
+I_.x += I_.dir * (I_.demo ? 5.5 : 3.4) * dt;
+
+// توجيه المسار إلى الممر المركزي عند الاقتراب من البوابات الطرفية لتفادي منصات البضائع
+if(Math.abs(I_.x) > 28){
+  I_.targetZ = lrp(I_.targetZ, INSP_SAFE.zebraZ, Math.min(1, dt * 5));
+}
+
+// تجنب الصناديق الملقاة على الأرض والمشي حولها بسلاسة بدل اختراقها
+let avoidZ = 0;
+for(const it of items){
+  if(it.st !== 'floor') continue;
+  const bx = it.m.position.x, bz = it.m.position.z;
+  const dx = bx - I_.x, dz = bz - I_.z;
+  if(dx * I_.dir > -0.4 && dx * I_.dir < 1.8 && Math.abs(dz) < 1.0){
+    const sign = dz >= 0 ? -1 : 1;
+    avoidZ = sign * Math.max(0.7, 1.2 - Math.abs(dz));
+    break;
+  }
+}
+
+const curGoalZ = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, (I_.targetZ || I_.z) + avoidZ));
+I_.z = lrp(I_.z, curGoalZ, Math.min(1, dt * 4.5));
+
 const targetWalkAngle = I_.dir > 0 ? Math.PI/2 : -Math.PI/2;
-I_.g.rotation.y = lrp(I_.g.rotation.y, targetWalkAngle, Math.min(1, dt * 10));
+I_.g.rotation.y = lrp(I_.g.rotation.y, targetWalkAngle, Math.min(1, dt * 8));
 I_.g.rotation.z = Math.sin(I_.t * 5) * 0.05;
 
 const sw = Math.sin(I_.t * 5) * 0.4;
@@ -2983,11 +3037,14 @@ if(I_.arms && I_.arms.length >= 2){ I_.arms[0].rotation.x = -sw * 0.8; I_.arms[1
 if(I_.rig && I_.rig.pose){ I_.rig.pose({ dt, phase: I_.t * 5, moving: true }); }
 I_.g.position.set(I_.x, Math.abs(Math.sin(I_.t * 5)) * 0.04, I_.z);
 
+// رصد الطرود المخالفة من مسافة رؤية آمنة دون التصادم معها
 for(const it of items){
   if(I_.demo || it.st !== 'floor' || it.data.isFod || it.fined) continue;
   const dx = it.m.position.x - I_.x;
   const dz = it.m.position.z - I_.z;
-  if(Math.abs(dz) < 4.2 && dx * I_.dir >= -0.4 && Math.abs(dx) <= 2.2){
+  const dist = Math.hypot(dx, dz);
+  const ahead = dx * I_.dir;
+  if(dist <= 5.8 && ahead >= -0.2 && ahead <= 3.2 && Math.abs(dz) <= 5.2){
     I_.state = 'inspect';
     I_.targetItem = it;
     I_.inspectT = 0;
@@ -2995,7 +3052,8 @@ for(const it of items){
   }
 }
 
-if(Math.abs(I_.x) > 37){
+// انتهاء الجولة والوصول إلى بوابة الخروج دون اختراق الجدران الخارجية
+if(Math.abs(I_.x) >= INSP_SAFE.maxX){
   I_.active = false; I_.g.visible = false; I_.done = true; I_.cooldown = 14; I_.elapsed = 0;
   if(I_.scanRing) I_.scanRing.visible = false;
   if(I_.demo){ I_.demo = false; demo.insp = false; demo.inspDone = true; if(demo.truckDone) saveTutorialDone(); demo.truckIn = 6; hideIntro(); }
@@ -3042,10 +3100,15 @@ if(I_.legs && I_.legs.length >= 2){ I_.legs[0].rotation.x = sw; I_.legs[1].rotat
 if(I_.arms && I_.arms.length >= 2){ I_.arms[0].rotation.x = -sw * .7; I_.arms[1].rotation.x = sw * .4 - .62; }
 if(I_.rig && I_.rig.pose){
   if(walking){
+    I_.g.rotation.y = -Math.PI / 2;
     I_.rig.pose({ dt: r, phase: I_.t * 7, moving: true });
   } else if(!caoQ.answered){
+    const facePlayer = Math.atan2(px.x - I_.x, px.z - I_.z);
+    I_.g.rotation.y = lrp(I_.g.rotation.y, facePlayer, Math.min(1, r * 8));
     I_.rig.pose({ dt: r, mode: 'cao_inspect', timer: I_.t });
   } else {
+    const facePlayer = Math.atan2(px.x - I_.x, px.z - I_.z);
+    I_.g.rotation.y = lrp(I_.g.rotation.y, facePlayer, Math.min(1, r * 8));
     I_.rig.pose({ dt: r, mode: caoQ.lastOk ? 'cao_approved' : 'cao_rejected', timer: I_.t });
   }
 }
@@ -3068,16 +3131,18 @@ if(caoAccept) caoAccept.hidden = false;
 if(caoStow) caoStow.hidden = placardQ;
 if(caoAccept) caoAccept.textContent = placardQ ? I18N.T('✅ نعم، مسموح','✅ Yes, allowed') : caoAccept.getAttribute('data-t');
 if(caoReject) caoReject.textContent = placardQ ? I18N.T('🚫 لا، غير مسموح','🚫 No, not allowed') : caoReject.getAttribute('data-t');
-/* المفتش يحضر بنفسه: يقف أمام اللاعب مواجهاً له ويطلب القرار */
+/* المفتش يحضر بنفسه: يقف أمام اللاعب في الممر الطبيعي المفتوح ويطلب القرار */
 const I_ = inspector;
-const z0 = Math.max(-4.2, Math.min(8.4, px.z - 2.2));
-const x0 = Math.max(-31, Math.min(31, px.x + 1.7));
+// ضمان موضع وقوف آمن وطبيعي في مساحة المشي بعيداً عن أقفاص الحاويات والحزام والرافعة
+const z0 = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, px.z > 2 ? px.z - 1.8 : px.z + 1.8));
+const x0 = Math.max(-24, Math.min(22, px.x > 0 ? px.x - 1.8 : px.x + 1.8));
 I_.active = true; I_.demo = false; I_.done = false; I_.t = 0;
 I_.g.visible = true;
 I_.z = z0;
+I_.targetZ = z0;
 I_.toX = x0;
-I_.x = Math.min(32, x0 + 7.4);
-I_.g.rotation.y = 0;
+I_.x = Math.min(27, x0 + 5.5);
+I_.g.rotation.y = -Math.PI / 2; // يواجه اتجاه مشيه أثناء الاقتراب
 I_.g.position.set(I_.x, 0, I_.z);
 CAO_BUBBLE.classList.remove('in');
 CAO_SAY.classList.remove('in');
