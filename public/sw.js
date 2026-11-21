@@ -1,5 +1,5 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v61";
+const VERSION = "v62";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
@@ -35,13 +35,76 @@ const SHELL = [
   "./icons/apple-touch-icon.png",
 ];
 
+// صور لعبة البطاقات: تُخزَّن مسبقاً حتى تعمل دون اتصال، وفشل أي صورة لا يُفشل التثبيت.
+const M1_ASSETS = [
+  "./m1/A1.jpg",
+  "./m1/A2.jpg",
+  "./m1/B1.jpg",
+  "./m1/B2.jpg",
+  "./m1/C1.jpg",
+  "./m1/C2.jpg",
+  "./m1/F1.jpg",
+  "./m1/F2.jpg",
+  "./m1/J1.jpg",
+  "./m1/J2.jpg",
+  "./m1/K1.jpg",
+  "./m1/K2.jpg",
+  "./m1/M1.jpg",
+  "./m1/M2.jpg",
+  "./m1/N1.jpg",
+  "./m1/N2.jpg",
+  "./m1/O1.jpg",
+  "./m1/O2.jpg",
+  "./m1/Q1.jpg",
+  "./m1/Q2.jpg",
+  "./m1/R1.jpg",
+  "./m1/R2.jpg",
+  "./m1/S1.jpg",
+  "./m1/S2.jpg",
+  "./m1/T1.jpg",
+  "./m1/T2.jpg",
+  "./m1/U1.jpg",
+  "./m1/U2.jpg",
+  "./m1/V1.jpg",
+  "./m1/V2.jpg",
+  "./m1/card-back.png",
+  "./m1/characters/alii-lose.jpg",
+  "./m1/characters/alii-think.jpg",
+  "./m1/characters/alii-win.jpg",
+  "./m1/characters/fahim-confused.jpg",
+  "./m1/characters/fahim-think.jpg",
+  "./m1/characters/fahim-win.jpg",
+  "./m1/characters/hosni-confused.jpg",
+  "./m1/characters/hosni-think.jpg",
+  "./m1/characters/hosni-win.jpg",
+  "./m1/characters/khalid-confused.jpg",
+  "./m1/characters/khalid-think.jpg",
+  "./m1/characters/khalid-win.jpg",
+  "./m1/characters/omar-confused.jpg",
+  "./m1/characters/omar-think.jpg",
+  "./m1/characters/omar-win.jpg",
+  "./m1/characters/said-confused.jpg",
+  "./m1/characters/said-think.jpg",
+  "./m1/characters/said-win.jpg",
+  "./m1/characters/saleh-confused.jpg",
+  "./m1/characters/saleh-think.jpg",
+  "./m1/characters/saleh-win.jpg",
+  "./m1/characters/sats-confused.jpg",
+  "./m1/characters/sats-think.jpg",
+  "./m1/characters/sats-win.jpg",
+];
+
 const base = (path) => new URL(path, self.registration.scope).href;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.addAll(SHELL.map(base)))
+      .then((cache) =>
+        cache
+          .addAll(SHELL.map(base))
+          .then(() => Promise.allSettled(M1_ASSETS.map((p) => cache.add(base(p))))),
+      )
       .then(() => self.skipWaiting()),
   );
 });
@@ -66,8 +129,11 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy));
+          // لا نخزّن صفحات الخطأ (404/500) حتى لا تُعرض بدل النسخة السليمة عند انقطاع الاتصال.
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
           return response;
         })
         .catch(

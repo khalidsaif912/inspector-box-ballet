@@ -218,6 +218,7 @@ canvas{display:block;position:absolute;inset:0}
 #cao-panel.on{display:block}
 .cq{position:absolute;left:50%;top:46%;transform:translate(-50%,calc(-100% - 16px));pointer-events:none;width:min(92vw,340px);background:#fff;border:2px solid #cdd2d8;border-radius:18px;padding:10px 12px 12px;box-shadow:0 16px 40px rgba(0,0,0,.5);direction:inherit;opacity:0;transition:opacity .16s;color:#14161b}
 .cq.in{opacity:1;pointer-events:auto}
+.cq:not(.in),.cq:not(.in) *{pointer-events:none!important}
 .cq::after{content:"";position:absolute;left:50%;bottom:-14px;transform:translateX(-50%);width:0;height:0;border:14px solid transparent;border-top-color:#cdd2d8;border-bottom:0}
 .cq::before{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);z-index:1;width:0;height:0;border:10px solid transparent;border-top-color:#fff;border-bottom:0}
 .cq-who{display:flex;align-items:center;gap:7px}
@@ -239,7 +240,7 @@ canvas{display:block;position:absolute;inset:0}
   #cao-bubble.placard .cq-b{padding:7px 9px;margin-top:5px}
 }
 .cq-b[hidden]{display:none}
-.cq-b{display:block;width:100%;margin-top:7px;padding:11px 12px;border-radius:12px;border:1px solid #cfd4da;background:#f2f4f6;color:#14161b;font:800 clamp(12px,3.4vmin,14px) system-ui,Tahoma,sans-serif;cursor:pointer;text-align:start;pointer-events:auto;transition:background .15s,transform .1s}
+.cq-b{display:block;width:100%;margin-top:7px;padding:11px 12px;border-radius:12px;border:1px solid #cfd4da;background:#f2f4f6;color:#14161b;font:800 clamp(12px,3.4vmin,14px) system-ui,Tahoma,sans-serif;cursor:pointer;text-align:start;transition:background .15s,transform .1s}
 .cq-b:active{transform:scale(.985);background:#e6e9ed}
 .cq-b.good{background:#e6f8ee;border-color:#8ed6ab}
 .cq-b.bad{background:#ffecea;border-color:#f0b4ae}

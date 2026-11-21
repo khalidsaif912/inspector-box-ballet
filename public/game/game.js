@@ -40,7 +40,7 @@ const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let actx = null, soundEnabled = true, ambEnabled = true, ambNode = null;
 function initAudio(){
 if(!actx && AudioCtx) actx = new AudioCtx();
-if(actx && actx.state === 'suspended') actx.resume();
+if(actx && actx.state === 'suspended' && !document.hidden) actx.resume().catch(() => {});
 initAmbience();
 }
 // ===== صوت المستودع المحيط: هدير تهوية + طنين مصابيح + ارتطامات بعيدة =====
@@ -77,7 +77,7 @@ scheduleClank();
 }
 function scheduleClank(){
 setTimeout(() => {
-if(actx && ambEnabled){
+if(actx && ambEnabled && actx.state === 'running' && !document.hidden){
 const at = actx.currentTime;
 const osc = actx.createOscillator(), g = actx.createGain();
 osc.type = 'triangle'; osc.frequency.setValueAtTime(210 + Math.random() * 260, at);
@@ -140,7 +140,7 @@ gate:[[392,.1],[523,.1],[659,.1],[784,.18],[1047,.24]],
 warp:[[1047,.05],[784,.05],[1047,.05],[1319,.06],[1568,.08],[2093,.26]]
 };
 function snd(type, pitch=1){
-if(!soundEnabled || !actx || !retroCues[type]) return;
+if(!soundEnabled || !actx || !retroCues[type] || document.hidden) return;
 let at = actx.currentTime;
 for(const [frequency,duration] of retroCues[type]){
 const osc = actx.createOscillator(), gain = actx.createGain();
@@ -820,6 +820,8 @@ const sw = z.w * (z.hz ? 1.03 : 0.95);
 spr.scale.set(sw, sw*(cv.height/cv.width), 1);
 return spr;
 }
+/* أضواء صناديق FOD تنبض داخل الحلقة الرئيسية بدل حلقة rAF مستقلة لكل صندوق */
+const FOD_PULSE = [];
 function buildFodBox(z){
 const x=z.x, zz=-8.6;
 const pad=B(2.8,0.06,2.8,0x7a1010,x,0.03,zz,S,0.55,0.05); pad.material.emissive=new THREE.Color(0xd32f2f).multiplyScalar(0.25); pad.castShadow=false;
@@ -833,7 +835,7 @@ const mat=new THREE.MeshStandardMaterial({map:tx,roughness:0.5,emissive:0xffffff
 const f=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.75),mat); f.position.set(x,0.66,zz+0.81); S.add(f);
 const t=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.75),mat); t.rotation.x=-Math.PI/2; t.position.set(x,1.355,zz+0.5); S.add(t);
 const L=new THREE.PointLight(0xff3b30,1,8); L.position.set(x,2.4,zz+1.2); S.add(L);
-(function pulse(ms){L.intensity=0.8+0.5*Math.sin(ms/260);requestAnimationFrame(pulse);})(0);
+FOD_PULSE.push(L);
 }
 Z.forEach(z => {
 if(z.k==='fod'){ buildFodBox(z); return; }
@@ -1165,6 +1167,8 @@ function loadSeatCrew() {
 const WALK = { minX: -33.6, maxX: 33.6, minZ: -11.5, maxZ: 10.1 };
 /* صندوق تصادم الرافعة المتوقفة: نصف الأبعاد من قواعد اللعبة (نفس الشكل المرئي بعد الدوران) */
 const FK_HX = gameRules.forklift.halfX, FK_HZ = gameRules.forklift.halfZ;
+/* صندوق الرافعة يدور معها: المحور الطويل (halfX) على اتجاه مقدمتها sin/cos(yaw) */
+function fkHalf(){ const s = Math.abs(Math.sin(fk.rotation.y)), c = Math.abs(Math.cos(fk.rotation.y)); return { hx: s*FK_HX + c*FK_HZ, hz: c*FK_HX + s*FK_HZ }; }
 const STATIC_OBSTACLES = [
 { minX: -26.0, maxX: 26.0, minZ: 10.6, maxZ: 13.6 },
 { minX: -27.1, maxX: -24.5, minZ: 10.2, maxZ: 13.8 },
@@ -1205,17 +1209,20 @@ if(best.c === 'x') p.x = Math.max(WALK.minX, Math.min(WALK.maxX, best.v));
 else p.z = Math.max(WALK.minZ, Math.min(WALK.maxZ, best.v));
 return true;
 }
-function resolvePlayerCollisions(targetX, targetZ, mvx=0, mvz=0, dt=0.016) {
+/* opt: rad نصف قطر الجسم، yaw/reach موضع الطرد المحمول، probe=true فحص بلا آثار (لا دفع طرود ولا صوت) */
+function resolvePlayerCollisions(targetX, targetZ, mvx=0, mvz=0, dt=0.016, opt) {
+const rad = (opt && opt.rad) || PLAYER_RADIUS, probe = !!(opt && opt.probe);
+const hYaw = opt && opt.yaw !== undefined ? opt.yaw : curRotY, hReach = opt && opt.reach !== undefined ? opt.reach : 0.78;
 const p = { x: Math.max(WALK.minX, Math.min(WALK.maxX, targetX)), z: Math.max(WALK.minZ, Math.min(WALK.maxZ, targetZ)) };
 let hit = false;
 for(let iter=0; iter<3; iter++){
-for (const o of STATIC_OBSTACLES) if(pushOutAABB(p, o.minX, o.maxX, o.minZ, o.maxZ, PLAYER_RADIUS)) hit = true;
+for (const o of STATIC_OBSTACLES) if(pushOutAABB(p, o.minX, o.maxX, o.minZ, o.maxZ, rad)) hit = true;
 for (const b of BOLLARDS){
-const dx = p.x - b.x, dz = p.z - b.z, d = Math.hypot(dx, dz), m = PLAYER_RADIUS + b.r;
+const dx = p.x - b.x, dz = p.z - b.z, d = Math.hypot(dx, dz), m = rad + b.r;
 if(d < m && d > 1e-6){ p.x += dx/d*(m-d); p.z += dz/d*(m-d); hit = true; }
 }
 // الرافعة المتوقفة جسم صلب ما دام اللاعب لا يقودها
-if(!FD.on && pushOutAABB(p, fk.position.x-FK_HX, fk.position.x+FK_HX, fk.position.z-FK_HZ, fk.position.z+FK_HZ, PLAYER_RADIUS)) hit = true;
+if(!FD.on){ const fh = fkHalf(); if(pushOutAABB(p, fk.position.x-fh.hx, fk.position.x+fh.hx, fk.position.z-fh.hz, fk.position.z+fh.hz, rad)) hit = true; }
 p.x = Math.max(WALK.minX, Math.min(WALK.maxX, p.x));
 p.z = Math.max(WALK.minZ, Math.min(WALK.maxZ, p.z));
 for (const it of items) {
@@ -1225,8 +1232,9 @@ if(it.st === 'floor'){
 // الطرود على الأرض تُدفع بلطف عند ملامستها
 const cx = Math.max(bx-h, Math.min(p.x, bx+h)), cz = Math.max(bz-h, Math.min(p.z, bz+h));
 const dx = p.x - cx, dz = p.z - cz, d = Math.hypot(dx, dz);
-if(d < PLAYER_RADIUS){
-const pen = PLAYER_RADIUS - d, nx = d > 1e-6 ? dx/d : -mvx, nz = d > 1e-6 ? dz/d : -mvz;
+if(d < rad){
+const pen = rad - d, nx = d > 1e-6 ? dx/d : -mvx, nz = d > 1e-6 ? dz/d : -mvz;
+if(probe){ p.x += nx * pen; p.z += nz * pen; hit = true; continue; }
 it.m.position.x -= nx * pen * 0.7; it.m.position.z -= nz * pen * 0.7;
 it.m.position.x = Math.max(-33, Math.min(33, it.m.position.x));
 it.m.position.z = Math.max(-11.9, Math.min(9.6, it.m.position.z));
@@ -1235,11 +1243,11 @@ it.wob = 1;
 p.x += nx * pen * 0.3; p.z += nz * pen * 0.3;
 hit = true;
 }
-} else if(pushOutAABB(p, bx-h, bx+h, bz-h, bz+h, PLAYER_RADIUS)) hit = true;
+} else if(pushOutAABB(p, bx-h, bx+h, bz-h, bz+h, rad)) hit = true;
 }
 }
 if(held && !liftAnim.active){
-const hh = boxHalf({m:{rotation:{y:curRotY}}}), fx = Math.sin(curRotY)*0.78, fz = Math.cos(curRotY)*0.78;
+const hh = boxHalf({m:{rotation:{y:hYaw}}}), fx = Math.sin(hYaw)*hReach, fz = Math.cos(hYaw)*hReach;
 for(let k=0;k<2;k++){
 const bp = {x:p.x+fx, z:p.z+fz};
 for(const o of STATIC_OBSTACLES){
@@ -1248,7 +1256,7 @@ if(v){ const m = Math.hypot(v[0], v[1]), f = m < 0.3 ? 1 : 0.3/m; p.x += v[0]*f;
 }
 }
 }
-if(hit && (Math.abs(mvx)+Math.abs(mvz)) > 0.3 && performance.now() - lastBump > 380){ lastBump = performance.now(); snd('bump'); addShake(.45); }
+if(!probe && hit && (Math.abs(mvx)+Math.abs(mvz)) > 0.3 && performance.now() - lastBump > 380){ lastBump = performance.now(); snd('bump'); addShake(.45); }
 return p;
 }
 let bob=0, walk=0, turnLean=0, curRotY=0, inX=0, inZ=0, animSpd=0;
@@ -1767,14 +1775,26 @@ spawnFloatTag('−' + CRIT_PENALTY, '#ff5252', 'big');
 toast(I18N.T('☠️ انفجر طرد مبرّد قبل فرزه! -', '☠️ A chilled parcel spoiled before sorting! -') + CRIT_PENALTY + I18N.T(' نقطة',' pts'), '#ff5252');
 clearCrit(it); rm(it); hud();
 }
+/* موارد FOD تُبنى مرة واحدة وتُشارك بين كل الأجسام المتساقطة (بلا تسرّب ذاكرة GPU) */
+let FOD_RES = null;
+function fodRes(){
+if(FOD_RES) return FOD_RES;
+const cv = document.createElement('canvas'); cv.width = 128; cv.height = 64;
+const g = cv.getContext('2d'); g.fillStyle='#ffd54a';g.fillRect(0,0,128,64);g.fillStyle='#17252b';g.font='900 40px monospace';g.textAlign='center';g.fillText('FOD',64,46);
+return FOD_RES = {
+  box: new THREE.BoxGeometry(.5,.3,.7), torus: new THREE.TorusGeometry(.28,.09,6,6), sh: new THREE.PlaneGeometry(1.2,1.2),
+  mat: new THREE.MeshStandardMaterial({color:0x94aebc,metalness:.7,roughness:.35}),
+  label: new THREE.SpriteMaterial({map:rawTex(cv),depthTest:false})
+};
+}
 function dropFod(x,z){
-const m = new THREE.Mesh(new THREE.BoxGeometry(.5,.3,.7), new THREE.MeshStandardMaterial({color:0x94aebc,metalness:.7,roughness:.35}));
+const R_ = fodRes();
+const m = new THREE.Mesh(R_.box, R_.mat);
 m.position.set(x,1.2,z); m.castShadow = true; m.receiveShadow = true;
-const nut = new THREE.Mesh(new THREE.TorusGeometry(.28,.09,6,6),m.material);
+const nut = new THREE.Mesh(R_.torus, R_.mat);
 nut.rotation.x=Math.PI/2; nut.position.set(.15,.15,0); m.add(nut);
-const marker = canvasTex(128,64,(g,w,h)=>{g.fillStyle='#ffd54a';g.fillRect(0,0,w,h);g.fillStyle='#17252b';g.font='900 40px monospace';g.textAlign='center';g.fillText('FOD',w/2,46);});
-const label = new THREE.Sprite(new THREE.SpriteMaterial({map:marker,depthTest:false}));label.position.y=.6;label.scale.set(.95,.48,1);m.add(label);
-const csh=new THREE.Mesh(new THREE.PlaneGeometry(1.2,1.2),SHM);csh.rotation.x=-Math.PI/2;csh.position.y=-.13;m.add(csh);
+const label = new THREE.Sprite(R_.label);label.position.y=.6;label.scale.set(.95,.48,1);m.add(label);
+const csh=new THREE.Mesh(R_.sh,SHM);csh.rotation.x=-Math.PI/2;csh.position.y=-.13;m.add(csh);
 S.add(m);items.push({m,csh,data:{t:'fod',emoji:'🔩',name:I18N.t('جسم غريب'),imp:'FOD',div:'',isFod:true,isHz:false,isMys:false},st:'floor',fall:true,vy:0,ty:.2});
 snd('place');tip('foddrop', '🔩 سقط جسم غريب FOD!', '#ffd54a');
 }
@@ -1948,18 +1968,38 @@ STUDY.on = false; closeStudy();
 toast(I18N.T('⏱ انتهى وقت المراجعة — عُد إلى الوردية', '⏱ Review time is over — back to the shift'), '#ffd54a');
 }
 }
+/* مادة الطرد وظل قاعدته ملك له وحده: نحررهما عند إزالته (الخامات المخزّنة وموارد FOD مشتركة فلا تُحرَّر) */
+function disposeItem(it){
+if(!it || it.data.isFod || it.disposed) return;
+it.disposed = true;
+if(it.m.material && it.m.material.dispose) it.m.material.dispose();
+if(it.csh && it.csh.geometry) it.csh.geometry.dispose();
+}
 function rm(it){
 clearCrit(it);
 /* تحرير أي مرجع حمل يشير إلى الطرد المُتلف قبل إزالته من المشهد */
 const h = gameRules.hold.forget(it, { held, lifting: liftAnim.toHold });
 held = h.held;
 if(liftAnim.toHold && h.lifting === null){ liftAnim.active = false; liftAnim.t = 0; liftAnim.toHold = null; }
-S.remove(it.m); items = items.filter(i => i !== it);
+S.remove(it.m); disposeItem(it); items = items.filter(i => i !== it);
 }
+/* الشحن بوقت اللعبة (dt) لا بمؤقت حقيقي: لا نقاط ولا ثوانٍ أثناء الإيقاف أو إخفاء التبويب */
+let shipQueue = [];
 function ship(z){
 z.full = true;
 snd('ship');
-setTimeout(() => {
+shipQueue.push({ z, t: .9 });
+}
+function updateShips(dt){
+if(!shipQueue.length || dt <= 0) return;
+for(const q of shipQueue) q.t -= dt;
+const due = shipQueue.filter(q => q.t <= 0);
+if(!due.length) return;
+shipQueue = shipQueue.filter(q => q.t > 0);
+due.forEach(q => finishShip(q.z));
+}
+function finishShip(z){
+{
 if(!z.full) return;
 z.items.forEach(x => rm(x));
 z.items = []; z.full = false; if(z.hz) drawZoneSign(z);
@@ -1968,7 +2008,7 @@ time += 15;
 spawnFloatTag(I18N.T('+50 و +15 ث ⏱','+50 & +15s ⏱'), '#69f0ae');
 toast(I18N.T('🚚 شُحنت ','🚚 Shipped ') + z.n + I18N.T(' (+50 و +15 ث)',' (+50 and +15s)'), '#69f0ae');
 hud();
-}, 900);
+}
 }
 function resolvePlacement(z, it){
 const d = it.data;
@@ -2074,7 +2114,11 @@ function stopDrive(msg){
 if(!FD.on) return;
 FD.on = false; crewShow(true); forkDriver.visible = false;
 const ox = Math.cos(fk.rotation.y) * 2.1, oz = -Math.sin(fk.rotation.y) * 2.1;
-px.set(Math.max(-33, Math.min(33, fk.position.x + ox)), 0, Math.max(-11, Math.min(9.7, fk.position.z + oz)));
+/* النزول بجانب الرافعة في نقطة حرة فعلاً (الجانب الأيمن ثم الأيسر ثم أقرب مكان خالٍ) */
+const side = (sg) => ({ x: Math.max(-33, Math.min(33, fk.position.x + sg*ox)), z: Math.max(-11, Math.min(9.7, fk.position.z + sg*oz)) });
+let spot = side(1);
+if(blockedAt(spot.x, spot.z)){ const alt = side(-1); spot = blockedAt(alt.x, alt.z) ? findFreeSpot(spot.x, spot.z) : alt; }
+px.set(spot.x, 0, spot.z);
 if(held){
 const h = held; held = null;
 h.st = 'floor'; h.fall = true; h.vy = 0; h.ty = h.data.isFod ? .2 : 0.02 + BH;
@@ -2213,7 +2257,7 @@ function blockedAt(x, z, r = PLAYER_RADIUS){
     if(x + r > o.minX && x - r < o.maxX && z + r > o.minZ && z - r < o.maxZ) return true;
   for(const b of BOLLARDS)
     if(Math.hypot(x - b.x, z - b.z) < r + b.r) return true;
-  if(!FD.on && Math.abs(x - fk.position.x) < FK_HX + r && Math.abs(z - fk.position.z) < FK_HZ + r) return true;
+  if(!FD.on){ const fh = fkHalf(); if(Math.abs(x - fk.position.x) < fh.hx + r && Math.abs(z - fk.position.z) < fh.hz + r) return true; }
   return false;
 }
 function findFreeSpot(x, z, r = PLAYER_RADIUS){
@@ -2248,7 +2292,11 @@ function safeSpawnPlayer(){
   last = performance.now();
 }
 addEventListener('blur', clearMovement);
-document.addEventListener('visibilitychange', () => { if(document.hidden) clearMovement(); });
+/* التبويب المخفي يجمّد اللعبة، فنعلّق الصوت أيضاً (المحيط والارتطامات والصفارة) ونستأنفه عند العودة */
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){ clearMovement(); if(actx && actx.state === 'running') actx.suspend().catch(() => {}); try{ speechSynthesis.pause(); }catch(e){} }
+  else { if(actx && actx.state === 'suspended') actx.resume().catch(() => {}); try{ speechSynthesis.resume(); }catch(e){} }
+});
 R.domElement.tabIndex = 0;
 R.domElement.addEventListener('pointerdown', () => R.domElement.focus({preventScroll:true}));
 document.addEventListener('pointerdown', e => {
@@ -2291,7 +2339,8 @@ function start(){
 const td = tutorialDone();
 initAudio();
 stopVib();
-items.forEach(i => { clearCrit(i); S.remove(i.m); }); items = [];
+items.forEach(i => { clearCrit(i); S.remove(i.m); disposeItem(i); }); items = [];
+shipQueue = [];
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
 slowT = 0; beltSlowT = 0; beltSlowUsed = false; beltBtnMat.color.setHex(0x14e0b0); beltBtnMat.emissiveIntensity = 1; beltBtnHalo.scale.setScalar(1);
 score = 0; combo = 1; time = 100; spawnT = 0; held = null; stage = 1;
@@ -2513,22 +2562,29 @@ function autoWalkStep(ux, uz, spd, dt){
   const tryDir = (vx, vz) => {
     let x = px.x, z = px.z;
     for(let i = 0; i < steps; i++){
-      const r = resolvePlayerCollisions(x + vx * spd * stepDt, z + vz * spd * stepDt, vx, vz, stepDt);
+      const r = resolvePlayerCollisions(x + vx * spd * stepDt, z + vz * spd * stepDt, vx, vz, stepDt, { probe: true });
       x = r.x; z = r.z;
     }
     return { x, z, moved: Math.hypot(x - px.x, z - px.z) };
   };
+  /* الاتجاهات تُفحص بلا آثار، ثم يُنفَّذ الاتجاه المختار وحده بدفع الطرود الحقيقي */
+  const commit = (r) => {
+    for(let i = 0; i < steps; i++){
+      const c = resolvePlayerCollisions(px.x + r.vx * spd * stepDt, px.z + r.vz * spd * stepDt, r.vx, r.vz, stepDt);
+      px.x = c.x; px.z = c.z;
+    }
+    return r;
+  };
   let best = tryDir(ux, uz);
   best.vx = ux; best.vz = uz;
-  if(best.moved > want * 0.6) { px.x = best.x; px.z = best.z; return best; }
+  if(best.moved > want * 0.6) return commit(best);
   for(const off of [.35, -.35, .7, -.7, 1.05, -1.05, 1.4, -1.4, Math.PI/2, -Math.PI/2]){
     const c = Math.cos(off), s = Math.sin(off);
     const vx = ux * c - uz * s, vz = ux * s + uz * c;
     const r = tryDir(vx, vz);
     if(r.moved > best.moved){ r.vx = vx; r.vz = vz; best = r; }
   }
-  px.x = best.x; px.z = best.z;
-  return best;
+  return commit(best);
 }
 function resetExitGate(){
 EXIT_GATE.active = false; EXIT_GATE.phase = 'idle'; EXIT_GATE.t = 0; EXIT_GATE.open = 0; EXIT_GATE.warped = false;
@@ -2667,7 +2723,7 @@ addShake(.6);
 startFireBuzz();
 vib([600, 200, 600, 200, 900]);
 speakFireAlert();
-fire.siren = setInterval(() => { if(fire.active && fire.phase !== 'done'){ snd('fire'); vib([350, 160, 350]); } }, 7000);
+fire.siren = setInterval(() => { if(fire.active && fire.phase !== 'done' && run && !document.hidden){ snd('fire'); vib([350, 160, 350]); } }, 7000);
 toast('🚨 إنذار حريق — توجّه يميناً إلى منطقة التجمع', '#ff5252');
 hud();
 }
@@ -2818,6 +2874,8 @@ pa.x = Math.max(-33, Math.min(33, pa.x)); pa.z = Math.max(-11.9, Math.min(9.6, p
 }
 
 // ===== المفتش: يمر بسرعة مرة واحدة ويخالف الطرود المتروكة خارج المناطق =====
+/* ممرات المشاة الآمنة للمفتش — على المستوى الأعلى لأن resetInspector و caoOpen تستخدمانها خارج الإغلاق */
+const INSP_SAFE = { minZ: -2.2, maxZ: 5.8, zebraZ: 2.5, minX: -33.2, maxX: 33.2 };
 const inspector = (() => {
 const g = new THREE.Group();
 const procMesh = new THREE.Group();
@@ -2871,7 +2929,6 @@ scanRing.visible = false;
 S.add(scanRing);
 
 // ممرات المشاة الطبيعية للمفتش: تمنعه تماماً من السير داخل أقفاص الحاويات أو فوق الحزام أو عبر الرافعة والجدران
-const INSP_SAFE = { minZ: -2.2, maxZ: 5.8, zebraZ: 2.5, minX: -33.2, maxX: 33.2 };
 
 const I_ = { g, legs, arms, procMesh, scanRing, rig:null, glbRoot:null, active:false, state:"walk", targetItem:null, inspectT:0, pauseT:0, x:0, z:INSP_SAFE.zebraZ, targetZ:INSP_SAFE.zebraZ, dir:1, t:0, cooldown:0 };
 
@@ -3194,7 +3251,7 @@ I_.active = false; I_.g.visible = false; I_.done = false; I_.cooldown = 8; I_.el
 }
 function caoAnswer(opt){
 const it = caoQ.it;
-if(!it) return;
+if(!it || !caoQ.active || caoQ.answered) return;
 const ok = gameRules.cao.correct(opt);
 it.caoChecked = true;
 caoQ.answered = true;
@@ -3237,6 +3294,8 @@ if(caoQ.answered){
 const b = e.target.closest && e.target.closest('button[data-a]');
 if(!b) return;
 e.preventDefault(); e.stopPropagation();
+/* لا إجابة من فقاعة مخفية: الأزرار غير المرئية لا تمنح نقاطاً */
+if(!caoQ.active || !CAO_BUBBLE.classList.contains('in')) return;
 caoAnswer(b.dataset.a);
 });
 }
@@ -3258,6 +3317,7 @@ function loop(now){
 requestAnimationFrame(loop);
 const rawDt = (now - last) / 1000;
 let dt = document.hidden || rawDt > 1 ? 0 : Math.min(rawDt, .5); last = now;
+for(const L of FOD_PULSE) L.intensity = 0.8 + 0.5 * Math.sin(now / 260);
 /* نافذة قرار CAO تجمّد الوردية كلها حتى يُحسم القبول أو الرفض */
 if(caoQ.active){ dt = 0; updateCaoScene(Math.min(rawDt, .05)); }
 /* Hit-stop: تجميد لحظي لكل المحاكاة لإبراز الأثر الكبير */
@@ -3322,6 +3382,7 @@ if(feverT > 0){ feverT = Math.max(0, feverT - dt); if(feverT === 0) $('stage').c
 shakeTrauma = Math.max(0, shakeTrauma - dt * TRAUMA_DECAY);
 /* لوحة الفرز: تُحسب قبل حركة هذا الإطار حتى تُجمّد الساعة فور الوقوف أمامها */
 updateStudy(dt);
+if(run) updateShips(dt);
 if(run && !fire.keypad){
 if(!fire.active && !STUDY.on && (stage>=3 || demo.truck)) updateTruck(dt);
 const sprintOn = !held && !!(key.ShiftLeft || key.ShiftRight);
@@ -3334,10 +3395,16 @@ FD.left = Math.max(0, FD.left - dt);
 /* الاندفاع يسرّع الرافعة أيضاً */
 const dSpd = gameRules.forklift.driveSpeed * sprintK;
 if(l > .001) fk.rotation.y = Math.atan2(vx, vz);
+/* جسم الرافعة = دائرتان على محورها الطويل بنصف قطر halfZ بدل نصف قطر اللاعب، فلا تخترق الجدران */
+const fkR = FK_HZ, fkOff = FK_HX - FK_HZ, fy = fk.rotation.y, ohx = Math.sin(fy) * fkOff, ohz = Math.cos(fy) * fkOff;
 for(let step=0; step<steps; step++){
-const c = resolvePlayerCollisions(fk.position.x + vx * dSpd * stepDt, fk.position.z + vz * dSpd * stepDt, vx, vz, stepDt);
-fk.position.x = Math.max(-33.2, Math.min(33.2, c.x));
-fk.position.z = Math.max(-11.2, Math.min(9.7, c.z));
+let cx = fk.position.x + vx * dSpd * stepDt, cz = fk.position.z + vz * dSpd * stepDt;
+for(const sg of [1, -1]){
+const c = resolvePlayerCollisions(cx + sg*ohx, cz + sg*ohz, vx, vz, stepDt, { rad: fkR, yaw: fy, reach: gameRules.forklift.forkOffset - sg*fkOff });
+cx = c.x - sg*ohx; cz = c.z - sg*ohz;
+}
+fk.position.x = Math.max(-33.2, Math.min(33.2, cx));
+fk.position.z = Math.max(-11.2, Math.min(9.7, cz));
 }
 px.x = fk.position.x; px.z = fk.position.z;
 if(FD.left <= 0) stopDrive('⏱ انتهت مدة قيادة الرافعة (٦٠ ثانية)');
