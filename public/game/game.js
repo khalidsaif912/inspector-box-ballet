@@ -3155,7 +3155,7 @@ I_.g.visible = true;
 I_.z = z0;
 I_.targetZ = z0;
 I_.toX = x0;
-I_.x = Math.min(27, x0 + 5.5);
+I_.x = Math.min(32, x0 + 7.4);
 I_.g.rotation.y = -Math.PI / 2; // يواجه اتجاه مشيه أثناء الاقتراب
 I_.g.position.set(I_.x, 0, I_.z);
 CAO_BUBBLE.classList.remove('in');
@@ -3223,7 +3223,7 @@ it.st = 'belt';
 }
 /* الرسالة تبقى معروضة بوقت كافٍ للقراءة ثم ينسحب المفتش */
 clearTimeout(caoHoldT);
-caoHoldT = setTimeout(caoEnd, ok ? 2000 : 2500);
+caoHoldT = setTimeout(caoEnd, ok ? 4600 : 5600);
 hud();
 }
 if(CAO_PANEL){
