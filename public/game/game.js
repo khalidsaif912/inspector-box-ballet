@@ -1406,7 +1406,19 @@ const showSkip = hold && (demo.insp || demo.truck);
 e.innerHTML=html + (showSkip ? `<button class="skip-tutorial" id="skip-tutorial" type="button">${I18N.T('تخطي الإرشادات','Skip tutorial')}</button>` : '');e.classList.add('on');e.classList.toggle('wait',hold);
 placeToastBelowIntro();
 clearTimeout(introT);
-if(hold){ introHold=true; e.onclick=resumeFromIntro; run=false; clearMovement(); introT=setTimeout(resumeFromIntro,20000); }
+if(hold){
+  introHold=true; run=false; clearMovement(); e.onclick=resumeFromIntro;
+  const onGlobalResume = ev => {
+    if(ev.target && ev.target.id === 'skip-tutorial') return;
+    window.removeEventListener('pointerdown', onGlobalResume, true);
+    resumeFromIntro();
+  };
+  window.addEventListener('pointerdown', onGlobalResume, true);
+  introT=setTimeout(()=>{
+    window.removeEventListener('pointerdown', onGlobalResume, true);
+    resumeFromIntro();
+  },20000);
+}
 else { introHold=false; e.onclick=null; introT=setTimeout(()=>{e.classList.remove('on');placeToastBelowIntro();},ms); }
 const sk = e.querySelector('#skip-tutorial');
 if(sk) sk.onclick = ev => { ev.stopPropagation(); skipTutorial(); };
@@ -1443,11 +1455,13 @@ I_.active=true;I_.g.visible=true;I_.t=0;
 I_.g.position.set(I_.x,0,I_.z);
 I_.g.rotation.y=I_.dir>0?Math.PI/2:-Math.PI/2;
 document.getElementById('inspector-badge').classList.add('on');snd('whistle');
-showIntro(I18N.T('<b class="t">🦺 المفتش</b>يغرّم كل طرد متروك خارج مناطق الفرز.<small>جولة تعريفية — بلا غرامات</small><span class="hint">⏸ اللعبة متوقفة — اضغط في أي مكان للمتابعة</span>', '<b class="t">🦺 Inspector</b>Fines every parcel left outside the sorting zones.<small>Intro round — no fines</small><span class="hint">⏸ Game paused — press anywhere to resume</span>'),0,true);
+/* لا نوقف اللعبة عند قدوم المفتش؛ يدخل في دورية حية وتستمر اللعبة بسلاسة وبلا تجميد */
+showIntro(I18N.T('<b class="t">🦺 جولة المفتش</b>يغرّم كل طرد متروك خارج مناطق الفرز.<small>دورية تفتيشية مباشرة — حافظ على نظافة الممرات والأرضيات!</small>', '<b class="t">🦺 Inspector on Patrol</b>Fines every parcel left outside sorting zones.<small>Live inspection patrol — keep walkways clear!</small>'), 4500, false);
 }
 function startTruckDemo(){
 demo.truck=true;truckState=gameRules.reset();truckState.elapsed=gameRules.startAt;snd('horn');
-showIntro(I18N.T('<b class="t">🚜 الرافعة الشوكية</b>تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.<small>جولة تعريفية — لن تصطدم بك</small><span class="hint">⏸ اللعبة متوقفة — اضغط في أي مكان للمتابعة</span>', '<b class="t">🚜 Forklift</b>Drops foreign objects (FOD); collect them and put them in the red bin.<small>Intro round — it won\'t hit you</small><span class="hint">⏸ Game paused — press anywhere to resume</span>'),0,true);
+/* جولة حية دون إيقاف سير اللعبة */
+showIntro(I18N.T('<b class="t">🚜 الرافعة الشوكية</b>تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.<small>جولة تدريبية مباشرة — انتبه أثناء العمل!</small>', '<b class="t">🚜 Forklift Operating</b>Drops foreign objects (FOD); collect them and put them in the red bin.<small>Live training round — stay alert!</small>'), 4500, false);
 }
 const beltSpeed=()=> gameRules.layout.beltSpeed(stage, feverT > 0);
 let sortedCount=0, totalProcessed=0;
@@ -3209,16 +3223,27 @@ it.st = 'belt';
 }
 /* الرسالة تبقى معروضة بوقت كافٍ للقراءة ثم ينسحب المفتش */
 clearTimeout(caoHoldT);
-caoHoldT = setTimeout(caoEnd, ok ? 4600 : 5600);
+caoHoldT = setTimeout(caoEnd, ok ? 2000 : 2500);
 hud();
 }
 if(CAO_PANEL){
-/* نفس نمط لوحة الطوارئ المجرَّب: تفويض النقر على الحاوية مع closest */
+/* تفويض النقر: الإجابة على السؤال، أو النقر في أي مكان بعد الإجابة للاستئناف الفوري دون انتظار */
 CAO_PANEL.addEventListener('click', e => {
+if(caoQ.answered){
+  e.preventDefault(); e.stopPropagation();
+  caoEnd();
+  return;
+}
 const b = e.target.closest && e.target.closest('button[data-a]');
 if(!b) return;
 e.preventDefault(); e.stopPropagation();
 caoAnswer(b.dataset.a);
+});
+}
+if(CAO_SAY){
+CAO_SAY.addEventListener('click', e => {
+  e.preventDefault(); e.stopPropagation();
+  caoEnd();
 });
 }
 let last = performance.now();
