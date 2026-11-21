@@ -1,17 +1,16 @@
 /* ===== هيكل عظمي إجرائي لشخصية المفتش الجديد (GLB) =====
-   نموذج base_2.glb مجسّم مفتش متكامل (قبعة، رأس، سترة، شارة، بنطال، حذاء، يدين).
-   نبني هنا 9 عظام متوافقة مع أبعاد النموذج (1.9م) ونتيح تحريكه بمشية فحص واثقة. */
+   نموذج مفتش رسمي بملامح عربية متناسقة، غترة بيضاء وعقال ملكي، فست برتحالي تحذيري، وأذرع طبيعية. */
 (function () {
   "use strict";
 
   var B = { hips: 0, torso: 1, armL: 2, armR: 3, head: 4, legL: 5, legR: 6, shinL: 7, shinR: 8 };
 
-  // [الأب, x, y, z] — أبعاد المفتش بارتفاع ~1.9م
+  // [الأب, x, y, z] — أبعاد المفتش بمحاذاة طبيعية للكتفين
   var REST = [
     [-1, 0, 0.94, 0],       // 0: hips
     [0, 0, 0, 0],           // 1: torso
-    [1, -0.32, 0.55, 0],    // 2: armL
-    [1, 0.32, 0.55, 0],     // 3: armR
+    [1, -0.24, 0.54, 0],    // 2: armL (الكتف الأيسر بموضعه الطبيعي)
+    [1, 0.24, 0.54, 0],     // 3: armR (الكتف الأيمن بموضعه الطبيعي)
     [1, 0, 0.65, 0],        // 4: head
     [0, -0.16, -0.05, 0],   // 5: legL
     [0, 0.16, -0.05, 0],    // 6: legR
@@ -19,11 +18,20 @@
     [6, 0, -0.45, 0],       // 8: shinR
   ];
 
-  var KNEE = 0.50, KNEE_BAND = 0.08, ARM_X = 0.22, HEAD_Y = 1.60, HIP_Y = 0.94;
+  var KNEE = 0.50, KNEE_BAND = 0.08, HEAD_Y = 1.60, HIP_Y = 0.94;
 
   function weight(x, y, id, wt) {
     if (y >= HEAD_Y) { id[0] = B.head; wt[0] = 1; return; }
-    if (Math.abs(x) >= ARM_X && y >= 0.85) { id[0] = x < 0 ? B.armL : B.armR; wt[0] = 1; return; }
+    var ax = Math.abs(x);
+    if (y >= 0.85) {
+      var limit = 0.26 - (y - 0.90) * 0.09;
+      if (ax >= limit - 0.04) {
+        var aw = Math.min(1, Math.max(0, (ax - (limit - 0.04)) / 0.08));
+        id[0] = x < 0 ? B.armL : B.armR; wt[0] = aw;
+        if (aw < 1) { id[1] = B.torso; wt[1] = 1 - aw; }
+        return;
+      }
+    }
     if (y < HIP_Y) {
       var side = x < 0 ? B.legL : B.legR;
       var shin = x < 0 ? B.shinL : B.shinR;
@@ -86,35 +94,35 @@
             var flat = [];
             src.traverse(function (o) { if (o.isMesh) flat.push(o); });
 
-            // مواد PBR ملونة ومفصلة لشخصية المفتش العربي الرسمي
+            // مواد PBR دقيقة لشخصية المفتش الرسمي
             var matVest = new THREE.MeshStandardMaterial({
-              color: 0x1b2838, // سديرية كحلية رسمية
-              roughness: 0.60,
+              color: 0xff6a00, // سديرية / فست برتقالي تحذيري واضح (Safety Orange)
+              roughness: 0.50,
               metalness: 0.05,
               skinning: true
             });
             var matThobe = new THREE.MeshStandardMaterial({
-              color: 0xf5f7fb, // ثوب أبيض ناصع وغترة بيضاء
+              color: 0xf5f7fb, // ثوب وغترة بيضاء ناصعة
               roughness: 0.65,
               metalness: 0.02,
               skinning: true
             });
             var matSkin = new THREE.MeshStandardMaterial({
-              color: 0xc88054, // بشرة عربية حنطية دافئة
+              color: 0xc88256, // ملامح وبشرة عربية حنطية دافئة متناسقة
               roughness: 0.55,
               metalness: 0.02,
               skinning: true
             });
             var matGold = new THREE.MeshStandardMaterial({
-              color: 0xfbbf24, // نجمة التفتيش الذهبية اللامعة والكركوشة
+              color: 0xfbbf24, // شارة التفتيش الذهبية اللامعة والكركوشة
               roughness: 0.20,
               metalness: 0.85,
               skinning: true
             });
-            var matHair = new THREE.MeshStandardMaterial({
-              color: 0x241710, // الشارب والحاجبين بلون بني داكن
-              roughness: 0.70,
-              metalness: 0.02,
+            var matEqal = new THREE.MeshStandardMaterial({
+              color: 0x18181b, // عقال ملكي أسود فاحم حول الجبهة
+              roughness: 0.85,
+              metalness: 0.05,
               skinning: true
             });
             var matSandals = new THREE.MeshStandardMaterial({
@@ -139,12 +147,12 @@
                 mat = matSkin;
               } else if (n === "root0" || (geo.index && geo.index.count === 365040)) {
                 geo.clearGroups();
-                geo.addGroup(0, 151161, 0);     // 0: Vest (Navy)
-                geo.addGroup(151161, 126285, 1); // 1: Thobe (Turban, sleeves, placket)
-                geo.addGroup(277446, 68196, 2);  // 2: Skin (Face, head, neck)
-                geo.addGroup(345642, 17847, 3);  // 3: Gold (Star badge, tassel)
-                geo.addGroup(363489, 1551, 4);   // 4: Hair (Mustache, eyebrows)
-                mat = [matVest, matThobe, matSkin, matGold, matHair];
+                geo.addGroup(0, 151161, 0);     // 0: Vest (Orange)
+                geo.addGroup(151161, 126285, 1); // 1: Thobe & Ghutra (White)
+                geo.addGroup(277446, 58311, 2);  // 2: Skin (Harmonious face & neck)
+                geo.addGroup(335757, 17847, 3);  // 3: Gold (Star badge, tassel)
+                geo.addGroup(353604, 11436, 4);  // 4: Eqal (Royal black headband)
+                mat = [matVest, matThobe, matSkin, matGold, matEqal];
               } else {
                 mat = matThobe;
               }
@@ -188,10 +196,11 @@
         torsoX: mv ? 0.04 : 0,
         headY: mv ? sw * 0.05 : idle * 0.5,
         headX: 0,
-        armLX: mv ? -sw * amp * 0.75 : idle * 0.4,
-        armRX: mv ? sw * amp * 0.75 : -idle * 0.4,
-        armLZ: 0.06,
-        armRZ: -0.06,
+        // أذرع مسترخية محاذية للجسم وتتأرجح للأمام والخلف بانسيابية
+        armLX: mv ? -sw * amp * 0.50 : idle * 0.25,
+        armRX: mv ? sw * amp * 0.50 : -idle * 0.25,
+        armLZ: 0.02,
+        armRZ: -0.02,
         legLX: mv ? sw * amp : 0,
         legRX: mv ? -sw * amp : 0,
         shinLX: mv ? Math.max(0, -cw) * amp * 1.3 + 0.04 : 0.02,
