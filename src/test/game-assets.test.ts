@@ -180,8 +180,9 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain(
       "const inZone = run && !fire.active && !fire.keypad && !EXIT_GATE.active && !introHold && !FD.on &&",
     );
-    expect(game).toContain("if(!fire.active && !STUDY.on) time -= dt;");
-    expect(game).toContain("const beltK = (fire.active || STUDY.on) ? 0");
+    // الإنذار لا يجمّد اللعبة: يتوقف الوقت والحزام فقط أثناء إدخال الرقم أو المراجعة
+    expect(game).toContain("if(!fire.keypad && !STUDY.on){ time -= dt; evt.t += dt; }");
+    expect(game).toContain("const beltK = (fire.keypad || STUDY.on) ? 0");
     // المراجعة تُعاد ضبطها مع كل جولة
     expect(game).toContain("STUDY.left = STUDY.total; STUDY.on = false; closeStudy();");
     expect(html).toContain('id="study"');

@@ -1690,7 +1690,7 @@ hideIntro(); run=true; pz=false; last=performance.now(); clearMovement();
 try { R.domElement.focus({preventScroll:true}); } catch(e){}
 }
 function startInspDemo(){
-const I_=inspector;demo.insp=true;I_.demo=true;I_.dir=Math.random()<.5?1:-1;
+const I_=inspector;demo.insp=true;I_.demo=true;evt.patrol++;evt.lastInsp=evt.t;I_.dir=Math.random()<.5?1:-1;
 I_.z=INSP_SAFE.zebraZ; I_.targetZ=INSP_SAFE.zebraZ; I_.x=-INSP_SAFE.maxX*I_.dir;
 I_.active=true;I_.g.visible=true;I_.t=0;
 I_.g.position.set(I_.x,0,I_.z);
@@ -1934,6 +1934,25 @@ hud();
 /* المفتش يسأل عن شحنات CAO ثلاث مرات فقط في الوردية.
    لذلك نحدّ ظهور شحنات CAO بنفس العدد: لا شحنة تُمرّ بلا سؤال ولا سؤال زائد. */
 const caoRun = { spawned: 0, placardUsed: false };
+/* ===== جدولة أحداث الوردية عشوائياً بلا تعارض =====
+   • المفتش (أسئلة CAO) ثلاث مرات في أوقات عشوائية متباعدة، وجولاته مرتبطة بالتباعد نفسه.
+   • إنذار الحريق مرة واحدة في وقت عشوائي، ولا يبدأ إلا حين لا يكون هناك مفتش أو سؤال أو شاحنة أو لغز أو قيادة رافعة. */
+const evt = { t: 0, fireAt: 70, caoAt: [30, 75, 130], caoIdx: 0, patrol: 0, lastInsp: -999 };
+const rnd = (a, b) => a + Math.random() * (b - a);
+function evtReset(){
+  evt.t = 0; evt.caoIdx = 0; evt.patrol = 0; evt.lastInsp = -999;
+  evt.caoAt = [rnd(15, 40), rnd(60, 90), rnd(110, 145)];
+  let f = rnd(45, 110);
+  for(let i = 0; i < 30 && evt.caoAt.some(c => Math.abs(c - f) < 22); i++) f = rnd(45, 120);
+  evt.fireAt = f;
+}
+function evtAllowPatrol(){
+  return evt.patrol < 3 && evt.t >= 14 && evt.t - evt.lastInsp >= 40 && !items.some(i => i.data.cao && !i.caoChecked);
+}
+function fireSafe(){
+  return time > 20 && !inspector.active && !caoQ.active && !truckState.active && !STUDY.on && !FD.on && !frzP.active && !FRZ.pending &&
+    !introHold && !liftAnim.active && rushN === 0 && !items.some(i => i.data.cao && !i.caoChecked) && evt.t - evt.lastInsp >= 12;
+}
 function caoSwap(raw){
   const pool = HZ.filter(h => !gameRules.cao.isCao(h[3]));
   return pool[Math.random() * pool.length | 0] || raw;
@@ -1946,9 +1965,13 @@ const list = stage===4 ? HZ : ((stage>=2 && Math.random() < (stage===3?0.6:0.45)
 let raw = (stage>=2 && stage<4 && Math.random() < 0.13 && !items.some(i => i.data.isMys)) ? MYS : list[Math.random()*list.length | 0];
 /* طرد مجمّد عشوائي: واحد فقط في كل مرة، ولا يظهر أثناء حمل/انتظار لغز الباب */
 if(raw !== MYS && gameRules.freezer.shouldSpawn({ processed: totalProcessed, present: items.some(i => i.data.isFrz) || frzP.active, rng: Math.random })) raw = FRZ_RAW;
-/* سقف أسئلة المفتش: أي شحنة CAO بعد الحد الأقصى تُستبدل بشحنة خطرة عادية */
-const isCaoRaw = raw[0][0]==='h' && gameRules.cao.isCao(raw[3]);
-if(isCaoRaw && caoRun.spawned >= gameRules.cao.maxAsks) raw = caoSwap(raw);
+/* شحنات CAO (أسئلة المفتش) تظهر فقط في الأوقات المجدولة العشوائية (٣ مرات) ومتباعدة؛ غير ذلك تُستبدل بشحنة خطرة عادية */
+const caoDue = evt.caoIdx < gameRules.cao.maxAsks && evt.t >= evt.caoAt[evt.caoIdx] && !fire.active && !inspector.active && !caoQ.active &&
+  !items.some(i => i.data.cao && !i.caoChecked) && evt.t - evt.lastInsp >= 25;
+if(caoDue){
+  const pool = HZ.filter(h => gameRules.cao.isCao(h[3]));
+  if(pool.length){ raw = pool[Math.random() * pool.length | 0]; evt.caoIdx++; }
+} else if(raw[0][0]==='h' && gameRules.cao.isCao(raw[3])) raw = caoSwap(raw);
 const caoParcel = raw[0][0]==='h' && gameRules.cao.isCao(raw[3]);
 /* الشحنة الأولى فقط تحمل لوحة DANGER الحقيقية بدقة عالية */
 const placard = caoParcel && !caoRun.placardUsed;
@@ -2408,7 +2431,7 @@ function frzDrop(it, x){
   FRZ.pending = it;
   frzOpenPuzzle();
 }
-function inFrzZone(x, z){ return Math.abs(x - FRZ.x) < FRZ.hw && z < -4.8; }
+function inFrzZone(x, z){ return Math.abs(x - FRZ.x) < FRZ.hw + 0.9 && z < -3.4; }   // منطقة الإسقاط أمام الغرفة (أوسع من الحصيرة كي لا يصعب الوقوف فيها)
 function updateFreezer(dt){
   const want = FRZ.open ? 1 : 0;
   FRZ.openAmt += (want - FRZ.openAmt) * Math.min(1, dt * 5);
@@ -2781,7 +2804,7 @@ $('dash-fx').classList.remove('on'); $('stage').classList.remove('fever'); setDa
 demo = {insp:false,truck:false,inspDone:td,truckDone:td,truckIn:0}; inspector.demo = false; hideIntro();
 sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false;
 /* كل وردية جديدة تبدأ بحصة ٣ أسئلة للمفتش وشحنة ملصق واحدة */
-resetCaoRun();
+resetCaoRun(); evtReset();
 $('rules').style.display = 'none';
 resetExitGate();
 resetFire();
@@ -3241,7 +3264,7 @@ alarmFlash.group.visible = false;
 alarmFlash.redLight.intensity = alarmFlash.whiteLight.intensity = 0;
 $('stage').classList.remove('fire');
 $('cp-err').textContent = '';
-clearMovement(); last = performance.now();
+clearMovement(); last = performance.now(); evt.lastInsp = Math.max(evt.lastInsp, evt.t - 15);   // بعد الإنذار يمهل المفتش قليلاً
 if(msg) toast(msg, '#64ffda');
 hud();
 }
@@ -3408,6 +3431,7 @@ if(I_.done) return;
 I_.elapsed = (I_.elapsed||0) + dt;
 I_.cooldown -= dt;
 if(I_.cooldown > 0) return;
+if(!evtAllowPatrol()) return;
 const bad = items.filter(i => i.st === 'floor' && !i.data.isFod && !i.fall && !i.fined && (i.floorT = (i.floorT||0) + dt) > 2.5);
 if(!bad.length && I_.elapsed < 30) return;
 const cand = bad.length ? bad : items.filter(i => i.st === 'floor' && !i.data.isFod && !i.fall && !i.fined);
@@ -3431,7 +3455,7 @@ I_.dir = Math.random() < 0.5 ? 1 : -1;
 I_.z = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, patrolZ));
 I_.targetZ = I_.z;
 I_.x = -INSP_SAFE.maxX * I_.dir; // البداية من عتبة باب المستودع داخل المبنى
-I_.active = true; I_.g.visible = true; I_.t = 0;
+I_.active = true; I_.g.visible = true; I_.t = 0; evt.patrol++; evt.lastInsp = evt.t;
 I_.state = 'walk';
 I_.targetItem = null;
 I_.inspectT = 0;
@@ -3633,7 +3657,7 @@ caoPlace();
 }
 function caoOpen(it){
 const f = gameRules.cao.flightFor(Math.round(it.m.position.x) + totalProcessed);
-caoQ.active = true; caoQ.answered = false; caoQ.it = it; caoQ.flight = f;
+caoQ.active = true; caoQ.answered = false; caoQ.it = it; caoQ.flight = f; evt.lastInsp = evt.t;
 const placardQ = !!it.data.placard;
 $('cao-item').textContent = it.data.name + ' • ' + it.data.imp + ' / ' + it.data.div;
 $('cao-flight').textContent = I18N.T('الرحلة ','Flight ') + (f.id + ' · ' + f.from + ' ✈ ' + f.to) + I18N.T(' — طائرة ركاب',' — passenger aircraft');
@@ -3873,21 +3897,21 @@ px.x = correctedPos.x; px.z = correctedPos.z;
 if(!FD.on) anim(dt, liftAnim.active ? 0 : animSpd, vx, vz);
 FD.near = !FD.on && FD.left > 0 && Math.hypot(px.x - fk.position.x, px.z - fk.position.z) < 4.2;
 /* المراجعة أمام اللوحة تجمّد ساعة الوردية والأحداث كلها */
-if(!fire.active && !STUDY.on) time -= dt;
+if(!fire.keypad && !STUDY.on){ time -= dt; evt.t += dt; }   // الإنذار لا يجمّد الوقت؛ يتوقف فقط أثناء إدخال الرقم
 if(time <= 20){
 warnTicker += dt;
 if(warnTicker > 1){ snd('warn'); warnTicker = 0; }
 }
 if(time <= 0){ time = 0; hud(); end(); }
-if(!fire.active && !fire.done && time > 0 && time <= 30) startFireDrill();
+if(!fire.active && !fire.done && evt.t >= evt.fireAt && fireSafe()) startFireDrill();
 if(stage===1){
-if(!demo.inspDone){ if(!demo.insp && (score >= 20 || time <= 90)) startInspDemo(); }
+if(!demo.inspDone){ if(!demo.insp && (score >= 20 || time <= 90) && !fire.active && !caoQ.active && !inspector.active && !items.some(i => i.data.cao && !i.caoChecked)) startInspDemo(); }
 else if(!demo.truckDone && !demo.truck){
 demo.truckIn = Math.max(0, demo.truckIn - dt);
 if(demo.truckIn <= 0) startTruckDemo();
 }
 }
-if(stage<4 && score >= STAGE_AT[stage+1]) setStage(gameRules.layout.stageForScore(stage, score));if(!fire.active && !STUDY.on){
+if(stage<4 && score >= STAGE_AT[stage+1]) setStage(gameRules.layout.stageForScore(stage, score));if(!fire.keypad && !STUDY.on){
 spawnT -= dt;
 if(spawnT <= 0){
 spawn();
@@ -3912,6 +3936,11 @@ if(rushN === 0) spawnT = Math.max(spawnT, BREATH_SPAWN[stage] * 1.4);
 }
 if(streakT > 0 && !STUDY.on){ streakT -= dt; if(streakT <= 0){ streakT = 0; streak = 0; combo = 1; } }
 for(const it of items.slice()){
+/* الطرد المجمّد المتروك على الأرض أمام غرفة التجميد (بأي طريقة: إسقاط عادي أو سريع أو رافعة) يفتح لوحة اللغز تلقائياً */
+if(it.data.isFrz){
+  if(it.st === 'floor' && !it.fall && inFrzZone(it.m.position.x, it.m.position.z)){ if(!it.frzAsked){ it.frzAsked = true; frzDrop(it, it.m.position.x); } }
+  else if(it.st !== 'floor' || !inFrzZone(it.m.position.x, it.m.position.z)) it.frzAsked = false;
+}
 if(it.st !== 'floor' || it.fall) continue;
 const zz = Z.find(z => (it.data.isFod ? z.k==='fod' : z.k!=='fod') && Math.abs(it.m.position.x - z.x) < z.hw && it.m.position.z < -5.6 && !z.full);
 if(zz){ it.st = 'sorting'; resolvePlacement(zz, it); }
@@ -3926,7 +3955,7 @@ if(jy){
 }
 slowT = STUDY.on ? slowT : Math.max(0, slowT - dt);
 beltSlowT = STUDY.on ? beltSlowT : Math.max(0, beltSlowT - dt);
-const beltK = (fire.active || STUDY.on) ? 0 : (slowT > 0 ? 0.35 : (beltSlowT > 0 ? 0.6 : 1));
+const beltK = (fire.keypad || STUDY.on) ? 0 : (slowT > 0 ? 0.35 : (beltSlowT > 0 ? 0.6 : 1));
 let best = null, bd = 2.8;
 for(const it of items.slice()){
 it.csh.visible = it.st !== 'held' && it.st !== 'lifting';

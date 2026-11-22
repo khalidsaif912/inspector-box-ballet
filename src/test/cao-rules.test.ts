@@ -125,8 +125,10 @@ describe("CAO wiring in the game", () => {
 
   it("asks the inspector at most three times per shift", () => {
     expect(cao.maxAsks).toBe(3);
-    expect(game).toMatch(/caoRun\.spawned >= gameRules\.cao\.maxAsks/);
-    expect(game).toContain("resetCaoRun();");
+    // الأسئلة مجدولة عشوائياً (ثلاث مرات متباعدة) ولا تتجاوز الحد
+    expect(game).toMatch(/evt\.caoIdx < gameRules\.cao\.maxAsks/);
+    expect(game).toMatch(/evt\.t - evt\.lastInsp >= 25/);
+    expect(game).toContain("resetCaoRun(); evtReset();");
   });
 
   it("ships one high-resolution CARGO ONLY placard per shift", () => {
