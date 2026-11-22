@@ -15,10 +15,24 @@
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <script>
-/* تسخين الذاكرة المؤقتة: نبدأ تنزيل مجسّم الشخصية المختارة والرافعة فوراً بالتوازي مع تحميل السكربتات وبناء المشهد */
+/* تنزيل مبكر: نبدأ جلب مجسّم الشخصية المختارة والرافعة فوراً (قبل السكربتات) ونحتفظ بالبايتات،
+   ثم يستعملها GLTFLoader مباشرة بدل تنزيل الملف مرة ثانية. */
 (function(){ try {
   var id = 'worker'; try { var v = localStorage.getItem('acg_char'); if (v === 'timmy') id = v; } catch(e){}
-  ['game/models/mixamo-' + id + '.glb', 'game/models/forklift.glb'].forEach(function(u){ fetch(u).then(function(r){ return r.arrayBuffer(); }).catch(function(){}); });
+  var pre = window.__pre = {};
+  ['game/models/mixamo-' + id + '.glb', 'game/models/forklift.glb'].forEach(function(u){
+    var e = pre[u] = { loaded: 0, total: 0, subs: [] };
+    e.p = fetch(u).then(function(r){
+      e.total = +r.headers.get('content-length') || 0;
+      if (!r.body || !r.body.getReader) return r.arrayBuffer();
+      var rd = r.body.getReader(), chunks = [];
+      return rd.read().then(function pump(x){
+        if (x.done) { var n = 0, o; chunks.forEach(function(c){ n += c.length; }); o = new Uint8Array(n); n = 0; chunks.forEach(function(c){ o.set(c, n); n += c.length; }); return o.buffer; }
+        chunks.push(x.value); e.loaded += x.value.length; e.subs.forEach(function(f){ f(e.loaded, e.total); });
+        return rd.read().then(pump);
+      });
+    });
+  });
 } catch(e){} })();
 </script>
 <link rel="stylesheet" href="game/game.css">
@@ -267,6 +281,18 @@
 </script>
 <script src="vendor/three.min.js"></script>
 <script src="vendor/GLTFLoader.js"></script>
+<script>
+(function(){ var L = THREE.GLTFLoader.prototype, orig = L.load;
+  L.load = function(url, onLoad, onProgress, onError){
+    var e = window.__pre && window.__pre[url];
+    if (!e) return orig.apply(this, arguments);
+    var self = this, base = url.slice(0, url.lastIndexOf('/') + 1);
+    delete window.__pre[url];
+    if (onProgress) { e.subs.push(function(l, t){ onProgress({ loaded: l, total: t || l, lengthComputable: !!t }); }); onProgress({ loaded: e.loaded, total: e.total, lengthComputable: !!e.total }); }
+    e.p.then(function(buf){ self.parse(buf, base, onLoad, onError || function(){}); }, function(){ orig.call(self, url, onLoad, onProgress, onError); });
+  };
+})();
+</script>
 <script src="game/crew-rig.js"></script>
 <script src="game/character-rig.js"></script>
 <script src="game/mixamo-rig.js"></script>

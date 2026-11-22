@@ -4,6 +4,7 @@ function lrp(cur, target, k){ return cur + (target - cur) * k; }
 /* ===== شاشة التحميل: تقدّم فعلي = متوسط موزون لمهام حقيقية =====
    المشهد (بناء الخامات والشيدرات) + ملفات المجسّمات التي تُنزَّل فعلاً (بايتات حقيقية) + الخلفية.
    لا يُخفى الشاشة إلا بعد رسم أول إطار واكتمال كل المهام (أو فشلها بوضوح). */
+const afterLoad = (() => { const q = []; let ok = false; const f = fn => { if(ok) setTimeout(fn, 0); else q.push(fn); }; f.run = () => { ok = true; q.splice(0).forEach(fn => setTimeout(fn, 0)); }; return f; })();
 const loading = (() => {
 const screen = document.getElementById('loading-screen');
 const fill = document.getElementById('loading-bar-fill');
@@ -69,7 +70,8 @@ clearTimeout(safety); clearInterval(tipTimer);
 if(tasks.scene){ tasks.scene.f = 1; tasks.scene.state = 'ok'; row(tasks.scene); }
 paint(100);
 if(screen) screen.setAttribute('aria-busy', 'false');
-setTimeout(() => { if(screen) screen.classList.add('hidden'); }, 450);
+setTimeout(() => { if(screen) screen.classList.add('hidden'); }, 250);
+afterLoad.run();
 }
 /* يُستدعى بعد رسم أول إطار: ننتظر باقي المهام إن كانت قيد التنزيل */
 function frameReady(){ sceneFirstFrame = true; if(tasks.scene){ tasks.scene.f = 1; tasks.scene.state = 'ok'; row(tasks.scene); } recompute(); settle(); }
@@ -600,21 +602,23 @@ B(0.12, 2.6, 0.2, 0x2a2a2a, 0, 1.3, 1.2, fk, 0.5, 0.6);
 const fkBoxParts = fk.children.slice();
 const recklessTruck = fk.clone(); S.add(recklessTruck); recklessTruck.visible = false;
 const truckBoxParts = recklessTruck.children.slice();
-/* رافعة شوكية بمجسّم Low Poly (Ricardo Sanchez، CC BY 4.0 — Sketchfab): تحلّ محل الصناديق عند نجاح التحميل،
+/* رافعة شوكية بمجسّم Low Poly (Kolos Studios، CC BY 4.0 — Sketchfab): تحلّ محل الصناديق عند نجاح التحميل،
    وتبقى الصناديق احتياطاً عند الفشل. المحور المحلي: +z للأمام (الشوكتان)، الوحدات سم → متر بمقياس واحد. */
 (function loadForkliftModel(){
   if(!THREE.GLTFLoader) return;
   const lt = loading.track('forklift', 'الرافعة الشوكية', 12);
   new THREE.GLTFLoader().load('game/models/forklift.glb', g => {
     try {
-      const src = g.scene, SC = 0.0175, SHIFT_Z = 0.665;   // السقف ≈ قامة الموظف (3.6)، الطول ≈ 6.5، العرض ≈ 2
+      const src = g.scene, SC = 0.028, SHIFT_Z = 0.1;   // الطول ≈ 6.5، العرض ≈ 2.4، ارتفاع السقف ≈ 4 (يتّسع لقامة الموظف 3.6 جالساً)
+      src.updateMatrixWorld(true);
+      const bx = new THREE.Box3().setFromObject(src);   // مركز النموذج الأصلي بعيد عن الأصل: نُعيد توسيطه وننزله على الأرض
       src.traverse(o => { if(o.isMesh){
         o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
         [].concat(o.material).forEach(m => { if(m.map) m.map.encoding = THREE.sRGBEncoding; if('metalness' in m) m.metalness = .1; if('roughness' in m) m.roughness = .8; m.needsUpdate = true; });
       }});
       const put = (parent, boxes) => {
         const holder = new THREE.Group(), m = parent === fk ? src : src.clone();
-        m.scale.setScalar(SC); m.position.set(0, 0.0249, SHIFT_Z);
+        m.scale.setScalar(SC); m.position.set(-(bx.min.x + bx.max.x) / 2 * SC, -bx.min.y * SC, -(bx.min.z + bx.max.z) / 2 * SC + SHIFT_Z);
         holder.add(m); parent.add(holder); boxes.forEach(b => { b.visible = false; });
       };
       put(fk, fkBoxParts); put(recklessTruck, truckBoxParts);
@@ -1027,8 +1031,8 @@ const HERO = { obj: null, inst: null, ready: false, loading: false, err: null };
 window.__hero = HERO;
 /* شخصيات Mixamo: مجسّم + حركات مسجّلة حقيقية، يحمّلها مُحمّل واحد مشترك (mixamo-rig.js) */
 const MIX = {
-  worker: { url: 'game/models/mixamo-worker.glb', obj: null, inst: null, ready: false, loading: false, err: null },
-  timmy:  { url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null }
+  worker: { seat: { z: -2.15, arm: 1.2, fore: -0.6 }, url: 'game/models/mixamo-worker.glb', obj: null, inst: null, ready: false, loading: false, err: null },
+  timmy:  { seat: { z: -1.7, arm: 1.5, fore: -0.5 }, url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null }
 };
 /* الشخصيات: worker و timmy (Mixamo) · hero (3D) · crew (المجسّم الثابت) · rig (الإجرائي) */
 const CHAR_IDS = ['worker', 'timmy'];
@@ -1084,6 +1088,7 @@ function loadMixamo(id, attempt){
   }).then(o => {
     lt.done();
     M.obj = o.root; M.inst = o; M.ready = true; M.loading = false;
+    o.seatZ = M.seat.z; Object.assign(o.sitCfg, { arm: M.seat.arm, fore: M.seat.fore });   // وضع الجلوس مضبوط لكل شخصية على مقعد الرافعة ومقودها
     pl.add(o.root); if(CHAR.id === id) charStatus(''); applyCrewMode();
     loadSeatCrew();
     console.log('[' + id + '] mixamo glb ready');
@@ -1289,7 +1294,7 @@ const PLAYER_RADIUS = 0.45;
    وذراعان إلى المقود. تُركّب داخل forkDriver حتى تبقى ظهورها/إخفاءها كما هي. */
 const HIP_REF = 1.824;             // ارتفاع الحوض في قالب الشخصية (3.6م)
 /* مقعد الرافعة الجديدة (النموذج الكبير): السائق بحجم اللاعب كاملاً (s=1) والحوض فوق وسادة المقعد */
-const SEAT = { s: 1, hips: 1.62, z: -0.42 };
+const SEAT = { s: 1, hips: 3.05, z: -2.15 };
 const SEAT_CREW = { fork: null, truck: null, tried: false };
 function seatCrewInto(parent, at) {
   const g = new THREE.Group();
@@ -3107,7 +3112,7 @@ const I_ = { g, legs, arms, procMesh, scanRing, rig:null, glbRoot:null, active:f
 if(window.InspectorRig && window.InspectorRig.create){
   const rig = window.InspectorRig.create();
   I_.rig = rig;
-  rig.load('game/models/inspector.glb?v=4').then(root => {
+  afterLoad(() => rig.load('game/models/inspector.glb?v=4').then(root => {
     I_.glbRoot = root;
     root.scale.setScalar(1.55);
     g.add(root);
@@ -3115,7 +3120,7 @@ if(window.InspectorRig && window.InspectorRig.create){
     console.log('[inspector] 3D GLB inspector character loaded and rigged');
   }).catch(err => {
     console.warn('[inspector] 3D GLB load fallback to procedural:', err);
-  });
+  }));
 }
 
 g.scale.setScalar(1.25); g.visible = false; S.add(g);
@@ -3580,7 +3585,8 @@ fk.position.z = Math.max(-11.2, Math.min(9.7, cz));
 px.x = fk.position.x; px.z = fk.position.z;
 if(FD.seated){
 const sc = FD.seated, yw = fk.rotation.y;
-sc.root.position.set(Math.sin(yw) * SEAT.z, SEAT.hips - (sc.hipsHeight || 1.8), Math.cos(yw) * SEAT.z);
+const sz = sc.seatZ !== undefined ? sc.seatZ : SEAT.z;
+sc.root.position.set(Math.sin(yw) * sz, SEAT.hips - (sc.hipsHeight || 1.8), Math.cos(yw) * sz);
 sc.root.rotation.set(0, yw, 0);
 sc.pose({ dt, sit: true, moving: false, speed: 0 });
 }

@@ -92,7 +92,7 @@
             if (m && o.isBone) sb[m[1] + m[2]] = o;
           });
           var AX = new THREE.Vector3(1, 0, 0), qs = new THREE.Quaternion();
-          var sitCfg = { thigh: -1.5, knee: 1.5, foot: -0.1, arm: 0.9, fore: -0.7, armAxis: [0, 0, 1], foreAxis: [0, 1, 0], armIn: 0.8, armInAxis: [0, 1, 0], foreIn: 0, foreInAxis: [0, 0, 1] };
+          var sitCfg = { thigh: -1.5, knee: 1.5, foot: -0.1, arm: 1.2, fore: -0.6, armAxis: [0, 0, 1], foreAxis: [0, 1, 0], armIn: 0.8, armInAxis: [0, 1, 0], foreIn: 0, foreInAxis: [0, 0, 1] };
           function turn(b, ang, ax) { if (b) { qs.setFromAxisAngle(ax ? new THREE.Vector3(ax[0], ax[1], ax[2]) : AX, ang); b.quaternion.multiply(qs); } }
           function applySit() {
             ['Left', 'Right'].forEach(function (h) {
