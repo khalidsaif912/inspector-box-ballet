@@ -459,7 +459,10 @@
         const rnd = typeof ctx.rng === "function" ? ctx.rng : Math.random;
         return rnd() < freezer.spawnChance;
       },
-      reward: { score: 80, time: 8 },
+      reward: { score: 50, time: 8 },
+      // فتح الباب بحل اللغز، وغرامة فوات الطرد المجمّد أو ترك الباب مقفلاً.
+      unlockBonus: 30,
+      penalty: 20,
       // بعد إدخال الطرد يبقى الباب مفتوحاً ثوانيَ ثم يُقفل من جديد؛ ويبقى أطول إن حُلّ اللغز بلا طرد.
       closeAfterDelivery: 2.6,
       closeIdle: 18,

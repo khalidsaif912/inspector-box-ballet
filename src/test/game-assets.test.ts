@@ -118,8 +118,8 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain("$('cp-cancel').onclick = cancelCodePad");
   });
 
-  it("deducts 10 points and 2 seconds for a parcel that falls off the belt", () => {
-    expect(game).toContain("const miss = 10;");
+  it("deducts 10 points (20 for a frozen parcel) and 2 seconds for a parcel that falls off the belt", () => {
+    expect(game).toContain("const miss = it.data.isFrz ? gameRules.freezer.penalty : 10;");
     expect(game).toContain("time = Math.max(0, time - 2);");
   });
 

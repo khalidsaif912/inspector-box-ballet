@@ -14,6 +14,8 @@ type Rules = {
     shuffle(rng?: () => number, moves?: number): Board;
     shouldSpawn(ctx: { processed: number; present: boolean; rng: () => number }): boolean;
     reward: { score: number; time: number };
+    unlockBonus: number;
+    penalty: number;
     spawnChance: number;
   };
 };
@@ -90,6 +92,8 @@ describe("Freezer room puzzle", () => {
     expect(f.shouldSpawn({ processed: 5, present: true, rng: () => 0 })).toBe(false);
     expect(f.shouldSpawn({ processed: 5, present: false, rng: () => 0 })).toBe(true);
     expect(f.shouldSpawn({ processed: 5, present: false, rng: () => 0.99 })).toBe(false);
-    expect(f.reward.score).toBeGreaterThan(0);
+    expect(f.reward.score).toBe(50);
+    expect(f.unlockBonus).toBe(30);
+    expect(f.penalty).toBe(20);
   });
 });

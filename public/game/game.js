@@ -1602,7 +1602,11 @@ let items=[], run=false, score=0, combo=1, time=100, spawnT=0, held=null, near=n
 let streak=0, streakT=0, maxStreak=0, rushT=25, rushN=0, rushDelay=0;
 /* ===== إثارة: اندفاع + اهتزاز كاميرا + وضع الحمى ===== */
 let dashT = 0, dashCD = 0, feverT = 0, shakeTrauma = 0, hitStop = 0;
-const DASH_TIME = .8, DASH_CD = 3, DASH_BOOST = 1.6, FEVER_TIME = 6, FEVER_BOOST = 1.15;
+const FEVER_TIME = 6, FEVER_BOOST = 1.15;
+/* مستويات الاندفاع: كل جسم FOD يوضع في مكانه الصحيح يرفع المستوى (مدة أطول وسرعة أعلى وتبريد أقصر) */
+const DASH_LV = [{ t: .8, cd: 3, k: 1.6 }, { t: 1.1, cd: 2.6, k: 1.8 }, { t: 1.4, cd: 2.2, k: 2.05 }, { t: 1.8, cd: 1.8, k: 2.3 }];
+const FODQ = { n: 0 };
+const dashCfg = () => DASH_LV[Math.min(FODQ.n, 3)];
 const TRAUMA_DECAY = 1.2, HITSTOP_LARGE = .05;
 function feverOn(){ return feverT > 0; }
 function addShake(a){ shakeTrauma = Math.min(1, shakeTrauma + a); }
@@ -1618,7 +1622,7 @@ screenFlash.t = setTimeout(() => { el.className = ''; }, 340);
 function setDashButton(){
 const b = $('dash-btn'); if(!b) return;
 b.classList.toggle('cool', dashCD > 0);
-b.style.setProperty('--cd', (dashCD > 0 ? (dashCD / DASH_CD) * 100 : 0) + '%');
+b.style.setProperty('--cd', (dashCD > 0 ? (dashCD / dashCfg().cd) * 100 : 0) + '%');
 }
 function startFever(){
 if(feverT > 0) return;
@@ -1629,7 +1633,7 @@ toast('🔥 وضع الحمى! النقاط مضاعفة ×2', '#ffd54a');
 }
 function doDash(){
 if(dashCD > 0 || dashT > 0 || !run || introHold || fire.keypad) return;
-dashT = DASH_TIME; dashCD = DASH_CD;
+dashT = dashCfg().t; dashCD = dashCfg().cd;
 addShake(.22); snd('dash');
 $('dash-fx').classList.add('on');
 setDashButton();
@@ -2388,7 +2392,11 @@ function frzClose(solvedNow){
   frzP.active = false;
   frzEl.root.style.display = 'none';
   if(solvedNow) frzUnlock();
-  else if(FRZ.pending) toast(I18N.T('الباب ما زال مقفلاً — الطرد بجانبك', 'Door still locked — the parcel is next to you'), '#8fe3ff');
+  else if(FRZ.pending){
+    const p = FRZ.pending;
+    if(!p.frzPen){ p.frzPen = true; const lost = Math.min(score, gameRules.freezer.penalty); score -= lost; snd('error'); penaltyFx(lost, false); spawnFloatTag('−' + gameRules.freezer.penalty + ' ❄️', '#ff5252', 'big'); toast(I18N.T('❌ لم تفتح غرفة التجميد −' + gameRules.freezer.penalty, '❌ Freezer door not opened −' + gameRules.freezer.penalty), '#ff8a5c'); }
+    else toast(I18N.T('الباب ما زال مقفلاً — الطرد بجانبك', 'Door still locked — the parcel is next to you'), '#8fe3ff');
+  }
   hud();
 }
 function frzKey(e){
@@ -2408,7 +2416,8 @@ if(frzEl.root){
 /* فتح الباب: يُسلَّم الطرد المنتظر فوراً إن وُجد، وإلا يبقى الباب مفتوحاً مدة قصيرة */
 function frzUnlock(){
   FRZ.open = true; FRZ.closeT = gameRules.freezer.closeIdle;
-  snd('ship'); toast(I18N.T('🔓 فُتح باب غرفة التجميد', '🔓 Freezer door unlocked'), '#8fe3ff');
+  const ub = gameRules.freezer.unlockBonus; score += ub;
+  snd('ship'); spawnFloatTag('+' + ub + ' 🔓', '#8fe3ff', 'big'); toast(I18N.T('🔓 فُتح باب غرفة التجميد +' + ub, '🔓 Freezer door unlocked +' + ub), '#8fe3ff');
   const it = FRZ.pending;
   if(it && items.includes(it) && it.st === 'floor') frzDeliver(it);
 }
@@ -2416,8 +2425,8 @@ function frzDeliver(it){
   FRZ.pending = null;
   const r = gameRules.freezer.reward;
   totalProcessed++; sortedCount++;
-  const base = gameRules.economy.sortReward({ isHz: false, combo, fever: feverT > 0 });
-  score += base + r.score; time += 3 + r.time;
+  const base = 0;
+  score += r.score; time += 3 + r.time;
   streak++; streakT = streakWindow(); maxStreak = Math.max(maxStreak, streak); combo = gameRules.economy.comboAfter(streak);
   if(streak >= 10 && streak % 10 === 0) startFever();
   if(it.crit) clearCrit(it);
@@ -2697,11 +2706,41 @@ function cardsFail(){
 function cardsClose(){ if(cardP.closing) return; cardsHide(); }
 if(cardsEl.x) cardsEl.x.addEventListener('click', cardsClose);
 if(cardsEl.root) cardsEl.root.addEventListener('pointerdown', e => e.stopPropagation());
+
+/* ===== تجميعات FOD: ٣ خانات أعلى الشاشة ترفع مستوى الاندفاع مع احتفال عند كل جسم ===== */
+const FOD_NAMES = ['١', '٢', '٣', '٤'];
+function fodRender(){
+  const el = $('fod-col'); if(!el) return;
+  el.dataset.lv = FODQ.n; el.querySelectorAll('.fs').forEach((s, i) => s.classList.toggle('on', i < FODQ.n));
+  const b = $('dash-btn'); if(b) b.dataset.lv = FODQ.n;
+  const l = $('fod-lv'); if(l) l.textContent = I18N.T('اندفاع ⚡ ' + FOD_NAMES[FODQ.n] + '/٤', 'Dash ⚡ ' + (FODQ.n + 1) + '/4');
+}
+function fodCollect(){
+  const was = FODQ.n; FODQ.n = Math.min(3, FODQ.n + 1);
+  const up = FODQ.n > was, el = $('fod-col'), slot = el && el.querySelector('.fs[data-i="' + FODQ.n + '"]');
+  fodRender();
+  screenFlash('gold');
+  if(up){
+    snd('fever'); hitStopNow();
+    if(slot){ slot.classList.remove('pop'); void slot.offsetWidth; slot.classList.add('pop'); }
+    if(el){ el.classList.remove('cele'); void el.offsetWidth; el.classList.add('cele'); }
+    const b = $('dash-btn'); if(b){ b.classList.remove('lvup'); void b.offsetWidth; b.classList.add('lvup'); }
+    try { if(slot && fwCv){ const r = slot.getBoundingClientRect(), c = fwCv.getBoundingClientRect(); fwBurst(r.left - c.left + r.width / 2, r.top - c.top + r.height / 2, 38, [28, 200, 48][FODQ.n - 1]); } } catch(e){}
+    fwShow(FODQ.n === 3 ? 5 : FODQ.n + 1);
+    const c = dashCfg();
+    spawnFloatTag('⚡ ' + I18N.T('المستوى ', 'Level ') + (FODQ.n + 1), '#ffd54a', 'big');
+    toast(I18N.T('⚡ تطوّر الاندفاع! المستوى ' + (FODQ.n + 1) + ' — مدة ' + c.t + ' ث وأسرع ×' + c.k, '⚡ Dash upgraded! Level ' + (FODQ.n + 1) + ' — ' + c.t + 's and ×' + c.k + ' faster'), '#ffd54a');
+    if(FODQ.n === 3) tip('fodmax', I18N.T('🏆 اكتملت تجميعات FOD — اندفاع بأقصى مستوى', '🏆 FOD collection complete — max dash'), '#ffd54a');
+  } else {
+    snd('ok'); fwShow(1);
+    toast(I18N.T('⭐ اندفاعك في أقصى مستوى', '⭐ Dash already at max level'), '#ffd54a');
+  }
+}
 function resolvePlacement(z, it){
 const d = it.data;
 if(d.isFod){
 const bonus=gameRules.reward(true,z.k);
-if(bonus){score+=bonus;rm(it);snd('ok');spawnFloatTag('+'+bonus+' FOD','#69f0ae');toast(I18N.T('✔ جمع الجسم الغريب +','✔ FOD collected +')+bonus+I18N.T(' نقطة',' pts'),'#69f0ae');}
+if(bonus){score+=bonus;rm(it);fodCollect();snd('ok');spawnFloatTag('+'+bonus+' FOD','#69f0ae');toast(I18N.T('✔ جمع الجسم الغريب +','✔ FOD collected +')+bonus+I18N.T(' نقطة',' pts'),'#69f0ae');}
 else {it.st='floor';it.fall=false;it.m.position.set(px.x, .2, Math.max(-4,px.z+1.5));snd('warn');tip('fodbox', '🔩 ضعه في صندوق FOD الأحمر','#ffd54a');}
 hud();return;
 }
@@ -3055,7 +3094,7 @@ slowT = 0; beltSlowT = 0; beltSlowUsed = false; beltBtnMat.color.setHex(0x14e0b0
 score = 0; combo = 1; time = 100; spawnT = 0; held = null; stage = 1;
 streak = 0; streakT = 0; maxStreak = 0; rushT = 25; rushN = 0; rushDelay = 0;
 $('streak').classList.remove('on');
-dashT = 0; dashCD = 0; feverT = 0; shakeTrauma = 0;
+dashT = 0; dashCD = 0; feverT = 0; shakeTrauma = 0; FODQ.n = 0; fodRender();
 $('dash-fx').classList.remove('on'); $('stage').classList.remove('fever'); setDashButton();
 demo = {insp:false,truck:false,inspDone:td,truckDone:td,truckIn:0}; inspector.demo = false; hideIntro();
 sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false;
@@ -4142,7 +4181,7 @@ updateFreezer(dt);
 if(run && !fire.keypad){
 if(!fire.active && !STUDY.on && !jam.active && (stage>=3 || demo.truck)) updateTruck(dt);
 const sprintOn = !held && !!(key.ShiftLeft || key.ShiftRight);
-const sprintK = (dashT > 0 ? DASH_BOOST : 1) * (feverT > 0 ? FEVER_BOOST : 1) * (sprintOn ? 1.35 : 1);
+const sprintK = (dashT > 0 ? dashCfg().k : 1) * (feverT > 0 ? FEVER_BOOST : 1) * (sprintOn ? 1.35 : 1);
 const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultiplier(fearT) * sprintK;
 // Small collision steps preserve full travel time even when rendering slows down.
 const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
@@ -4252,7 +4291,7 @@ if(it.st === 'belt'){
 if(it.data.cao && !it.caoChecked && !caoQ.active && it.m.position.x > 8) caoOpen(it);
 if(it.m.position.x > 23.5){
 if(it.data.isMys){ rm(it); continue; }
-const miss = 10;
+const miss = it.data.isFrz ? gameRules.freezer.penalty : 10;
 totalProcessed++;
 rm(it);
 const lost = Math.min(score, miss);
@@ -4261,7 +4300,7 @@ time = Math.max(0, time - 2);
 streak = 0; streakT = 0; combo = 1;
 snd('error');
 penaltyFx(lost, it.data.isHz);
-spawnFloatTag('−10 −2 ث', '#ff5252');
+spawnFloatTag('−' + miss + ' −2 ث', '#ff5252');
 toast((it.data.isHz ? I18N.T('⚠️ فاتتك مادة خطرة! ','⚠️ You missed a dangerous good! ') : I18N.T('فاتك طرد! ','Parcel missed! ')) + (lost ? '−' + lost + I18N.T(' نقاط و −2 ث',' pts and −2s') : I18N.t('بدون خصم')), '#ff8a5c'); hud(); continue;
 }
 }
