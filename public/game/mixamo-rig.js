@@ -84,8 +84,29 @@
           });
           if (!actions.idle) throw new Error('mixamo-worker.glb: idle clip missing');
 
+          /* وضع الجلوس (قيادة الرافعة): نُبقي حركة الوقوف الحيّة ثم نلوي الفخذين والركبتين والذراعين فوقها.
+             الزوايا قابلة للضبط من اللعبة عبر inst.sitCfg. */
+          var sb = {};
+          model.traverse(function (o) {
+            var m = /(Left|Right)(UpLeg|Leg|Foot|Arm|ForeArm|Hand)$/.exec(o.name);
+            if (m && o.isBone) sb[m[1] + m[2]] = o;
+          });
+          var AX = new THREE.Vector3(1, 0, 0), qs = new THREE.Quaternion();
+          var sitCfg = { thigh: -1.5, knee: 1.5, foot: -0.1, arm: 0.9, fore: -0.7, armAxis: [0, 0, 1], foreAxis: [0, 1, 0] };
+          function turn(b, ang, ax) { if (b) { qs.setFromAxisAngle(ax ? new THREE.Vector3(ax[0], ax[1], ax[2]) : AX, ang); b.quaternion.multiply(qs); } }
+          function applySit() {
+            ['Left', 'Right'].forEach(function (h) {
+              turn(sb[h + 'UpLeg'], sitCfg.thigh); turn(sb[h + 'Leg'], sitCfg.knee); turn(sb[h + 'Foot'], sitCfg.foot);
+              var sg = h === 'Left' ? 1 : -1;
+              turn(sb[h + 'Arm'], sg * sitCfg.arm, sitCfg.armAxis); turn(sb[h + 'ForeArm'], sg * sitCfg.fore, sitCfg.foreAxis);
+            });
+          }
           var cur = 'idle';
           actions.idle.setEffectiveWeight(1);
+          // ارتفاع الحوض الفعلي (بعد المقياس) ليُوضع الحوض على وسادة المقعد بدقة
+          var hipsB = null; model.traverse(function (o) { if (/Hips$/.test(o.name) && o.isBone) hipsB = o; });
+          var hipsH = 0;
+          if (hipsB) { mixer.update(0); root.updateMatrixWorld(true); hipsH = hipsB.getWorldPosition(new THREE.Vector3()).y; }
           var handL = null, handR = null;
           model.traverse(function (o) {
             if (/LeftHand$/.test(o.name)) handL = o;
@@ -95,6 +116,7 @@
 
           function want(p) {
             var moving = p.moving && (p.speed || 0) > 0.6;
+            if (p.sit) return 'idle';
             if (p.held) return moving && actions.carry_jog ? 'carry_jog' : (actions.carry_idle ? 'carry_idle' : 'idle');
             if (!moving) return 'idle';
             if (p.sprint && actions.run) return 'run';
@@ -102,7 +124,7 @@
           }
 
           var inst = {
-            root: root, height: TARGET_H,
+            root: root, height: TARGET_H, sitCfg: sitCfg, hipsHeight: hipsH,
             holdPoint: function (out) {
               if (!handL || !handR) return null;
               if (!out) out = new THREE.Vector3();
@@ -123,6 +145,7 @@
               var a = actions[cur];
               a.setEffectiveTimeScale(NATURAL[cur] ? Math.max(0.55, Math.min(1.6, (p.speed || NATURAL[cur]) / NATURAL[cur])) : 1);
               mixer.update(dt);
+              if (p.sit) applySit();
             }
           };
           resolve(inst);

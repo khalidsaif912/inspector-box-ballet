@@ -556,7 +556,30 @@ B(0.12, 2.6, 0.2, 0x2a2a2a, 0, 1.3, 1.2, fk, 0.5, 0.6);
 [-0.45,0.45].forEach(s => B(0.15, 0.06, 1.3, 0x555, s, 0.15, 1.8, fk, 0.4, 0.8));
 [[-0.78,0.7],[0.78,0.7],[-0.78,-0.7],[0.78,-0.7]].forEach(([x,z]) => { const w = CY(0.32,0.32,0.3,0x161616,x,0.32,z,fk,0.9,0.1); w.rotation.z = Math.PI/2; });
 // Moving forklift reuses the parked vehicle, with a visible seated driver.
+const fkBoxParts = fk.children.slice();
 const recklessTruck = fk.clone(); S.add(recklessTruck); recklessTruck.visible = false;
+const truckBoxParts = recklessTruck.children.slice();
+/* رافعة شوكية بمجسّم Low Poly (Ricardo Sanchez، CC BY 4.0 — Sketchfab): تحلّ محل الصناديق عند نجاح التحميل،
+   وتبقى الصناديق احتياطاً عند الفشل. المحور المحلي: +z للأمام (الشوكتان)، الوحدات سم → متر بمقياس واحد. */
+(function loadForkliftModel(){
+  if(!THREE.GLTFLoader) return;
+  new THREE.GLTFLoader().load('game/models/forklift.glb', g => {
+    try {
+      const src = g.scene, SC = 0.0175, SHIFT_Z = 0.665;   // السقف ≈ قامة الموظف (3.6)، الطول ≈ 6.5، العرض ≈ 2
+      src.traverse(o => { if(o.isMesh){
+        o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
+        [].concat(o.material).forEach(m => { if(m.map) m.map.encoding = THREE.sRGBEncoding; if('metalness' in m) m.metalness = .1; if('roughness' in m) m.roughness = .8; m.needsUpdate = true; });
+      }});
+      const put = (parent, boxes) => {
+        const holder = new THREE.Group(), m = parent === fk ? src : src.clone();
+        m.scale.setScalar(SC); m.position.set(0, 0.0249, SHIFT_Z);
+        holder.add(m); parent.add(holder); boxes.forEach(b => { b.visible = false; });
+      };
+      put(fk, fkBoxParts); put(recklessTruck, truckBoxParts);
+      console.log('[forklift] glb model ready');
+    } catch(e){ console.warn('[forklift] glb failed, keeping box model', e); }
+  }, undefined, err => console.warn('[forklift] glb load failed, keeping box model', err));
+})();
 const truckDriver = new THREE.Group(); recklessTruck.add(truckDriver);
 B(.65,.65,.4,0xf45d39,0,1.75,-.35,truckDriver);
 B(.55,.25,.65,0x243240,0,1.4,-.2,truckDriver);
@@ -570,7 +593,7 @@ const boot = B(.22,.4,.24,0x243240,side*.2,1.23,.2,truckDriver); boot.rotation.x
 const steering = M(new THREE.TorusGeometry(.23,.035,6,16),0x181c20);
 steering.position.set(0,1.85,.2); steering.rotation.x=-.65; truckDriver.add(steering);
 let truckState = gameRules.reset(), fearT = 0;
-const FD = { on:false, left:60, near:false, home:{x:30.8, z:8.4} };
+const FD = { on:false, left:60, near:false, seated:null, home:{x:30.8, z:8.4} };
 // لافتات حائطية
 function wallSign(txt, sub, bg, x, y, z, ry=0, w=4){
 const t = canvasTex(512, 256, (g)=>{ g.fillStyle=bg; g.fillRect(0,0,512,256); g.strokeStyle='#fff'; g.lineWidth=10; g.strokeRect(12,12,488,232); g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle'; g.font='bold 74px sans-serif'; g.fillText(txt,256,100); g.font='bold 38px sans-serif'; g.fillText(sub,256,185); });
@@ -1213,14 +1236,14 @@ forkHead.position.set(0, 2.14, -0.18); forkHead.scale.set(0.94, 1.06, 0.96); for
 CY(0.28, 0.28, 0.16, C_CAP, 0, 2.37, -0.18, forkDriver);
 const forkWheel = M(new THREE.TorusGeometry(0.24, 0.035, 8, 20), 0x181c20);
 forkWheel.position.set(0, 1.36, 0.46); forkWheel.rotation.x = -1.15; forkDriver.add(forkWheel);
-forkWheel.userData.keep = true;
-B(0.08, 0.5, 0.08, 0x2a2a2a, 0, 1.12, 0.58, forkDriver, 0.5, 0.4).userData.keep = true;
+B(0.08, 0.5, 0.08, 0x2a2a2a, 0, 1.12, 0.58, forkDriver, 0.5, 0.4);
 const PLAYER_RADIUS = 0.45;
 /* ===== سائق الرافعة: نفس شخصية اللاعب المجسّمة بدل المجسّمات الإجرائية =====
    نسخة مستقلة (هيكل عظمي ومواد خاصة بها) جالسة على المقعد: ساقان للأمام
    وذراعان إلى المقود. تُركّب داخل forkDriver حتى تبقى ظهورها/إخفاءها كما هي. */
 const HIP_REF = 1.824;             // ارتفاع الحوض في قالب الشخصية (3.6م)
-const SEAT = { s: 0.82, hips: 1.33, z: 0.08 };
+/* مقعد الرافعة الجديدة (النموذج الكبير): السائق بحجم اللاعب كاملاً (s=1) والحوض فوق وسادة المقعد */
+const SEAT = { s: 1, hips: 1.62, z: -0.42 };
 const SEAT_CREW = { fork: null, truck: null, tried: false };
 function seatCrewInto(parent, at) {
   const g = new THREE.Group();
@@ -2198,7 +2221,11 @@ hud();
 function mountDrive(){
 if(FD.on || FD.left <= 0 || held || liftAnim.active) return;
 FD.on = true; FD.near = false;
-fk.visible = true; crewShow(false); forkDriver.visible = true;
+fk.visible = true;
+/* السائق هو الشخصية المختارة نفسها جالسة على المقعد (شخصيات Mixamo)؛ غيرها تبقى على المجسّم الاحتياطي */
+const sc = activeCharRig();
+if(sc && sc.sitCfg && sc.root.visible){ FD.seated = sc; forkDriver.visible = false; }
+else { FD.seated = null; crewShow(false); forkDriver.visible = true; }
 px.set(fk.position.x, 0, fk.position.z);
 snd('horn');
 toast(I18N.T('🚜 قُد الرافعة الشوكية','🚜 Driving the forklift'), '#ffd54a');
@@ -2206,7 +2233,9 @@ hud();
 }
 function stopDrive(msg){
 if(!FD.on) return;
-FD.on = false; crewShow(true); forkDriver.visible = false;
+FD.on = false;
+if(FD.seated){ FD.seated.root.position.set(0, 0, 0); FD.seated = null; }
+crewShow(true); forkDriver.visible = false;
 const ox = Math.cos(fk.rotation.y) * 2.1, oz = -Math.sin(fk.rotation.y) * 2.1;
 /* النزول بجانب الرافعة في نقطة حرة فعلاً (الجانب الأيمن ثم الأيسر ثم أقرب مكان خالٍ) */
 const side = (sg) => ({ x: Math.max(-33, Math.min(33, fk.position.x + sg*ox)), z: Math.max(-11, Math.min(9.7, fk.position.z + sg*oz)) });
@@ -2451,7 +2480,7 @@ $('rules').style.display = 'none';
 resetExitGate();
 resetFire();
 px.set(SAFE_SPAWN.x, 0, SAFE_SPAWN.z); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
-FD.on = false; FD.left = 60; FD.near = false; crewShow(true); forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = -Math.PI/2;
+FD.on = false; if(FD.seated){ FD.seated.root.position.set(0, 0, 0); FD.seated = null; } FD.left = 60; FD.near = false; crewShow(true); forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = -Math.PI/2;
 STUDY.left = STUDY.total; STUDY.on = false; closeStudy();
 clearMovement(); last = performance.now();
 run = true; document.body.classList.add('ingame'); $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true});
@@ -3503,6 +3532,12 @@ fk.position.x = Math.max(-33.2, Math.min(33.2, cx));
 fk.position.z = Math.max(-11.2, Math.min(9.7, cz));
 }
 px.x = fk.position.x; px.z = fk.position.z;
+if(FD.seated){
+const sc = FD.seated, yw = fk.rotation.y;
+sc.root.position.set(Math.sin(yw) * SEAT.z, SEAT.hips - (sc.hipsHeight || 1.8), Math.cos(yw) * SEAT.z);
+sc.root.rotation.set(0, yw, 0);
+sc.pose({ dt, sit: true, moving: false, speed: 0 });
+}
 if(FD.left <= 0) stopDrive('⏱ انتهت مدة قيادة الرافعة (٦٠ ثانية)');
 } else if(l > .001){
 for(let step=0; step<steps; step++){
@@ -3511,7 +3546,7 @@ px.x = correctedPos.x; px.z = correctedPos.z;
 }
 }
 if(!FD.on) anim(dt, liftAnim.active ? 0 : animSpd, vx, vz);
-FD.near = !FD.on && FD.left > 0 && Math.hypot(px.x - fk.position.x, px.z - fk.position.z) < 2.6;
+FD.near = !FD.on && FD.left > 0 && Math.hypot(px.x - fk.position.x, px.z - fk.position.z) < 4.2;
 /* المراجعة أمام اللوحة تجمّد ساعة الوردية والأحداث كلها */
 if(!fire.active && !STUDY.on) time -= dt;
 if(time <= 20){

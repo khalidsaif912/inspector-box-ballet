@@ -93,7 +93,7 @@
         dz = bz - az,
         length = dx * dx + dz * dz;
       const t = length ? Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / length)) : 0;
-      return Math.hypot(px - ax - dx * t, pz - az - dz * t) < 1.65;
+      return Math.hypot(px - ax - dx * t, pz - az - dz * t) < 2.3;
     },
     reward(isFod, zone) {
       return isFod && zone === "fod" ? rules.fodReward : 0;
@@ -143,12 +143,12 @@
   rules.emergency = emergency;
   // أسرار اللعبة: الرافعة تحمل الطرود — قواعد مشتركة صرفة بلا واجهة
   const forklift = {
-    reach: 3.3,
-    forkOffset: 1.95,
+    reach: 4.6,
+    forkOffset: 3.3,
     carryY: 0.88,
     driveSpeed: 9.8,
-    halfX: 1.15,
-    halfZ: 0.78,
+    halfX: 2.35,
+    halfZ: 1.03,
     nearest(list, x, z) {
       let best = null,
         bd = forklift.reach;
