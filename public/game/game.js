@@ -1,42 +1,83 @@
 const gameRules = WarehouseRules;
 /* استيفاء خطي عام (تستخدمه حركة المفتش ودورانه) */
 function lrp(cur, target, k){ return cur + (target - cur) * k; }
-/* ===== شاشة التحميل: تقدّم حقيقي مبني على مراحل البناء الفعلية ===== */
+/* ===== شاشة التحميل: تقدّم فعلي = متوسط موزون لمهام حقيقية =====
+   المشهد (بناء الخامات والشيدرات) + ملفات المجسّمات التي تُنزَّل فعلاً (بايتات حقيقية) + الخلفية.
+   لا يُخفى الشاشة إلا بعد رسم أول إطار واكتمال كل المهام (أو فشلها بوضوح). */
 const loading = (() => {
 const screen = document.getElementById('loading-screen');
 const fill = document.getElementById('loading-bar-fill');
+const bar = document.getElementById('loading-bar');
 const pct = document.getElementById('loading-percent');
 const tip = document.getElementById('loading-tip');
+const list = document.getElementById('loading-list');
 const TIPS = [
 'تلميح: حافظ على فصل المواد الخطرة لتجنب الغرامات!',
 'تلميح: المسافة أو E أو F للالتقاط والتفاعل.',
 'تلميح: Shift للجري، و Q أو X لإسقاط الطرد فوراً.',
 'تلميح: الطرود المبرّدة لها مؤقت — أسرع قبل أن تفسد!'
 ];
-let value = 0, done = false, tipIdx = 0, tipTimer = 0, safety = 0;
+const tasks = {};
+let value = 0, done = false, tipIdx = 0, tipTimer = 0, safety = 0, sceneFirstFrame = false;
 function paint(v){
 value = Math.max(value, Math.min(100, Math.round(v)));
 if(fill) fill.style.width = value + '%';
 if(pct) pct.textContent = value + '%';
+if(bar) bar.setAttribute('aria-valuenow', value);
 }
-/* إخفاء الشاشة بعد أول إطار مرسوم فعلياً (لا شاشة بيضاء ولا تقطيع أول) */
+function recompute(){
+let w = 0, a = 0;
+for(const k in tasks){ w += tasks[k].w; a += tasks[k].w * tasks[k].f; }
+if(w) paint(a / w * 100 * 0.99);          // آخر 1% يُملأ عند الإخفاء فعلاً
+}
+function row(t){
+if(!list) return;
+if(!t.li){
+t.li = document.createElement('li');
+t.li.innerHTML = '<span class="ld-nm"></span><span class="ld-st"></span>';
+list.appendChild(t.li);
+}
+t.li.className = t.state;
+t.li.firstChild.textContent = t.label;
+t.li.lastChild.textContent = t.state === 'ok' ? '✔' : t.state === 'bad' ? I18N.t('تعذّر') : (t.f > 0 ? Math.round(t.f * 100) + '%' : '…');
+}
+/* مهمة تحميل: set(0..1) أثناء التقدّم، done() عند النجاح، fail() عند الفشل (لا يعلّق الشاشة) */
+function track(key, label, weight){
+if(done) return { set(){}, done(){}, fail(){} };
+const t = tasks[key] = { w: weight, f: 0, label: I18N.t(label), state: 'run' };
+row(t); recompute();
+return {
+set(f){ if(t.state !== 'run') return; t.f = Math.max(t.f, Math.min(.99, f || 0)); row(t); recompute(); },
+done(){ t.f = 1; t.state = 'ok'; row(t); recompute(); settle(); },
+fail(){ t.f = 1; t.state = 'bad'; row(t); recompute(); settle(); }
+};
+}
+function pending(){ for(const k in tasks) if(tasks[k].state === 'run') return true; return false; }
+function settle(){ if(sceneFirstFrame && !pending()) finish(); }
+/* تقدّم بناء المشهد القديم: phase(amount) → مهمة "scene" */
+function phase(amount, label){
+if(done) return;
+if(label && tip) tip.textContent = label;
+if(!tasks.scene) track('scene', 'بناء المستودع', 50);
+const t = tasks.scene; t.f = Math.max(t.f, Math.min(.97, amount / 100)); row(t); recompute();
+}
+/* إخفاء الشاشة بعد أول إطار مرسوم فعلياً واكتمال كل المهام */
 function finish(){
 if(done) return;
 done = true;
 clearTimeout(safety); clearInterval(tipTimer);
+if(tasks.scene){ tasks.scene.f = 1; tasks.scene.state = 'ok'; row(tasks.scene); }
 paint(100);
-setTimeout(() => { if(screen) screen.classList.add('hidden'); }, 400);
+if(screen) screen.setAttribute('aria-busy', 'false');
+setTimeout(() => { if(screen) screen.classList.add('hidden'); }, 450);
 }
-function phase(amount, label){
-if(done) return;
-if(label && tip) tip.textContent = label;
-paint(amount);
-}
-paint(8);
+/* يُستدعى بعد رسم أول إطار: ننتظر باقي المهام إن كانت قيد التنزيل */
+function frameReady(){ sceneFirstFrame = true; if(tasks.scene){ tasks.scene.f = 1; tasks.scene.state = 'ok'; row(tasks.scene); } recompute(); settle(); }
+paint(3);
 if(tip) tipTimer = setInterval(() => { tip.textContent = I18N.t(TIPS[(++tipIdx) % TIPS.length]); }, 2600);
-/* صمام أمان: لا نحجب اللعب أكثر من 7 ثوانٍ مهما حدث */
-safety = setTimeout(finish, 7000);
-return { phase, finish, get value(){ return value; } };
+/* صمام أمان: لا نحجب اللعب أكثر من 20 ثانية على شبكة بطيئة جداً — المهام المتأخرة تكمل في الخلفية */
+safety = setTimeout(finish, 20000);
+return { phase, finish, frameReady, track, get value(){ return value; } };
 })();
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let actx = null, soundEnabled = true, ambEnabled = true, ambNode = null;
@@ -563,6 +604,7 @@ const truckBoxParts = recklessTruck.children.slice();
    وتبقى الصناديق احتياطاً عند الفشل. المحور المحلي: +z للأمام (الشوكتان)، الوحدات سم → متر بمقياس واحد. */
 (function loadForkliftModel(){
   if(!THREE.GLTFLoader) return;
+  const lt = loading.track('forklift', 'الرافعة الشوكية', 12);
   new THREE.GLTFLoader().load('game/models/forklift.glb', g => {
     try {
       const src = g.scene, SC = 0.0175, SHIFT_Z = 0.665;   // السقف ≈ قامة الموظف (3.6)، الطول ≈ 6.5، العرض ≈ 2
@@ -576,9 +618,9 @@ const truckBoxParts = recklessTruck.children.slice();
         holder.add(m); parent.add(holder); boxes.forEach(b => { b.visible = false; });
       };
       put(fk, fkBoxParts); put(recklessTruck, truckBoxParts);
-      console.log('[forklift] glb model ready');
-    } catch(e){ console.warn('[forklift] glb failed, keeping box model', e); }
-  }, undefined, err => console.warn('[forklift] glb load failed, keeping box model', err));
+      console.log('[forklift] glb model ready'); lt.done();
+    } catch(e){ console.warn('[forklift] glb failed, keeping box model', e); lt.fail(); }
+  }, e => { if(e && e.total) lt.set(e.loaded / e.total); }, err => { console.warn('[forklift] glb load failed, keeping box model', err); lt.fail(); });
 })();
 const truckDriver = new THREE.Group(); recklessTruck.add(truckDriver);
 B(.65,.65,.4,0xf45d39,0,1.75,-.35,truckDriver);
@@ -1031,12 +1073,16 @@ function loadMixamo(id, attempt){
   if(!M || M.loading || M.ready || !window.MixamoWorker) return;
   M.loading = true; M.err = null;
   const n = CHAR_NAMES[id];
+  const lt = loading.track('char-' + id, n[0], 22);
   charStatus(I18N.T('⏳ جاري تحميل ' + n[0] + '…', '⏳ Loading ' + n[1] + '…'));
   MixamoWorker.load(M.url, (e) => {
-    if(!e || !e.total || CHAR.id !== id) return;
+    if(!e || !e.total) return;
+    lt.set(e.loaded / e.total);
+    if(CHAR.id !== id) return;
     const p = Math.min(99, Math.round(e.loaded / e.total * 100));
     charStatus(I18N.T('⏳ جاري تحميل ' + n[0] + '… ' + p + '%', '⏳ Loading ' + n[1] + '… ' + p + '%'));
   }).then(o => {
+    lt.done();
     M.obj = o.root; M.inst = o; M.ready = true; M.loading = false;
     pl.add(o.root); if(CHAR.id === id) charStatus(''); applyCrewMode();
     loadSeatCrew();
@@ -1044,6 +1090,7 @@ function loadMixamo(id, attempt){
   }).catch(err => {
     M.loading = false; M.err = String(err && err.message || err);
     if(!attempt && CHAR.id === id){ setTimeout(() => { if(CHAR.id === id) loadMixamo(id, 1); }, 1500); return; }
+    lt.fail();
     crewShow(true);
     if(CHAR.id === id) charLoadFailed(id, err);
   });
@@ -3741,7 +3788,7 @@ C.position.y += (Math.random() - 0.5) * shake * 0.5;
 C.rotation.z += (Math.random() - 0.5) * shake * 0.03;
 }
 R.render(S, C);
-if(!loadingDone){ loadingDone = true; loading.finish(); }
+if(!loadingDone){ loadingDone = true; loading.frameReady(); }
 }
 syncMenu();
 const shellBtn = $('shell'); if(shellBtn) shellBtn.onclick = e => { e.stopPropagation(); exitToShell(); };

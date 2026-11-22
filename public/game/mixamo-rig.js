@@ -92,13 +92,13 @@
             if (m && o.isBone) sb[m[1] + m[2]] = o;
           });
           var AX = new THREE.Vector3(1, 0, 0), qs = new THREE.Quaternion();
-          var sitCfg = { thigh: -1.5, knee: 1.5, foot: -0.1, arm: 0.9, fore: -0.7, armAxis: [0, 0, 1], foreAxis: [0, 1, 0] };
+          var sitCfg = { thigh: -1.5, knee: 1.5, foot: -0.1, arm: 0.9, fore: -0.7, armAxis: [0, 0, 1], foreAxis: [0, 1, 0], armIn: 0.8, armInAxis: [0, 1, 0], foreIn: 0, foreInAxis: [0, 0, 1] };
           function turn(b, ang, ax) { if (b) { qs.setFromAxisAngle(ax ? new THREE.Vector3(ax[0], ax[1], ax[2]) : AX, ang); b.quaternion.multiply(qs); } }
           function applySit() {
             ['Left', 'Right'].forEach(function (h) {
               turn(sb[h + 'UpLeg'], sitCfg.thigh); turn(sb[h + 'Leg'], sitCfg.knee); turn(sb[h + 'Foot'], sitCfg.foot);
               var sg = h === 'Left' ? 1 : -1;
-              turn(sb[h + 'Arm'], sg * sitCfg.arm, sitCfg.armAxis); turn(sb[h + 'ForeArm'], sg * sitCfg.fore, sitCfg.foreAxis);
+              turn(sb[h + 'Arm'], sg * sitCfg.arm, sitCfg.armAxis); if (sitCfg.armIn) turn(sb[h + 'Arm'], sg * sitCfg.armIn, sitCfg.armInAxis); if (sitCfg.foreIn) turn(sb[h + 'ForeArm'], sg * sitCfg.foreIn, sitCfg.foreInAxis); turn(sb[h + 'ForeArm'], sg * sitCfg.fore, sitCfg.foreAxis);
             });
           }
           var cur = 'idle';

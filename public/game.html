@@ -18,17 +18,18 @@
 <link rel="stylesheet" href="game/ui.css">
 </head>
 <body>
-<div id="loading-screen" class="loading-screen" role="status" aria-live="polite">
+<div id="loading-screen" class="loading-screen" role="status" aria-live="polite" aria-busy="true">
   <div class="loading-content">
     <h1 class="loading-title">مستودع الشحن الجوي</h1>
-    <p class="loading-subtitle">جاري تجهيز مستودع الشحن الجوي وتصنيف الشحنات...</p>
-    <div class="loading-bar-wrapper">
+    <p class="loading-subtitle">نجهّز مناوبتك: نبني المستودع ونحمّل الشخصية والرافعة.</p>
+    <div id="loading-bar" class="loading-bar-wrapper" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="تقدّم التحميل">
       <div id="loading-bar-fill" class="loading-bar-fill"></div>
     </div>
     <div class="loading-meta">
       <span id="loading-percent">0%</span>
       <span id="loading-tip" class="loading-tip">تلميح: حافظ على فصل المواد الخطرة لتجنب الغرامات!</span>
     </div>
+    <ul id="loading-list" class="loading-list"></ul>
   </div>
 </div>
 <div id="stage">
