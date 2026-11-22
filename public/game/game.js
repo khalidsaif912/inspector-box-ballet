@@ -618,7 +618,7 @@ const truckBoxParts = recklessTruck.children.slice();
   const lt = loading.track('forklift', 'الرافعة الشوكية', 12);
   new THREE.GLTFLoader().load('game/models/forklift-kolos.glb', g => {
     try {
-      const src = g.scene, SC = 0.0265, SHIFT_Z = 0.9;   // الطول ≈ 6.1، العرض ≈ 2.25، السقف ≈ 3.8 (الشخصية 3.1 والطرد 1.35)
+      const src = g.scene, SC = 0.0228, SHIFT_Z = 0.77;   // الطول ≈ 5.2، العرض ≈ 1.95، السقف ≈ 3.3 (الشخصية 3.1 والطرد 1.35)
       src.updateMatrixWorld(true);
       const bx = new THREE.Box3().setFromObject(src);   // مركز النموذج الأصلي بعيد عن الأصل: نُعيد توسيطه وننزله على الأرض
       src.traverse(o => { if(o.isMesh){
@@ -1367,6 +1367,7 @@ const PLAYER_RADIUS = 0.45;
 const HIP_REF = 1.824;             // ارتفاع الحوض في قالب الشخصية (3.6م)
 /* مقعد الرافعة الجديدة (النموذج الكبير): السائق بحجم اللاعب كاملاً (s=1) والحوض فوق وسادة المقعد */
 const SEAT = { s: 1, hips: 2.1, z: 0 };
+const FK_SCALE = 0.86, DRV_SCALE = 0.92;   // تصغير الرافعة نسبةً للنموذج الأول، وحجم السائق داخلها
 const SEAT_CREW = { fork: null, truck: null, tried: false };
 function seatCrewInto(parent, at) {
   const g = new THREE.Group();
@@ -1713,7 +1714,7 @@ document.getElementById('inspector-badge').classList.add('on');snd('whistle');
 showIntro(I18N.T('<b class="t">🦺 جولة المفتش</b>يغرّم كل طرد متروك خارج مناطق الفرز.<small>دورية تفتيشية مباشرة — حافظ على نظافة الممرات والأرضيات!</small>', '<b class="t">🦺 Inspector on Patrol</b>Fines every parcel left outside sorting zones.<small>Live inspection patrol — keep walkways clear!</small>'), 4500, false);
 }
 function startTruckDemo(){
-demo.truck=true;truckState=gameRules.reset();truckState.elapsed=gameRules.startAt;snd('horn');
+demo.truck=true;truckState=gameRules.reset();truckState.trips=1;truckState.elapsed=gameRules.startAt;snd('horn');
 /* جولة حية دون إيقاف سير اللعبة */
 showIntro(I18N.T('<b class="t">🚜 الرافعة الشوكية</b>تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.<small>جولة تدريبية مباشرة — انتبه أثناء العمل!</small>', '<b class="t">🚜 Forklift Operating</b>Drops foreign objects (FOD); collect them and put them in the red bin.<small>Live training round — stay alert!</small>'), 4500, false);
 }
@@ -2020,20 +2021,23 @@ gr.addColorStop(0, 'rgba(78,78,78,.8)'); gr.addColorStop(1, 'rgba(46,46,46,0)');
 g.fillStyle = gr; g.fillRect(0, 0, w, h);
 });
 function critTagCanvas(){
-const cv = document.createElement('canvas'); cv.width = 192; cv.height = 96;
+const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
 const t = rawTex(cv);
 return { cv, t, sec: -1 };
 }
-function drawCritTag(tag, sec){
-const g = tag.cv.getContext('2d'), w = tag.cv.width, h = tag.cv.height;
-g.clearRect(0, 0, w, h);
-g.fillStyle = sec <= 5 ? 'rgba(120,8,8,.92)' : 'rgba(14,10,10,.88)';
-g.fillRect(8, 10, w-16, h-20);
-g.strokeStyle = sec <= 5 ? '#ff5252' : '#ffd54a'; g.lineWidth = 5; g.strokeRect(8, 10, w-16, h-20);
-g.fillStyle = sec <= 5 ? '#fff' : '#ffd54a';
-g.font = '900 52px ui-monospace,monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
-g.fillText(sec + 's', w/2, h/2 + 4);
-tag.sec = sec; tag.t.needsUpdate = true;
+/* ساعة عقارب صغيرة بدل الرقم: القطاع الملوّن هو الوقت المتبقي والعقرب يدور معه، وتحمرّ في آخر ٥ ثوانٍ */
+function drawCritTag(tag, tleft){
+const g = tag.cv.getContext('2d'), w = tag.cv.width, c = w / 2;
+const f = Math.max(0, Math.min(1, tleft / CRIT_TIME)), urgent = tleft <= 5, a = -Math.PI / 2 + f * Math.PI * 2;
+g.clearRect(0, 0, w, w);
+g.beginPath(); g.arc(c, c, 58, 0, Math.PI * 2); g.fillStyle = urgent ? '#fff1f0' : '#fffdf2'; g.fill();
+g.lineWidth = 9; g.strokeStyle = urgent ? '#e53935' : '#1d2b3a'; g.stroke();
+if(f > 0.002){ g.beginPath(); g.moveTo(c, c); g.arc(c, c, 47, -Math.PI / 2, a); g.closePath(); g.fillStyle = urgent ? 'rgba(229,57,53,.88)' : 'rgba(255,193,7,.9)'; g.fill(); }
+g.strokeStyle = '#1d2b3a'; g.lineWidth = 3; g.lineCap = 'round';
+for(let i = 0; i < 12; i++){ const t = i * Math.PI / 6, r1 = i % 3 ? 49 : 45, r2 = 53; g.beginPath(); g.moveTo(c + Math.cos(t) * r1, c + Math.sin(t) * r1); g.lineTo(c + Math.cos(t) * r2, c + Math.sin(t) * r2); g.stroke(); }
+g.strokeStyle = '#10161d'; g.lineWidth = 7; g.beginPath(); g.moveTo(c, c); g.lineTo(c + Math.cos(a) * 42, c + Math.sin(a) * 42); g.stroke();
+g.beginPath(); g.arc(c, c, 7, 0, Math.PI * 2); g.fillStyle = '#10161d'; g.fill();
+tag.sec = Math.round(Math.max(0, tleft) * 8); tag.t.needsUpdate = true;
 }
 function makeCrit(it){
 // المؤقت للطرود التي تحتاج سلسلة تبريد فقط (منطقة ❄️ تبريد) — لا للطرود العامة أو القابلة للتلف
@@ -2043,7 +2047,7 @@ const halo = new THREE.Sprite(new THREE.SpriteMaterial({map:critHaloTex, transpa
 halo.position.y = .05; halo.scale.set(2.3, 2.3, 1); it.m.add(halo);
 const tag = critTagCanvas();
 const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tag.t, transparent:true, depthTest:false}));
-sp.position.y = 1.35; sp.scale.set(1.15, .58, 1); sp.renderOrder = 6; it.m.add(sp);
+sp.position.y = 1.4; sp.scale.set(.82, .82, 1); sp.renderOrder = 6; it.m.add(sp);
 drawCritTag(tag, CRIT_TIME);
 it.crit = { t: CRIT_TIME, halo, tag, sp };
 }
@@ -2100,16 +2104,37 @@ return FOD_RES = {
   label: new THREE.SpriteMaterial({map:rawTex(cv),depthTest:false})
 };
 }
-function dropFod(x,z){
-const R_ = fodRes();
-const m = new THREE.Mesh(R_.box, R_.mat);
+/* ثلاثة أشكال للجسم الغريب، يتبدّل الشكل مع كل عبور للرافعة المتهورة: صامولة ومسمار، مفتاح ربط، قطعة إطار */
+const FOD_KINDS = [
+  { ar: 'مسمار وصامولة', en: 'Bolt and nut', ico: '🔩' },
+  { ar: 'مفتاح ربط', en: 'Dropped wrench', ico: '🔧' },
+  { ar: 'قطعة إطار', en: 'Tyre fragment', ico: '⚙️' }
+];
+function dropFod(x,z,trip){
+const R_ = fodRes(), kind = (trip || 0) % FOD_KINDS.length;
+let m;
+if(kind === 1){
+  m = new THREE.Mesh(new THREE.BoxGeometry(.95,.1,.2), R_.mat);
+  const head = new THREE.Mesh(new THREE.TorusGeometry(.17,.065,8,12,Math.PI*1.6), R_.mat);
+  head.rotation.x = Math.PI/2; head.rotation.z = -Math.PI*.3; head.position.set(.52,0,0); m.add(head);
+  const eye = new THREE.Mesh(new THREE.TorusGeometry(.1,.05,8,10), R_.mat); eye.rotation.x = Math.PI/2; eye.position.set(-.5,0,0); m.add(eye);
+  m.rotation.y = Math.random()*Math.PI;
+} else if(kind === 2){
+  if(!R_.rubber) R_.rubber = new THREE.MeshStandardMaterial({color:0x1b1b1d,roughness:.95,metalness:0});
+  m = new THREE.Mesh(new THREE.BoxGeometry(.8,.2,.42), R_.rubber);
+  for(let i=-3;i<=3;i++){ const r = new THREE.Mesh(new THREE.BoxGeometry(.07,.06,.46), R_.rubber); r.position.set(i*.11,.12,0); r.rotation.y = .35; m.add(r); }
+  m.rotation.y = Math.random()*Math.PI;
+} else {
+  m = new THREE.Mesh(R_.box, R_.mat);
+  const nut = new THREE.Mesh(R_.torus, R_.mat);
+  nut.rotation.x=Math.PI/2; nut.position.set(.15,.15,0); m.add(nut);
+}
 m.position.set(x,1.2,z); m.castShadow = true; m.receiveShadow = true;
-const nut = new THREE.Mesh(R_.torus, R_.mat);
-nut.rotation.x=Math.PI/2; nut.position.set(.15,.15,0); m.add(nut);
 const label = new THREE.Sprite(R_.label);label.position.y=.6;label.scale.set(.95,.48,1);m.add(label);
 const csh=new THREE.Mesh(R_.sh,SHM);csh.rotation.x=-Math.PI/2;csh.position.y=-.13;m.add(csh);
-S.add(m);items.push({m,csh,data:{t:'fod',emoji:'🔩',name:I18N.t('جسم غريب'),imp:'FOD',div:'',isFod:true,isHz:false,isMys:false},st:'floor',fall:true,vy:0,ty:.2});
-snd('place');tip('foddrop', '🔩 سقط جسم غريب FOD!', '#ffd54a');
+const K = FOD_KINDS[kind];
+S.add(m);items.push({m,csh,data:{t:'fod',emoji:K.ico,name:I18N.T(K.ar,K.en),imp:'FOD',div:'',isFod:true,isHz:false,isMys:false},st:'floor',fall:true,vy:0,ty:.2});
+snd('place');tip('foddrop', K.ico + ' ' + I18N.T('سقط جسم غريب FOD: ' + K.ar + '!', 'FOD dropped: ' + K.en + '!'), '#ffd54a');
 }
 function resetTruck(){ truckState=gameRules.reset();fearT=0;recklessTruck.visible=false; }
 function updateTruck(dt){
@@ -2117,8 +2142,8 @@ fearT=Math.max(0,fearT-dt);
 const steps=Math.max(1,Math.ceil(dt/.016)), step=dt/steps;
 for(let i=0;i<steps;i++){
 const before=gameRules.position(truckState), event=gameRules.advance(truckState,step,px.z), after=gameRules.position(truckState);
-if(event.entered){snd('horn');addShake(.35);tip('forklift', '⚠️ رافعة متهورة تعبر المستودع!', '#ffd54a');}
-if(event.drop) dropFod(after.x,after.z);
+if(event.entered){snd('horn');addShake(.35);tip('forklift' + (event.trip || 0), '⚠️ رافعة متهورة تعبر المستودع!' + (event.trip ? ' (' + (event.trip + 1) + '/3)' : ''), '#ffd54a');}
+if(event.drop) dropFod(after.x,after.z,event.trip);
 if(!demo.truck && truckState.active && !truckState.hit && gameRules.touches(before.x,before.z,after.x,after.z,px.x,px.z)){
 truckState.hit=true;fearT=gameRules.fearDuration;snd('bump');tip('bump', '😨 اصطدام! حركة أبطأ مؤقتًا', '#ffd54a');
 }
@@ -2845,7 +2870,7 @@ hud();
 function stopDrive(msg){
 if(!FD.on) return;
 FD.on = false;
-if(FD.seated){ FD.seated.root.position.set(0, 0, 0); FD.seated = null; }
+if(FD.seated){ FD.seated.root.position.set(0, 0, 0); FD.seated.root.scale.setScalar(FD.seated.baseScale || 1); FD.seated = null; }
 crewShow(true); forkDriver.visible = false;
 const ox = Math.cos(fk.rotation.y) * 2.1, oz = -Math.sin(fk.rotation.y) * 2.1;
 /* النزول بجانب الرافعة في نقطة حرة فعلاً (الجانب الأيمن ثم الأيسر ثم أقرب مكان خالٍ) */
@@ -3104,7 +3129,7 @@ $('rules').style.display = 'none';
 resetExitGate();
 resetFire();
 px.set(SAFE_SPAWN.x, 0, SAFE_SPAWN.z); curRotY = 0; liftAnim.active = false; resetInspector(); resetTruck();
-FD.on = false; if(FD.seated){ FD.seated.root.position.set(0, 0, 0); FD.seated = null; } FD.left = 60; FD.near = false; crewShow(true); forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = -Math.PI/2;
+FD.on = false; if(FD.seated){ FD.seated.root.position.set(0, 0, 0); FD.seated.root.scale.setScalar(FD.seated.baseScale || 1); FD.seated = null; } FD.left = 60; FD.near = false; crewShow(true); forkDriver.visible = false; fk.position.set(FD.home.x, 0, FD.home.z); fk.rotation.y = -Math.PI/2;
 STUDY.left = STUDY.total; STUDY.on = false; closeStudy();
 clearMovement(); last = performance.now();
 run = true; document.body.classList.add('ingame'); $('ov').style.display = 'none'; R.domElement.focus({preventScroll:true});
@@ -4204,8 +4229,11 @@ fk.position.z = Math.max(-11.2, Math.min(9.7, cz));
 px.x = fk.position.x; px.z = fk.position.z;
 if(FD.seated){
 const sc = FD.seated, yw = fk.rotation.y;
-const sz = sc.seatZ !== undefined ? sc.seatZ : SEAT.z;
-sc.root.position.set(Math.sin(yw) * sz, (sc.seatY !== undefined ? sc.seatY : SEAT.hips) - (sc.hipsHeight || 1.8), Math.cos(yw) * sz);
+/* الرافعة أصغر (FK_SCALE) فيصغر السائق قليلاً (DRV_SCALE) ويُنزَّل مقعده بالنسبة نفسها كي يتناسق مع المقعد والسقف */
+if(sc.baseScale === undefined) sc.baseScale = sc.root.scale.x || 1;
+sc.root.scale.setScalar(sc.baseScale * DRV_SCALE);
+const sz = (sc.seatZ !== undefined ? sc.seatZ : SEAT.z) * FK_SCALE;
+sc.root.position.set(Math.sin(yw) * sz, (sc.seatY !== undefined ? sc.seatY : SEAT.hips) * FK_SCALE - (sc.hipsHeight || 1.8) * DRV_SCALE, Math.cos(yw) * sz);
 sc.root.rotation.set(0, yw, 0);
 sc.pose({ dt, sit: true, moving: false, speed: 0 });
 }
@@ -4346,8 +4374,7 @@ if(it.data.isMys && it.m.material.emissive){ it.m.material.emissive.setHex(0x4a3
 if(it.crit){
 if(it.st === 'belt' || it.st === 'floor' || it.st === 'held'){
 if(!STUDY.on && !jam.active) it.crit.t -= dt;
-const sec = Math.max(0, Math.ceil(it.crit.t));
-if(sec !== it.crit.tag.sec) drawCritTag(it.crit.tag, sec);
+if(Math.round(Math.max(0, it.crit.t) * 8) !== it.crit.tag.sec) drawCritTag(it.crit.tag, it.crit.t);
 const pl = 1 + Math.sin(now * 0.012) * 0.16;
 it.crit.halo.scale.set(2.3 * pl, 2.3 * pl, 1);
 it.crit.halo.material.opacity = .55 + Math.sin(now * 0.012) * .3;

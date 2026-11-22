@@ -33,6 +33,9 @@
 
   const rules = {
     startAt: 12,
+    // الرافعة المتهورة تعبر ثلاث مرات في الجولة، وفي كل مرة تُسقط جسماً غريباً بشكل مختلف.
+    trips: 3,
+    startAts: [12, 52, 92],
     speed: 12,
     turnDuration: 1.5,
     turnRadius: 2,
@@ -51,14 +54,17 @@
         turned: false,
         dropped: false,
         hit: false,
+        trip: 0,
+        trips: rules.trips,
       };
     },
     advance(state, dt, playerZ) {
-      const result = { drop: false, entered: false };
+      const result = { drop: false, entered: false, trip: state.trip || 0 };
       if (state.done) return result;
       state.elapsed += dt;
       if (!state.active) {
-        if (state.elapsed < rules.startAt) return result;
+        const at = rules.startAts[state.trip || 0] !== undefined ? rules.startAts[state.trip || 0] : rules.startAt;
+        if (state.elapsed < at) return result;
         state.active = true;
         state.lane = Math.max(-2, Math.min(6, playerZ));
         result.entered = true;
@@ -73,8 +79,16 @@
         if (state.turn >= rules.turnDuration) state.turned = true;
       } else state.x += rules.speed * dt;
       if (state.x > 37) {
-        state.done = true;
         state.active = false;
+        if ((state.trip || 0) < (state.trips || 1) - 1) {
+          // تجهيز العبور التالي
+          state.trip = (state.trip || 0) + 1;
+          state.x = -36;
+          state.turn = 0;
+          state.turned = false;
+          state.dropped = false;
+          state.hit = false;
+        } else state.done = true;
       }
       return result;
     },
@@ -144,11 +158,11 @@
   // أسرار اللعبة: الرافعة تحمل الطرود — قواعد مشتركة صرفة بلا واجهة
   const forklift = {
     reach: 4.6,
-    forkOffset: 3.3,
+    forkOffset: 2.85,
     carryY: 0.88,
     driveSpeed: 9.8,
-    halfX: 2.4,
-    halfZ: 1.2,
+    halfX: 2.06,
+    halfZ: 1.04,
     nearest(list, x, z) {
       let best = null,
         bd = forklift.reach;

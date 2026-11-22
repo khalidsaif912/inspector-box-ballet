@@ -10,7 +10,7 @@ type ForkliftState = {
 
 type Rules = {
   reset(): ForkliftState;
-  advance(state: ForkliftState, dt: number, playerZ: number): { drop: boolean; entered: boolean };
+  advance(state: ForkliftState, dt: number, playerZ: number): { drop: boolean; entered: boolean; trip: number };
   touches(ax: number, az: number, bx: number, bz: number, px: number, pz: number): boolean;
   movementMultiplier(remaining: number): number;
   fearDuration: number;
@@ -38,21 +38,20 @@ runInNewContext(readFileSync("public/game/game-rules.js", "utf8"), context);
 const rules = context["WarehouseRules"] as Rules;
 
 describe("Reckless forklift", () => {
-  it("crosses only once per shift", () => {
+  it("crosses exactly three times per shift", () => {
     const state = rules.reset();
     let entries = 0;
-    for (let i = 0; i < 2000; i++) if (rules.advance(state, 0.05, 3).entered) entries++;
-    expect(entries).toBe(1);
+    for (let i = 0; i < 6000; i++) if (rules.advance(state, 0.05, 3).entered) entries++;
+    expect(entries).toBe(3);
     expect(state.done).toBe(true);
     expect(rules.reset().done).toBe(false);
   });
-  it("makes exactly one full turn and drops one foreign object", () => {
+  it("drops one foreign object per crossing, each of a different kind (trip 0, 1, 2)", () => {
     const state = rules.reset();
-    let drops = 0;
-    for (let i = 0; i < 1000; i++) if (rules.advance(state, 0.05, 3).drop) drops++;
-    expect(state.turn).toBe(rules.turnDuration);
+    const trips: number[] = [];
+    for (let i = 0; i < 6000; i++) { const r = rules.advance(state, 0.05, 3); if (r.drop) trips.push(r.trip); }
+    expect(trips).toEqual([0, 1, 2]);
     expect(state.turned).toBe(true);
-    expect(drops).toBe(1);
   });
   it("detects collisions along a fast crossing, not just its endpoints", () => {
     expect(rules.touches(-4, 3, 4, 3, 0, 3)).toBe(true);
