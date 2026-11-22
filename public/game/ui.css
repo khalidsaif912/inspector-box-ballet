@@ -735,3 +735,49 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
 #cao-panel.on #cao-bubble.placard #cao-placard{display:block}
 @media (max-height:480px) and (orientation:landscape){#cao-panel.on .cq{width:min(48vw,330px)}#cao-panel.on #cao-placard{max-height:30vh}}
 @media (orientation:portrait){#cao-panel.on .cq{max-height:64%}#cao-panel.on #cao-placard{max-height:13vh}}
+
+/* ===== انسداد الحزام ===== */
+#jam-banner{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + var(--hh,56px) + 10px);transform:translate(-50%,-14px);width:min(94%,520px);z-index:8;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;background:linear-gradient(180deg,#f59e0b,#b45309);border:2px solid #1b1300;border-radius:14px;padding:9px 14px;text-align:center;color:#1b1300;box-shadow:0 12px 32px rgba(0,0,0,.55);font-family:'Cairo',system-ui,sans-serif;direction:rtl}
+#jam-banner.on{opacity:1;transform:translate(-50%,0);animation:jamPulse 1.1s ease-in-out infinite alternate}
+.jb-t{font-weight:900;font-size:clamp(14px,3.8vmin,19px)}
+.jb-s{font-weight:700;font-size:clamp(11px,2.9vmin,14px);line-height:1.5;margin-top:2px}
+.jb-c{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:4px;font-weight:800;font-size:clamp(11px,2.9vmin,14px)}
+.jb-c b{font-size:clamp(20px,5vmin,28px);font-variant-numeric:tabular-nums}
+@keyframes jamPulse{to{box-shadow:0 12px 32px rgba(0,0,0,.55),0 0 0 4px rgba(255,214,102,.55)}}
+@media (prefers-reduced-motion:reduce){#jam-banner.on{animation:none}}
+
+/* ===== لغز بطاقات تشغيل الرافعة: لوحة تحكم معدنية داخل المستودع ===== */
+.fw{position:absolute;inset:0;width:100%;height:100%;z-index:16;pointer-events:none}
+.cards{position:absolute;inset:0;z-index:14;display:none;align-items:center;justify-content:center;padding:10px;background:rgba(4,10,16,.62);direction:rtl;font-family:'Cairo',system-ui,sans-serif;--c:clamp(54px,min(17vh,19vw),104px)}
+.cards-panel{width:max-content;max-width:100%;padding:12px 14px;border-radius:12px;color:#f4f1e6;background:linear-gradient(180deg,#39434d,#242c33);border:6px solid transparent;border-image:repeating-linear-gradient(-45deg,#f5c400 0 12px,#1a1a1a 12px 24px) 6;box-shadow:0 22px 60px rgba(0,0,0,.7),inset 0 0 0 2px rgba(255,255,255,.06)}
+.cards-head{display:flex;align-items:center;gap:10px}
+.cards-ic{font-size:28px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+.cards-ttl{display:flex;flex-direction:column;flex:1;min-width:0;text-align:start}
+.cards-ttl b{font-size:clamp(14px,3.5vmin,18px);font-weight:900}
+.cards-ttl small{font-size:clamp(11px,2.6vmin,13px);color:#c9d3da;font-weight:600;line-height:1.35}
+.cards-x{all:unset;box-sizing:border-box;cursor:pointer;width:34px;height:34px;display:grid;place-items:center;border-radius:6px;background:#4a5661;color:#fff;font-weight:900}
+.cards-x:hover{background:#63717d}
+.cards-x:focus-visible,.card9:focus-visible{outline:3px solid #ffd54a;outline-offset:2px}
+.cards-bar{position:relative;height:14px;margin:10px 0;border-radius:3px;background:#12181d;overflow:hidden;border:1px solid #000}
+.cards-bar i{position:absolute;inset:0 auto 0 0;width:100%;background:repeating-linear-gradient(-45deg,#f5c400 0 8px,#8a6c00 8px 16px);transform-origin:left;transition:background .3s}
+.cards-bar.low i{background:repeating-linear-gradient(-45deg,#ff4a3d 0 8px,#8f1a12 8px 16px)}
+.cards-bar span{position:absolute;inset:0;display:grid;place-items:center;font:900 12px/1 ui-monospace,monospace;color:#fff;text-shadow:0 1px 2px #000}
+.cards-grid{display:grid;grid-template-columns:repeat(3,var(--c));gap:8px;direction:ltr;justify-content:center;perspective:700px}
+.card9{all:unset;box-sizing:border-box;cursor:pointer;position:relative;width:var(--c);height:var(--c);transform-style:preserve-3d;transition:transform .35s cubic-bezier(.3,.7,.3,1)}
+.card9.up{transform:rotateY(180deg)}
+.card9.bad{animation:cardShake .35s}
+.card9.ok .face.front{box-shadow:0 0 0 3px #2fe06d,0 0 18px rgba(47,224,109,.7)}
+.card9.matched{cursor:default}
+.card9 .face{position:absolute;inset:0;border-radius:10%;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.card9 .back{background:repeating-linear-gradient(-45deg,#2b333b 0 10px,#232a31 10px 20px);border:3px solid #f5c400;color:#f5c400;font-size:calc(var(--c)*.42);box-shadow:inset 0 0 0 2px #000,0 4px 8px rgba(0,0,0,.5)}
+.card9 .front{transform:rotateY(180deg);background:#f4f1e6;color:#161a1d;border:3px solid #161a1d;box-shadow:0 4px 8px rgba(0,0,0,.5)}
+.card9 .front img{width:86%;height:86%;object-fit:contain;display:block}
+.card9 .front.code{background:#161a1d;color:#f5c400;gap:1px;padding:2px}
+.card9 .front.code b{font:900 calc(var(--c)*.27)/1 ui-monospace,monospace;letter-spacing:.02em}
+.card9 .front.code small{font:700 calc(var(--c)*.11)/1.15 'Cairo',sans-serif;color:#e9e6d6;text-align:center;max-width:94%}
+.card9 .front.code i{font:800 calc(var(--c)*.12)/1 ui-monospace,monospace;color:#9fb0bb;font-style:normal}
+.card9 .front.wild{background:radial-gradient(circle,#ffd86b,#e6552b);font-size:calc(var(--c)*.5);color:#fff}
+.cards-foot{margin-top:8px;font-weight:800;font-size:clamp(11px,2.8vmin,14px);color:#d9e2e8;text-align:center;min-height:20px}
+@keyframes cardShake{25%{translate:-5px 0}50%{translate:5px 0}75%{translate:-3px 0}}
+@media (max-height:440px){.cards{padding:4px;--c:clamp(44px,15vh,64px)}.cards-panel{padding:6px 10px}.cards-bar{margin:5px 0}.cards-foot{margin-top:4px}}
+@media (prefers-reduced-motion:reduce){.card9{transition:none}.card9.bad{animation:none}}

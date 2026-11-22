@@ -467,5 +467,69 @@
   })();
   rules.freezer = freezer;
 
+  // ===== انسداد الحزام + الطرد الثقيل + لغز بطاقات تشغيل الرافعة (كلها داخل المستودع) =====
+  // الحزام يتوقف (يتجمد الوقت) حين تتراكم الصناديق عليه فوق الحد، ولا يعود حتى تُنقل الزائدة إلى مناطقها.
+  const belt = {
+    jamAt: 9,
+    clearAt: 4,
+    clearReward: 20,
+    warnAt: 7,
+    jammed(count) {
+      return count >= belt.jamAt;
+    },
+    cleared(count) {
+      return count <= belt.clearAt;
+    },
+  };
+  rules.belt = belt;
+
+  // طرد واحد ثقيل لا يُرفع باليد؛ تنقله الرافعة إلى منطقته الصحيحة (+50)
+  const heavy = {
+    kg: 850,
+    deliverReward: 50,
+    solveReward: 100,
+    failPenalty: 50,
+    window: [30, 75],
+    canLiftByHand(item) {
+      return !(item && item.isHeavy);
+    },
+  };
+  rules.heavy = heavy;
+
+  // لغز البطاقات: 9 بطاقات = 4 ملصقات مواد خطرة + 4 أكواد مطابقة + بطاقة شرارة (ألعاب نارية).
+  // يُقلب ملصق مع كوده فيتطابقان. المهلة 60 ثانية.
+  const cards = {
+    seconds: 60,
+    pairs: 4,
+    size: 9,
+    wildTimeBonus: 10,
+    build(pool, rng) {
+      const rnd = typeof rng === "function" ? rng : Math.random;
+      const seen = new Set();
+      const uniq = (pool || []).filter((e) => e && !seen.has(e.key) && seen.add(e.key));
+      const picked = [];
+      const bag = uniq.slice();
+      while (picked.length < cards.pairs && bag.length) picked.push(bag.splice(Math.floor(rnd() * bag.length), 1)[0]);
+      const deck = [];
+      picked.forEach((e, i) => {
+        deck.push({ id: "L" + i, key: e.key, kind: "label", data: e });
+        deck.push({ id: "C" + i, key: e.key, kind: "code", data: e });
+      });
+      deck.push({ id: "W", key: "wild", kind: "wild", data: null });
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(rnd() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    },
+    isPair(a, b) {
+      return !!a && !!b && a.id !== b.id && a.kind !== "wild" && b.kind !== "wild" && a.key === b.key && a.kind !== b.kind;
+    },
+    won(deck, matched) {
+      return deck.filter((c) => c.kind !== "wild").every((c) => matched.has(c.id));
+    },
+  };
+  rules.cards = cards;
+
   root.WarehouseRules = rules;
 })(globalThis);

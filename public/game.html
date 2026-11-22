@@ -195,6 +195,24 @@
 <span>دليل سريع</span>
 </button>
 </div>
+<div id="jam-banner" role="alert" aria-live="assertive">
+<div class="jb-t">⚠️ توقف الحزام عن العمل</div>
+<div class="jb-s">الوزن على الحزام أثقل من المسموح — انقل الصناديق الزائدة إلى مناطقها الصحيحة</div>
+<div class="jb-c"><b id="jam-n">0</b><span id="jam-goal"></span></div>
+</div>
+<div id="cards" class="cards" role="dialog" aria-modal="true" aria-labelledby="cards-title" style="display:none">
+<div class="cards-panel">
+<div class="cards-head">
+<span class="cards-ic" aria-hidden="true">🔑</span>
+<div class="cards-ttl"><b id="cards-title">تشغيل الرافعة الشوكية</b><small id="cards-sub"></small></div>
+<button id="cards-x" class="cards-x" type="button" aria-label="إغلاق">✕</button>
+</div>
+<div class="cards-bar" role="timer" aria-live="off"><i id="cards-fill"></i><span id="cards-time"></span></div>
+<div class="cards-grid" id="cards-grid" role="group"></div>
+<div class="cards-foot"><span id="cards-info" aria-live="polite"></span></div>
+</div>
+</div>
+<canvas id="fw" class="fw" aria-hidden="true"></canvas>
 <div id="frz" class="frz" role="dialog" aria-modal="true" aria-labelledby="frz-title" style="display:none">
 <div class="frz-card">
 <div class="frz-head">
