@@ -1,4 +1,6 @@
 const gameRules = WarehouseRules;
+/* استيفاء خطي عام (تستخدمه حركة المفتش ودورانه) */
+function lrp(cur, target, k){ return cur + (target - cur) * k; }
 /* ===== شاشة التحميل: تقدّم حقيقي مبني على مراحل البناء الفعلية ===== */
 const loading = (() => {
 const screen = document.getElementById('loading-screen');
@@ -947,12 +949,20 @@ const CREW = { mode: 'glb', obj: null, inst: null, ready: false, tried: false };
 /* الشخصية الأساسية: مجسّم مجهّز بهيكل عظمي (11MB) — تُحمّل عند اختيارها فقط. */
 const HERO = { obj: null, inst: null, ready: false, loading: false, err: null };
 window.__hero = HERO;
-/* ثلاث شخصيات: hero (الأساسية) · crew (المجسّم الثابت) · rig (الإجرائي) */
-const CHAR_IDS = ['hero', 'crew', 'rig'];
-const CHAR = { id: 'hero' };
+/* شخصيات Mixamo: مجسّم + حركات مسجّلة حقيقية، يحمّلها مُحمّل واحد مشترك (mixamo-rig.js) */
+const MIX = {
+  worker: { url: 'game/models/mixamo-worker.glb', obj: null, inst: null, ready: false, loading: false, err: null },
+  timmy:  { url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null }
+};
+/* الشخصيات: worker و timmy (Mixamo) · hero (3D) · crew (المجسّم الثابت) · rig (الإجرائي) */
+const CHAR_IDS = ['worker', 'timmy', 'hero', 'crew', 'rig'];
+const CHAR = { id: 'worker' };
+/* ترحيل لمرة واحدة: من بقي على الافتراضي القديم (hero) ينتقل إلى عامل المستودع الافتراضي الجديد */
+try { if(localStorage.getItem('acg_char_v') !== '2'){ const o = localStorage.getItem('acg_char'); if(!o || o === 'hero') localStorage.setItem('acg_char', 'worker'); localStorage.setItem('acg_char_v', '2'); } } catch(e){}
 try { const saved = localStorage.getItem('acg_char'); if(CHAR_IDS.indexOf(saved) >= 0) CHAR.id = saved; } catch(e){}
 try { if(new URLSearchParams(location.search).get('crew') === 'rig') CREW.mode = 'rig'; } catch(e){}
 function activeCharRig(){
+  if(MIX[CHAR.id]) return MIX[CHAR.id].ready ? MIX[CHAR.id].inst : null;
   if(CHAR.id === 'hero') return HERO.ready ? HERO.inst : null;
   if(CHAR.id === 'crew') return (CREW.ready && CREW.mode === 'glb') ? CREW.inst : null;
   return null; // الإجرائي: يحل محلّه rig المجسّم
@@ -961,37 +971,98 @@ function crewShow(v){
   const act = activeCharRig();
   if(CREW.obj) CREW.obj.visible = v && CHAR.id === 'crew' && !!act;
   if(HERO.obj) HERO.obj.visible = v && CHAR.id === 'hero' && !!act;
+  for(const id in MIX) if(MIX[id].obj) MIX[id].obj.visible = v && CHAR.id === id && !!act;
   rig.visible = v && !act;
 }
 function applyCrewMode(){
-  if(CHAR.id === 'hero') loadHero(); else if(CHAR.id === 'crew') loadCrewGLB();
+  if(MIX[CHAR.id]) loadMixamo(CHAR.id);
+  else if(CHAR.id === 'hero') loadHero(); else if(CHAR.id === 'crew') loadCrewGLB();
   crewShow(true);
+}
+/* حالة تحميل الشخصية: تظهر تحت أزرار الاختيار (وكإشعار داخل اللعب) بدل أن يظهر
+   الموظف الكلاسيكي بصمت أثناء تنزيل المجسّم الكبير أو عند فشله. */
+function charStatus(text){
+  const row = document.getElementById('chars');
+  let el = document.getElementById('char-status');
+  if(!el && row && row.parentNode){
+    el = document.createElement('div'); el.id = 'char-status'; el.setAttribute('role', 'status');
+    el.style.cssText = 'font-size:12px;opacity:.85;margin-top:6px;min-height:1em;text-align:center';
+    row.parentNode.insertBefore(el, row.nextSibling);
+  }
+  if(el) el.textContent = text || '';
+}
+const CHAR_NAMES = { worker: ['عامل المستودع', 'warehouse worker'], timmy: ['تيمي المرح', 'Timmy'], hero: ['شخصية 3D', '3D character'], crew: ['طاقم أرضي', 'ground crew'] };
+function loadMixamo(id, attempt){
+  const M = MIX[id];
+  if(!M || M.loading || M.ready || !window.MixamoWorker) return;
+  M.loading = true; M.err = null;
+  const n = CHAR_NAMES[id];
+  charStatus(I18N.T('⏳ جاري تحميل ' + n[0] + '…', '⏳ Loading ' + n[1] + '…'));
+  MixamoWorker.load(M.url, (e) => {
+    if(!e || !e.total || CHAR.id !== id) return;
+    const p = Math.min(99, Math.round(e.loaded / e.total * 100));
+    charStatus(I18N.T('⏳ جاري تحميل ' + n[0] + '… ' + p + '%', '⏳ Loading ' + n[1] + '… ' + p + '%'));
+  }).then(o => {
+    M.obj = o.root; M.inst = o; M.ready = true; M.loading = false;
+    pl.add(o.root); if(CHAR.id === id) charStatus(''); applyCrewMode();
+    loadSeatCrew();
+    console.log('[' + id + '] mixamo glb ready');
+  }).catch(err => {
+    M.loading = false; M.err = String(err && err.message || err);
+    if(!attempt && CHAR.id === id){ setTimeout(() => { if(CHAR.id === id) loadMixamo(id, 1); }, 1500); return; }
+    crewShow(true);
+    if(CHAR.id === id) charLoadFailed(id, err);
+  });
+}
+function charLoadFailed(id, err){
+  const n = CHAR_NAMES[id] || ['الشخصية', 'character'];
+  console.warn('[' + id + '] glb failed', err);
+  /* لا نغيّر اختيار اللاعب المحفوظ: الكلاسيكي بديل مؤقت فقط، وتُعاد المحاولة عند الاختيار التالي */
+  const msg = I18N.T('⚠️ تعذّر تحميل ' + n[0] + ' — يظهر الموظف الكلاسيكي مؤقتاً. اختره مرة أخرى للمحاولة.',
+    '⚠️ Could not load the ' + n[1] + ' — showing the classic worker for now. Pick it again to retry.');
+  charStatus(msg);
+  try { toast(msg, '#ffd54a'); } catch(e){}
 }
 function loadCrewGLB(){
   if(CREW.tried || CREW.mode !== 'glb' || !window.CrewRig) return;
   CREW.tried = true;
+  charStatus(I18N.T('⏳ جاري تحميل الطاقم الأرضي…', '⏳ Loading ground crew…'));
   CrewRig.load('game/models/airport-crew.glb').then(o => {
-    CREW.obj = o.root; CREW.inst = o; CREW.ready = true; pl.add(o.root); applyCrewMode();
+    CREW.obj = o.root; CREW.inst = o; CREW.ready = true; pl.add(o.root); charStatus(''); applyCrewMode();
     loadSeatCrew();
     console.log('[crew] skinned glb ready, parts:', CrewRig.state.parts);
-  }).catch(err => { CREW.mode = 'rig'; CREW.ready = false; applyCrewMode(); console.warn('[crew] glb failed, using procedural rig', err); });
+  }).catch(err => {
+    CREW.ready = false; CREW.tried = false;            // يسمح بإعادة المحاولة بدل قفل الكلاسيكي طوال الجلسة
+    crewShow(true);
+    if(CHAR.id === 'crew') charLoadFailed('crew', err);
+  });
 }
-function loadHero(){
+function loadHero(attempt){
   if(HERO.loading || HERO.ready || !window.Character3D) return;
-  HERO.loading = true;
-  Character3D.load('game/models/character-3d.glb').then(o => {
+  HERO.loading = true; HERO.err = null;
+  charStatus(I18N.T('⏳ جاري تحميل الشخصية 3D…', '⏳ Loading 3D character…'));
+  Character3D.load('game/models/character-3d.glb', (e) => {
+    if(!e || !e.total || CHAR.id !== 'hero') return;
+    const p = Math.min(99, Math.round(e.loaded / e.total * 100));
+    charStatus(I18N.T('⏳ جاري تحميل الشخصية 3D… ' + p + '%', '⏳ Loading 3D character… ' + p + '%'));
+  }).then(o => {
     HERO.obj = o.root; HERO.inst = o; HERO.ready = true; HERO.loading = false;
-    pl.add(o.root); applyCrewMode();
+    pl.add(o.root); charStatus(''); applyCrewMode();
     loadSeatCrew();
     console.log('[hero] rigged glb ready');
   }).catch(err => {
-    HERO.loading = false; HERO.err = String(err && err.message || err); console.warn('[hero] glb failed', err);
-    if(CHAR.id === 'hero') setCharacter('rig');
+    HERO.loading = false; HERO.err = String(err && err.message || err);
+    /* شبكة الجوال قد تنقطع أثناء تنزيل 12MB: محاولة ثانية تلقائية قبل إظهار التنبيه */
+    if(!attempt && CHAR.id === 'hero'){ setTimeout(() => { if(CHAR.id === 'hero') loadHero(1); }, 1500); return; }
+    crewShow(true);
+    if(CHAR.id === 'hero') charLoadFailed('hero', err);
   });
 }
 function setCharacter(id){
-  CHAR.id = CHAR_IDS.indexOf(id) >= 0 ? id : 'hero';
+  CHAR.id = CHAR_IDS.indexOf(id) >= 0 ? id : 'worker';
   try { localStorage.setItem('acg_char', CHAR.id); } catch(e){}
+  try { if(parent !== window) parent.postMessage({ type: 'acg-character-changed', id: CHAR.id }, location.origin); } catch(e){}
+  charStatus('');                                   // دوال التحميل تعيد كتابة الحالة إن كان المجسّم قيد التنزيل
   applyCrewMode();
   syncCharButtons();
   return CHAR.id;
@@ -1270,12 +1341,22 @@ lShldX:0, rShldX:0, lShldZ:0, rShldZ:0,
 lElb:0, rElb:0,
 torsoTwist:0, torsoLean:0, torsoRoll:0, pelvisDrop:0
 };
+/* سرعة المشي الفعلية: من إزاحة اللاعب الحقيقية لا من الإدخال، فتتوقف الخطوات عند الاصطدام بجدار */
+let animPrevX = null, animPrevZ = null, animVel = 0;
 function anim(dt, spd, vx, vz){
-const isMoving = spd > 0.08;
 const isHeld = !!held;
 const sprinting = !isHeld && !!(key.ShiftLeft || key.ShiftRight);
+let moved = 0;
+if(animPrevX !== null) moved = Math.hypot(px.x - animPrevX, px.z - animPrevZ);
+animPrevX = px.x; animPrevZ = px.z;
+if(moved > 1.5) moved = 0;                                  // انتقال فوري (إعادة تموضع) لا يُحسب خطوات
+if(dt > 0) animVel += (moved / dt - animVel) * Math.min(1, dt * 14);
+const isMoving = spd > 0.08 && animVel > 0.6;
+const ac0 = activeCharRig();
 if(isMoving){
-walk += dt * (isHeld ? 13 : 15.5) * (sprinting ? 1.35 : 1) * gameRules.movementMultiplier(fearT);
+/* الطور يتقدم بالمسافة: دورة خطوتين لكل cycleLength وحدة ⇒ لا انزلاق للقدمين وإيقاع طبيعي */
+if(ac0 && window.Character3D && Character3D.cycleLength) walk += moved / Character3D.cycleLength(animVel, isHeld, sprinting) * Math.PI * 2;
+else walk += dt * (isHeld ? 13 : 15.5) * (sprinting ? 1.35 : 1) * gameRules.movementMultiplier(fearT);
 const targetRot = Math.atan2(vx, vz);
 const diff = Math.atan2(Math.sin(targetRot - curRotY), Math.cos(targetRot - curRotY));
 const turnK = Math.min(1, dt * (18 + Math.abs(diff) * 12));
@@ -1293,7 +1374,7 @@ const ac = activeCharRig();
 if(ac && ac.root.visible){
 ac.root.rotation.y = curRotY;
 ac.root.rotation.z = turnLean * .55;
-ac.pose({ dt, phase: walk, moving: isMoving, sprint: sprinting, held: isHeld, lift: liftAnim.active ? Math.sin(liftAnim.t * Math.PI) : 0 });
+ac.pose({ dt, phase: walk, moving: isMoving, speed: animVel, sprint: sprinting, held: isHeld, lift: liftAnim.active ? Math.sin(liftAnim.t * Math.PI) : 0 });
 }
 if(SEAT_CREW.fork) SEAT_CREW.fork.pose({ dt, sit: true });
 if(SEAT_CREW.truck) SEAT_CREW.truck.pose({ dt, sit: true });
@@ -3636,7 +3717,7 @@ apply(COLORS.some(([c]) => c === saved) ? saved : COLORS[0][0]);
 // ===== اختيار الشخصية =====
 (() => {
 const row = document.getElementById('chars'); if(!row) return;
-const LIST = [['hero', I18N.t('شخصية 3D')], ['crew', I18N.t('طاقم أرضي')], ['rig', I18N.t('موظف كلاسيكي')]];
+const LIST = [['worker', I18N.t('عامل المستودع')], ['timmy', I18N.t('تيمي المرح')], ['hero', I18N.t('شخصية 3D')], ['crew', I18N.t('طاقم أرضي')], ['rig', I18N.t('موظف كلاسيكي')]];
 LIST.forEach(([id, n]) => {
   const b = document.createElement('button'); b.type = 'button'; b.dataset.char = id; b.textContent = n;
   b.onclick = e => { e.stopPropagation(); window.__setCharacter(id); };

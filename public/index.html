@@ -147,52 +147,59 @@ body.ios .ios-note{display:inline}
 /* English (LTR) */
 html[lang="en"] .help-card{text-align:left}
 
-/* ===== شريط اختيار الشخصية: واضح وسريع فوق الملعب ===== */
+/* ===== اختيار الشخصية: خطوتان واضحتان — ١ اختر شخصيتك ٢ اضغط «العب الآن» ===== */
 .char-picker{
   position:relative;z-index:2;width:min(1680px,96vw);
-  display:flex;align-items:center;gap:12px;
-  padding:9px 14px;border-radius:16px;
+  display:flex;align-items:center;gap:14px;
+  padding:10px 14px;border-radius:18px;
   background:linear-gradient(180deg,rgba(26,45,66,.94),rgba(11,21,33,.94));
   border:1px solid rgba(150,205,255,.22);
   box-shadow:0 16px 38px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);
 }
-.char-picker .cp-title{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:900;color:#9fc0dd;white-space:nowrap}
-.char-picker .cp-title svg{width:16px;height:16px;color:#ffd05a}
-.char-opts{display:flex;gap:8px;flex-wrap:wrap;flex:1;min-width:0}
+.char-picker .cp-title{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:900;color:#eaf3ff;white-space:nowrap}
+.char-picker .cp-step{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#ffd05a;color:#2a1a00;font-size:14px;font-weight:900}
+.char-opts{display:flex;gap:10px;flex-wrap:wrap;flex:1;min-width:0}
 .char-opt{
-  position:relative;display:flex;align-items:center;gap:9px;cursor:pointer;
-  padding:7px 12px;border-radius:12px;font-family:inherit;
-  border:1px solid rgba(150,205,255,.22);background:rgba(255,255,255,.045);color:#dbe7f5;
+  position:relative;display:flex;align-items:center;gap:10px;cursor:pointer;min-height:56px;
+  padding:8px 14px 8px 12px;border-radius:14px;font-family:inherit;
+  border:2px solid rgba(150,205,255,.2);background:rgba(255,255,255,.05);color:#dbe7f5;
   transition:border-color .16s,background .16s,transform .16s,box-shadow .16s;
 }
-.char-opt:hover{background:rgba(255,255,255,.1);border-color:rgba(150,205,255,.5);transform:translateY(-1px)}
-.char-opt .ico{font-size:18px;line-height:1}
-.char-opt .txt{display:flex;flex-direction:column;line-height:1.22;text-align:start;font-size:12.5px;font-weight:800}
-.char-opt .txt small{font-size:9.5px;font-weight:700;color:#8ba4bd}
-.char-opt .tick{font-size:12px;font-weight:900;color:#ffd05a;opacity:0;transition:opacity .16s}
+.char-opt:hover{background:rgba(255,255,255,.1);border-color:rgba(150,205,255,.55);transform:translateY(-1px)}
+.char-opt .ico{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.09);font-size:21px;line-height:1;flex:0 0 auto}
+.char-opt .txt{display:flex;flex-direction:column;line-height:1.25;text-align:start;font-size:14px;font-weight:900}
+.char-opt .txt small{font-size:11.5px;font-weight:700;color:#9db3ca}
+.char-opt .tick{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#ffd05a;color:#2a1a00;font-size:12px;font-weight:900;opacity:0;transform:scale(.4);transition:opacity .16s,transform .16s;flex:0 0 auto}
 .char-opt.on{
-  border-color:rgba(255,208,90,.85);
-  background:linear-gradient(180deg,rgba(255,208,90,.24),rgba(255,167,38,.09));
-  box-shadow:0 0 0 1px rgba(255,208,90,.4),0 8px 22px rgba(255,167,38,.2);
+  border-color:#ffd05a;
+  background:linear-gradient(180deg,rgba(255,208,90,.26),rgba(255,167,38,.1));
+  box-shadow:0 0 0 2px rgba(255,208,90,.25),0 8px 22px rgba(255,167,38,.22);
 }
-.char-opt.on .txt small{color:#ffd88a}
-.char-opt.on .tick{opacity:1}
-.char-opt:focus-visible{outline:2px solid #8fd0ff;outline-offset:2px}
+.char-opt.on .ico{background:rgba(255,208,90,.3)}
+.char-opt.on .txt small{color:#ffe0a0}
+.char-opt.on .tick{opacity:1;transform:none}
+.char-opt:focus-visible{outline:3px solid #8fd0ff;outline-offset:2px}
+.char-opt .rec{position:absolute;top:-9px;inset-inline-end:10px;padding:1px 8px;border-radius:99px;background:#3ddc97;color:#04251a;font-size:10px;font-weight:900}
+.char-go{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#ffd88a;white-space:nowrap}
+.char-go .cp-step{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#3ddc97;color:#04251a;font-size:14px;font-weight:900}
+@media (min-width:901px) and (max-width:1500px){.char-go{display:none}}
 @media (max-width:900px){
-  .char-picker{width:100%;border-radius:0;border-inline:0;margin-top:52px;padding:6px 8px;gap:6px}
-  .char-picker .cp-title{display:none}
-  .char-opts{flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none}
+  .char-picker{width:100%;border-radius:0;border-inline:0;margin-top:52px;padding:10px 10px 8px;gap:8px;flex-direction:column;align-items:stretch}
+  .char-picker .cp-title{font-size:14px}
+  .char-opts{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:10px 2px 6px;scroll-snap-type:x proximity;scrollbar-width:none}
   .char-opts::-webkit-scrollbar{display:none}
-  .char-opt{flex:0 0 auto;padding:5px 9px;gap:6px}
-  .char-opt .ico{font-size:15px}
-  .char-opt .txt{font-size:11px;white-space:nowrap}
-  .char-opt .txt small{display:none}
-  .char-opt .tick{font-size:11px}
+  .char-opt{flex:0 0 auto;scroll-snap-align:center;min-height:60px;padding:8px 12px}
+  .char-go{display:flex;justify-content:center;font-size:12.5px}
   body>.frame-wrap{height:auto;flex:1 1 auto;min-height:0}
   .frame{height:100%}
 }
 @media (max-height:560px) and (orientation:landscape){
-  .char-picker{margin-top:0;padding:4px 8px}
+  .char-picker{margin-top:0;padding:4px 8px;flex-direction:row;align-items:center}
+  .char-picker .cp-title,.char-go{display:none}
+  .char-opts{padding:4px 2px}
+  .char-opt{min-height:44px;padding:4px 10px}
+  .char-opt .ico{width:28px;height:28px;font-size:16px}
+  .char-opt .txt small{display:none}
 }
 </style>
 </head>
@@ -226,11 +233,9 @@ html[lang="en"] .help-card{text-align:left}
 </header>
 
 <section class="char-picker" id="char-picker" aria-label="اختيار الشخصية">
-  <span class="cp-title">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/></svg>
-    <span data-t="الشخصية">الشخصية</span>
-  </span>
+  <span class="cp-title"><span class="cp-step" aria-hidden="true">1</span><span data-t="اختر شخصيتك">اختر شخصيتك</span></span>
   <div class="char-opts" id="char-opts" role="group" aria-label="اختيار الشخصية"></div>
+  <span class="char-go"><span class="cp-step" aria-hidden="true">2</span><span data-t="ثم اضغط «العب الآن» داخل اللعبة">ثم اضغط «العب الآن» داخل اللعبة</span></span>
 </section>
 
 <div class="frame-wrap">
@@ -238,7 +243,7 @@ html[lang="en"] .help-card{text-align:left}
     <iframe id="game" src="game.html" title="لعبة مستودع الشحن الجوي" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe>
   </div>
   <div class="caption">
-    <span class="dot"><i></i>اللعبة تعمل داخل إطار — اضغط داخل الإطار لتفعيل لوحة المفاتيح</span>
+    <span class="dot"><i></i><span data-t="اضغط داخل اللعبة لتفعيل لوحة المفاتيح">اضغط داخل اللعبة لتفعيل لوحة المفاتيح</span></span>
     <span class="ios-note">للتثبيت على iPhone: زر المشاركة ← إضافة إلى الشاشة الرئيسية</span>
   </div>
 </div>
@@ -307,20 +312,26 @@ document.addEventListener('click', (e) => {
 
 /* ===== اختيار الشخصية: الأساسية 3D + الشخصيتان السابقتان ===== */
 const CHARS = [
-  { id: 'hero', ico: '🧍', name: 'شخصية 3D', hint: 'الأساسية' },
+  { id: 'worker', ico: '👷', name: 'عامل المستودع', hint: 'الأساسية' },
+  { id: 'timmy', ico: '🧢', name: 'تيمي المرح', hint: 'كرتوني' },
+  { id: 'hero', ico: '🧍', name: 'شخصية 3D', hint: 'مجسّم مفصّل' },
   { id: 'crew', ico: '🧑‍✈️', name: 'طاقم أرضي', hint: 'مجسّم واقعي' },
   { id: 'rig', ico: '🧑‍🔧', name: 'موظف كلاسيكي', hint: 'خفيف وسريع' }
 ];
 const CHAR_KEY = 'acg_char';
 const charOpts = document.getElementById('char-opts');
 const charTitle = document.querySelector('#char-picker .cp-title [data-t]');
+const charGo = document.querySelector('#char-picker .char-go [data-t]');
 function charSaved(){
-  try { const v = localStorage.getItem(CHAR_KEY); return CHARS.some((c) => c.id === v) ? v : 'hero'; } catch(e){ return 'hero'; }
+  /* ترحيل لمرة واحدة: من بقي على الافتراضي القديم (hero) ينتقل إلى عامل المستودع الافتراضي الجديد */
+  try { if (localStorage.getItem('acg_char_v') !== '2') { const o = localStorage.getItem(CHAR_KEY); if (!o || o === 'hero') localStorage.setItem(CHAR_KEY, 'worker'); localStorage.setItem('acg_char_v', '2'); } } catch(e){}
+  try { const v = localStorage.getItem(CHAR_KEY); return CHARS.some((c) => c.id === v) ? v : 'worker'; } catch(e){ return 'worker'; }
 }
 let charNow = charSaved();
 function renderChars(){
   if (!charOpts) return;
-  if (charTitle) charTitle.textContent = I18N.t('الشخصية');
+  if (charTitle) charTitle.textContent = I18N.t('اختر شخصيتك');
+  if (charGo) charGo.textContent = I18N.t('ثم اضغط «العب الآن» داخل اللعبة');
   charOpts.setAttribute('aria-label', I18N.t('اختيار الشخصية'));
   charOpts.innerHTML = '';
   CHARS.forEach((c) => {
@@ -332,13 +343,19 @@ function renderChars(){
     b.title = I18N.t(c.name) + ' — ' + I18N.t(c.hint);
     b.innerHTML = '<span class="ico" aria-hidden="true">' + c.ico + '</span>' +
       '<span class="txt"><span>' + I18N.t(c.name) + '</span><small>' + I18N.t(c.hint) + '</small></span>' +
-      '<span class="tick" aria-hidden="true">✔</span>';
+      '<span class="tick" aria-hidden="true">✔</span>' +
+      (c.id === 'worker' ? '<span class="rec">' + I18N.t('موصى بها') + '</span>' : '');
     b.addEventListener('click', () => pickChar(c.id));
     charOpts.appendChild(b);
   });
 }
+/* مزامنة معاكسة: عند تغيير الشخصية من داخل اللعبة يتحدّث الغلاف فلا يختلف الاختياران */
+addEventListener('message', (e) => {
+  const d = e.data;
+  if (e.origin === location.origin && d && d.type === 'acg-character-changed' && CHARS.some((c) => c.id === d.id) && d.id !== charNow) { charNow = d.id; renderChars(); }
+});
 function pickChar(id){
-  charNow = CHARS.some((c) => c.id === id) ? id : 'hero';
+  charNow = CHARS.some((c) => c.id === id) ? id : 'worker';
   try { localStorage.setItem(CHAR_KEY, charNow); } catch(e){}
   renderChars();
   try { game.contentWindow.postMessage({ type: 'acg-character', id: charNow }, location.origin); } catch(e){}
