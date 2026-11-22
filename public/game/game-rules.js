@@ -548,5 +548,41 @@
   };
   rules.cards = cards;
 
+  // كومبو الرقصة: فرزات صحيحة متتالية والمفتش يتحرك بلا توقف بينها.
+  // الوقوف أكثر من maxIdle ثانية أو مرور maxGap ثانية بلا فرز أو خطأ فرز ⇒ تنكسر الرقصة.
+  // عند الفرزة الثالثة وكل فرزة بعدها: "Ballet xN!" ومكافأة تكبر حتى سقف.
+  const ballet = {
+    minChain: 3,
+    maxIdle: 1.2,
+    maxGap: 8,
+    bonusStep: 20,
+    bonusCap: 100,
+    spinSeconds: 0.75,
+    initial() {
+      return { count: 0, idle: 0, gap: 0 };
+    },
+    bonus(count) {
+      return count >= ballet.minChain ? Math.min(ballet.bonusCap, (count - ballet.minChain + 1) * ballet.bonusStep) : 0;
+    },
+    // يُستدعى كل إطار؛ يعيد حالة جديدة (count=0 إن انكسرت الرقصة)
+    tick(state, dt, moving) {
+      if (!state.count) return ballet.initial();
+      const idle = moving ? 0 : state.idle + dt;
+      const gap = state.gap + dt;
+      if (idle > ballet.maxIdle || gap > ballet.maxGap) return ballet.initial();
+      return { count: state.count, idle, gap };
+    },
+    // فرزة صحيحة: تزيد العدّاد وتعيد مكافأة الرقصة إن بلغت الحد الأدنى
+    onSort(state) {
+      const count = state.count + 1;
+      const bonus = ballet.bonus(count);
+      return { state: { count, idle: 0, gap: 0 }, triggered: bonus > 0, count, bonus };
+    },
+    onMiss() {
+      return ballet.initial();
+    },
+  };
+  rules.ballet = ballet;
+
   root.WarehouseRules = rules;
 })(globalThis);

@@ -1493,6 +1493,22 @@ if(!probe && hit && (Math.abs(mvx)+Math.abs(mvz)) > 0.3 && performance.now() - l
 return p;
 }
 let bob=0, walk=0, turnLean=0, curRotY=0, inX=0, inZ=0, animSpd=0;
+/* كومبو الرقصة: الحالة من WarehouseRules.ballet، والدوران الاحتفالي مدته spinSeconds */
+let ballet = { count: 0, idle: 0, gap: 0 }, balletMoving = false, balletSpinT = 0, balletPrev = null;
+function balletReset(){ ballet = gameRules.ballet.onMiss(); balletSpinT = 0; }
+function balletOnSort(){
+const r = gameRules.ballet.onSort(ballet);
+ballet = r.state;
+if(!r.triggered) return;
+score += r.bonus;
+balletSpinT = gameRules.ballet.spinSeconds;
+const el = $('ballet-banner');
+if(el){
+el.innerHTML = '💃 Ballet ×' + r.count + '!<small>+' + r.bonus + '</small>';
+el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+}
+snd('cardwin', 1 + Math.min(r.count - 3, 6) * .05);
+}
 let liftAnim = {active:false, t:0, dur:0.32, fromPos:new THREE.Vector3(), toHold:null};
 const cargoSmoothPos = new THREE.Vector3();
 const cargoHold = new THREE.Vector3();
@@ -1533,8 +1549,16 @@ turnLean += (0 - turnLean) * Math.min(1, dt * 8);
 rig.rotation.z = turnLean;
 /* الشخصية المجسّمة تُقلّد اتجاه الـrig، وحركة الجسد تأتي من الهيكل العظمي */
 const ac = activeCharRig();
+/* دوران الباليه الاحتفالي: لفّة كاملة فوق اتجاه الحركة الحالي (تخفيف ease-out) */
+let spinOff = 0;
+if(balletSpinT > 0){
+balletSpinT = Math.max(0, balletSpinT - dt);
+const k = 1 - balletSpinT / gameRules.ballet.spinSeconds;
+spinOff = (1 - Math.pow(1 - k, 3)) * Math.PI * 2;
+rig.rotation.y = curRotY + spinOff;
+}
 if(ac && ac.root.visible){
-ac.root.rotation.y = curRotY;
+ac.root.rotation.y = curRotY + spinOff;
 ac.root.rotation.z = turnLean * .55;
 ac.pose({ dt, phase: walk, moving: isMoving, speed: animVel, sprint: sprinting, held: isHeld, lift: liftAnim.active ? Math.sin(liftAnim.t * Math.PI) : 0 });
 }
@@ -2802,6 +2826,7 @@ score += p;
 streak++; streakT = streakWindow(); maxStreak = Math.max(maxStreak, streak);
 combo = gameRules.economy.comboAfter(streak);
 time += 3;
+balletOnSort();
 let critMsg = '';
 if(it.crit){
 /* Large tier: hit-stop + ضربة اهتزاز + وميض ذهبي + رقم كبير بارتداد */
@@ -2841,6 +2866,7 @@ score = Math.max(0, score - pen);
 combo = 1; streak = 0; streakT = 0;
 snd('error');
 penaltyFx(lost, conflict);
+balletReset();
 spawnFloatTag('−' + pen, '#ff5252', conflict ? 'big' : undefined);
 if(conflict){
 /* Large tier: تعارض IATA جسيم — وقفة + صدمة اهتزاز + وميض أحمر */
@@ -3118,6 +3144,7 @@ Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) dr
 slowT = 0; beltSlowT = 0; beltSlowUsed = false; beltBtnMat.color.setHex(0x14e0b0); beltBtnMat.emissiveIntensity = 1; beltBtnHalo.scale.setScalar(1);
 score = 0; combo = 1; time = 100; spawnT = 0; held = null; stage = 1;
 streak = 0; streakT = 0; maxStreak = 0; rushT = 25; rushN = 0; rushDelay = 0;
+balletReset();
 $('streak').classList.remove('on');
 dashT = 0; dashCD = 0; feverT = 0; shakeTrauma = 0; FODQ.n = 0; fodRender();
 $('dash-fx').classList.remove('on'); $('stage').classList.remove('fever'); setDashButton();
@@ -4090,6 +4117,7 @@ score = Math.max(0, score - gameRules.cao.penalty);
 time = Math.max(0, time - 4);
 streak = 0; streakT = 0; combo = 1;
 snd('error'); penaltyFx(lost, true);
+balletReset();
 spawnFloatTag('−' + gameRules.cao.penalty + ' −4 ث', '#ff5252');
 caoSay(I18N.T('قرار خاطئ. الطرد يحمل ملصق CAO — Cargo Aircraft Only — ورحلتنا ركاب، فتحميله مخالفة. أوقفه وأعد تصديره على طائرة شحن. −','Wrong call. The parcel is labelled CAO — Cargo Aircraft Only — and this is a passenger flight, so loading it is a violation. Hold it and re-route it on a freighter. −') + gameRules.cao.penalty + I18N.T(' نقطة و −4 ثوانٍ.',' pts and −4s.'), false);
 it.st = 'belt';
@@ -4284,6 +4312,11 @@ if(rushN === 0) spawnT = Math.max(spawnT, BREATH_SPAWN[stage] * 1.4);
 }
 }
 if(streakT > 0 && !STUDY.on){ streakT -= dt; if(streakT <= 0){ streakT = 0; streak = 0; combo = 1; } }
+/* الحركة للرقصة من إزاحة اللاعب الفعلية (لا تتأثر ببطء الإطارات) */
+{ const bm = balletPrev ? Math.hypot(px.x - balletPrev.x, px.z - balletPrev.z) : 0;
+  balletPrev = { x: px.x, z: px.z };
+  balletMoving = dt > 0 && bm / dt > 0.6 && bm < 6;
+  if(!STUDY.on && !FD.on) ballet = gameRules.ballet.tick(ballet, dt, balletMoving); }
 for(const it of items.slice()){
 /* الطرد المجمّد المتروك على الأرض أمام غرفة التجميد (بأي طريقة: إسقاط عادي أو سريع أو رافعة) يفتح لوحة اللغز تلقائياً */
 if(it.data.isFrz){
