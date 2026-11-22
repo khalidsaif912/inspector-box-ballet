@@ -155,12 +155,14 @@
   }
 
   /* ===== المفتش (Mixamo): نفس مجسّم المفتش بعد ترقيمه آلياً + حركات مسجّلة =====
-     الملف game/models/inspector-mx.glb: walk · idle · look_down · look_around · thumbs · head_no.
+     الملف game/models/inspector-mx.glb: walk · idle · look_down · thumbs · head_no.
      واجهة pose({dt, mode, moving}) نفسها التي تستعملها اللعبة مع المفتش القديم. */
+  var INSP_ARM_K = 0;   // المجسّم الحالي يحمل أوزاناً صحيحة للذراعين فلا حاجة لإمالتهما؛ تبقى القيمة للتجارب (window.__armk)
   var INSP_H = 2.92;   // ارتفاع المفتش المحلي؛ مجموعة المفتش في اللعبة بمقياس 1.08 فتصير قامته ≈ 3.15
-  var INSP_CLIP = { walk: 'walk', idle: 'idle', inspect: 'look_down', verdict_pause: 'head_no', cao_inspect: 'look_around', cao_approved: 'thumbs', cao_rejected: 'head_no' };
+  var INSP_CLIP = { walk: 'walk', idle: 'idle', inspect: 'look_down', verdict_pause: 'head_no', cao_inspect: 'idle', cao_approved: 'thumbs', cao_rejected: 'head_no' };
   function createInspector() {
-    var S = { mixer: null, actions: {}, cur: null, loaded: false, root: null };
+    var S = { mixer: null, actions: {}, cur: null, loaded: false, root: null, armL: null, armR: null, foreL: null, foreR: null };
+    var vA = new THREE.Vector3(), vB = new THREE.Vector3(), vD = new THREE.Vector3(), vT = new THREE.Vector3(), vDown = new THREE.Vector3(0, -1, 0), qW = new THREE.Quaternion(), qA = new THREE.Quaternion(), qP = new THREE.Quaternion();
     function load(url) {
       return new Promise(function (resolve, reject) {
         if (!THREE.GLTFLoader) return reject(new Error('GLTFLoader missing'));
@@ -171,8 +173,8 @@
               if (o.isMesh || o.isSkinnedMesh) {
                 o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
                 var m = [].concat(o.material)[0];
-                if (m && m.map) { m.map.magFilter = THREE.NearestFilter; m.map.minFilter = THREE.NearestFilter; m.map.generateMipmaps = false; m.map.needsUpdate = true; }
-                var sm = new THREE.MeshStandardMaterial({ map: m && m.map || null, color: 0xffffff, roughness: 0.72, metalness: 0.02 });
+                if (m && m.map) { m.map.anisotropy = 4; m.map.needsUpdate = true; }
+                var sm = new THREE.MeshStandardMaterial({ map: m && m.map || null, color: 0xffffff, roughness: 0.72, metalness: 0.02, skinning: !!o.isSkinnedMesh });   // r128 يحتاج skinning:true وإلا يبقى الجسم ثابتاً
                 if (sm.map) sm.map.encoding = THREE.sRGBEncoding;
                 o.material = sm;
               }
@@ -196,6 +198,7 @@
             });
             if (!S.actions.idle) throw new Error('inspector-mx.glb: idle clip missing');
             S.mixer = mixer; S.cur = 'idle'; S.actions.idle.setEffectiveWeight(1);
+            model.traverse(function (o) { if (o.name === 'mixamorigLeftArm') S.armL = o; if (o.name === 'mixamorigRightArm') S.armR = o; if (o.name === 'mixamorigLeftForeArm') S.foreL = o; if (o.name === 'mixamorigRightForeArm') S.foreR = o; });
             S.root = root; S.loaded = true;
             resolve(root);
           } catch (e) { reject(e); }
@@ -215,6 +218,20 @@
       }
       S.actions[S.cur].setEffectiveTimeScale(S.cur === 'walk' ? (p.speed ? p.speed / 2.5 : 1.4) : 1);
       S.mixer.update(dt);
+      // المجسّم رُقّم بوضع A (ذراعان مفتوحتان قليلاً) فتبقى الذراعان بعيدتين عن الجسم: نُميل كل ذراع نحو الأسفل
+      // في الفضاء العالمي (مستقلاً عن محاور العظام) بمقدار يتناسب مع الحركة الحالية.
+      var k = window.__armk !== undefined ? window.__armk : (S.cur === 'walk' || S.cur === 'idle' || S.cur === 'head_no' ? INSP_ARM_K : INSP_ARM_K * 0.45);
+      if (S.armL && k) { S.root.updateMatrixWorld(true); lowerArm(S.armL, S.foreL, k); lowerArm(S.armR, S.foreR, k); }
+    }
+    function lowerArm(arm, fore, k) {
+      arm.getWorldPosition(vA); fore.getWorldPosition(vB);
+      vD.subVectors(vB, vA); if (vD.lengthSq() < 1e-8) return; vD.normalize();
+      vT.copy(vD).lerp(vDown, k).normalize();
+      qW.setFromUnitVectors(vD, vT);
+      arm.getWorldQuaternion(qA);
+      arm.parent.getWorldQuaternion(qP);
+      arm.quaternion.copy(qP.invert().multiply(qW).multiply(qA));
+      arm.updateMatrixWorld(true);
     }
     return { load: load, pose: pose };
   }

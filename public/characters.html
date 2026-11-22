@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>غرفة الشخصيات — مستودع الشحن الجوي 3D</title>
+<meta name="theme-color" content="#0e1b26">
+<style>
+@font-face{font-family:'Cairo';font-style:normal;font-weight:500 900;font-display:swap;src:url(vendor/fonts/cairo-arabic.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:'Cairo';font-style:normal;font-weight:500 900;font-display:swap;src:url(vendor/fonts/cairo-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+:root{--paper:#e9edef;--ink:#12212e;--field:#d3dade;--mute:#4b5c69;--red:#d4281e;--blue:#1c4e8a;--ok:#1f8a52;--night:#0e1b26;color-scheme:dark light}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:'Cairo',system-ui,"Segoe UI",Tahoma,sans-serif;background:var(--night);color:#e9f1f6;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.app{display:flex;height:100dvh;min-height:0}
+.stage{position:relative;flex:1 1 auto;min-width:0;background:radial-gradient(ellipse at 50% 38%,#2c4a62 0%,#162a3b 52%,#0b1620 100%);touch-action:none;cursor:grab}
+.stage:active{cursor:grabbing}
+.stage canvas{display:block;width:100%;height:100%}
+.top{position:absolute;inset-inline:0;top:0;display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 0;pointer-events:none}
+.top>*{pointer-events:auto}
+.back{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 14px;border-radius:4px;border:2px solid #e9f1f6;color:#e9f1f6;font-weight:800;font-size:14px;background:rgba(10,20,30,.55)}
+.back:hover{background:#e9f1f6;color:var(--ink)}
+.back:focus-visible,.card:focus-visible,.chip:focus-visible,.pick:focus-visible{outline:3px solid #ffd54a;outline-offset:2px}
+.ttl{font-size:clamp(15px,2.6vw,20px);font-weight:900;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.hint{position:absolute;inset-inline:0;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);text-align:center;font-size:12.5px;font-weight:600;color:#9cb4c4;pointer-events:none}
+.load{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:15px;color:#cfe3f1;background:rgba(8,16,24,.55);transition:opacity .3s}
+.load[hidden]{display:none}
+.panel{flex:0 0 min(360px,42vw);display:flex;flex-direction:column;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 12px) 14px calc(env(safe-area-inset-bottom,0px) + 12px);background:var(--paper);color:var(--ink);border-inline-start:6px solid transparent;border-image:repeating-linear-gradient(-45deg,var(--red) 0 7px,var(--paper) 7px 14px) 6;overflow-y:auto}
+.panel h2{margin:0;font-size:16px;font-weight:900}
+.cards{display:grid;gap:8px}
+.card{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--field);border:2px solid var(--field);border-radius:4px;position:relative}
+.card:hover{border-color:var(--ink)}
+.card[aria-checked=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.card .ic{font-size:30px;line-height:1;width:44px;height:44px;display:grid;place-items:center;background:var(--paper);border-radius:3px;flex:0 0 auto}
+.card .nm{display:block;font-weight:900;font-size:15px;line-height:1.2}
+.card .rl{display:block;font-size:12px;font-weight:600;opacity:.75;line-height:1.3}
+.card .st{margin-inline-start:auto;font-size:11px;font-weight:800;opacity:.8;white-space:nowrap}
+.card .tag{position:absolute;top:-8px;inset-inline-end:8px;background:var(--red);color:#fff;font-size:10.5px;font-weight:900;padding:0 8px;height:18px;display:flex;align-items:center;border-radius:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{all:unset;box-sizing:border-box;cursor:pointer;padding:6px 12px;border-radius:4px;background:#fff;border:2px solid var(--field);font-weight:800;font-size:13px}
+.chip:hover{border-color:var(--ink)}
+.chip[aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:#fff}
+.pick{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:11px 14px;background:var(--red);color:#fff;border-radius:4px;font-weight:900;font-size:15px;box-shadow:0 4px 0 #8f1a12}
+.pick:active{transform:translateY(3px);box-shadow:0 1px 0 #8f1a12}
+.pick[hidden]{display:none}
+.note{margin:0;font-size:12.5px;line-height:1.55;color:var(--mute);font-weight:600}
+.msg{min-height:20px;font-size:13px;font-weight:800;color:var(--ok)}
+@media (max-width:760px) and (orientation:portrait){
+  .app{flex-direction:column}
+  .stage{flex:1 1 52%}
+  .panel{flex:0 0 auto;max-height:48dvh;border-inline-start:0;border-top:6px solid var(--red)}
+}
+@media (max-height:480px) and (orientation:landscape){
+  .panel{flex-basis:min(330px,46vw);gap:6px;padding:8px 10px}
+  .card{padding:4px 10px;gap:8px}.card .ic{width:34px;height:34px;font-size:22px}.card .nm{font-size:13px}.card .rl{display:none}
+  .chip{padding:4px 9px;font-size:12px}.note{display:none}.pick{padding:8px 10px;font-size:13px}
+}
+@media (prefers-reduced-motion:reduce){.load{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="stage" id="stage">
+    <div class="top"><button class="back" id="back" type="button">↩ <span id="t-back">العودة إلى اللعبة</span></button><span class="ttl" id="t-title">غرفة الشخصيات</span></div>
+    <div class="load" id="load"><span id="t-load">جاري تجهيز الشخصيات…</span></div>
+    <div class="hint" id="t-hint">اسحب لتدوير الشخصية</div>
+  </div>
+  <aside class="panel" aria-label="الشخصيات">
+    <h2 id="t-pick">اختر شخصية لمعاينتها</h2>
+    <div class="cards" id="cards" role="radiogroup" aria-label="الشخصيات"></div>
+    <h2 id="t-anim">الحركات</h2>
+    <div class="chips" id="chips"></div>
+    <button class="pick" id="pick" type="button" hidden>اجعلها شخصيتي في اللعبة</button>
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <p class="note" id="t-note"></p>
+  </aside>
+</div>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/GLTFLoader.js"></script>
+<script src="game/mixamo-rig.js?v=101"></script>
+<script src="game/i18n.js?v=101"></script>
+<script>
+(function(){
+'use strict';
+var T = function(a, e){ return window.I18N ? I18N.T(a, e) : a; };
+var CHARS = [
+  { id: 'worker', ico: '👷', url: 'game/models/mixamo-worker.glb', kind: 'mx', name: ['عامل المستودع', 'Warehouse worker'], role: ['الشخصية الأساسية للاعب', 'The default player character'], playable: true },
+  { id: 'timmy', ico: '🧢', url: 'game/models/mixamo-timmy.glb', kind: 'mx', name: ['تيمي المرح', 'Funny Timmy'], role: ['شخصية كرتونية للاعب', 'A cartoon player character'], playable: true },
+  { id: 'inspector', ico: '🦺', url: 'game/models/inspector-mx.glb', kind: 'insp', name: ['المفتش', 'The inspector'], role: ['يفتّش الشحنات ويسألك عن CAO', 'Inspects cargo and quizzes you on CAO'], playable: false }
+];
+var ANIMS = {
+  mx: [
+    { k: 'idle', ar: 'واقف', en: 'Idle', p: {} },
+    { k: 'jog', ar: 'مشي سريع', en: 'Jog', p: { moving: true, speed: 8.2 } },
+    { k: 'run', ar: 'جري', en: 'Run', p: { moving: true, sprint: true, speed: 11 } },
+    { k: 'carry', ar: 'حمل طرد', en: 'Carry a parcel', p: { held: true }, box: true },
+    { k: 'carryjog', ar: 'مشي بطرد', en: 'Walk with parcel', p: { held: true, moving: true, speed: 6.2 }, box: true }
+  ],
+  insp: [
+    { k: 'idle', ar: 'واقف', en: 'Idle', p: { mode: 'idle' } },
+    { k: 'walk', ar: 'مشي', en: 'Walk', p: { mode: 'walk', moving: true } },
+    { k: 'inspect', ar: 'يفحص طرداً', en: 'Inspecting', p: { mode: 'inspect' } },
+    { k: 'ok', ar: 'قبول', en: 'Approve', p: { mode: 'cao_approved' } },
+    { k: 'no', ar: 'رفض', en: 'Reject', p: { mode: 'cao_rejected' } }
+  ]
+};
+var $ = function(id){ return document.getElementById(id); };
+var state = window.__room = { id: 'worker', anim: 'idle', yaw: 0.35, drag: false, lastDrag: 0, ready: {}, inst: {}, err: {} };
+
+/* ---------- نصوص الواجهة ---------- */
+function texts(){
+  document.title = T('غرفة الشخصيات — مستودع الشحن الجوي 3D', 'Character room — Air Cargo Warehouse 3D');
+  $('t-back').textContent = T('العودة إلى اللعبة', 'Back to the game');
+  $('t-title').textContent = T('غرفة الشخصيات', 'Character room');
+  $('t-load').textContent = T('جاري تجهيز الشخصيات…', 'Preparing characters…');
+  $('t-hint').textContent = T('اسحب لتدوير الشخصية', 'Drag to rotate the character');
+  $('t-pick').textContent = T('اختر شخصية لمعاينتها', 'Pick a character to preview');
+  $('t-anim').textContent = T('الحركات', 'Animations');
+  $('pick').textContent = T('اجعلها شخصيتي في اللعبة', 'Make it my character in the game');
+  $('t-note').textContent = T('هذه معاينة فقط: المفتش يظهر أثناء الوردية ولا يمكن اللعب به.', 'Preview only: the inspector appears during the shift and cannot be played.');
+  renderCards(); renderChips();
+}
+function savedChar(){ try { var v = localStorage.getItem('acg_char'); return v === 'timmy' ? 'timmy' : 'worker'; } catch(e){ return 'worker'; } }
+function renderCards(){
+  var box = $('cards'); box.innerHTML = '';
+  CHARS.forEach(function(c){
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'card'; b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', c.id === state.id ? 'true' : 'false');
+    var st = state.err[c.id] ? T('تعذّر', 'Failed') : (state.ready[c.id] ? '' : T('جاري التحميل…', 'Loading…'));
+    b.innerHTML = '<span class="ic" aria-hidden="true">' + c.ico + '</span><span><span class="nm">' + T(c.name[0], c.name[1]) + '</span><span class="rl">' + T(c.role[0], c.role[1]) + '</span></span><span class="st">' + st + '</span>' + (c.playable && c.id === savedChar() ? '<span class="tag">' + T('شخصيتك الآن', 'Your pick') + '</span>' : '');
+    b.addEventListener('click', function(){ choose(c.id); });
+    box.appendChild(b);
+  });
+  var cur = CHARS.filter(function(c){ return c.id === state.id; })[0];
+  $('pick').hidden = !cur.playable;
+}
+function renderChips(){
+  var cur = CHARS.filter(function(c){ return c.id === state.id; })[0];
+  var box = $('chips'); box.innerHTML = '';
+  ANIMS[cur.kind].forEach(function(a){
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.setAttribute('aria-pressed', a.k === state.anim ? 'true' : 'false');
+    b.textContent = T(a.ar, a.en);
+    b.addEventListener('click', function(){ state.anim = a.k; renderChips(); });
+    box.appendChild(b);
+  });
+}
+function choose(id){
+  state.id = id; state.anim = 'idle'; $('msg').textContent = '';
+  CHARS.forEach(function(c){ if(state.inst[c.id]) state.inst[c.id].root.visible = (c.id === id); });
+  renderCards(); renderChips();
+}
+$('pick').addEventListener('click', function(){
+  try { localStorage.setItem('acg_char', state.id); localStorage.setItem('acg_char_v', '2'); } catch(e){}
+  var cur = CHARS.filter(function(c){ return c.id === state.id; })[0];
+  $('msg').textContent = T('✔ تم اختيار ' + cur.name[0] + ' — ابدأ اللعب من الغلاف', '✔ ' + cur.name[1] + ' selected — start playing from the cover');
+  renderCards();
+});
+$('back').addEventListener('click', function(){ location.href = 'index.html'; });
+
+/* ---------- المشهد ثلاثي الأبعاد ---------- */
+var stage = $('stage');
+var R = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+R.outputEncoding = THREE.sRGBEncoding;
+stage.insertBefore(R.domElement, stage.firstChild);
+var S = new THREE.Scene();
+var cam = new THREE.PerspectiveCamera(30, 1, 0.1, 60);
+S.add(new THREE.HemisphereLight(0xffffff, 0x35506a, 1.05));
+var key = new THREE.DirectionalLight(0xfff2e0, 1.15); key.position.set(4, 8, 6); S.add(key);
+var rim = new THREE.DirectionalLight(0x7fc4ff, 0.7); rim.position.set(-6, 4, -5); S.add(rim);
+/* منصة العرض */
+var pod = new THREE.Group(); S.add(pod);
+var disc = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.3, 0.18, 48), new THREE.MeshStandardMaterial({ color: 0x1b2e3e, roughness: 0.55, metalness: 0.3 }));
+disc.position.y = -0.09; pod.add(disc);
+var ring = new THREE.Mesh(new THREE.RingGeometry(1.7, 1.82, 64), new THREE.MeshBasicMaterial({ color: 0xd4281e, side: THREE.DoubleSide }));
+ring.rotation.x = -Math.PI / 2; ring.position.y = 0.012; pod.add(ring);
+var cvS = document.createElement('canvas'); cvS.width = cvS.height = 128; var cs = cvS.getContext('2d');
+var gr = cs.createRadialGradient(64, 64, 4, 64, 64, 64); gr.addColorStop(0, 'rgba(0,0,0,.55)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); cs.fillStyle = gr; cs.fillRect(0, 0, 128, 128);
+var blob = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cvS), transparent: true, depthWrite: false }));
+blob.rotation.x = -Math.PI / 2; blob.position.y = 0.02; pod.add(blob);
+/* طرد العرض عند حركات الحمل */
+var parcel = new THREE.Mesh(new THREE.BoxGeometry(1.08, 1.08, 1.08), new THREE.MeshStandardMaterial({ color: 0xa67c52, roughness: 0.6 }));
+parcel.visible = false; S.add(parcel);
+
+function resize(){
+  var w = stage.clientWidth, h = stage.clientHeight; if(!w || !h) return;
+  R.setSize(w, h, false); cam.aspect = w / h;
+  var portrait = w < h * 0.9;
+  cam.fov = portrait ? 38 : 30;
+  cam.position.set(0, 2.5, portrait ? 11.5 : 9.6); cam.lookAt(0, 1.7, 0); cam.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+new ResizeObserver(resize).observe(stage);
+
+/* تدوير بالسحب */
+var lastX = 0;
+stage.addEventListener('pointerdown', function(e){ if(e.target.closest('.back')) return; state.drag = true; lastX = e.clientX; try { stage.setPointerCapture(e.pointerId); } catch(err){} });
+stage.addEventListener('pointermove', function(e){ if(!state.drag) return; state.yaw += (e.clientX - lastX) * 0.012; lastX = e.clientX; state.lastDrag = performance.now(); });
+['pointerup', 'pointercancel'].forEach(function(n){ stage.addEventListener(n, function(){ state.drag = false; }); });
+
+/* ---------- تحميل الشخصيات ---------- */
+function done(id, inst){
+  inst.root.visible = (id === state.id); state.inst[id] = inst; state.ready[id] = true; pod.add(inst.root);
+  renderCards(); $('load').hidden = true;
+}
+function fail(id, err){ console.warn('[room]', id, err); state.err[id] = true; renderCards(); if(id === state.id) $('load').hidden = true; }
+CHARS.forEach(function(c){
+  if(c.kind === 'mx' && window.MixamoWorker){
+    MixamoWorker.load(c.url).then(function(inst){ done(c.id, inst); }).catch(function(e){ fail(c.id, e); });
+  } else if(c.kind === 'insp' && window.MixamoInspector){
+    var rg = MixamoInspector.create();
+    rg.load(c.url).then(function(root){ root.scale.multiplyScalar(1.08); done(c.id, { root: root, pose: rg.pose }); }).catch(function(e){ fail(c.id, e); });
+  } else fail(c.id, new Error('loader missing'));
+});
+
+/* ---------- الحلقة ---------- */
+var last = performance.now(), hv = new THREE.Vector3();
+function frame(now){
+  requestAnimationFrame(frame);
+  var dt = Math.min((now - last) / 1000, 0.05); last = now;
+  var cur = CHARS.filter(function(c){ return c.id === state.id; })[0];
+  var inst = state.inst[state.id];
+  if(!state.drag && now - state.lastDrag > 2500) state.yaw += dt * 0.35;
+  parcel.visible = false;
+  if(inst){
+    var a = ANIMS[cur.kind].filter(function(x){ return x.k === state.anim; })[0] || ANIMS[cur.kind][0];
+    inst.root.rotation.y = state.yaw;
+    var p = { dt: dt, moving: false, speed: 0 }; for(var k in a.p) p[k] = a.p[k];
+    inst.pose(p);
+    if(a.box && inst.holdPoint){
+      inst.root.updateMatrixWorld(true);
+      var hp = inst.holdPoint(hv);
+      if(hp){ parcel.position.set(hp.x + Math.sin(state.yaw) * 0.5, hp.y, hp.z + Math.cos(state.yaw) * 0.5); parcel.rotation.y = state.yaw; parcel.visible = true; }
+    }
+  }
+  R.render(S, cam);
+}
+requestAnimationFrame(frame);
+state.id = savedChar(); texts();
+document.addEventListener('i18n:change', texts);
+setTimeout(function(){ $('load').hidden = true; }, 15000);
+})();
+</script>
+</body>
+</html>

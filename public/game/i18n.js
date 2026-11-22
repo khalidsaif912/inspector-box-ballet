@@ -72,6 +72,7 @@
     'ثم اضغط «العب الآن» داخل اللعبة': 'Then press “Play now” inside the game',
     'موصى بها': 'Recommended',
     'طرد مجمّد': 'Frozen parcel',
+    'غرفة الشخصيات': 'Character room',
     'بناء المستودع': 'Building the warehouse',
     'الرافعة الشوكية': 'Forklift',
     'تعذّر': 'Failed',

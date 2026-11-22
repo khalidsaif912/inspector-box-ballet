@@ -1,10 +1,11 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v97";
+const VERSION = "v102";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
   "./index.html",
   "./game.html",
+  "./characters.html",
   "./game/game.css",
   "./game/ui.css",
   "./game/game.js",

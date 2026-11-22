@@ -1155,7 +1155,8 @@ function loadMixamo(id, attempt){
     console.log('[' + id + '] mixamo glb ready');
   }).catch(err => {
     M.loading = false; M.err = String(err && err.message || err);
-    if(!attempt && CHAR.id === id){ setTimeout(() => { if(CHAR.id === id) loadMixamo(id, 1); }, 1500); return; }
+    const tries = attempt || 0;
+    if(tries < 2){ console.warn('[' + id + '] glb failed, retrying', M.err); setTimeout(() => loadMixamo(id, tries + 1), tries ? 4000 : 1500); return; }   // ثلاث محاولات قبل الاستسلام (شبكة الجوال تنقطع أحياناً)
     lt.fail();
     crewShow(true);
     if(CHAR.id === id) charLoadFailed(id, err);
@@ -1165,8 +1166,9 @@ function charLoadFailed(id, err){
   const n = CHAR_NAMES[id] || ['الشخصية', 'character'];
   console.warn('[' + id + '] glb failed', err);
   /* لا نغيّر اختيار اللاعب المحفوظ: الكلاسيكي بديل مؤقت فقط، وتُعاد المحاولة عند الاختيار التالي */
-  const msg = I18N.T('⚠️ تعذّر تحميل ' + n[0] + ' — يظهر الموظف الكلاسيكي مؤقتاً. اختره مرة أخرى للمحاولة.',
-    '⚠️ Could not load the ' + n[1] + ' — showing the classic worker for now. Pick it again to retry.');
+  const why = String(err && err.message || err || '').slice(0, 70);
+  const msg = I18N.T('⚠️ تعذّر تحميل ' + n[0] + ' — يظهر الموظف الكلاسيكي مؤقتاً. اختره مرة أخرى للمحاولة. (' + why + ')',
+    '⚠️ Could not load the ' + n[1] + ' — showing the classic worker for now. Pick it again to retry. (' + why + ')');
   charStatus(msg);
   try { toast(msg, '#ffd54a'); } catch(e){}
 }
@@ -3647,8 +3649,9 @@ if(caoReject) caoReject.textContent = placardQ ? I18N.T('🚫 لا، غير مس
 /* المفتش يحضر بنفسه: يقف أمام اللاعب في الممر الطبيعي المفتوح ويطلب القرار */
 const I_ = inspector;
 // ضمان موضع وقوف آمن وطبيعي في مساحة المشي بعيداً عن أقفاص الحاويات والحزام والرافعة
-const z0 = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, px.z > 2 ? px.z - 1.8 : px.z + 1.8));
-const x0 = Math.max(-24, Math.min(22, px.x > 0 ? px.x - 1.8 : px.x + 1.8));
+/* يقف المفتش بجانب الموظف على الخط نفسه (وجهاً لوجه) فيظهر الاثنان جانبياً بوضوح ولا يحجب أحدهما الآخر */
+const z0 = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, px.z));
+const x0 = Math.max(-24, Math.min(22, px.x > 0 ? px.x - 2.7 : px.x + 2.7));
 I_.active = true; I_.demo = false; I_.done = false; I_.t = 0;
 I_.g.visible = true;
 I_.z = z0;
@@ -4073,6 +4076,9 @@ R.render(S, C);
 if(!loadingDone){ loadingDone = true; loading.frameReady(); }
 }
 syncMenu();
+/* زر غرفة الشخصيات في بطاقة البداية: يفتح صفحة المعاينة (من الغلاف المضيف أو مباشرة) */
+const roomBtn = $('chars-room');
+if(roomBtn) roomBtn.onclick = e => { e.stopPropagation(); try { if(parent !== window){ parent.location.href = 'characters.html'; return; } } catch(err){} location.href = 'characters.html'; };
 const shellBtn = $('shell'); if(shellBtn) shellBtn.onclick = e => { e.stopPropagation(); exitToShell(); };
 let loadingDone = false;
 loading.phase(88, I18N.t('تسخين الشيدرات والمؤثرات...'));
