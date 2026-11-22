@@ -1,5 +1,5 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v93";
+const VERSION = "v97";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
@@ -13,7 +13,7 @@ const SHELL = [
   "./game/mixamo-rig.js",
   "./game/models/forklift-kolos.glb",
   "./game/inspector-rig.js",
-  "./game/models/inspector.glb",
+  "./game/models/inspector-mx.glb",
   "./game/touch-ui.js",
   "./game/game-rules.js",
   "./game/game-hub.js",

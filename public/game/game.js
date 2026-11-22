@@ -3362,19 +3362,24 @@ S.add(scanRing);
 const I_ = { g, legs, arms, procMesh, scanRing, rig:null, glbRoot:null, active:false, state:"walk", targetItem:null, inspectT:0, pauseT:0, x:0, z:INSP_SAFE.zebraZ, targetZ:INSP_SAFE.zebraZ, dir:1, t:0, cooldown:0 };
 
 // تحميل وتحريك مجسم المفتش الجديد ثلاثي الأبعاد GLB
-if(window.InspectorRig && window.InspectorRig.create){
-  const rig = window.InspectorRig.create();
-  I_.rig = rig;
-  afterLoad(() => rig.load('game/models/inspector.glb?v=4').then(root => {
-    I_.glbRoot = root;
-    root.scale.setScalar(1.55);
+/* المفتش: نموذج مُرقَّم بـ Mixamo بحركات حقيقية؛ وإن فشل تنزيله يعود إلى المفتش القديم ثم إلى المجسّم الإجرائي */
+function attachInspector(rig, url, scale, label){
+  return rig.load(url).then(root => {
+    I_.rig = rig; I_.glbRoot = root;
+    if(scale) root.scale.setScalar(scale);
     g.add(root);
     procMesh.visible = false;
-    console.log('[inspector] 3D GLB inspector character loaded and rigged');
-  }).catch(err => {
-    console.warn('[inspector] 3D GLB load fallback to procedural:', err);
-  }));
+    console.log('[inspector] ' + label + ' loaded');
+  });
 }
+afterLoad(() => {
+  const tryOld = err => {
+    console.warn('[inspector] Mixamo inspector unavailable, using classic rig:', err);
+    if(window.InspectorRig && window.InspectorRig.create) attachInspector(window.InspectorRig.create(), 'game/models/inspector.glb?v=4', 1.55, 'classic GLB').catch(e => console.warn('[inspector] fallback to procedural:', e));
+  };
+  if(window.MixamoInspector) attachInspector(window.MixamoInspector.create(), 'game/models/inspector-mx.glb', 0, 'Mixamo').catch(tryOld);
+  else tryOld('no loader');
+});
 
 g.scale.setScalar(1.08); g.visible = false; S.add(g);
 return I_;
@@ -3593,7 +3598,7 @@ caoAnchor(CAO_SAY, 0);
 function updateCaoScene(r){
 const I_ = inspector;
 I_.t += r;
-if(I_.x > I_.toX) I_.x = Math.max(I_.toX, I_.x - 6.4 * r);
+if(I_.x > I_.toX) I_.x = Math.max(I_.toX, I_.x - 3.8 * r);
 const walking = I_.x > I_.toX + .01;
 const sw = Math.sin(I_.t * 7) * (walking ? .5 : .06);
 if(I_.legs && I_.legs.length >= 2){ I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw; }
@@ -3613,6 +3618,14 @@ if(I_.rig && I_.rig.pose){
   }
 }
 I_.g.position.set(I_.x, walking ? Math.abs(Math.sin(I_.t * 7)) * .05 : 0, I_.z);
+/* الموظف يلتفت إلى المفتش ويقف في وضع انتظار حيّ بدل أن يتجمّد وهو يمشي */
+{
+  const faceInsp = Math.atan2(I_.x - px.x, I_.z - px.z);
+  let dA = faceInsp - curRotY; dA = Math.atan2(Math.sin(dA), Math.cos(dA));
+  curRotY += dA * Math.min(1, r * 6); rig.rotation.y = curRotY;
+  const acr = activeCharRig();
+  if(acr && acr.root.visible){ acr.root.rotation.y = curRotY; acr.pose({ dt: r, moving: false, speed: 0, held: false }); }
+}
 if(!walking && !caoQ.answered) CAO_BUBBLE.classList.add('in');
 caoPlace();
 }
@@ -3741,6 +3754,8 @@ let warnTicker = 0;
 let hudTicker = 0;
 const cargoTarget = new THREE.Vector3();
 let camTarget = new THREE.Vector3(), camLook = new THREE.Vector3(0,0.9,0.8), camLookT = new THREE.Vector3();
+/* أثناء سؤال المفتش: تتحرك الكاميرا نحو الاثنين (الموظف والمفتش) وتُزيحهما إلى جهة الشاشة المقابلة للفقاعة */
+let caoView = 0;
 C.position.set(0, 13.2, 15.4);
 function loop(now){
 requestAnimationFrame(loop);
@@ -4035,9 +4050,15 @@ camLook.lerp(camLookT.set(-34.2, 3.2, -6), 1 - Math.exp(-dt * 2.6));
 C.lookAt(camLook);
 } else {
 // الكاميرا تتبع الموظف كاملاً (مع سقف عند جدران المستودع) فلا يصل إلى حافة الشاشة
-const camX = Math.max(-camMaxX, Math.min(camMaxX, px.x));
-C.position.lerp(camTarget.set(camX + evacView, 9.6, px.z + 11.0), 1 - Math.exp(-dt*9));
-camLook.lerp(camLookT.set(px.x + evacView, 1.15, px.z - 2.0), 1 - Math.exp(-dt*10));
+const cdt = caoQ.active ? Math.min(rawDt, .05) : dt;   // الكاميرا تتحرك حتى والمحاكاة مجمّدة
+caoView += ((caoQ.active ? 1 : 0) - caoView) * Math.min(1, cdt * 5);
+const pairX = caoQ.active ? (px.x + inspector.x) / 2 : px.x, pairZ = caoQ.active ? (px.z + inspector.z) / 2 : px.z;
+const midX = px.x + (pairX - px.x) * caoView, midZ = px.z + (pairZ - px.z) * caoView;
+const camX = Math.max(-camMaxX, Math.min(camMaxX, midX));
+const wide = innerWidth >= innerHeight;
+const sideShift = (wide ? 4.6 : 0) * caoView, upShift = (wide ? 0 : 8.5) * caoView;   // عرضي: الفقاعة يميناً · طولي: الفقاعة أسفل الشاشة
+C.position.lerp(camTarget.set(camX + evacView + sideShift, 9.6 - 1.9 * caoView, midZ + upShift + 11.0 - 2.6 * caoView), 1 - Math.exp(-cdt*9));
+camLook.lerp(camLookT.set(midX + evacView + sideShift, 1.15 + 0.5 * caoView, midZ + upShift - 2.0 + 1.4 * caoView), 1 - Math.exp(-cdt*10));
 C.lookAt(camLook);
 if(!FD.on && !EXIT_GATE.active && !STUDY.on) pl.visible = true;
 }

@@ -154,5 +154,71 @@
     });
   }
 
+  /* ===== المفتش (Mixamo): نفس مجسّم المفتش بعد ترقيمه آلياً + حركات مسجّلة =====
+     الملف game/models/inspector-mx.glb: walk · idle · look_down · look_around · thumbs · head_no.
+     واجهة pose({dt, mode, moving}) نفسها التي تستعملها اللعبة مع المفتش القديم. */
+  var INSP_H = 2.92;   // ارتفاع المفتش المحلي؛ مجموعة المفتش في اللعبة بمقياس 1.08 فتصير قامته ≈ 3.15
+  var INSP_CLIP = { walk: 'walk', idle: 'idle', inspect: 'look_down', verdict_pause: 'head_no', cao_inspect: 'look_around', cao_approved: 'thumbs', cao_rejected: 'head_no' };
+  function createInspector() {
+    var S = { mixer: null, actions: {}, cur: null, loaded: false, root: null };
+    function load(url) {
+      return new Promise(function (resolve, reject) {
+        if (!THREE.GLTFLoader) return reject(new Error('GLTFLoader missing'));
+        new THREE.GLTFLoader().load(url, function (gltf) {
+          try {
+            var model = gltf.scene;
+            model.traverse(function (o) {
+              if (o.isMesh || o.isSkinnedMesh) {
+                o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
+                var m = [].concat(o.material)[0];
+                if (m && m.map) { m.map.magFilter = THREE.NearestFilter; m.map.minFilter = THREE.NearestFilter; m.map.generateMipmaps = false; m.map.needsUpdate = true; }
+                var sm = new THREE.MeshStandardMaterial({ map: m && m.map || null, color: 0xffffff, roughness: 0.72, metalness: 0.02 });
+                if (sm.map) sm.map.encoding = THREE.sRGBEncoding;
+                o.material = sm;
+              }
+            });
+            model.updateMatrixWorld(true);
+            var box = new THREE.Box3().setFromObject(model);
+            var h = Math.max(0.1, box.max.y - box.min.y), sc = INSP_H / h;
+            model.position.set(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
+            var root = new THREE.Group();
+            root.scale.setScalar(sc);
+            root.add(model);
+            root.updateMatrixWorld(true);
+            var mixer = new THREE.AnimationMixer(model);
+            (gltf.animations || []).forEach(function (clip) {
+              clip.tracks.forEach(function (t) {
+                if (/Hips\.position$/.test(t.name)) { var v = t.values, x0 = v[0], z0 = v[2]; for (var i = 0; i < v.length; i += 3) { v[i] = x0; v[i + 2] = z0; } }
+              });
+              var a = mixer.clipAction(clip);
+              a.enabled = true; a.setEffectiveWeight(0); a.play();
+              S.actions[clip.name] = a;
+            });
+            if (!S.actions.idle) throw new Error('inspector-mx.glb: idle clip missing');
+            S.mixer = mixer; S.cur = 'idle'; S.actions.idle.setEffectiveWeight(1);
+            S.root = root; S.loaded = true;
+            resolve(root);
+          } catch (e) { reject(e); }
+        }, undefined, reject);
+      });
+    }
+    function pose(p) {
+      if (!S.loaded) return;
+      var dt = Math.min(p.dt || 0.016, 0.05);
+      var mode = p.mode || (p.moving ? 'walk' : 'idle');
+      var next = INSP_CLIP[mode] || 'idle';
+      if (!S.actions[next]) next = 'idle';
+      if (next !== S.cur) {
+        var from = S.actions[S.cur], to = S.actions[next];
+        to.reset(); to.setEffectiveWeight(1); to.crossFadeFrom(from, 0.25, true);
+        S.cur = next;
+      }
+      S.actions[S.cur].setEffectiveTimeScale(S.cur === 'walk' ? (p.speed ? p.speed / 2.5 : 1.4) : 1);
+      S.mixer.update(dt);
+    }
+    return { load: load, pose: pose };
+  }
+
   window.MixamoWorker = { load: load, height: TARGET_H };
+  window.MixamoInspector = { create: createInspector };
 })();
