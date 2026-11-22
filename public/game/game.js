@@ -1031,7 +1031,7 @@ const MIX = {
   timmy:  { url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null }
 };
 /* الشخصيات: worker و timmy (Mixamo) · hero (3D) · crew (المجسّم الثابت) · rig (الإجرائي) */
-const CHAR_IDS = ['worker', 'timmy', 'hero', 'crew', 'rig'];
+const CHAR_IDS = ['worker', 'timmy'];
 const CHAR = { id: 'worker' };
 /* ترحيل لمرة واحدة: من بقي على الافتراضي القديم (hero) ينتقل إلى عامل المستودع الافتراضي الجديد */
 try { if(localStorage.getItem('acg_char_v') !== '2'){ const o = localStorage.getItem('acg_char'); if(!o || o === 'hero') localStorage.setItem('acg_char', 'worker'); localStorage.setItem('acg_char_v', '2'); } } catch(e){}
@@ -1149,9 +1149,8 @@ function setCharacter(id){
   return CHAR.id;
 }
 /* داخل غلاف الصفحة يوجد اختيار الشخصية الأساسي: نُخفي النسخة المكررة من إعدادات اللعبة (تبقى في game.html وحده) */
-try { if(parent !== window){ const row = document.getElementById('chars'); const it = row && row.closest('.setting-item'); if(it) it.style.display = 'none'; } } catch(e){}
 function syncCharButtons(){
-  document.querySelectorAll('#chars button').forEach(b => b.classList.toggle('on', b.dataset.char === CHAR.id));
+  document.querySelectorAll('#chars button').forEach(b => { const on = b.dataset.char === CHAR.id; b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
 }
 window.__crew = CREW;
 window.__setCrew = m => { CREW.mode = m === 'rig' ? 'rig' : 'glb'; if(m !== 'rig') loadCrewGLB(); applyCrewMode(); return CREW.ready; };
@@ -1986,7 +1985,7 @@ const $ = id => document.getElementById(id);
 /* الخروج من اللعب: العودة إلى غلاف اللعبة (index.html) وليس البقاء داخل الإطار */
 function exitToShell(){
 try {
-if(window.parent && window.parent !== window){ window.parent.location.href = 'index.html'; return; }
+if(window.parent && window.parent !== window){ window.parent.postMessage({ type: 'acg-exit' }, location.origin); return; }
 } catch(e){}
 location.href = 'index.html';
 }
@@ -3814,13 +3813,40 @@ apply(COLORS.some(([c]) => c === saved) ? saved : COLORS[0][0]);
 // ===== اختيار الشخصية =====
 (() => {
 const row = document.getElementById('chars'); if(!row) return;
-const LIST = [['worker', I18N.t('عامل المستودع')], ['timmy', I18N.t('تيمي المرح')], ['hero', I18N.t('شخصية 3D')], ['crew', I18N.t('طاقم أرضي')], ['rig', I18N.t('موظف كلاسيكي')]];
-LIST.forEach(([id, n]) => {
-  const b = document.createElement('button'); b.type = 'button'; b.dataset.char = id; b.textContent = n;
+const LIST = [['worker', I18N.t('عامل المستودع'), I18N.t('الأساسية'), '👷'], ['timmy', I18N.t('تيمي المرح'), I18N.t('كرتوني'), '🧢']];
+LIST.forEach(([id, n, hint, ico]) => {
+  const b = document.createElement('button'); b.type = 'button'; b.dataset.char = id;
+  b.setAttribute('role', 'radio');
+  b.innerHTML = '<span class="pk-ico" aria-hidden="true">' + ico + '</span><span class="pk-tx"><b>' + n + '</b><small>' + hint + '</small></span>';
   b.onclick = e => { e.stopPropagation(); window.__setCharacter(id); };
   row.appendChild(b);
 });
 row.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.char === CHAR.id));
+})();
+
+// ===== معاينة حيّة للشخصية المختارة في شاشة البداية (عرض ثانٍ لنفس المشهد بكاميرا قريبة) =====
+(() => {
+const cv = document.getElementById('pick-cv'), ov = document.getElementById('ov');
+if(!cv || !ov) return;
+let PR;
+try { PR = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); } catch(e){ cv.style.display = 'none'; return; }
+PR.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); PR.setSize(cv.width, cv.height, false);
+PR.outputEncoding = R.outputEncoding; PR.toneMapping = R.toneMapping; PR.toneMappingExposure = R.toneMappingExposure;
+const cam = new THREE.PerspectiveCamera(26, cv.width / cv.height, 0.1, 140);
+let t0 = 0;
+function pv(now){
+  requestAnimationFrame(pv);
+  if(ov.style.display === 'none' || ov.classList.contains('hidden') || document.hidden || !cv.offsetParent) return;
+  if(now - t0 < 33) return; t0 = now;
+  const a = Math.sin(now / 1800) * 0.35, ry = (activeCharRig() && activeCharRig().root.rotation.y) || 0;
+  const fx = Math.sin(ry + a), fz = Math.cos(ry + a);
+  cam.position.set(px.x + fx * 10.5, 2.6, px.z + fz * 10.5);
+  cam.lookAt(px.x, 1.95, px.z);
+  const bg = S.background; S.background = null;
+  PR.render(S, cam);
+  S.background = bg;
+}
+requestAnimationFrame(pv);
 })();
 
 // ===== ذرات غبار خفيفة في شاشة البداية (بدون مكتبات خارجية) =====

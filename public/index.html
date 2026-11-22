@@ -154,21 +154,21 @@ header{width:100%;flex:0 0 auto;padding:12px clamp(14px,2.6vw,32px) 8px;backgrou
 .char-picker .cp-title{display:flex;flex-direction:column;align-items:flex-start;gap:1px;font-size:clamp(14px,1.5vw,17px);font-weight:900;color:var(--ink);white-space:nowrap}
 .char-picker .cp-title small{font-size:12.5px;font-weight:500;color:var(--mute)}
 .char-go{display:none!important}
-.char-opts{display:flex;gap:8px;flex:1;min-width:0;overflow-x:auto;padding:4px 2px;scrollbar-width:none;scroll-snap-type:x proximity}
+.char-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;flex:1;min-width:0;max-width:640px;padding:12px 2px 14px}
 .char-opts::-webkit-scrollbar{display:none}
 /* خانة اختيار المناول */
 .char-opt{
-  all:unset;box-sizing:border-box;cursor:pointer;position:relative;flex:0 0 auto;scroll-snap-align:center;
-  display:flex;align-items:center;gap:10px;min-height:56px;padding:6px 16px 6px 8px;
+  all:unset;box-sizing:border-box;cursor:pointer;position:relative;min-width:0;
+  display:flex;align-items:center;gap:14px;min-height:76px;padding:8px 18px 8px 10px;
   background:var(--field);color:var(--ink);border:2px solid var(--field);border-radius:4px;
   transition:background .14s,color .14s,border-color .14s;
 }
 .char-opt:hover{border-color:var(--ink)}
 .char-opt:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 .char-opt .clip,.char-opt .id{display:none}
-.char-opt .ph{display:grid;place-items:center;width:40px;height:40px;border-radius:3px;background:var(--paper);flex:0 0 auto}
-.char-opt .ico{font-size:24px;line-height:1;display:block}
-.char-opt .nm{font-size:14px;font-weight:900;line-height:1.2}
+.char-opt .ph{display:grid;place-items:center;width:58px;height:58px;border-radius:3px;background:var(--paper);flex:0 0 auto}
+.char-opt .ico{font-size:34px;line-height:1;display:block}
+.char-opt .nm{font-size:16px;font-weight:900;line-height:1.2}
 .char-opt .rl{display:block;font-size:11.5px;font-weight:500;color:var(--mute);line-height:1.25}
 .char-opt .nm,.char-opt .rl{text-align:start}
 .char-opt .tx{display:flex;flex-direction:column;align-items:flex-start}
@@ -211,7 +211,11 @@ header{width:100%;flex:0 0 auto;padding:12px clamp(14px,2.6vw,32px) 8px;backgrou
   .actions #lang span{display:inline}
   .char-picker{flex-direction:column;align-items:stretch;gap:4px;padding:2px 10px 12px}
   .char-picker .cp-title small{display:none}
-  .char-opts{padding:12px 2px 12px}
+  .char-opts{padding:12px 2px 12px;gap:8px}
+  .char-opt{min-height:64px;gap:10px;padding:6px 10px 6px 6px}
+  .char-opt .ph{width:46px;height:46px}
+  .char-opt .ico{font-size:26px}
+  .char-opt .nm{font-size:14px}
   .frame-wrap{padding:0}
   .frame{width:100%;aspect-ratio:auto;border-radius:0;padding:5px}
   .frame iframe{border-radius:0}
@@ -221,7 +225,7 @@ header{width:100%;flex:0 0 auto;padding:12px clamp(14px,2.6vw,32px) 8px;backgrou
   header{display:none}
   .char-picker{flex-direction:row;align-items:center;gap:10px;padding:3px 10px 5px}
   .char-picker .cp-title{font-size:13px}
-  .char-opts{padding:10px 2px 8px;gap:6px}
+  .char-opts{padding:10px 2px 8px;gap:6px;max-width:420px}
   .char-opt{min-height:40px;padding:3px 12px 3px 5px;gap:7px}
   .char-opt .ph{width:30px;height:30px}
   .char-opt .ico{font-size:18px}
@@ -272,11 +276,7 @@ header{width:100%;flex:0 0 auto;padding:12px clamp(14px,2.6vw,32px) 8px;backgrou
 </header>
 <div class="tape" aria-hidden="true"></div>
 
-<section class="char-picker" id="char-picker" aria-label="اختيار الشخصية">
-  <span class="cp-title"><span data-t="اختر شخصيتك">اختر شخصيتك</span><small data-t="ثم اضغط «العب الآن» داخل اللعبة">ثم اضغط «العب الآن» داخل اللعبة</small></span>
-  <div class="char-opts" id="char-opts" role="radiogroup" aria-label="اختيار الشخصية"></div>
-  <span class="char-go"><span class="cp-step" aria-hidden="true">2</span><span data-t="ثم اضغط «العب الآن» داخل اللعبة">ثم اضغط «العب الآن» داخل اللعبة</span></span>
-</section>
+
 
 <div class="frame-wrap">
   <div class="frame" id="frame">
@@ -355,10 +355,7 @@ document.addEventListener('click', (e) => {
 /* ===== اختيار الشخصية: الأساسية 3D + الشخصيتان السابقتان ===== */
 const CHARS = [
   { id: 'worker', ico: '👷', name: 'عامل المستودع', hint: 'الأساسية' },
-  { id: 'timmy', ico: '🧢', name: 'تيمي المرح', hint: 'كرتوني' },
-  { id: 'hero', ico: '🧍', name: 'شخصية 3D', hint: 'مجسّم مفصّل' },
-  { id: 'crew', ico: '🧑‍✈️', name: 'طاقم أرضي', hint: 'مجسّم واقعي' },
-  { id: 'rig', ico: '🧑‍🔧', name: 'موظف كلاسيكي', hint: 'خفيف وسريع' }
+  { id: 'timmy', ico: '🧢', name: 'تيمي المرح', hint: 'كرتوني' }
 ];
 const CHAR_KEY = 'acg_char';
 const charOpts = document.getElementById('char-opts');
@@ -397,6 +394,16 @@ function renderChars(){
 addEventListener('message', (e) => {
   const d = e.data;
   if (e.origin === location.origin && d && d.type === 'acg-character-changed' && CHARS.some((c) => c.id === d.id) && d.id !== charNow) { charNow = d.id; renderChars(); }
+});
+/* زر «الغلاف» داخل اللعبة: نعيد الغلاف كما كان عند فتح اللعبة (شاشة البداية، بدون ملء الشاشة ولا قفل الاتجاه) */
+addEventListener('message', (e) => {
+  const d = e.data;
+  if (e.origin !== location.origin || !d || d.type !== 'acg-exit') return;
+  document.body.classList.remove('playing');
+  try { if (document.fullscreenElement) document.exitFullscreen(); } catch(err){}
+  try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(err){}
+  try { game.contentWindow.location.replace(game.getAttribute('src') || 'game.html'); } catch(err){ game.src = game.getAttribute('src') || 'game.html'; }
+  scrollTo(0, 0);
 });
 addEventListener('message', (e) => {
   const d = e.data;
