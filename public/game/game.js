@@ -1459,8 +1459,8 @@ p.x = Math.max(WALK.minX, Math.min(WALK.maxX, p.x));
 p.z = Math.max(WALK.minZ, Math.min(WALK.maxZ, p.z));
 for (const it of items) {
 if (it.st === 'held' || it.st === 'lifting' || it.st === 'belt') continue;
-const h = 0.68, bx = it.m.position.x, bz = it.m.position.z;
-if(it.st === 'floor'){
+const h = it.data.isHeavy ? 0.78 : 0.68, bx = it.m.position.x, bz = it.m.position.z;
+if(it.st === 'floor' && !it.data.isHeavy){   // الطرد الثقيل جسم صلب لا يُدفع (يُنقل بالرافعة فقط)
 // الطرود على الأرض تُدفع بلطف عند ملامستها
 const cx = Math.max(bx-h, Math.min(p.x, bx+h)), cz = Math.max(bz-h, Math.min(p.z, bz+h));
 const dx = p.x - cx, dz = p.z - cz, d = Math.hypot(dx, dz);
@@ -2550,7 +2550,14 @@ function spawnHeavy(){
   m.position.set(21 + Math.random() * 2, BH + .02, 3.4 + Math.random() * 1.4);
   m.add(new THREE.LineSegments(EDGEG, EDGEM));
   const csh = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 2.1), SHM);
-  csh.rotation.x = -Math.PI / 2; csh.position.y = -BH + .015; m.add(csh);
+  /* منصة خشبية (باليت) أسفل الطرد: سطح من ألواح + ثلاث عوارض + ألواح سفلية */
+  const PH = .22, wood = new THREE.MeshStandardMaterial({ color: 0xa9763f, roughness: .92 }), woodD = new THREE.MeshStandardMaterial({ color: 0x7d5329, roughness: .95 });
+  const pal = new THREE.Group(), bx = (w, h, d, x, y, z, mt) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mt); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; pal.add(o); };
+  for(let i = 0; i < 5; i++) bx(1.5, .04, .24, 0, -BH - .02, -.6 + i * .3, wood);
+  [-.62, 0, .62].forEach(x => bx(.16, .12, 1.5, x, -BH - .04 - .06, 0, woodD));
+  [-.62, 0, .62].forEach(z => bx(1.5, .04, .2, 0, -BH - PH + .02, z, wood));
+  m.add(pal); m.position.y += PH;
+  csh.rotation.x = -Math.PI / 2; csh.position.y = -BH - PH + .015; m.add(csh);
   S.add(m);
   const data = { t: 'gen', emoji: '🏗️', name: I18N.t('معدات ثقيلة'), imp: 'HVY', div: gameRules.heavy.kg + 'kg', isHz: false, isMys: false, isFrz: false, isHeavy: true, cao: false };
   const it = { m, data, st: 'floor', csh, fined: true };
@@ -3596,7 +3603,7 @@ if(v){ pa.x += v[0]; pa.z += v[1]; }
 for(const b of solid){ const pb = b.m.position, v = overlapVec(pa, ha, pb.x, pb.z, BH, BH); if(v){ pa.x += v[0]; pa.z += v[1]; } }
 for(let c = a + 1; c < fl.length; c++){
 const B_ = fl[c], pb = B_.m.position, v = overlapVec(pa, ha, pb.x, pb.z, boxHalf(B_), boxHalf(B_));
-if(v){ pa.x += v[0]/2; pa.z += v[1]/2; pb.x -= v[0]/2; pb.z -= v[1]/2; A.wob = Math.max(A.wob||0, 0.5); B_.wob = Math.max(B_.wob||0, 0.5); }
+if(v){ const wa = A.data.isHeavy ? 0 : B_.data.isHeavy ? 1 : .5; pa.x += v[0]*wa; pa.z += v[1]*wa; pb.x -= v[0]*(1 - wa); pb.z -= v[1]*(1 - wa); A.wob = Math.max(A.wob||0, 0.5); B_.wob = Math.max(B_.wob||0, 0.5); }
 }
 pa.x = Math.max(-33, Math.min(33, pa.x)); pa.z = Math.max(-11.9, Math.min(9.6, pa.z));
 }

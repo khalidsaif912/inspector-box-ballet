@@ -2,23 +2,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function okStr(v) { return v is string && v.size() < 80; }
+    function isAdmin() { return request.auth != null && request.auth.token.email == 'admin@game1.app'; }
     match /players/{id} {
       allow read: if true;
       allow create, update: if request.resource.data.keys().hasOnly(['id','name','dept','best','plays','logins','last'])
         && okStr(request.resource.data.name) && request.resource.data.best is int
         && request.resource.data.best >= 0 && request.resource.data.best <= 100000;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
     match /logins/{doc} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasOnly(['id','name','dept','at']) && okStr(request.resource.data.name);
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
     match /scores/{doc} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasOnly(['id','name','dept','score','at'])
         && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 100000;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
   }
 }

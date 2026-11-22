@@ -4,7 +4,8 @@
 'use strict';
 const CFG = { projectId: 'game1-21af4', apiKey: 'AIzaSyBa5CcYG3aXHVZ1p6NGjy23MqBDHSjAGdY' };
 const KEY = 'acg_emp';
-let emp = null, dir = null;
+const ADMIN_EMAIL = 'admin@game1.app';
+let emp = null, dir = null, tok = null;
 
 const base = () => `https://firestore.googleapis.com/v1/projects/${CFG.projectId}/databases/(default)/documents`;
 const on = () => !!(CFG.projectId && CFG.apiKey);
@@ -60,6 +61,34 @@ const Online = {
   async _query(coll, field, limit){
     const r = await send('POST', `${base()}:runQuery?key=${CFG.apiKey}`, { structuredQuery: { from: [{ collectionId: coll }], orderBy: [{ field: { fieldPath: field }, direction: 'DESCENDING' }], limit } });
     return r.filter(x => x.document).map(x => dec(x.document));
+  },
+
+  /* ===== مسح الأرقام القياسية (للإدارة فقط: يتطلب حساب مدير في Firebase Auth) ===== */
+  async adminLogin(code){
+    const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${CFG.apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ADMIN_EMAIL, password: String(code), returnSecureToken: true }) });
+    if(!r.ok) throw new Error('auth');
+    tok = (await r.json()).idToken; return true;
+  },
+  /* mode: 'all' | 'id' (+id) | 'date' (+date بصيغة YYYY-MM-DD). يعيد خطة المسح دون تنفيذها */
+  async planWipe(o){
+    const scores = await this._query('scores', 'at', 1000), players = await this._query('players', 'best', 1000);
+    const day = d => d ? d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') : '';
+    const del = scores.filter(x => o.mode === 'all' || (o.mode === 'id' && x.id === o.id) || (o.mode === 'date' && day(x.at) === o.date));
+    const gone = new Set(del.map(x => x._id)), aff = new Set(del.map(x => x.id));
+    if(o.mode === 'all') players.forEach(p => { if(p.best > 0) aff.add(p.id); });
+    if(o.mode === 'id') aff.add(o.id);
+    const upd = [...aff].map(id => { const keep = scores.filter(x => x.id === id && !gone.has(x._id)).map(x => x.score); const cur = players.find(p => p.id === id); return { id, best: keep.length ? Math.max(...keep) : 0, was: cur ? cur.best : 0 }; }).filter(u => players.some(p => p.id === u.id) && u.best !== u.was);
+    return { del: del.map(x => x._id), upd, truncated: scores.length >= 1000 };
+  },
+  async runWipe(plan){
+    if(!tok) throw new Error('auth');
+    const root = `projects/${CFG.projectId}/databases/(default)/documents`;
+    const writes = [...plan.del.map(id => ({ delete: `${root}/scores/${id}` })), ...plan.upd.map(u => ({ update: { name: `${root}/players/${u.id}`, fields: { best: { integerValue: String(u.best) } } }, updateMask: { fieldPaths: ['best'] }, currentDocument: { exists: true } }))];
+    for(let i = 0; i < writes.length; i += 400){
+      const r = await fetch(`${base()}:commit?key=${CFG.apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: JSON.stringify({ writes: writes.slice(i, i + 400) }) });
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+    }
+    return writes.length;
   },
   async top(n){ if(!on()) return []; return (await this._query('players', 'best', n || 10)).filter(p => p.best > 0); },
   async logins(n){ if(!on()) return []; return this._query('logins', 'at', n || 200); },

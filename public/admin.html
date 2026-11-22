@@ -44,6 +44,16 @@ td.rk{font-weight:900;color:var(--red);width:48px}
 tr.top1 td{background:#fff3cd!important}
 .mute{color:var(--mute);font-weight:600}
 .empty{padding:28px;text-align:center;color:var(--mute);font-weight:700}
+.wipe{background:#fff;border:3px solid var(--red);border-radius:3px;padding:14px 16px;margin-bottom:14px}
+.wipe h2{margin:0 0 4px;font-size:18px;font-weight:900;color:var(--red)}
+.wipe p{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--mute)}
+.wipe .modes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.wipe .modes button{font:800 13px inherit;font-family:inherit;padding:7px 14px;border:2px solid var(--ink);border-radius:3px;background:#fff;color:var(--ink);cursor:pointer}
+.wipe .modes button[aria-pressed=true]{background:var(--ink);color:#fff}
+.wipe .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.wipe input{height:38px;border:2px solid var(--ink);border-radius:3px;padding:0 10px;font:700 14px inherit;font-family:inherit;background:#fff;min-width:0;flex:1 1 180px}
+.wipe .msg{min-height:20px;font-weight:800;font-size:14px;margin:6px 0 0}
+.wipe .msg.err{color:var(--red)}.wipe .msg.ok{color:var(--ok)}
 .warn{background:#fff3cd;border:2px solid var(--gold);border-radius:3px;padding:10px 14px;font-weight:700;margin-bottom:12px}
 @media (max-width:520px){th,td{padding:7px 8px}}
 </style>
@@ -58,8 +68,16 @@ tr.top1 td{background:#fff3cd!important}
 <section id="app" hidden>
 <header>
 <div><h1 data-k="title">لوحة الإدارة</h1><p class="sub" id="upd"></p></div>
-<div><button class="btn lang" id="lang" type="button" aria-label="Language">EN</button> <button class="btn" id="refresh" type="button" data-k="refresh">تحديث</button> <button class="btn ghost" id="lock" type="button" data-k="lock">قفل</button></div>
+<div><button class="btn lang" id="lang" type="button" aria-label="Language">EN</button> <button class="btn" id="wipeBtn" type="button" data-k="wipeBtn">مسح الأرقام</button> <button class="btn" id="refresh" type="button" data-k="refresh">تحديث</button> <button class="btn ghost" id="lock" type="button" data-k="lock">قفل</button></div>
 </header>
+<section id="wipe" class="wipe" hidden>
+<h2 data-k="wipeT">مسح الأرقام القياسية</h2>
+<p data-k="wipeP">عملية نهائية لا يمكن التراجع عنها. تتطلب إدخال الرمز السري من جديد.</p>
+<div class="modes" id="wmodes"><button type="button" data-m="all" aria-pressed="true" data-k="wAll">كل الأرقام</button><button type="button" data-m="id" aria-pressed="false" data-k="wOne">موظف واحد</button><button type="button" data-m="date" aria-pressed="false" data-k="wDate">تاريخ محدد</button></div>
+<div class="row"><input id="wid" list="wnames" hidden data-kp="wIdPh" placeholder="الرقم الوظيفي أو الاسم" autocomplete="off"><datalist id="wnames"></datalist><input id="wdate" type="date" hidden></div>
+<div class="row"><input id="wcode" type="password" inputmode="numeric" autocomplete="off" dir="ltr" data-kp="wCodePh" placeholder="الرمز السري للتأكيد"><button class="btn red" id="wgo" type="button" data-k="wCheck">معاينة</button><button class="btn" id="wcancel" type="button" data-k="wCancel">إلغاء</button></div>
+<p class="msg" id="wmsg" role="status"></p>
+</section>
 <div id="warn" class="warn" hidden data-k="warn">الاتصال بـ Firebase غير مُفعَّل بعد، لذلك لا توجد بيانات.</div>
 <div class="stats" id="stats"></div>
 <nav role="tablist" id="tabs">
@@ -82,9 +100,11 @@ const fmt = d => d ? new Intl.DateTimeFormat(L[lang].loc, { dateStyle: 'short', 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const L = {
  ar: { title:'لوحة الإدارة', gate:'أدخل الرمز السري للإدارة', enter:'دخول', refresh:'تحديث', lock:'قفل', warn:'الاتصال بـ Firebase غير مُفعَّل بعد، لذلك لا توجد بيانات.', t_top:'الأرقام القياسية', t_logins:'سجل الدخول', t_scores:'كل النتائج', t_absent:'لم يدخلوا بعد', search:'ابحث بالاسم أو الرقم الوظيفي أو القسم',
+  wipeBtn:'مسح الأرقام', wipeT:'مسح الأرقام القياسية', wipeP:'عملية نهائية لا يمكن التراجع عنها. تتطلب إدخال الرمز السري من جديد.', wAll:'كل الأرقام', wOne:'موظف واحد', wDate:'تاريخ محدد', wIdPh:'الرقم الوظيفي أو الاسم', wCodePh:'الرمز السري للتأكيد', wCheck:'معاينة', wCancel:'إلغاء', wConfirm:'حذف نهائي', wNoCfg:'Firebase غير مُفعَّل', wBadCode:'الرمز غير صحيح أو حساب المدير غير مُنشأ في Firebase', wNoEmp:'اختر موظفاً صحيحاً', wNoDate:'اختر تاريخاً', wNothing:'لا توجد أرقام مطابقة للمسح', wPlan:(a,b)=>`سيُحذف ${a} سجل نتيجة ويُعاد ضبط ${b} رقم قياسي. اضغط «حذف نهائي» للتأكيد.`, wDone:n=>`تم المسح (${n} عملية)`, wFail:'تعذّر المسح — تحقّق من قواعد Firebase', wTrunc:' (يُعالَج آخر 1000 نتيجة فقط)',
   bad:'الرمز غير صحيح', loading:'جارٍ التحميل…', upd:'آخر تحديث: ', fail:'تعذّر الاتصال بقاعدة البيانات', s_seen:'موظفون دخلوا اللعبة', s_today:'دخلوا اليوم', s_plays:'مرات اللعب', s_best:'أعلى رقم', s_bestby:'أعلى رقم — ', none:'لا توجد بيانات',
   h_name:'الاسم', h_id:'الرقم', h_dept:'القسم', h_best:'أفضل نتيجة', h_plays:'مرات اللعب', h_time:'الوقت', h_score:'النتيجة', loc:'ar-OM-u-nu-latn', btn:'EN' },
  en: { title:'Admin Panel', gate:'Enter the admin passcode', enter:'Sign in', refresh:'Refresh', lock:'Lock', warn:'Firebase is not connected yet, so there is no data.', t_top:'Leaderboard', t_logins:'Login log', t_scores:'All scores', t_absent:'Not yet joined', search:'Search by name, employee ID or department',
+  wipeBtn:'Reset records', wipeT:'Reset records', wipeP:'This is permanent and cannot be undone. You must enter the passcode again.', wAll:'All records', wOne:'One employee', wDate:'A specific date', wIdPh:'Employee ID or name', wCodePh:'Passcode to confirm', wCheck:'Preview', wCancel:'Cancel', wConfirm:'Delete permanently', wNoCfg:'Firebase is not connected', wBadCode:'Wrong passcode, or the admin account is not set up in Firebase', wNoEmp:'Pick a valid employee', wNoDate:'Pick a date', wNothing:'Nothing matches to reset', wPlan:(a,b)=>`This will delete ${a} score entries and reset ${b} records. Press “Delete permanently” to confirm.`, wDone:n=>`Reset complete (${n} operations)`, wFail:'Reset failed — check the Firebase rules', wTrunc:' (only the latest 1000 scores are processed)',
   bad:'Wrong passcode', loading:'Loading…', upd:'Last updated: ', fail:'Could not reach the database', s_seen:'Employees who joined', s_today:'Joined today', s_plays:'Games played', s_best:'Top score', s_bestby:'Top score — ', none:'No data',
   h_name:'Name', h_id:'ID', h_dept:'Department', h_best:'Best score', h_plays:'Games', h_time:'Time', h_score:'Score', loc:'en-GB', btn:'العربية' }
 };
@@ -133,6 +153,34 @@ function render(){
 $('tabs').onclick = e => { const b = e.target.closest('button'); if(!b) return; tab = b.dataset.t; [...$('tabs').children].forEach(x => x.setAttribute('aria-selected', x === b)); render(); };
 $('q').oninput = render;
 $('lang').onclick = () => { lang = lang === 'ar' ? 'en' : 'ar'; try { localStorage.setItem('acg_admin_lang', lang); } catch(e){} applyLang(); $('upd').textContent = tr('upd') + fmt(new Date()); render(); };
+
+/* ===== مسح الأرقام القياسية ===== */
+let wmode = 'all', wplan = null;
+const wmsg = (t, c) => { $('wmsg').textContent = t || ''; $('wmsg').className = 'msg' + (c ? ' ' + c : ''); };
+function wreset(){ wplan = null; $('wgo').textContent = tr('wCheck'); $('wgo').dataset.k = 'wCheck'; $('wcode').value = ''; wmsg(''); }
+function wmodeSet(m){ wmode = m; [...$('wmodes').children].forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m)); $('wid').hidden = m !== 'id'; $('wdate').hidden = m !== 'date'; wplan = null; $('wgo').dataset.k = 'wCheck'; $('wgo').textContent = tr('wCheck'); wmsg(''); }
+$('wipeBtn').onclick = () => { const w = $('wipe'); w.hidden = !w.hidden; if(!w.hidden){ wmodeSet('all'); wreset(); $('wnames').innerHTML = Object.entries(D.dir).map(([id, v]) => `<option value="${id}">${esc(lang === 'en' ? v[0] : v[2] || v[0])}</option>`).join(''); } };
+$('wcancel').onclick = () => { $('wipe').hidden = true; wreset(); };
+$('wmodes').onclick = e => { const b = e.target.closest('button'); if(b) wmodeSet(b.dataset.m); };
+function empId(v){ v = v.trim(); if(D.dir[v]) return v; const hit = Object.entries(D.dir).find(([id, r]) => r[0].toLowerCase() === v.toLowerCase() || r[2] === v); return hit ? hit[0] : null; }
+$('wgo').onclick = async () => {
+  if(!Online.enabled()) return wmsg(tr('wNoCfg'), 'err');
+  const o = { mode: wmode };
+  if(wmode === 'id'){ o.id = empId($('wid').value); if(!o.id) return wmsg(tr('wNoEmp'), 'err'); }
+  if(wmode === 'date'){ o.date = $('wdate').value; if(!o.date) return wmsg(tr('wNoDate'), 'err'); }
+  $('wgo').disabled = true;
+  try {
+    if(!wplan){
+      try { await Online.adminLogin($('wcode').value.trim()); } catch(e){ return wmsg(tr('wBadCode'), 'err'); }
+      const p = await Online.planWipe(o);
+      if(!p.del.length && !p.upd.length) return wmsg(tr('wNothing'), 'err');
+      wplan = p; $('wgo').textContent = tr('wConfirm'); $('wgo').dataset.k = 'wConfirm';
+      wmsg(tr('wPlan')(p.del.length, p.upd.length) + (p.truncated ? tr('wTrunc') : ''));
+    } else {
+      const n = await Online.runWipe(wplan); wplan = null; wmsg(tr('wDone')(n), 'ok'); $('wgo').textContent = tr('wCheck'); $('wgo').dataset.k = 'wCheck'; $('wcode').value = ''; load();
+    }
+  } catch(e){ wmsg(tr('wFail'), 'err'); } finally { $('wgo').disabled = false; }
+};
 applyLang();
 try { if(sessionStorage.getItem(SK) === HASH){ $('gate').hidden = true; $('app').hidden = false; load(); } } catch(e){}
 </script>
