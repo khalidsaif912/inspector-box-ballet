@@ -835,3 +835,52 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
 @media (max-width:900px) and (min-height:561px){
   #ov.start .records-dock .gl-title,#ov.start .records-dock .gl-list{display:none}
 }
+
+/* ===== تجربة بدون رقم + نوافذ الغلاف القابلة للتمرير ===== */
+#ov .login-guest{display:block;margin:6px auto 0;background:none;border:0;padding:2px 4px;color:var(--blue,#1c4e8a);font:800 12px inherit;font-family:inherit;text-decoration:underline;cursor:pointer}
+#ov .login-guest[hidden]{display:none}
+#ov.start .pager{display:contents}
+#ov.start .pager-dots{display:none}
+@media (max-width:1140px){
+  #ov.start{display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:6px;padding:8px 0}
+  #ov.start .pager{
+    --pw:min(520px,calc(100vw - 48px));--edge:max(16px,calc(50% - var(--pw) / 2));
+    display:flex;direction:ltr;width:100%;gap:14px;align-items:stretch;
+    overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-padding-inline:var(--edge);
+    padding:6px var(--edge);max-height:calc(100dvh - 78px);scrollbar-width:none;overscroll-behavior-x:contain;cursor:grab;
+  }
+  #ov.start .pager::-webkit-scrollbar{display:none}
+  #ov.start .pager.drag{cursor:grabbing;scroll-snap-type:none;user-select:none}
+  #ov.start .pager>*{
+    flex:0 0 var(--pw);width:var(--pw);max-width:none;min-width:0;margin:0;box-sizing:border-box;direction:rtl;
+    position:relative;inset:auto;grid-column:auto;grid-row:auto;justify-self:auto;align-self:stretch;
+    scroll-snap-align:center;overflow-y:auto;overflow-x:hidden;
+    background:rgba(233,237,239,.8);background-clip:padding-box;
+    border:8px solid;border-image:repeating-linear-gradient(-45deg,#d4281e 0 7px,#e9edef 7px 14px) 8;border-radius:0;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 14px 40px rgba(0,0,0,.45);
+  }
+  #ov.start .pager>.side-stack{display:flex;flex-direction:column;gap:10px;padding:12px 14px;color:var(--ink);max-height:none;height:auto}
+  #ov.start .pager .side-stack .settings-dock,#ov.start .pager .side-stack .records-dock{background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding:4px 0;width:100%}
+  #ov.start .pager .records-dock{border-bottom:2px solid var(--ink);padding-bottom:12px}
+  #ov.start .pager .records-dock .lb-title{display:block}
+  #ov.start .pager .records-dock .gl-title{display:block}
+  #ov.start .pager .records-dock .gl-list{display:grid}
+  #ov.start .pager-dots{display:flex;gap:10px;justify-content:center;flex:0 0 auto}
+  #ov.start .pd{width:11px;height:11px;border-radius:50%;border:2px solid #fff;background:transparent;padding:0;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.6)}
+  #ov.start .pd.on{background:#fff}
+  #ov.start .guide-btn{position:static;width:auto;max-width:none;height:32px;padding:0 14px;font-size:12px;align-self:center;grid-column:auto;grid-row:auto}
+}
+@media (max-width:1140px) and (max-height:560px){
+  #ov.start .pager>.side-stack{flex-direction:row;gap:12px}
+  #ov.start .pager .side-stack .settings-dock,#ov.start .pager .side-stack .records-dock{flex:1 1 0;min-width:0}
+  #ov.start .pager .records-dock{border-bottom:0;border-inline-end:2px solid var(--ink);padding:4px 0 4px 10px}
+}
+@media (max-width:1140px) and (max-height:560px){
+  #ov.start .pager .start-card{padding:6px 12px 8px}
+  #ov.start .pager .start-card .emblem-wrap,#ov.start .pager .start-card .tagline-pill,#ov.start .pager .start-card .keyhint{display:none}
+  #ov.start .pager .start-card .game-title{margin:0 0 4px;font-size:18px}
+  #ov.start .pager .start-card .pick-stage{transform:none}
+  #ov.start .pager .start-card .pick{margin-bottom:6px}
+  #ov.start .pager .start-card .login{margin-bottom:6px}
+  #ov.start .pager .start-card .btn-play{height:36px;margin-bottom:0}
+}

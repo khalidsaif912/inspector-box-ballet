@@ -3035,7 +3035,7 @@ if(!fire.active && !fire.keypad && !introHold && $('rules').style.display === 'n
 hud();
 }
 function start(){
-if(window.Online && !Online.user()){ const l = $('login'); if(l){ l.classList.remove('shake'); void l.offsetWidth; l.classList.add('shake'); const i = $('emp-id'); if(i) i.focus(); } return; }
+if(window.Online && !Online.user() && !Online.guest){ const l = $('login'); if(l){ l.classList.remove('shake'); void l.offsetWidth; l.classList.add('shake'); const i = $('emp-id'); if(i) i.focus(); } return; }
 try { if(parent !== window) parent.postMessage({ type: 'acg-state', playing: true }, location.origin); } catch(e){}
 const td = tutorialDone();
 initAudio();
@@ -3071,9 +3071,10 @@ $('go').onclick = () => start();
 function loginUI(){
 if(!window.Online || !$('login')) return;
 const f = $('login-form'), who = $('login-who'), msg = $('login-msg'), go = $('go');
-const refresh = () => { const u = Online.user(); f.hidden = !!u; who.hidden = !u; go.disabled = !u; if(u) $('who-name').textContent = '👤 ' + Online.nameOf(u.id, I18N.lang, u.name); };
+const refresh = () => { const u = Online.user(); f.hidden = !!u; who.hidden = !u; go.disabled = !u && !Online.guest; if(u) $('who-name').textContent = '👤 ' + Online.nameOf(u.id, I18N.lang, u.name); };
 f.onsubmit = async e => { e.preventDefault(); msg.textContent = '…'; const u = await Online.login($('emp-id').value); if(!u){ msg.textContent = I18N.t('الرقم الوظيفي غير موجود'); return; } msg.textContent = ''; refresh(); globalTop(); };
-$('who-out').onclick = () => { Online.logout(); $('emp-id').value = ''; refresh(); $('emp-id').focus(); };
+$('guest').onclick = () => { Online.guest = true; refresh(); start(); };
+$('who-out').onclick = () => { Online.guest = false; Online.logout(); $('emp-id').value = ''; refresh(); $('emp-id').focus(); };
 Online.directory().then(refresh); refresh(); globalTop();
 }
 async function globalTop(){
@@ -3082,6 +3083,18 @@ if(!Online.enabled()){ ol.innerHTML = '<li class="gl-empty">سيُفعَّل ق�
 try { await Online.directory(); const t = await Online.top(5); ol.innerHTML = t.length ? t.map((p, i) => `<li><b>${i + 1}</b><span>${Online.nameOf(p.id, I18N.lang, p.name).replace(/[<&]/g, '')}</span><i>${p.best}</i></li>`).join('') : '<li class="gl-empty">كن أول المتصدرين</li>'; } catch(e){ ol.innerHTML = '<li class="gl-empty">تعذّر التحميل</li>'; }
 }
 loginUI();
+/* نوافذ الغلاف في الشاشات الضيقة: تمرير بالسحب/اللمس بين «الدخول والشخصية» و«النتائج والإعدادات» */
+(function(){
+const p = $('pager'), dots = document.querySelectorAll('#pager-dots .pd'); if(!p) return;
+const page = () => p.children.length > 1 ? (p.children[1].offsetLeft - p.children[0].offsetLeft) : p.clientWidth;
+const go = i => p.scrollTo({ left: i * page(), behavior: 'smooth' });
+dots.forEach(d => d.onclick = () => go(+d.dataset.i));
+p.addEventListener('scroll', () => { const i = Math.round(p.scrollLeft / (page() || 1)); dots.forEach((d, k) => d.classList.toggle('on', k === Math.min(i, dots.length - 1))); }, { passive: true });
+let d = null;
+p.addEventListener('pointerdown', e => { if(e.pointerType !== 'mouse' || e.button !== 0 || e.target.closest('input,button,a,label,canvas')) return; d = { x: e.clientX, s: p.scrollLeft, m: false }; });
+window.addEventListener('pointermove', e => { if(!d) return; const dx = e.clientX - d.x; if(!d.m && Math.abs(dx) < 6) return; if(!d.m){ d.m = true; p.classList.add('drag'); } p.scrollLeft = d.s - dx; });
+window.addEventListener('pointerup', () => { if(!d) return; const m = d.m; d = null; p.classList.remove('drag'); if(m) go(Math.max(0, Math.min(dots.length - 1, Math.round(p.scrollLeft / (page() || 1))))); });
+})();
 let pz = false;
 const openRules = () => {
 const r = $('rules'), o = r.style.display === 'none';

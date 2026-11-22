@@ -144,6 +144,7 @@
 <canvas id="dust" aria-hidden="true"></canvas>
 <div class="bloom b1" aria-hidden="true"></div>
 <div class="bloom b2" aria-hidden="true"></div>
+<div class="pager" id="pager">
 <main class="start-card">
 <div class="emblem-wrap">
 <div class="emblem-ring"></div>
@@ -160,6 +161,7 @@
 <label for="emp-id">الرقم الوظيفي</label>
 <div class="login-row"><input id="emp-id" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="مثال: 82645" dir="ltr"><button type="submit" class="login-ok">دخول</button></div>
 <p class="login-msg" id="login-msg" role="status"></p>
+<button type="button" id="guest" class="login-guest">جرّب بدون رقم وظيفي (لا تُسجَّل نتيجتك)</button>
 </form>
 <div class="login-who" id="login-who" hidden><span class="login-badge" id="who-name"></span><button type="button" id="who-out" class="login-out">تغيير</button></div>
 </section>
@@ -205,6 +207,8 @@
 </button>
 </aside>
 </div>
+</div>
+<div class="pager-dots" id="pager-dots" role="tablist" aria-label="النوافذ"><button type="button" class="pd on" data-i="0" aria-label="الدخول والشخصية"></button><button type="button" class="pd" data-i="1" aria-label="النتائج والإعدادات"></button></div>
 <button class="guide-btn" id="how" type="button" title="دليل سريع" aria-label="دليل سريع">
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
 <span>دليل سريع</span>
