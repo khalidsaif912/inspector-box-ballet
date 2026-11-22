@@ -71,6 +71,7 @@
     'اختر شخصيتك': 'Choose your character',
     'ثم اضغط «العب الآن» داخل اللعبة': 'Then press “Play now” inside the game',
     'موصى بها': 'Recommended',
+    'تدرّب على فرز المواد الخطرة وفق IATA DGR': 'Practice sorting dangerous goods to IATA DGR',
     'على رأس العمل': 'On duty',
     'اضغط داخل اللعبة لتفعيل لوحة المفاتيح': 'Click inside the game to enable the keyboard',
     'كرتوني': 'Cartoon',
