@@ -3938,7 +3938,7 @@ if(streakT > 0 && !STUDY.on){ streakT -= dt; if(streakT <= 0){ streakT = 0; stre
 for(const it of items.slice()){
 /* الطرد المجمّد المتروك على الأرض أمام غرفة التجميد (بأي طريقة: إسقاط عادي أو سريع أو رافعة) يفتح لوحة اللغز تلقائياً */
 if(it.data.isFrz){
-  if(it.st === 'floor' && !it.fall && inFrzZone(it.m.position.x, it.m.position.z)){ if(!it.frzAsked){ it.frzAsked = true; frzDrop(it, it.m.position.x); } }
+  if(it.st === 'floor' && inFrzZone(it.m.position.x, it.m.position.z)){ if(!it.frzAsked){ it.frzAsked = true; frzDrop(it, it.m.position.x); } }   // فور الإسقاط (حتى أثناء السقوط) بلا انتظار الاستقرار
   else if(it.st !== 'floor' || !inFrzZone(it.m.position.x, it.m.position.z)) it.frzAsked = false;
 }
 if(it.st !== 'floor' || it.fall) continue;
@@ -4095,7 +4095,7 @@ C.lookAt(camLook);
 if(!FD.on && !EXIT_GATE.active && !STUDY.on) pl.visible = true;
 }
 // اهتزاز الكاميرا (Trauma): يُطبَّق بعد lookAt حتى يهتز المنظور فعلاً
-const shake = shakeTrauma * shakeTrauma;
+const shake = (frzP.active || caoQ.active || STUDY.on) ? 0 : shakeTrauma * shakeTrauma;   // لا اهتزاز للكاميرا والمحاكاة متوقفة (الاهتزاز لا يتلاشى حين يتجمّد الزمن)
 if(shake > 0.0005){
 C.position.x += (Math.random() - 0.5) * shake * 0.7;
 C.position.y += (Math.random() - 0.5) * shake * 0.5;
