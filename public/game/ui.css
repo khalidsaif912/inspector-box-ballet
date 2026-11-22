@@ -674,3 +674,11 @@ html[lang="en"] body{direction:ltr;text-align:left}
   #ov.start .pk-tx b{font-size:13px}
   #ov.start .pk-tx small{display:none}
 }
+
+/* لمعان يعبر الشريط طوال التحميل (حركة transform تعمل حتى والمعالج مشغول ببناء المشهد) */
+.loading-bar-wrapper{position:relative}
+.loading-bar-wrapper::after{content:"";position:absolute;top:3px;bottom:3px;inset-inline-start:0;width:30%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:translateX(-120%);animation:ld-sheen 1.3s linear infinite;pointer-events:none}
+html[dir=rtl] .loading-bar-wrapper::after{animation-name:ld-sheen-rtl}
+@keyframes ld-sheen{to{transform:translateX(450%)}}
+@keyframes ld-sheen-rtl{from{transform:translateX(120%)}to{transform:translateX(-450%)}}
+@media (prefers-reduced-motion:reduce){.loading-bar-wrapper::after{animation:none;display:none}}

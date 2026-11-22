@@ -14,6 +14,13 @@
 <meta name="apple-mobile-web-app-title" content="مستودع الشحن">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script>
+/* تسخين الذاكرة المؤقتة: نبدأ تنزيل مجسّم الشخصية المختارة والرافعة فوراً بالتوازي مع تحميل السكربتات وبناء المشهد */
+(function(){ try {
+  var id = 'worker'; try { var v = localStorage.getItem('acg_char'); if (v === 'timmy') id = v; } catch(e){}
+  ['game/models/mixamo-' + id + '.glb', 'game/models/forklift.glb'].forEach(function(u){ fetch(u).then(function(r){ return r.arrayBuffer(); }).catch(function(){}); });
+} catch(e){} })();
+</script>
 <link rel="stylesheet" href="game/game.css">
 <link rel="stylesheet" href="game/ui.css">
 </head>

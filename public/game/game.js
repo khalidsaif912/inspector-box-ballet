@@ -1048,7 +1048,7 @@ function crewShow(v){
   if(CREW.obj) CREW.obj.visible = v && CHAR.id === 'crew' && !!act;
   if(HERO.obj) HERO.obj.visible = v && CHAR.id === 'hero' && !!act;
   for(const id in MIX) if(MIX[id].obj) MIX[id].obj.visible = v && CHAR.id === id && !!act;
-  rig.visible = v && !act;
+  rig.visible = v && !act && !MIX[CHAR.id];
 }
 function applyCrewMode(){
   if(MIX[CHAR.id]) loadMixamo(CHAR.id);
