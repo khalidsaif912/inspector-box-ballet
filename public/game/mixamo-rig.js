@@ -5,9 +5,9 @@
 (function () {
   "use strict";
 
-  var TARGET_H = 3.6;
+  var TARGET_H = 3.1;   // قامة الشخصية: متناسبة مع الرافعة والطرود والرفوف
   // سرعة اللعبة (وحدة/ث) التي تطابق كل حركة عند سرعة تشغيل 1.0
-  var NATURAL = { jog: 8.2, run: 11.1, carry_jog: 6.2 };
+  var NATURAL = { jog: 7.05, run: 9.55, carry_jog: 5.35 };   // سرعات الحركة الأصلية × (3.1/3.6) لأن الجسم أصغر
   var FADE = 0.22;
 
   function load(url, onProgress) {

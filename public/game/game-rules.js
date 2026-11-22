@@ -147,8 +147,8 @@
     forkOffset: 3.3,
     carryY: 0.88,
     driveSpeed: 9.8,
-    halfX: 2.35,
-    halfZ: 1.03,
+    halfX: 2.4,
+    halfZ: 1.2,
     nearest(list, x, z) {
       let best = null,
         bd = forklift.reach;
@@ -394,6 +394,78 @@
     },
   };
   rules.scoreboard = scoreboard;
+
+  // غرفة التجميد: لغز انزلاقي 3×3 يفتح باب الغرفة قبل إدخال الطرد المجمّد.
+  // الصفوف (من الأعلى) نطاقات الحرارة: COL 2–8°C · CRT 15–25°C · FRZ 0°C وما دونها.
+  // القطع: 3 COL + 3 CRT + 2 FRZ وخانة فارغة. يُحل اللغز حين تقع كل قطعة في صف نطاقها.
+  // الخلط يبدأ من الوضع المحلول بحركات قانونية فقط، فكل لوحة قابلة للحل دائماً.
+  const freezer = (() => {
+    const ROWS = ["COL", "CRT", "FRZ"];
+    const BANDS = ["2–8°C", "15–25°C", "0°C"];
+    const SOLVED = ["COL", "COL", "COL", "CRT", "CRT", "CRT", "FRZ", "FRZ", null];
+    const neighbors = (i) => {
+      const r = Math.floor(i / 3);
+      const c = i % 3;
+      const out = [];
+      if (r > 0) out.push(i - 3);
+      if (r < 2) out.push(i + 3);
+      if (c > 0) out.push(i - 1);
+      if (c < 2) out.push(i + 1);
+      return out;
+    };
+    const isSolved = (board) =>
+      Array.isArray(board) &&
+      board.length === 9 &&
+      board.filter((t) => t === null).length === 1 &&
+      board.every((t, i) => t === null || ROWS[Math.floor(i / 3)] === t) &&
+      ["COL", "CRT", "FRZ"].every((k) => board.filter((t) => t === k).length === SOLVED.filter((t) => t === k).length);
+    const move = (board, i) => {
+      if (!Array.isArray(board) || i < 0 || i > 8 || board[i] === null) return null;
+      const blank = board.indexOf(null);
+      if (!neighbors(i).includes(blank)) return null;
+      const next = board.slice();
+      next[blank] = next[i];
+      next[i] = null;
+      return next;
+    };
+    const shuffle = (rng, moves) => {
+      const rnd = typeof rng === "function" ? rng : Math.random;
+      let board = SOLVED.slice();
+      let prev = -1;
+      for (let n = 0; n < (moves || 60); n++) {
+        const blank = board.indexOf(null);
+        const opts = neighbors(blank).filter((i) => i !== prev);
+        const pick = opts[Math.floor(rnd() * opts.length) % opts.length];
+        prev = blank;
+        board = move(board, pick);
+      }
+      // لوحة محلولة أو قريبة جداً من الحل لا تُعطى للاعب
+      return isSolved(board) ? shuffle(rnd, (moves || 60) + 7) : board;
+    };
+    return {
+      ROWS,
+      BANDS,
+      SOLVED,
+      neighbors,
+      isSolved,
+      move,
+      shuffle,
+      // ظهور الطرد المجمّد على الحزام: مرة واحدة في كل مرة، بعد أول طرود، وبنسبة محدودة.
+      spawnChance: 0.11,
+      minProcessed: 2,
+      shouldSpawn(ctx) {
+        if (!ctx || ctx.present) return false;
+        if ((ctx.processed || 0) < freezer.minProcessed) return false;
+        const rnd = typeof ctx.rng === "function" ? ctx.rng : Math.random;
+        return rnd() < freezer.spawnChance;
+      },
+      reward: { score: 80, time: 8 },
+      // بعد إدخال الطرد يبقى الباب مفتوحاً ثوانيَ ثم يُقفل من جديد؛ ويبقى أطول إن حُلّ اللغز بلا طرد.
+      closeAfterDelivery: 2.6,
+      closeIdle: 18,
+    };
+  })();
+  rules.freezer = freezer;
 
   root.WarehouseRules = rules;
 })(globalThis);

@@ -71,6 +71,7 @@
     'اختر شخصيتك': 'Choose your character',
     'ثم اضغط «العب الآن» داخل اللعبة': 'Then press “Play now” inside the game',
     'موصى بها': 'Recommended',
+    'طرد مجمّد': 'Frozen parcel',
     'بناء المستودع': 'Building the warehouse',
     'الرافعة الشوكية': 'Forklift',
     'تعذّر': 'Failed',

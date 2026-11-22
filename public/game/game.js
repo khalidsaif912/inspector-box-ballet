@@ -242,6 +242,9 @@ const I = [
 ['perish','🍓','فراولة طازجة','PER','EAT'],['perish','🌹','زهور مقطوفة','PEF','EAT'],['perish','🍞','مخبوزات طازجة','PEM','EAT'],
 ['gen','👕','ملابس قطنية','GEN','GEN'],['gen','📚','كتب ومطبوعات','GEN','GEN'],['gen','🧸','ألعاب أطفال','GEN','GEN']
 ];
+/* الطرد المجمّد: يظهر عشوائياً على الحزام، ولا يُقبل إلا في غرفة التجميد بعد حل لغز الباب */
+const FRZ_RAW = ['frz', '🧊', 'طرد مجمّد', 'FRZ', '−18°C'];
+FRZ_RAW[2] = I18N.t(FRZ_RAW[2]);
 const HZ = [
 ['h1','🧨','ذخائر خفيفة','RXS','1.4S'],
 ['h1','🎆','ألعاب نارية','RGX','1.3G'],
@@ -607,9 +610,9 @@ const truckBoxParts = recklessTruck.children.slice();
 (function loadForkliftModel(){
   if(!THREE.GLTFLoader) return;
   const lt = loading.track('forklift', 'الرافعة الشوكية', 12);
-  new THREE.GLTFLoader().load('game/models/forklift.glb', g => {
+  new THREE.GLTFLoader().load('game/models/forklift-kolos.glb', g => {
     try {
-      const src = g.scene, SC = 0.028, SHIFT_Z = 0.1;   // الطول ≈ 6.5، العرض ≈ 2.4، ارتفاع السقف ≈ 4 (يتّسع لقامة الموظف 3.6 جالساً)
+      const src = g.scene, SC = 0.0265, SHIFT_Z = 0.9;   // الطول ≈ 6.1، العرض ≈ 2.25، السقف ≈ 3.8 (الشخصية 3.1 والطرد 1.35)
       src.updateMatrixWorld(true);
       const bx = new THREE.Box3().setFromObject(src);   // مركز النموذج الأصلي بعيد عن الأصل: نُعيد توسيطه وننزله على الأرض
       src.traverse(o => { if(o.isMesh){
@@ -944,6 +947,57 @@ const back = new THREE.Mesh(new THREE.PlaneGeometry(z.w, 1.8), meshMat); back.po
 const dz = new THREE.Mesh(new THREE.PlaneGeometry(1.4,1.4), new THREE.MeshStandardMaterial({color:0xf5c400, roughness:0.6})); dz.rotation.x = -Math.PI/2; dz.rotation.z = Math.PI/4; dz.position.set(z.x, 0.075, -4.9); S.add(dz);
 }
 });
+// ===== غرفة التجميد: غرفة معزولة على يسار المستودع بباب منزلق مقفل (يُفتح بحل اللغز) =====
+const frzP = { active: false, cells: [], moves: 0, solved: false, timer: 0 };
+const FRZ = { x: -28.2, w: 5.8, hw: 2.9, zBack: -11.9, zFront: -6.2, doorW: 2.5, doorH: 3.7, open: false, openAmt: 0, closeT: 0, pending: null, items: [], door: null, lamp: null, lampMat: null, glow: null, solved: 0 };
+(() => {
+const g = new THREE.Group(); S.add(g);
+const wallC = 0xdde9ef, trimC = 0x3b8fb5, depth = FRZ.zFront - FRZ.zBack, cz = (FRZ.zFront + FRZ.zBack) / 2, H = 5.3;
+// أرضية داخلية جليدية + سقف وجدران جانبية وخلفية
+B(FRZ.w, 0.08, depth, 0xbfe3f2, FRZ.x, 0.04, cz, g, 0.3, 0.1).castShadow = false;
+B(FRZ.w + 0.4, 0.3, depth + 0.2, wallC, FRZ.x, H + 0.15, cz, g, 0.6, 0.1);
+[-1, 1].forEach(q => B(0.3, H, depth, wallC, FRZ.x + q * (FRZ.w / 2 - 0.15), H / 2, cz, g, 0.6, 0.1));
+B(FRZ.w, H, 0.3, wallC, FRZ.x, H / 2, FRZ.zBack + 0.15, g, 0.6, 0.1);
+// الواجهة: جداران جانبيان للباب + عتبة علوية
+const sideW = (FRZ.w - FRZ.doorW) / 2;
+[-1, 1].forEach(q => B(sideW, H, 0.3, wallC, FRZ.x + q * (FRZ.doorW / 2 + sideW / 2), H / 2, FRZ.zFront - 0.15, g, 0.6, 0.1));
+B(FRZ.doorW, H - FRZ.doorH, 0.3, wallC, FRZ.x, FRZ.doorH + (H - FRZ.doorH) / 2, FRZ.zFront - 0.15, g, 0.6, 0.1);
+// إطار الباب وخطوط التبريد الزرقاء
+[-1, 1].forEach(q => B(0.12, FRZ.doorH, 0.36, trimC, FRZ.x + q * (FRZ.doorW / 2 + 0.06), FRZ.doorH / 2, FRZ.zFront - 0.15, g, 0.4, 0.3));
+B(FRZ.w + 0.5, 0.14, 0.4, trimC, FRZ.x, 0.7, FRZ.zFront - 0.12, g, 0.5, 0.2).castShadow = false;
+B(FRZ.doorW + 0.24, 0.12, 0.36, trimC, FRZ.x, FRZ.doorH + 0.06, FRZ.zFront - 0.15, g, 0.4, 0.3);
+// ورقة الباب المنزلقة (تتحرك نحو الجدار الأيمن عند الفتح)
+const door = new THREE.Group(); door.position.set(FRZ.x, 0, FRZ.zFront + 0.12); g.add(door);
+B(FRZ.doorW - 0.04, FRZ.doorH - 0.04, 0.22, 0xaec3cf, 0, FRZ.doorH / 2, 0, door, 0.35, 0.55);
+B(FRZ.doorW - 0.5, 0.9, 0.24, 0x1c3a4c, 0, FRZ.doorH * 0.64, 0, door, 0.2, 0.2);
+B(0.14, 1.3, 0.3, 0x2a3640, FRZ.doorW / 2 - 0.45, FRZ.doorH * 0.44, 0.1, door, 0.4, 0.6);
+for(let i = 0; i < 4; i++) B(FRZ.doorW - 0.3, 0.07, 0.25, 0xe8f3f8, 0, 0.35 + i * 0.4, 0, door, 0.5, 0.1);
+FRZ.door = door;
+// لوحة القفل بجانب الباب: مصباح أحمر (مقفل) / أخضر (مفتوح)
+const lampMat = new THREE.MeshStandardMaterial({ color: 0xff3b30, emissive: 0xff3b30, emissiveIntensity: 0.9, roughness: 0.4 });
+B(0.62, 1.1, 0.2, 0x1d2a33, FRZ.x - FRZ.doorW / 2 - 0.55, 2.0, FRZ.zFront + 0.02, g, 0.5, 0.4);
+const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.17, 14, 12), lampMat); lamp.position.set(FRZ.x - FRZ.doorW / 2 - 0.55, 2.3, FRZ.zFront + 0.18); g.add(lamp);
+const padTx = canvasTex(128, 128, (c, w, h) => { c.fillStyle = '#0e1a22'; c.fillRect(0, 0, w, h); for(let r = 0; r < 3; r++) for(let q = 0; q < 3; q++){ c.fillStyle = '#4fc3e8'; c.fillRect(14 + q * 38, 14 + r * 30, 26, 20); } });
+const padFace = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.5), new THREE.MeshBasicMaterial({ map: padTx })); padFace.position.set(FRZ.x - FRZ.doorW / 2 - 0.55, 1.75, FRZ.zFront + 0.13); g.add(padFace);
+FRZ.lampMat = lampMat; FRZ.lamp = lamp;
+// لافتة فوق الغرفة
+const sg = canvasTex(1024, 256, (c, w, h) => {
+c.fillStyle = '#0f3347'; c.fillRect(0, 0, w, h);
+c.strokeStyle = '#8fe3ff'; c.lineWidth = 10; c.strokeRect(8, 8, w - 16, h - 16);
+c.fillStyle = '#e9f9ff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '900 92px Cairo, Tahoma, sans-serif';
+c.fillText('❄ ' + I18N.T('غرفة التجميد', 'FREEZER ROOM'), w / 2, h / 2 - 20);
+c.font = '700 54px monospace'; c.fillStyle = '#8fe3ff'; c.fillText('FRZ  •  0°C', w / 2, h / 2 + 64);
+});
+const sign = new THREE.Mesh(new THREE.PlaneGeometry(FRZ.w - 0.4, (FRZ.w - 0.4) / 4), new THREE.MeshBasicMaterial({ map: sg, toneMapped: false }));
+sign.position.set(FRZ.x, H + 1.0, FRZ.zFront + 0.2); g.add(sign);
+[-1, 1].forEach(q => B(0.1, 1.2, 0.1, 0x2b333c, FRZ.x + q * (FRZ.w / 2 - 0.5), H + 0.6, FRZ.zFront + 0.1, g, 0.4, 0.7));
+// إنارة باردة داخل الغرفة تظهر عند فتح الباب
+const glow = new THREE.PointLight(0x7fd8ff, 0.0, 9); glow.position.set(FRZ.x, 3.2, cz); g.add(glow); FRZ.glow = glow;
+// منصة الإسقاط أمام الباب على الأرض
+const pad = B(FRZ.w, 0.06, 1.7, 0x3b8fb5, FRZ.x, 0.03, FRZ.zFront + 0.85, g, 0.55, 0.05); pad.material.emissive = new THREE.Color(0x3b8fb5).multiplyScalar(0.18); pad.castShadow = false;
+for(let i = 0; i < 7; i++){ const st = B(0.3, 0.03, 1.7, i % 2 ? 0xffffff : 0x1d5873, FRZ.x - 2.4 + i * 0.8, 0.075, FRZ.zFront + 0.85, g, 0.6, 0.05); st.castShadow = false; }
+})();
+
 // ===== منطقة التجمع: رقعة خضراء واضحة على يمين المستودع =====
 const EM = gameRules.emergency;
 const muster = (() => {
@@ -1031,8 +1085,8 @@ const HERO = { obj: null, inst: null, ready: false, loading: false, err: null };
 window.__hero = HERO;
 /* شخصيات Mixamo: مجسّم + حركات مسجّلة حقيقية، يحمّلها مُحمّل واحد مشترك (mixamo-rig.js) */
 const MIX = {
-  worker: { seat: { z: -2.15, arm: 1.2, fore: -0.6 }, url: 'game/models/mixamo-worker.glb', obj: null, inst: null, ready: false, loading: false, err: null },
-  timmy:  { seat: { z: -1.7, arm: 1.5, fore: -0.5 }, url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null }
+  worker: { seat: { z: 0, hips: 2.1, arm: 1.0, fore: -0.5 }, url: 'game/models/mixamo-worker.glb', obj: null, inst: null, ready: false, loading: false, err: null },
+  timmy:  { seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null }
 };
 /* الشخصيات: worker و timmy (Mixamo) · hero (3D) · crew (المجسّم الثابت) · rig (الإجرائي) */
 const CHAR_IDS = ['worker', 'timmy'];
@@ -1041,8 +1095,14 @@ const CHAR = { id: 'worker' };
 try { if(localStorage.getItem('acg_char_v') !== '2'){ const o = localStorage.getItem('acg_char'); if(!o || o === 'hero') localStorage.setItem('acg_char', 'worker'); localStorage.setItem('acg_char_v', '2'); } } catch(e){}
 try { const saved = localStorage.getItem('acg_char'); if(CHAR_IDS.indexOf(saved) >= 0) CHAR.id = saved; } catch(e){}
 try { if(new URLSearchParams(location.search).get('crew') === 'rig') CREW.mode = 'rig'; } catch(e){}
+/* أثناء تنزيل الشخصية المختارة يبقى ظاهراً مجسّم الشخصية السابقة الجاهز بدل أن يختفي اللاعب */
+function shownMixId(){
+  if(MIX[CHAR.id] && MIX[CHAR.id].ready) return CHAR.id;
+  for(const id in MIX) if(MIX[id].ready) return id;
+  return null;
+}
 function activeCharRig(){
-  if(MIX[CHAR.id]) return MIX[CHAR.id].ready ? MIX[CHAR.id].inst : null;
+  if(MIX[CHAR.id]){ const id = shownMixId(); return id ? MIX[id].inst : null; }
   if(CHAR.id === 'hero') return HERO.ready ? HERO.inst : null;
   if(CHAR.id === 'crew') return (CREW.ready && CREW.mode === 'glb') ? CREW.inst : null;
   return null; // الإجرائي: يحل محلّه rig المجسّم
@@ -1051,8 +1111,9 @@ function crewShow(v){
   const act = activeCharRig();
   if(CREW.obj) CREW.obj.visible = v && CHAR.id === 'crew' && !!act;
   if(HERO.obj) HERO.obj.visible = v && CHAR.id === 'hero' && !!act;
-  for(const id in MIX) if(MIX[id].obj) MIX[id].obj.visible = v && CHAR.id === id && !!act;
-  rig.visible = v && !act && !MIX[CHAR.id];
+  const shown = MIX[CHAR.id] ? shownMixId() : null;
+  for(const id in MIX) if(MIX[id].obj) MIX[id].obj.visible = v && shown === id && !!act;
+  rig.visible = v && !act && !(MIX[CHAR.id] && !MIX[CHAR.id].err);   // الإجرائي احتياطاً فقط إن فشل تنزيل الشخصية
 }
 function applyCrewMode(){
   if(MIX[CHAR.id]) loadMixamo(CHAR.id);
@@ -1088,7 +1149,7 @@ function loadMixamo(id, attempt){
   }).then(o => {
     lt.done();
     M.obj = o.root; M.inst = o; M.ready = true; M.loading = false;
-    o.seatZ = M.seat.z; Object.assign(o.sitCfg, { arm: M.seat.arm, fore: M.seat.fore });   // وضع الجلوس مضبوط لكل شخصية على مقعد الرافعة ومقودها
+    o.seatZ = M.seat.z; o.seatY = M.seat.hips; Object.assign(o.sitCfg, { arm: M.seat.arm, fore: M.seat.fore });   // وضع الجلوس مضبوط لكل شخصية على مقعد الرافعة ومقودها
     pl.add(o.root); if(CHAR.id === id) charStatus(''); applyCrewMode();
     loadSeatCrew();
     console.log('[' + id + '] mixamo glb ready');
@@ -1294,7 +1355,7 @@ const PLAYER_RADIUS = 0.45;
    وذراعان إلى المقود. تُركّب داخل forkDriver حتى تبقى ظهورها/إخفاءها كما هي. */
 const HIP_REF = 1.824;             // ارتفاع الحوض في قالب الشخصية (3.6م)
 /* مقعد الرافعة الجديدة (النموذج الكبير): السائق بحجم اللاعب كاملاً (s=1) والحوض فوق وسادة المقعد */
-const SEAT = { s: 1, hips: 3.05, z: -2.15 };
+const SEAT = { s: 1, hips: 2.1, z: 0 };
 const SEAT_CREW = { fork: null, truck: null, tried: false };
 function seatCrewInto(parent, at) {
   const g = new THREE.Group();
@@ -1340,6 +1401,8 @@ const STATIC_OBSTACLES = [
 Z.filter(z => z.hz).forEach(z => [-1,1].forEach(q => STATIC_OBSTACLES.push({minX:z.x+q*z.w/2-0.1, maxX:z.x+q*z.w/2+0.1, minZ:-11.7, maxZ:-5.5})));
 Z.filter(z=>z.k!=='fod').forEach(z => STATIC_OBSTACLES.push({minX:z.x-(z.w+0.1)/2, maxX:z.x+(z.w+0.1)/2, minZ:-11.925, maxZ:-11.675}));
 STATIC_OBSTACLES.push({minX:gameRules.fodZoneX-1.0,maxX:gameRules.fodZoneX+1.0,minZ:-9.6,maxZ:-7.6});
+/* جسم غرفة التجميد صلب (التسليم من الواجهة فقط) */
+STATIC_OBSTACLES.push({minX:FRZ.x-FRZ.w/2,maxX:FRZ.x+FRZ.w/2,minZ:FRZ.zBack-0.2,maxZ:FRZ.zFront+0.05});
 /* قاعدة منضدة القراءة المائلة: صلبة كي لا يمرّ اللاعب من خلالها */
 STATIC_OBSTACLES.push({minX:3.3,maxX:9.5,minZ:-14.6,maxZ:-11.35});
 let bumpCD = 0, lastBump = 0;
@@ -1736,12 +1799,49 @@ function placardTex(imp, div){
   }
   return tc[k] || (tc[k] = rawTex(_placardCv));
 }
+/* خامة الطرد المجمّد: صندوق عازل أبيض مزرق بشريط لاصق، وعليه ملصق تجميد كبير (ندفة ثلج + FRZ + ≤ −18°C) */
+function frzTex(){
+const cv = document.createElement('canvas'); cv.width = cv.height = 512;
+const g = cv.getContext('2d');
+const base = g.createLinearGradient(0, 0, 0, 512); base.addColorStop(0, '#eef8fc'); base.addColorStop(1, '#cfe6ef');
+g.fillStyle = base; g.fillRect(0, 0, 512, 512);
+for(let i=0;i<1100;i++){ g.fillStyle = Math.random() > .5 ? 'rgba(255,255,255,.55)' : 'rgba(110,160,185,.10)'; g.fillRect(Math.random()*512, Math.random()*512, Math.random()*20+2, 2); }
+g.strokeStyle = '#7fb0c6'; g.lineWidth = 10; g.strokeRect(8, 8, 496, 496);
+// شريط لاصق أزرق عمودي
+g.fillStyle = '#2f7da3'; g.fillRect(238, 0, 36, 512);
+g.fillStyle = 'rgba(255,255,255,.28)'; g.fillRect(242, 0, 4, 512);
+// الملصق: ورقة بيضاء بإطار أزرق وشريط علوي
+const x = 46, y = 52, w = 420, h = 408, r = 22;
+g.save();
+g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 14; g.shadowOffsetY = 5;
+g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); g.fill();
+g.restore();
+g.lineWidth = 12; g.strokeStyle = '#1a6fa3'; g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); g.stroke();
+g.fillStyle = '#1a6fa3'; g.fillRect(x + 6, y + 6, w - 12, 62);
+g.fillStyle = '#fff'; g.font = '900 38px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('KEEP FROZEN', 256, y + 38);
+// ندفة ثلج مرسومة بالخطوط
+g.save(); g.translate(256, 196); g.strokeStyle = '#1a6fa3'; g.lineCap = 'round'; g.lineWidth = 9;
+for(let k=0;k<6;k++){
+g.rotate(Math.PI / 3);
+g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -66); g.stroke();
+g.lineWidth = 6;
+g.beginPath(); g.moveTo(0, -30); g.lineTo(-18, -46); g.moveTo(0, -30); g.lineTo(18, -46); g.stroke();
+g.beginPath(); g.moveTo(0, -50); g.lineTo(-12, -62); g.moveTo(0, -50); g.lineTo(12, -62); g.stroke();
+g.lineWidth = 9;
+}
+g.restore();
+g.fillStyle = '#0f3347'; g.font = '900 104px monospace'; g.fillText('FRZ', 256, 330);
+g.fillStyle = '#c0392b'; g.fillRect(x + 6, 378, w - 12, 50);
+g.fillStyle = '#fff'; g.font = '900 33px monospace'; g.fillText('≤ −18°C • DO NOT THAW', 256, 404);
+const t = rawTex(cv); t.anisotropy = 4; return t;
+}
 function tex(it, placard){
 const isCao = it[0][0] === 'h' && gameRules.cao.isCao(it[3]);
 if(placard && isCao) return placardTex(it[3], it[4]);
 const k = it[2] + '_' + it[3] + (isCao ? '_CAO' : '');
 if(tc[k]) return tc[k];
 if(it === MYS) return tc[k] = mysTex();
+if(it === FRZ_RAW) return tc[k] = frzTex();
 const cv = document.createElement('canvas'); cv.width = cv.height = 512;
 const ctx = cv.getContext('2d');
 ctx.fillStyle = '#a67c52'; ctx.fillRect(0,0,512,512);
@@ -1811,7 +1911,7 @@ function useBeltSlow(){
 }
 const beltRay = new THREE.Raycaster(), beltNdc = new THREE.Vector2();
 R.domElement.addEventListener('pointerdown', e => {
-  if(!run || fire.active || introHold || caoQ.active) return;
+  if(!run || fire.active || introHold || caoQ.active || frzP.active) return;
   const r = R.domElement.getBoundingClientRect();
   beltNdc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   beltRay.setFromCamera(beltNdc, C);
@@ -1842,6 +1942,8 @@ function resetCaoRun(){
 function spawn(){
 const list = stage===4 ? HZ : ((stage>=2 && Math.random() < (stage===3?0.6:0.45)) ? HZ : I);
 let raw = (stage>=2 && stage<4 && Math.random() < 0.13 && !items.some(i => i.data.isMys)) ? MYS : list[Math.random()*list.length | 0];
+/* طرد مجمّد عشوائي: واحد فقط في كل مرة، ولا يظهر أثناء حمل/انتظار لغز الباب */
+if(raw !== MYS && gameRules.freezer.shouldSpawn({ processed: totalProcessed, present: items.some(i => i.data.isFrz) || frzP.active, rng: Math.random })) raw = FRZ_RAW;
 /* سقف أسئلة المفتش: أي شحنة CAO بعد الحد الأقصى تُستبدل بشحنة خطرة عادية */
 const isCaoRaw = raw[0][0]==='h' && gameRules.cao.isCao(raw[3]);
 if(isCaoRaw && caoRun.spawned >= gameRules.cao.maxAsks) raw = caoSwap(raw);
@@ -1849,7 +1951,7 @@ const caoParcel = raw[0][0]==='h' && gameRules.cao.isCao(raw[3]);
 /* الشحنة الأولى فقط تحمل لوحة DANGER الحقيقية بدقة عالية */
 const placard = caoParcel && !caoRun.placardUsed;
 if(caoParcel){ caoRun.spawned++; if(placard) caoRun.placardUsed = true; }
-const itObj = { t:raw[0], emoji:raw[1], name:raw[2], imp:raw[3], div:raw[4], isHz:raw[0][0]==='h', isMys:raw===MYS, cao: caoParcel, placard };
+const itObj = { t:raw[0], emoji:raw[1], name:raw[2], imp:raw[3], div:raw[4], isHz:raw[0][0]==='h', isMys:raw===MYS, isFrz:raw===FRZ_RAW, cao: caoParcel, placard };
 const m = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({map:tex(raw, placard), roughness:0.5, metalness:0.05}));
 m.castShadow = true; m.receiveShadow = true; const bs = gameRules.layout.beltSpawn(); m.position.set(bs.x, bs.y, bs.z);
 m.add(new THREE.LineSegments(EDGEG, EDGEM));
@@ -2152,6 +2254,8 @@ if(liftAnim.toHold && h.lifting === null){ liftAnim.active = false; liftAnim.t =
 S.remove(it.m); disposeItem(it); items = items.filter(i => i !== it);
 }
 /* الشحن بوقت اللعبة (dt) لا بمؤقت حقيقي: لا نقاط ولا ثوانٍ أثناء الإيقاف أو إخفاء التبويب */
+/* مركز الصندوق المحمول يُدفع أمام الكفّين بنصف عمقه تقريباً كي لا يخترق جسم الشخصية */
+const HOLD_OFF = 0.5;
 let shipQueue = [];
 function ship(z){
 z.full = true;
@@ -2177,6 +2281,145 @@ spawnFloatTag(I18N.T('+50 و +15 ث ⏱','+50 & +15s ⏱'), '#69f0ae');
 toast(I18N.T('🚚 شُحنت ','🚚 Shipped ') + z.n + I18N.T(' (+50 و +15 ث)',' (+50 and +15s)'), '#69f0ae');
 hud();
 }
+}
+/* ===== لغز غرفة التجميد: انزلاق قطع COL / CRT / FRZ إلى صفوف نطاقاتها الحرارية ===== */
+const frzEl = { root: $('frz'), tiles: $('frz-tiles'), moves: $('frz-moves'), lock: $('frz-lock'), title: $('frz-title'), sub: $('frz-sub'), x: $('frz-x'), again: $('frz-new'), board: $('frz-board') };
+const FRZ_TIP = { COL: '2–8°C', CRT: '15–25°C', FRZ: '0°C' };
+function frzText(){
+  frzEl.title.textContent = frzP.solved ? I18N.T('تم فتح الباب!', 'Door unlocked!') : I18N.T('غرفة التجميد مقفلة', 'Freezer room locked');
+  frzEl.sub.textContent = frzP.solved ? I18N.T('أدخل الطرد المجمّد الآن', 'Load the frozen parcel now') : I18N.T('رتّب القطع في صف نطاق حرارتها لفتح الباب', 'Slide each tile into its temperature row to unlock');
+  frzEl.moves.textContent = I18N.T('الحركات: ', 'Moves: ') + frzP.moves;
+  frzEl.again.textContent = I18N.T('خلط جديد', 'New shuffle');
+  frzEl.x.setAttribute('aria-label', I18N.T('إغلاق', 'Close'));
+  frzEl.lock.textContent = frzP.solved ? '🔓' : '🔒';
+  frzEl.root.querySelectorAll('[data-band]').forEach(b => { b.querySelector('small').textContent = ({ COL: I18N.T('مبرّد', 'Cool'), CRT: I18N.T('حرارة الغرفة', 'Room temp'), FRZ: I18N.T('مجمّد', 'Frozen') })[b.dataset.band]; });
+}
+function frzPlace(){
+  frzP.cells.forEach((t, i) => { if(t) t.el.style.transform = 'translate(' + (i % 3) * 100 + '%,' + Math.floor(i / 3) * 100 + '%)'; });
+}
+function frzBuild(){
+  frzEl.tiles.innerHTML = '';
+  const board = gameRules.freezer.shuffle(Math.random, 56);
+  frzP.cells = board.map((type) => {
+    if(!type) return null;
+    const el = document.createElement('button');
+    el.type = 'button'; el.className = 'frz-t'; el.dataset.type = type;
+    el.setAttribute('aria-label', type + ' ' + FRZ_TIP[type]);
+    el.innerHTML = '<span><b>' + type + '</b><small>' + FRZ_TIP[type] + '</small></span>';
+    const tile = { type, el };
+    el.addEventListener('click', () => frzTap(frzP.cells.indexOf(tile)));
+    frzEl.tiles.appendChild(el);
+    return tile;
+  });
+  frzP.moves = 0; frzP.solved = false;
+  frzEl.root.classList.remove('solved');
+  frzPlace(); frzText();
+}
+function frzTap(i){
+  if(!frzP.active || frzP.solved || i < 0) return;
+  const types = frzP.cells.map(t => t && t.type);
+  const next = gameRules.freezer.move(types, i);
+  if(!next){ snd('warn', .6); return; }
+  const blank = types.indexOf(null);
+  frzP.cells[blank] = frzP.cells[i]; frzP.cells[i] = null;
+  frzP.moves++; snd('pick', .9 + Math.min(frzP.moves, 30) * .005);
+  frzPlace(); frzText();
+  if(gameRules.freezer.isSolved(frzP.cells.map(t => t && t.type))) frzSolved();
+}
+function frzSolved(){
+  frzP.solved = true;
+  frzEl.root.classList.add('solved');
+  frzEl.tiles.querySelectorAll('.frz-t').forEach(e => { e.disabled = true; });
+  snd('fever'); frzText();
+  clearTimeout(frzP.timer);
+  frzP.timer = setTimeout(() => { frzClose(true); }, 1100);
+}
+function frzOpenPuzzle(){
+  if(frzP.active) return;
+  frzP.active = true;
+  for(const k of ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) key[k] = 0;
+  frzEl.root.style.display = 'flex';
+  frzBuild();
+  snd('warn', .8);
+  setTimeout(() => { try { const t = frzEl.tiles.querySelector('.frz-t'); if(t) t.focus({ preventScroll: true }); } catch(e){} }, 50);
+}
+function frzClose(solvedNow){
+  clearTimeout(frzP.timer);
+  if(!frzP.active) return;
+  frzP.active = false;
+  frzEl.root.style.display = 'none';
+  if(solvedNow) frzUnlock();
+  else if(FRZ.pending) toast(I18N.T('الباب ما زال مقفلاً — الطرد بجانبك', 'Door still locked — the parcel is next to you'), '#8fe3ff');
+  hud();
+}
+function frzKey(e){
+  e.preventDefault();
+  if(e.repeat) return;
+  if(e.code === 'Escape' || e.code === 'KeyP'){ frzClose(false); return; }
+  if(frzP.solved) return;
+  const blank = frzP.cells.indexOf(null), c = blank % 3;
+  const src = { ArrowLeft: c < 2 ? blank + 1 : -1, ArrowRight: c > 0 ? blank - 1 : -1, ArrowUp: blank + 3, ArrowDown: blank - 3, KeyA: c < 2 ? blank + 1 : -1, KeyD: c > 0 ? blank - 1 : -1, KeyW: blank + 3, KeyS: blank - 3 }[e.code];
+  if(src !== undefined && src >= 0 && src <= 8) frzTap(src);
+}
+if(frzEl.root){
+  frzEl.x.addEventListener('click', () => frzClose(false));
+  frzEl.again.addEventListener('click', () => { if(!frzP.solved) frzBuild(); });
+  frzEl.root.addEventListener('pointerdown', e => e.stopPropagation());
+}
+/* فتح الباب: يُسلَّم الطرد المنتظر فوراً إن وُجد، وإلا يبقى الباب مفتوحاً مدة قصيرة */
+function frzUnlock(){
+  FRZ.open = true; FRZ.closeT = gameRules.freezer.closeIdle;
+  snd('ship'); toast(I18N.T('🔓 فُتح باب غرفة التجميد', '🔓 Freezer door unlocked'), '#8fe3ff');
+  const it = FRZ.pending;
+  if(it && items.includes(it) && it.st === 'floor') frzDeliver(it);
+}
+function frzDeliver(it){
+  FRZ.pending = null;
+  const r = gameRules.freezer.reward;
+  totalProcessed++; sortedCount++;
+  const base = gameRules.economy.sortReward({ isHz: false, combo, fever: feverT > 0 });
+  score += base + r.score; time += 3 + r.time;
+  streak++; streakT = streakWindow(); maxStreak = Math.max(maxStreak, streak); combo = gameRules.economy.comboAfter(streak);
+  if(streak >= 10 && streak % 10 === 0) startFever();
+  if(it.crit) clearCrit(it);
+  const slot = FRZ.items.length % 6;
+  it.st = 'placed'; FRZ.items.push(it);
+  if(FRZ.items.length > 6) rm(FRZ.items.shift());
+  it.m.position.set(FRZ.x - 1.3 + (slot % 3) * 1.3, 2.6, FRZ.zBack + 1.4 + Math.floor(slot / 3) * 1.5);
+  it.m.rotation.set(0, 0, 0); it.fall = true; it.vy = 0; it.ty = 0.1 + BH;
+  FRZ.closeT = gameRules.freezer.closeAfterDelivery; FRZ.solved++;
+  snd('ok', 1.2); screenFlash('gold');
+  spawnFloatTag('+' + (base + r.score) + ' ❄️ +' + (3 + r.time) + I18N.T(' ث', 's'), '#8fe3ff', 'big');
+  toast(I18N.T('❄️ دخل الطرد غرفة التجميد +', '❄️ Parcel stored in the freezer +') + (base + r.score), '#69f0ae');
+  hud();
+}
+/* إسقاط طرد أمام غرفة التجميد: المجمّد يطلب فتح الباب، وغيره يُرفض بلا غرامة */
+function frzDrop(it, x){
+  const fx = Math.max(FRZ.x - FRZ.hw + 0.6, Math.min(FRZ.x + FRZ.hw - 0.6, x));
+  if(!it.data.isFrz){
+    it.st = 'floor'; it.fall = true; it.vy = 0; it.ty = 0.02 + BH; it.m.position.set(fx, 1.05, -4.3);
+    snd('warn'); tip('frz-only', I18N.T('هذه الغرفة للطرود المجمّدة 🧊 فقط', 'This room is for frozen parcels 🧊 only'), '#8fe3ff');
+    return;
+  }
+  if(FRZ.open){ it.st = 'floor'; frzDeliver(it); return; }
+  it.st = 'floor'; it.fall = true; it.vy = 0; it.ty = 0.02 + BH; it.m.position.set(fx, 1.05, -4.3); it.m.rotation.set(0, 0, 0);
+  FRZ.pending = it;
+  frzOpenPuzzle();
+}
+function inFrzZone(x, z){ return Math.abs(x - FRZ.x) < FRZ.hw && z < -4.8; }
+function updateFreezer(dt){
+  const want = FRZ.open ? 1 : 0;
+  FRZ.openAmt += (want - FRZ.openAmt) * Math.min(1, dt * 5);
+  FRZ.door.position.x = FRZ.x + FRZ.openAmt * (FRZ.doorW + 0.1);
+  FRZ.lampMat.color.setHex(FRZ.open ? 0x2fe06d : 0xff3b30); FRZ.lampMat.emissive.setHex(FRZ.open ? 0x2fe06d : 0xff3b30);
+  FRZ.glow.intensity = FRZ.openAmt * 1.4;
+  if(FRZ.open && dt > 0){ FRZ.closeT -= dt; if(FRZ.closeT <= 0){ FRZ.open = false; snd('place', .7); } }
+  if(FRZ.pending && !items.includes(FRZ.pending)) FRZ.pending = null;
+}
+function resetFreezer(){
+  frzP.active = false; clearTimeout(frzP.timer); if(frzEl.root) frzEl.root.style.display = 'none';
+  FRZ.open = false; FRZ.openAmt = 0; FRZ.closeT = 0; FRZ.pending = null; FRZ.items = []; FRZ.solved = 0;
+  if(FRZ.door) FRZ.door.position.x = FRZ.x;
 }
 function resolvePlacement(z, it){
 const d = it.data;
@@ -2323,6 +2566,7 @@ snd('pick');
 }
 function forkUnload(){
 const it = held; held = null;
+if(inFrzZone(fk.position.x, fk.position.z)){ frzDrop(it, fk.position.x); hud(); return; }
 const z = Z.find(z => Math.abs(fk.position.x - z.x) < z.hw && fk.position.z < -4.9 && !z.full);
 if(z){ it.st = 'floor'; resolvePlacement(z, it); return; }
 it.st = 'floor'; it.fall = true; it.vy = 0; it.ty = it.data.isFod ? .2 : 0.02 + BH;
@@ -2336,7 +2580,7 @@ const _drvEl = $('drv');
 if(_drvEl) _drvEl.onclick = () => { if(FD.on) stopDrive(I18N.t('🚜 نزلت من الرافعة')); };
 function act(){
 initAudio();
-if(!run || liftAnim.active || caoQ.active) return;
+if(!run || liftAnim.active || caoQ.active || frzP.active) return;
 if(FD.on){
 if(held) forkUnload();
 else { const it = forkCargo(); if(it) forkLoad(it); else stopDrive(); }
@@ -2359,6 +2603,8 @@ snd('pick');
 const d = targetItem.data;
 if(d.isHz){
 tip('dg-' + d.imp + d.div, I18N.T('⚠️ تم التقاط مادة خطرة: ','⚠️ Dangerous good picked up: ') + `${d.imp} . ${d.div}`, '#ffb020');
+} else if(d.isFrz){
+tip('frz-pick', I18N.T('🧊 طرد مجمّد: أوصله إلى غرفة التجميد (يسار المستودع) — الباب مقفل وتحتاج لحل اللغز','🧊 Frozen parcel: take it to the freezer room (left side) — the door is locked, solve the puzzle'), '#8fe3ff');
 } else {
 toast(I18N.T('تم الالتقاط: ','Picked up: ') + d.name, '#fff');
 }
@@ -2370,6 +2616,11 @@ toast('⚡ التقاط في اللحظة الأخيرة +25', '#ffd54a');
 hud();
 }
 } else {
+if(inFrzZone(px.x, px.z)){
+const it = held; held = null;
+frzDrop(it, px.x); hud();
+return;
+}
 const z = Z.find(z => Math.abs(px.x - z.x) < z.hw && px.z < -4.8 && !z.full);
 if(z){
 const it = held; held = null;
@@ -2402,6 +2653,7 @@ addEventListener('keydown', e => {
 if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyQ','KeyX'].includes(e.code)) e.preventDefault();
 if(introHold){ if(['Space','KeyE','KeyF','Enter','NumpadEnter','Escape','KeyP'].includes(e.code)){ e.preventDefault(); if(!e.repeat) resumeFromIntro(); } return; }
 if(caoQ.active){ e.preventDefault(); return; }
+if(frzP.active){ frzKey(e); return; }
 if(fire.keypad){ handlePadKey(e); return; }
 key[e.code] = 1;
 /* Esc / P = إيقاف مؤقت أو متابعة */
@@ -2516,6 +2768,7 @@ initAudio();
 stopVib();
 items.forEach(i => { clearCrit(i); S.remove(i.m); disposeItem(i); }); items = [];
 shipQueue = [];
+resetFreezer();
 Z.forEach(z => { z.items = []; z.n_ = 0; z.full = false; if(z.hz && z.signCv) drawZoneSign(z); });
 slowT = 0; beltSlowT = 0; beltSlowUsed = false; beltBtnMat.color.setHex(0x14e0b0); beltBtnMat.emissiveIntensity = 1; beltBtnHalo.scale.setScalar(1);
 score = 0; combo = 1; time = 100; spawnT = 0; held = null; stage = 1;
@@ -3123,7 +3376,7 @@ if(window.InspectorRig && window.InspectorRig.create){
   }));
 }
 
-g.scale.setScalar(1.25); g.visible = false; S.add(g);
+g.scale.setScalar(1.08); g.visible = false; S.add(g);
 return I_;
 })();
 function resetInspector(){
@@ -3496,6 +3749,7 @@ let dt = document.hidden || rawDt > 1 ? 0 : Math.min(rawDt, .5); last = now;
 for(const L of FOD_PULSE) L.intensity = 0.8 + 0.5 * Math.sin(now / 260);
 /* نافذة قرار CAO تجمّد الوردية كلها حتى يُحسم القبول أو الرفض */
 if(caoQ.active){ dt = 0; updateCaoScene(Math.min(rawDt, .05)); }
+if(frzP.active) dt = 0;
 /* Hit-stop: تجميد لحظي لكل المحاكاة لإبراز الأثر الكبير */
 if(hitStop > 0){ hitStop = Math.max(0, hitStop - Math.max(rawDt, 0)); dt = 0; }
 if(!document.hidden && rawDt > 0 && rawDt < 1){
@@ -3559,6 +3813,7 @@ shakeTrauma = Math.max(0, shakeTrauma - dt * TRAUMA_DECAY);
 /* لوحة الفرز: تُحسب قبل حركة هذا الإطار حتى تُجمّد الساعة فور الوقوف أمامها */
 updateStudy(dt);
 if(run) updateShips(dt);
+updateFreezer(dt);
 if(run && !fire.keypad){
 if(!fire.active && !STUDY.on && (stage>=3 || demo.truck)) updateTruck(dt);
 const sprintOn = !held && !!(key.ShiftLeft || key.ShiftRight);
@@ -3586,7 +3841,7 @@ px.x = fk.position.x; px.z = fk.position.z;
 if(FD.seated){
 const sc = FD.seated, yw = fk.rotation.y;
 const sz = sc.seatZ !== undefined ? sc.seatZ : SEAT.z;
-sc.root.position.set(Math.sin(yw) * sz, SEAT.hips - (sc.hipsHeight || 1.8), Math.cos(yw) * sz);
+sc.root.position.set(Math.sin(yw) * sz, (sc.seatY !== undefined ? sc.seatY : SEAT.hips) - (sc.hipsHeight || 1.8), Math.cos(yw) * sz);
 sc.root.rotation.set(0, yw, 0);
 sc.pose({ dt, sit: true, moving: false, speed: 0 });
 }
@@ -3694,9 +3949,9 @@ cargoInertiaY += (bnc - cargoInertiaY) * Math.min(1, dt * 14);
         /* إن كانت الشخصية تكشف كفّيها نحمل الصندوق بينهما بدل ارتفاع تقديري */
         const hp = (acr && acr.root.visible && acr.holdPoint) ? acr.holdPoint(cargoHold) : null;
         const targetPos = cargoTarget.set(
-          hp ? hp.x + lX * sway : px.x + fX * 0.78 + lX * sway,
+          hp ? hp.x + fX * HOLD_OFF + lX * sway : px.x + fX * 0.78 + lX * sway,
           (hp ? hp.y : (bodyH ? bodyH * 0.5 : 1.38) + bob * 0.55) + cargoInertiaY,
-          hp ? hp.z + lZ * sway : px.z + fZ * 0.78 + lZ * sway
+          hp ? hp.z + fZ * HOLD_OFF + lZ * sway : px.z + fZ * 0.78 + lZ * sway
         );
 cargoSmoothPos.lerp(targetPos, Math.min(1, dt * 22));
 it.m.position.copy(cargoSmoothPos);
@@ -3714,6 +3969,7 @@ if(it.wob){ it.wob *= Math.exp(-dt*6); it.m.rotation.z = Math.sin(performance.no
 }
 { const ts = (it.st === 'held' || it.st === 'lifting') ? 0.8 : 1; if(Math.abs(it.m.scale.x - ts) > 0.001) it.m.scale.setScalar(it.m.scale.x + (ts - it.m.scale.x) * Math.min(1, dt * 12)); }
 if(it.m.material.emissive) it.m.material.emissive.setHex(0);
+if(it.data.isFrz && it.m.material.emissive){ it.m.material.emissive.setHex(0x2a8fb8); it.m.material.emissiveIntensity = 0.1 + Math.sin(now*0.005)*0.07; }
 if(it.data.isMys && it.m.material.emissive){ it.m.material.emissive.setHex(0x4a3000); it.m.material.emissiveIntensity = 0.5 + Math.sin(now*0.006)*0.4; }
 if(it.crit){
 if(it.st === 'belt' || it.st === 'floor' || it.st === 'held'){
