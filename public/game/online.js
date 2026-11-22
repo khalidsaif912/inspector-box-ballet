@@ -25,6 +25,9 @@ const Online = {
   config: CFG, enabled: on,
   directory,
   user(){ if(emp) return emp; try { emp = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e){} return emp; },
+  /* الاسم/القسم بحسب اللغة (ar افتراضياً) من الدليل المحمّل */
+  nameOf(id, lang, fallback){ const r = dir && dir[id]; return r ? (lang === 'en' ? r[0] : r[2] || r[0]) : (fallback || id); },
+  deptOf(id, lang, fallback){ const r = dir && dir[id]; return r ? (lang === 'en' ? r[1] : r[3] || r[1]) : (fallback || ''); },
   logout(){ emp = null; try { localStorage.removeItem(KEY); } catch(e){} },
   /* يتحقق من الرقم الوظيفي ويعيد {id,name,dept} أو null */
   async login(raw){

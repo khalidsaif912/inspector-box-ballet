@@ -18,6 +18,7 @@ h1{margin:0;font-size:clamp(22px,4vw,30px);font-weight:900}
 .btn{font:800 14px inherit;font-family:inherit;border:0;border-radius:3px;padding:9px 16px;background:var(--ink);color:#fff;cursor:pointer}
 .btn.red{background:var(--red);box-shadow:0 4px 0 #8f1a12}
 .btn.red:active{transform:translateY(3px);box-shadow:0 1px 0 #8f1a12}
+.lang{background:#fff;color:var(--ink);border:2px solid var(--ink);padding:7px 14px}
 .btn.ghost{background:none;color:var(--blue);text-decoration:underline;padding:6px}
 .btn:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 #gate{max-width:340px;margin:12vh auto;text-align:center}
@@ -35,10 +36,10 @@ nav button[aria-selected=true]{background:var(--ink);color:#fff}
 .tools input{flex:1;min-width:160px;height:38px;border:2px solid var(--ink);border-radius:3px;padding:0 10px;font:700 14px inherit;font-family:inherit;background:#fff}
 .tw{overflow-x:auto;border:2px solid var(--ink);border-radius:3px;background:#fff}
 table{width:100%;border-collapse:collapse;font-size:14px;font-weight:700;min-width:520px}
-th{background:var(--ink);color:#fff;text-align:right;padding:9px 12px;font-weight:800;white-space:nowrap;position:sticky;top:0}
-td{padding:8px 12px;border-top:1px solid #c7ced3;white-space:nowrap}
+th{background:var(--ink);color:#fff;text-align:center;padding:9px 12px;font-weight:800;white-space:nowrap;position:sticky;top:0}
+td{padding:8px 12px;border-top:1px solid #c7ced3;white-space:nowrap;text-align:center}
 tr:nth-child(even) td{background:#f4f6f7}
-td.n{font-family:ui-monospace,Consolas,monospace;text-align:left;direction:ltr}
+td.n{font-family:ui-monospace,Consolas,monospace;direction:ltr}
 td.rk{font-weight:900;color:var(--red);width:48px}
 tr.top1 td{background:#fff3cd!important}
 .mute{color:var(--mute);font-weight:600}
@@ -50,24 +51,24 @@ tr.top1 td{background:#fff3cd!important}
 <body>
 <main class="sheet">
 <section id="gate">
-<h1>لوحة الإدارة</h1>
-<p class="sub">أدخل الرمز السري للإدارة</p>
-<form id="gf"><input id="code" type="password" inputmode="numeric" autocomplete="off" dir="ltr" aria-label="الرمز السري"><p class="err" id="gerr" role="alert"></p><button class="btn red" type="submit">دخول</button></form>
+<h1 data-k="title">لوحة الإدارة</h1>
+<p class="sub" data-k="gate">أدخل الرمز السري للإدارة</p>
+<form id="gf"><input id="code" type="password" inputmode="numeric" autocomplete="off" dir="ltr" aria-label="الرمز السري"><p class="err" id="gerr" role="alert"></p><button class="btn red" type="submit" data-k="enter">دخول</button></form>
 </section>
 <section id="app" hidden>
 <header>
-<div><h1>لوحة الإدارة</h1><p class="sub" id="upd">مستودع الشحن الجوي</p></div>
-<div><button class="btn" id="refresh" type="button">تحديث</button> <button class="btn ghost" id="lock" type="button">قفل</button></div>
+<div><h1 data-k="title">لوحة الإدارة</h1><p class="sub" id="upd"></p></div>
+<div><button class="btn lang" id="lang" type="button" aria-label="Language">EN</button> <button class="btn" id="refresh" type="button" data-k="refresh">تحديث</button> <button class="btn ghost" id="lock" type="button" data-k="lock">قفل</button></div>
 </header>
-<div id="warn" class="warn" hidden>الاتصال بـ Firebase غير مُفعَّل بعد، لذلك لا توجد بيانات.</div>
+<div id="warn" class="warn" hidden data-k="warn">الاتصال بـ Firebase غير مُفعَّل بعد، لذلك لا توجد بيانات.</div>
 <div class="stats" id="stats"></div>
 <nav role="tablist" id="tabs">
-<button role="tab" data-t="top" aria-selected="true">الأرقام القياسية</button>
-<button role="tab" data-t="logins" aria-selected="false">سجل الدخول</button>
-<button role="tab" data-t="scores" aria-selected="false">كل النتائج</button>
-<button role="tab" data-t="absent" aria-selected="false">لم يدخلوا بعد</button>
+<button role="tab" data-t="top" aria-selected="true" data-k="t_top">الأرقام القياسية</button>
+<button role="tab" data-t="logins" aria-selected="false" data-k="t_logins">سجل الدخول</button>
+<button role="tab" data-t="scores" aria-selected="false" data-k="t_scores">كل النتائج</button>
+<button role="tab" data-t="absent" aria-selected="false" data-k="t_absent">لم يدخلوا بعد</button>
 </nav>
-<div class="tools"><input id="q" type="search" placeholder="ابحث بالاسم أو الرقم الوظيفي أو القسم"></div>
+<div class="tools"><input id="q" type="search" data-kp="search" placeholder="ابحث بالاسم أو الرقم الوظيفي أو القسم"></div>
 <div class="tw"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
 </section>
 </main>
@@ -77,44 +78,63 @@ tr.top1 td{background:#fff3cd!important}
 const HASH = '6547f192c1fda3b27eeff6606ea172480774cd0f6de3b6e955f47e7037c4d8ad', SK = 'acg_admin';
 const $ = id => document.getElementById(id);
 const sha = async s => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map(b => b.toString(16).padStart(2, '0')).join('');
-const fmt = d => d ? new Intl.DateTimeFormat('ar-OM-u-nu-latn', { dateStyle: 'short', timeStyle: 'short' }).format(d) : '—';
+const fmt = d => d ? new Intl.DateTimeFormat(L[lang].loc, { dateStyle: 'short', timeStyle: 'short' }).format(d) : '—';
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const L = {
+ ar: { title:'لوحة الإدارة', gate:'أدخل الرمز السري للإدارة', enter:'دخول', refresh:'تحديث', lock:'قفل', warn:'الاتصال بـ Firebase غير مُفعَّل بعد، لذلك لا توجد بيانات.', t_top:'الأرقام القياسية', t_logins:'سجل الدخول', t_scores:'كل النتائج', t_absent:'لم يدخلوا بعد', search:'ابحث بالاسم أو الرقم الوظيفي أو القسم',
+  bad:'الرمز غير صحيح', loading:'جارٍ التحميل…', upd:'آخر تحديث: ', fail:'تعذّر الاتصال بقاعدة البيانات', s_seen:'موظفون دخلوا اللعبة', s_today:'دخلوا اليوم', s_plays:'مرات اللعب', s_best:'أعلى رقم', s_bestby:'أعلى رقم — ', none:'لا توجد بيانات',
+  h_name:'الاسم', h_id:'الرقم', h_dept:'القسم', h_best:'أفضل نتيجة', h_plays:'مرات اللعب', h_time:'الوقت', h_score:'النتيجة', loc:'ar-OM-u-nu-latn', btn:'EN' },
+ en: { title:'Admin Panel', gate:'Enter the admin passcode', enter:'Sign in', refresh:'Refresh', lock:'Lock', warn:'Firebase is not connected yet, so there is no data.', t_top:'Leaderboard', t_logins:'Login log', t_scores:'All scores', t_absent:'Not yet joined', search:'Search by name, employee ID or department',
+  bad:'Wrong passcode', loading:'Loading…', upd:'Last updated: ', fail:'Could not reach the database', s_seen:'Employees who joined', s_today:'Joined today', s_plays:'Games played', s_best:'Top score', s_bestby:'Top score — ', none:'No data',
+  h_name:'Name', h_id:'ID', h_dept:'Department', h_best:'Best score', h_plays:'Games', h_time:'Time', h_score:'Score', loc:'en-GB', btn:'العربية' }
+};
+let lang = 'ar'; try { lang = localStorage.getItem('acg_admin_lang') === 'en' ? 'en' : 'ar'; } catch(e){}
+const tr = k => L[lang][k];
+function applyLang(){
+  document.documentElement.lang = lang; document.documentElement.dir = lang === 'en' ? 'ltr' : 'rtl'; document.title = tr('title') + ' — Air Cargo';
+  document.querySelectorAll('[data-k]').forEach(e => e.textContent = tr(e.dataset.k));
+  document.querySelectorAll('[data-kp]').forEach(e => e.placeholder = tr(e.dataset.kp));
+  $('lang').textContent = tr('btn');
+}
 let D = { players: [], logins: [], scores: [], dir: {} }, tab = 'top';
 
 async function unlock(code){ if(await sha('acg|' + code) !== HASH) return false; try { sessionStorage.setItem(SK, HASH); } catch(e){} $('gate').hidden = true; $('app').hidden = false; load(); return true; }
 $('gf').onsubmit = async e => { e.preventDefault(); $('gerr').textContent = (await unlock($('code').value.trim())) ? '' : 'الرمز غير صحيح'; };
 $('lock').onclick = () => { try { sessionStorage.removeItem(SK); } catch(e){} location.reload(); };
 $('refresh').onclick = () => load();
-try { if(sessionStorage.getItem(SK) === HASH){ $('gate').hidden = true; $('app').hidden = false; load(); } } catch(e){}
 
 async function load(){
-  $('upd').textContent = 'جارٍ التحميل…';
+  $('upd').textContent = tr('loading');
   D.dir = await Online.directory();
   $('warn').hidden = Online.enabled();
-  try { const [p, l, s] = await Promise.all([Online.players(1000), Online.logins(500), Online.scores(500)]); D.players = p; D.logins = l; D.scores = s; $('upd').textContent = 'آخر تحديث: ' + fmt(new Date()); }
+  try { const [p, l, s] = await Promise.all([Online.players(1000), Online.logins(500), Online.scores(500)]); D.players = p; D.logins = l; D.scores = s; $('upd').textContent = tr('upd') + fmt(new Date()); }
   catch(e){ $('upd').textContent = 'تعذّر الاتصال بقاعدة البيانات'; }
   render();
 }
 function render(){
+  const nm = r => Online.nameOf(r.id, lang, r.name), dp = r => Online.deptOf(r.id, lang, r.dept);
   const total = Object.keys(D.dir).length, seen = D.players.length, today = new Date().toDateString();
   const todayN = new Set(D.logins.filter(x => x.at && x.at.toDateString() === today).map(x => x.id)).size;
   const best = D.players.slice().sort((a, b) => b.best - a.best)[0];
   const plays = D.players.reduce((n, p) => n + (p.plays || 0), 0);
-  $('stats').innerHTML = [['hot', seen + ' / ' + total, 'موظفون دخلوا اللعبة'], ['ok', todayN, 'دخلوا اليوم'], ['', plays, 'مرات اللعب'], ['gold', best && best.best > 0 ? best.best : '—', best && best.best > 0 ? 'أعلى رقم — ' + esc(best.name) : 'أعلى رقم']]
+  $('stats').innerHTML = [['hot', seen + ' / ' + total, tr('s_seen')], ['ok', todayN, tr('s_today')], ['', plays, tr('s_plays')], ['gold', best && best.best > 0 ? best.best : '—', best && best.best > 0 ? tr('s_bestby') + esc(nm(best)) : tr('s_best')]]
     .map(([c, n, l]) => `<div class="stat ${c}"><b>${n}</b><span>${l}</span></div>`).join('');
-  const q = $('q').value.trim().toLowerCase(), hit = r => !q || Object.values(r).join(' ').toLowerCase().includes(q);
+  const q = $('q').value.trim().toLowerCase(), hit = r => !q || (Object.values(r).join(' ') + ' ' + nm(r) + ' ' + dp(r)).toLowerCase().includes(q);
   const T = {
-    top: [['#', 'الاسم', 'الرقم', 'القسم', 'أفضل نتيجة', 'مرات اللعب'], () => D.players.filter(p => p.best > 0).sort((a, b) => b.best - a.best).filter(hit).map((p, i) => [i + 1, p.name, p.id, p.dept, p.best, p.plays], i => i === 0)],
-    logins: [['الوقت', 'الاسم', 'الرقم', 'القسم'], () => D.logins.filter(hit).map(l => [fmt(l.at), l.name, l.id, l.dept])],
-    scores: [['الوقت', 'الاسم', 'الرقم', 'القسم', 'النتيجة'], () => D.scores.filter(hit).map(s => [fmt(s.at), s.name, s.id, s.dept, s.score])],
-    absent: [['الاسم', 'الرقم', 'القسم'], () => { const have = new Set(D.players.map(p => p.id)); return Object.entries(D.dir).filter(([id]) => !have.has(id)).map(([id, v]) => ({ id, name: v[0], dept: v[1] })).filter(hit).map(r => [r.name, r.id, r.dept]); }]
+    top: [['#', tr('h_name'), tr('h_id'), tr('h_dept'), tr('h_best'), tr('h_plays')], () => D.players.filter(p => p.best > 0).sort((a, b) => b.best - a.best).filter(hit).map((p, i) => [i + 1, nm(p), p.id, dp(p), p.best, p.plays], i => i === 0)],
+    logins: [[tr('h_time'), tr('h_name'), tr('h_id'), tr('h_dept')], () => D.logins.filter(hit).map(l => [fmt(l.at), nm(l), l.id, dp(l)])],
+    scores: [[tr('h_time'), tr('h_name'), tr('h_id'), tr('h_dept'), tr('h_score')], () => D.scores.filter(hit).map(s => [fmt(s.at), nm(s), s.id, dp(s), s.score])],
+    absent: [[tr('h_name'), tr('h_id'), tr('h_dept')], () => { const have = new Set(D.players.map(p => p.id)); return Object.entries(D.dir).filter(([id]) => !have.has(id)).map(([id, v]) => ({ id, name: v[0], dept: v[1] })).filter(hit).map(r => [nm(r), r.id, dp(r)]); }]
   }[tab];
   const rows = T[1](), numCol = { top: [2, 4, 5], logins: [2], scores: [2, 4], absent: [1] }[tab];
   $('th').innerHTML = '<tr>' + T[0].map(h => `<th>${h}</th>`).join('') + '</tr>';
-  $('tb').innerHTML = rows.length ? rows.map(r => `<tr${tab === 'top' && r[0] === 1 ? ' class="top1"' : ''}>` + r.map((c, i) => `<td class="${numCol.includes(i) ? 'n' : ''}${tab === 'top' && i === 0 ? ' rk' : ''}">${esc(c)}</td>`).join('') + '</tr>').join('') : `<tr><td class="empty" colspan="${T[0].length}">لا توجد بيانات</td></tr>`;
+  $('tb').innerHTML = rows.length ? rows.map(r => `<tr${tab === 'top' && r[0] === 1 ? ' class="top1"' : ''}>` + r.map((c, i) => `<td class="${numCol.includes(i) ? 'n' : ''}${tab === 'top' && i === 0 ? ' rk' : ''}">${esc(c)}</td>`).join('') + '</tr>').join('') : `<tr><td class="empty" colspan="${T[0].length}">${tr('none')}</td></tr>`;
 }
 $('tabs').onclick = e => { const b = e.target.closest('button'); if(!b) return; tab = b.dataset.t; [...$('tabs').children].forEach(x => x.setAttribute('aria-selected', x === b)); render(); };
 $('q').oninput = render;
+$('lang').onclick = () => { lang = lang === 'ar' ? 'en' : 'ar'; try { localStorage.setItem('acg_admin_lang', lang); } catch(e){} applyLang(); $('upd').textContent = tr('upd') + fmt(new Date()); render(); };
+applyLang();
+try { if(sessionStorage.getItem(SK) === HASH){ $('gate').hidden = true; $('app').hidden = false; load(); } } catch(e){}
 </script>
 </body>
 </html>

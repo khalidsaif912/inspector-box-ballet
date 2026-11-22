@@ -805,3 +805,33 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
 #ov .gl-list li i{font-style:normal;font-family:ui-monospace,Consolas,monospace}
 #ov .gl-empty{justify-content:center;color:var(--mute,#4b5c69)!important;border-style:dashed!important}
 @media (max-height:520px){#ov .login{margin-bottom:6px}#ov .login-form label{display:none}#ov .login-row input,#ov .login-ok{height:34px}#ov .login-msg{margin:2px 0 0;min-height:12px;font-size:11px}#ov .gl-list li{padding:1px 6px;font-size:11px}}
+
+/* ===== عمودا اليمين: «أفضل النتائج» فوق «الإعدادات» بعرض واحد وشفافية ===== */
+#ov.start .side-stack{position:absolute;z-index:4;bottom:22px;right:22px;width:260px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 44px);direction:rtl}
+#ov.start .side-stack .settings-dock,#ov.start .side-stack .records-dock{
+  position:static;width:100%;max-width:none;margin:0;box-sizing:border-box;padding:12px 14px;gap:4px;
+  background:rgba(233,237,239,.66);-webkit-backdrop-filter:blur(10px) saturate(1.15);backdrop-filter:blur(10px) saturate(1.15);
+  border:3px solid var(--ink);border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.4);color:var(--ink);
+}
+#ov.start .records-dock .records-box{background:none;border:0;border-radius:0;padding:0;text-align:center}
+#ov.start .records-dock .best-row{display:flex;justify-content:center;margin-bottom:8px;padding:5px 10px}
+#ov.start .records-dock .lb-title{font-size:12px;font-weight:800;margin:0 0 6px;color:var(--ink)}
+#ov.start .records-dock .lb-chips{justify-content:center;gap:6px}
+#ov.start .records-dock .score-chip{background:rgba(255,255,255,.85)}
+#ov.start .records-dock .gl-title{margin-top:10px;padding-top:8px;border-top:1px solid rgba(18,33,46,.25)}
+#ov.start .records-dock .gl-list li{background:rgba(255,255,255,.85)}
+#ov.start .side-stack .setting-item{padding:6px 2px}
+@media (max-width:900px){
+  #ov.start .side-stack{position:static;width:100%;max-width:540px;flex:0 0 auto}
+}
+@media (max-width:580px){
+  #ov.start .side-stack{grid-column:2;grid-row:1;align-self:end;width:auto;max-width:none;gap:8px}
+}
+@media (orientation:landscape) and (max-height:560px){
+  #ov.start .side-stack{position:static;grid-column:2;grid-row:1;align-self:end;justify-self:stretch;width:auto;max-width:none;gap:5px;max-height:none}
+  #ov.start .side-stack .settings-dock,#ov.start .side-stack .records-dock{padding:5px 8px;border-width:2px}
+  #ov.start .records-dock .gl-title,#ov.start .records-dock .gl-list,#ov.start .records-dock .lb-title{display:none}
+}
+@media (max-width:900px) and (min-height:561px){
+  #ov.start .records-dock .gl-title,#ov.start .records-dock .gl-list{display:none}
+}

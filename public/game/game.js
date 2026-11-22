@@ -3071,15 +3071,15 @@ $('go').onclick = () => start();
 function loginUI(){
 if(!window.Online || !$('login')) return;
 const f = $('login-form'), who = $('login-who'), msg = $('login-msg'), go = $('go');
-const refresh = () => { const u = Online.user(); f.hidden = !!u; who.hidden = !u; go.disabled = !u; if(u) $('who-name').textContent = '👤 ' + u.name; };
+const refresh = () => { const u = Online.user(); f.hidden = !!u; who.hidden = !u; go.disabled = !u; if(u) $('who-name').textContent = '👤 ' + Online.nameOf(u.id, I18N.lang, u.name); };
 f.onsubmit = async e => { e.preventDefault(); msg.textContent = '…'; const u = await Online.login($('emp-id').value); if(!u){ msg.textContent = I18N.t('الرقم الوظيفي غير موجود'); return; } msg.textContent = ''; refresh(); globalTop(); };
 $('who-out').onclick = () => { Online.logout(); $('emp-id').value = ''; refresh(); $('emp-id').focus(); };
-Online.directory(); refresh(); globalTop();
+Online.directory().then(refresh); refresh(); globalTop();
 }
 async function globalTop(){
 const ol = $('gtop'); if(!ol) return;
 if(!Online.enabled()){ ol.innerHTML = '<li class="gl-empty">سيُفعَّل قريباً</li>'; return; }
-try { const t = await Online.top(5); ol.innerHTML = t.length ? t.map((p, i) => `<li><b>${i + 1}</b><span>${p.name.replace(/[<&]/g, '')}</span><i>${p.best}</i></li>`).join('') : '<li class="gl-empty">كن أول المتصدرين</li>'; } catch(e){ ol.innerHTML = '<li class="gl-empty">تعذّر التحميل</li>'; }
+try { await Online.directory(); const t = await Online.top(5); ol.innerHTML = t.length ? t.map((p, i) => `<li><b>${i + 1}</b><span>${Online.nameOf(p.id, I18N.lang, p.name).replace(/[<&]/g, '')}</span><i>${p.best}</i></li>`).join('') : '<li class="gl-empty">كن أول المتصدرين</li>'; } catch(e){ ol.innerHTML = '<li class="gl-empty">تعذّر التحميل</li>'; }
 }
 loginUI();
 let pz = false;
