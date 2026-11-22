@@ -3035,6 +3035,7 @@ if(!fire.active && !fire.keypad && !introHold && $('rules').style.display === 'n
 hud();
 }
 function start(){
+if(window.Online && !Online.user()){ const l = $('login'); if(l){ l.classList.remove('shake'); void l.offsetWidth; l.classList.add('shake'); const i = $('emp-id'); if(i) i.focus(); } return; }
 try { if(parent !== window) parent.postMessage({ type: 'acg-state', playing: true }, location.origin); } catch(e){}
 const td = tutorialDone();
 initAudio();
@@ -3066,6 +3067,21 @@ hud();
 tip('stage1', '🎓 المرحلة ١: التعريف والأساسيات — التقط وافرز', '#64ffda');
 }
 $('go').onclick = () => start();
+/* الدخول بالرقم الوظيفي + المتصدرون عالمياً */
+function loginUI(){
+if(!window.Online || !$('login')) return;
+const f = $('login-form'), who = $('login-who'), msg = $('login-msg'), go = $('go');
+const refresh = () => { const u = Online.user(); f.hidden = !!u; who.hidden = !u; go.disabled = !u; if(u) $('who-name').textContent = '👤 ' + u.name; };
+f.onsubmit = async e => { e.preventDefault(); msg.textContent = '…'; const u = await Online.login($('emp-id').value); if(!u){ msg.textContent = I18N.t('الرقم الوظيفي غير موجود'); return; } msg.textContent = ''; refresh(); globalTop(); };
+$('who-out').onclick = () => { Online.logout(); $('emp-id').value = ''; refresh(); $('emp-id').focus(); };
+Online.directory(); refresh(); globalTop();
+}
+async function globalTop(){
+const ol = $('gtop'); if(!ol) return;
+if(!Online.enabled()){ ol.innerHTML = '<li class="gl-empty">سيُفعَّل قريباً</li>'; return; }
+try { const t = await Online.top(5); ol.innerHTML = t.length ? t.map((p, i) => `<li><b>${i + 1}</b><span>${p.name.replace(/[<&]/g, '')}</span><i>${p.best}</i></li>`).join('') : '<li class="gl-empty">كن أول المتصدرين</li>'; } catch(e){ ol.innerHTML = '<li class="gl-empty">تعذّر التحميل</li>'; }
+}
+loginUI();
 let pz = false;
 const openRules = () => {
 const r = $('rules'), o = r.style.display === 'none';
@@ -3092,6 +3108,7 @@ const best = bestScore();
 const record = score > best && score > 0;
 if(record) saveBest(score);
 const topList = score > 0 ? pushTop(score) : getTop();
+try { if(window.Online) Online.submit(score).then(() => globalTop()).catch(() => {}); } catch(e){}
 const grade = gameRules.scoreboard.grade(score, acc);
 const titles = { s:I18N.t('خبير DGR معتمد'), a:I18N.t('مشرف فرز متمكن'), b:I18N.t('فني مستودع واعد'), c:I18N.t('متدرب قيد التأهيل') };
 const stars = gameRules.scoreboard.stars(grade);

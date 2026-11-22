@@ -781,3 +781,27 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
 @keyframes cardShake{25%{translate:-5px 0}50%{translate:5px 0}75%{translate:-3px 0}}
 @media (max-height:440px){.cards{padding:4px;--c:clamp(44px,15vh,64px)}.cards-panel{padding:6px 10px}.cards-bar{margin:5px 0}.cards-foot{margin-top:4px}}
 @media (prefers-reduced-motion:reduce){.card9{transition:none}.card9.bad{animation:none}}
+
+/* ===== الدخول بالرقم الوظيفي + المتصدرون عالمياً ===== */
+#ov .login{width:100%;max-width:290px;margin:0 auto 12px;direction:rtl;font-family:inherit}
+#ov .login-form label{display:block;font-size:12px;font-weight:800;color:var(--mute,#4b5c69);margin-bottom:4px;text-align:right}
+#ov .login-row{display:flex;gap:6px}
+#ov .login-row input{flex:1;min-width:0;height:42px;border:2px solid var(--ink,#12212e);border-radius:3px;background:#fff;color:var(--ink,#12212e);font:800 18px/1 inherit;font-family:ui-monospace,Consolas,monospace;letter-spacing:2px;padding:0 10px;text-align:center}
+#ov .login-row input:focus-visible{outline:3px solid var(--blue,#1c4e8a);outline-offset:2px}
+#ov .login-ok{height:42px;padding:0 16px;border:0;border-radius:3px;background:var(--ink,#12212e);color:#fff;font:900 15px inherit;font-family:inherit;cursor:pointer}
+#ov .login-msg{min-height:16px;margin:4px 0 0;font-size:12px;font-weight:700;color:var(--red,#d4281e)}
+#ov .login-who{display:flex;align-items:center;justify-content:center;gap:8px}
+#ov .login-who[hidden],#ov .login-form[hidden]{display:none}
+#ov .login-badge{background:var(--ink,#12212e);color:#fff;padding:8px 14px;border-radius:3px;font-weight:900;font-size:15px}
+#ov .login-out{background:none;border:0;color:var(--blue,#1c4e8a);font:800 12px inherit;font-family:inherit;text-decoration:underline;cursor:pointer}
+#ov .btn-play[disabled]{opacity:.45;filter:grayscale(.4);cursor:not-allowed}
+#ov .login.shake{animation:lg-shake .35s}
+@keyframes lg-shake{25%{transform:translateX(6px)}75%{transform:translateX(-6px)}}
+#ov .gl-title{margin-top:10px}
+#ov .gl-list{list-style:none;margin:0;padding:0;display:grid;gap:4px;direction:rtl;text-align:right}
+#ov .gl-list li{display:flex;align-items:center;gap:8px;background:#fff;border:2px solid var(--ink,#12212e);border-radius:3px;padding:3px 8px;font-size:12.5px;font-weight:800;color:var(--ink,#12212e)}
+#ov .gl-list li b{flex:0 0 18px;color:var(--red,#d4281e)}
+#ov .gl-list li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ov .gl-list li i{font-style:normal;font-family:ui-monospace,Consolas,monospace}
+#ov .gl-empty{justify-content:center;color:var(--mute,#4b5c69)!important;border-style:dashed!important}
+@media (max-height:520px){#ov .login{margin-bottom:6px}#ov .login-form label{display:none}#ov .login-row input,#ov .login-ok{height:34px}#ov .login-msg{margin:2px 0 0;min-height:12px;font-size:11px}#ov .gl-list li{padding:1px 6px;font-size:11px}}

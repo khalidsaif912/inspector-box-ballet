@@ -1,5 +1,5 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v111";
+const VERSION = "v112";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
@@ -17,6 +17,8 @@ const SHELL = [
   "./game/models/inspector-mx.glb",
   "./game/touch-ui.js",
   "./game/game-rules.js",
+  "./game/online.js",
+  "./game/employees.json",
   "./game/game-hub.js",
   "./m1/pairs.html",
   "./m1/manifest.json",

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>لوحة الإدارة — مستودع الشحن الجوي</title>
+<style>
+@font-face{font-family:'Cairo';font-style:normal;font-weight:500 900;font-display:swap;src:url(vendor/fonts/cairo-arabic.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:'Cairo';font-style:normal;font-weight:500 900;font-display:swap;src:url(vendor/fonts/cairo-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122}
+:root{--paper:#e9edef;--ink:#12212e;--red:#d4281e;--blue:#1c4e8a;--field:#d3dade;--mute:#4b5c69;--ok:#1f8a52;--gold:#c58a00;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:#0a121c;color:var(--ink);font-family:'Cairo',system-ui,"Segoe UI",Tahoma,sans-serif;padding:max(16px,env(safe-area-inset-top)) 16px 32px}
+.sheet{max-width:980px;margin:0 auto;border:8px solid transparent;border-radius:4px;background:linear-gradient(var(--paper),var(--paper)) padding-box,repeating-linear-gradient(-45deg,var(--red) 0 7px,var(--paper) 7px 14px) border-box;box-shadow:0 22px 60px rgba(0,0,0,.55);padding:22px clamp(14px,3vw,30px) 28px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:3px solid var(--ink);padding-bottom:12px;margin-bottom:16px}
+h1{margin:0;font-size:clamp(22px,4vw,30px);font-weight:900}
+.sub{margin:2px 0 0;color:var(--mute);font-weight:600;font-size:13px}
+.btn{font:800 14px inherit;font-family:inherit;border:0;border-radius:3px;padding:9px 16px;background:var(--ink);color:#fff;cursor:pointer}
+.btn.red{background:var(--red);box-shadow:0 4px 0 #8f1a12}
+.btn.red:active{transform:translateY(3px);box-shadow:0 1px 0 #8f1a12}
+.btn.ghost{background:none;color:var(--blue);text-decoration:underline;padding:6px}
+.btn:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+#gate{max-width:340px;margin:12vh auto;text-align:center}
+#gate input{width:100%;height:46px;border:2px solid var(--ink);border-radius:3px;background:#fff;font:800 20px ui-monospace,Consolas,monospace;text-align:center;letter-spacing:3px;margin:10px 0}
+#gate .err{color:var(--red);font-weight:800;min-height:20px;margin:0 0 8px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--field);border-radius:4px;padding:12px 14px;border-inline-start:6px solid var(--ink)}
+.stat b{display:block;font-size:30px;font-weight:900;line-height:1.1;font-family:ui-monospace,Consolas,monospace}
+.stat span{font-size:13px;font-weight:700;color:var(--mute)}
+.stat.hot{border-color:var(--red)}.stat.ok{border-color:var(--ok)}.stat.gold{border-color:var(--gold)}
+nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+nav button{font:800 14px inherit;font-family:inherit;padding:8px 16px;border:2px solid var(--ink);border-radius:3px;background:#fff;color:var(--ink);cursor:pointer}
+nav button[aria-selected=true]{background:var(--ink);color:#fff}
+.tools{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.tools input{flex:1;min-width:160px;height:38px;border:2px solid var(--ink);border-radius:3px;padding:0 10px;font:700 14px inherit;font-family:inherit;background:#fff}
+.tw{overflow-x:auto;border:2px solid var(--ink);border-radius:3px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:14px;font-weight:700;min-width:520px}
+th{background:var(--ink);color:#fff;text-align:right;padding:9px 12px;font-weight:800;white-space:nowrap;position:sticky;top:0}
+td{padding:8px 12px;border-top:1px solid #c7ced3;white-space:nowrap}
+tr:nth-child(even) td{background:#f4f6f7}
+td.n{font-family:ui-monospace,Consolas,monospace;text-align:left;direction:ltr}
+td.rk{font-weight:900;color:var(--red);width:48px}
+tr.top1 td{background:#fff3cd!important}
+.mute{color:var(--mute);font-weight:600}
+.empty{padding:28px;text-align:center;color:var(--mute);font-weight:700}
+.warn{background:#fff3cd;border:2px solid var(--gold);border-radius:3px;padding:10px 14px;font-weight:700;margin-bottom:12px}
+@media (max-width:520px){th,td{padding:7px 8px}}
+</style>
+</head>
+<body>
+<main class="sheet">
+<section id="gate">
+<h1>لوحة الإدارة</h1>
+<p class="sub">أدخل الرمز السري للإدارة</p>
+<form id="gf"><input id="code" type="password" inputmode="numeric" autocomplete="off" dir="ltr" aria-label="الرمز السري"><p class="err" id="gerr" role="alert"></p><button class="btn red" type="submit">دخول</button></form>
+</section>
+<section id="app" hidden>
+<header>
+<div><h1>لوحة الإدارة</h1><p class="sub" id="upd">مستودع الشحن الجوي</p></div>
+<div><button class="btn" id="refresh" type="button">تحديث</button> <button class="btn ghost" id="lock" type="button">قفل</button></div>
+</header>
+<div id="warn" class="warn" hidden>الاتصال بـ Firebase غير مُفعَّل بعد، لذلك لا توجد بيانات.</div>
+<div class="stats" id="stats"></div>
+<nav role="tablist" id="tabs">
+<button role="tab" data-t="top" aria-selected="true">الأرقام القياسية</button>
+<button role="tab" data-t="logins" aria-selected="false">سجل الدخول</button>
+<button role="tab" data-t="scores" aria-selected="false">كل النتائج</button>
+<button role="tab" data-t="absent" aria-selected="false">لم يدخلوا بعد</button>
+</nav>
+<div class="tools"><input id="q" type="search" placeholder="ابحث بالاسم أو الرقم الوظيفي أو القسم"></div>
+<div class="tw"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+</section>
+</main>
+<script src="game/online.js"></script>
+<script>
+/* الرمز السري يُقارَن ببصمته فقط (SHA-256). هذه حماية واجهة بسيطة وليست حماية خادم. */
+const HASH = '6547f192c1fda3b27eeff6606ea172480774cd0f6de3b6e955f47e7037c4d8ad', SK = 'acg_admin';
+const $ = id => document.getElementById(id);
+const sha = async s => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map(b => b.toString(16).padStart(2, '0')).join('');
+const fmt = d => d ? new Intl.DateTimeFormat('ar-OM-u-nu-latn', { dateStyle: 'short', timeStyle: 'short' }).format(d) : '—';
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let D = { players: [], logins: [], scores: [], dir: {} }, tab = 'top';
+
+async function unlock(code){ if(await sha('acg|' + code) !== HASH) return false; try { sessionStorage.setItem(SK, HASH); } catch(e){} $('gate').hidden = true; $('app').hidden = false; load(); return true; }
+$('gf').onsubmit = async e => { e.preventDefault(); $('gerr').textContent = (await unlock($('code').value.trim())) ? '' : 'الرمز غير صحيح'; };
+$('lock').onclick = () => { try { sessionStorage.removeItem(SK); } catch(e){} location.reload(); };
+$('refresh').onclick = () => load();
+try { if(sessionStorage.getItem(SK) === HASH){ $('gate').hidden = true; $('app').hidden = false; load(); } } catch(e){}
+
+async function load(){
+  $('upd').textContent = 'جارٍ التحميل…';
+  D.dir = await Online.directory();
+  $('warn').hidden = Online.enabled();
+  try { const [p, l, s] = await Promise.all([Online.players(1000), Online.logins(500), Online.scores(500)]); D.players = p; D.logins = l; D.scores = s; $('upd').textContent = 'آخر تحديث: ' + fmt(new Date()); }
+  catch(e){ $('upd').textContent = 'تعذّر الاتصال بقاعدة البيانات'; }
+  render();
+}
+function render(){
+  const total = Object.keys(D.dir).length, seen = D.players.length, today = new Date().toDateString();
+  const todayN = new Set(D.logins.filter(x => x.at && x.at.toDateString() === today).map(x => x.id)).size;
+  const best = D.players.slice().sort((a, b) => b.best - a.best)[0];
+  const plays = D.players.reduce((n, p) => n + (p.plays || 0), 0);
+  $('stats').innerHTML = [['hot', seen + ' / ' + total, 'موظفون دخلوا اللعبة'], ['ok', todayN, 'دخلوا اليوم'], ['', plays, 'مرات اللعب'], ['gold', best && best.best > 0 ? best.best : '—', best && best.best > 0 ? 'أعلى رقم — ' + esc(best.name) : 'أعلى رقم']]
+    .map(([c, n, l]) => `<div class="stat ${c}"><b>${n}</b><span>${l}</span></div>`).join('');
+  const q = $('q').value.trim().toLowerCase(), hit = r => !q || Object.values(r).join(' ').toLowerCase().includes(q);
+  const T = {
+    top: [['#', 'الاسم', 'الرقم', 'القسم', 'أفضل نتيجة', 'مرات اللعب'], () => D.players.filter(p => p.best > 0).sort((a, b) => b.best - a.best).filter(hit).map((p, i) => [i + 1, p.name, p.id, p.dept, p.best, p.plays], i => i === 0)],
+    logins: [['الوقت', 'الاسم', 'الرقم', 'القسم'], () => D.logins.filter(hit).map(l => [fmt(l.at), l.name, l.id, l.dept])],
+    scores: [['الوقت', 'الاسم', 'الرقم', 'القسم', 'النتيجة'], () => D.scores.filter(hit).map(s => [fmt(s.at), s.name, s.id, s.dept, s.score])],
+    absent: [['الاسم', 'الرقم', 'القسم'], () => { const have = new Set(D.players.map(p => p.id)); return Object.entries(D.dir).filter(([id]) => !have.has(id)).map(([id, v]) => ({ id, name: v[0], dept: v[1] })).filter(hit).map(r => [r.name, r.id, r.dept]); }]
+  }[tab];
+  const rows = T[1](), numCol = { top: [2, 4, 5], logins: [2], scores: [2, 4], absent: [1] }[tab];
+  $('th').innerHTML = '<tr>' + T[0].map(h => `<th>${h}</th>`).join('') + '</tr>';
+  $('tb').innerHTML = rows.length ? rows.map(r => `<tr${tab === 'top' && r[0] === 1 ? ' class="top1"' : ''}>` + r.map((c, i) => `<td class="${numCol.includes(i) ? 'n' : ''}${tab === 'top' && i === 0 ? ' rk' : ''}">${esc(c)}</td>`).join('') + '</tr>').join('') : `<tr><td class="empty" colspan="${T[0].length}">لا توجد بيانات</td></tr>`;
+}
+$('tabs').onclick = e => { const b = e.target.closest('button'); if(!b) return; tab = b.dataset.t; [...$('tabs').children].forEach(x => x.setAttribute('aria-selected', x === b)); render(); };
+$('q').oninput = render;
+</script>
+</body>
+</html>
