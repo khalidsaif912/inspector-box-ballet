@@ -297,10 +297,21 @@ function rsSoon(){
 if(rsRaf) cancelAnimationFrame(rsRaf);
 rsRaf = requestAnimationFrame(() => { rsRaf = 0; rs(); requestAnimationFrame(rs); placeToastBelowIntro(); });
 }
+/* بعد التدوير أو الرجوع من الخلفية/ملء الشاشة تُبلغ المتصفحات أحياناً أبعاداً قديمة لبضع مئات من الملّي ثانية:
+   نعيد الضبط عدة مرات حتى يستقر القياس، وResizeObserver يلتقط أي تغيّر فعلي في حاوية اللعبة. */
+let rsSettleT = [];
+function rsSettle(){
+rsSoon(); rsSettleT.forEach(clearTimeout);
+rsSettleT = [120, 350, 800, 1500].map(ms => setTimeout(rsSoon, ms));
+}
 addEventListener('resize', rsSoon, { passive:true });
-addEventListener('orientationchange', rsSoon, { passive:true });
+addEventListener('orientationchange', rsSettle, { passive:true });
+addEventListener('pageshow', rsSettle, { passive:true });
+document.addEventListener('visibilitychange', () => { if(!document.hidden) rsSettle(); });
+document.addEventListener('fullscreenchange', rsSettle);
+if(window.ResizeObserver) new ResizeObserver(rsSoon).observe(stageEl);
 if(window.visualViewport) visualViewport.addEventListener('resize', rsSoon, { passive:true });
-if(window.screen && screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', rsSoon);
+if(window.screen && screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', rsSettle);
 rs();
 // ===== الإضاءة: ضوء سماوي بارد من النوافذ العلوية + مصابيح صناعية دافئة + إضاءة مركّزة على مناطق الفرز
 const hemiLight = new THREE.HemisphereLight(0xcfe2ff, 0x3a3226, 0.55);
@@ -1067,6 +1078,8 @@ function setCharacter(id){
   syncCharButtons();
   return CHAR.id;
 }
+/* داخل غلاف الصفحة يوجد اختيار الشخصية الأساسي: نُخفي النسخة المكررة من إعدادات اللعبة (تبقى في game.html وحده) */
+try { if(parent !== window){ const row = document.getElementById('chars'); const it = row && row.closest('.setting-item'); if(it) it.style.display = 'none'; } } catch(e){}
 function syncCharButtons(){
   document.querySelectorAll('#chars button').forEach(b => b.classList.toggle('on', b.dataset.char === CHAR.id));
 }
@@ -2417,6 +2430,7 @@ if(!fire.active && !fire.keypad && !introHold && $('rules').style.display === 'n
 hud();
 }
 function start(){
+try { if(parent !== window) parent.postMessage({ type: 'acg-state', playing: true }, location.origin); } catch(e){}
 const td = tutorialDone();
 initAudio();
 stopVib();
@@ -2455,6 +2469,7 @@ if(o){ pz = run; run = false; } else if(pz){ run = true; pz = false; }
 $('rc').onclick = openRules;
 $('how').onclick = openRules;
 function end(){
+try { if(parent !== window) parent.postMessage({ type: 'acg-state', playing: false }, location.origin); } catch(e){}
 run = false;
 stopVib();
 if(STUDY.on){ STUDY.on = false; closeStudy(); }
