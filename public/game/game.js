@@ -1970,7 +1970,11 @@ function caoSwap(raw){
 function resetCaoRun(){
   caoRun.spawned = 0; caoRun.placardUsed = false;
 }
+/* مسافة دنيا بين صندوقين على الحزام: لا يتداخلان أبداً (الصندوق الخلفي ينتظر خلف الأمامي حين يبطؤ الحزام أو يتوقف) */
+const BELT_GAP = 1.6;
 function spawn(){
+const bsp = gameRules.layout.beltSpawn();
+if(items.some(i => i.st === 'belt' && i.m.position.x < bsp.x + BELT_GAP)) return false;   // نقطة الدخول مشغولة: انتظر
 const list = stage===4 ? HZ : ((stage>=2 && Math.random() < (stage===3?0.6:0.45)) ? HZ : I);
 let raw = (stage>=2 && stage<4 && Math.random() < 0.13 && !items.some(i => i.data.isMys)) ? MYS : list[Math.random()*list.length | 0];
 /* طرد مجمّد عشوائي: واحد فقط في كل مرة، ولا يظهر أثناء حمل/انتظار لغز الباب */
@@ -4156,8 +4160,7 @@ if(demo.truckIn <= 0) startTruckDemo();
 if(stage<4 && score >= STAGE_AT[stage+1]) setStage(gameRules.layout.stageForScore(stage, score));if(!fire.keypad && !STUDY.on && !jam.active){
 spawnT -= dt;
 if(spawnT <= 0){
-spawn();
-spawnT = BREATH_SPAWN[stage];
+if(spawn() === false) spawnT = .25; else spawnT = BREATH_SPAWN[stage];
 }
 }
 if(stage >= 2 && !fire.active && !STUDY.on && !jam.active){
@@ -4170,7 +4173,7 @@ showIntro(I18N.T('<b class="t">⚡ تدفق سريع!</b>ثلاث شحنات م�
 if(rushN > 0){
 rushDelay -= dt;
 if(rushDelay <= 0 && items.length < 14){
-spawn(); rushN--; rushDelay = RUSH_GAP[stage];
+if(spawn() === false) rushDelay = .25; else { rushN--; rushDelay = RUSH_GAP[stage]; }
 /* بعد الموجة: استراحة أطول لالتقاط الأنفاس */
 if(rushN === 0) spawnT = Math.max(spawnT, BREATH_SPAWN[stage] * 1.4);
 }
@@ -4200,11 +4203,14 @@ slowT = STUDY.on ? slowT : Math.max(0, slowT - dt);
 beltSlowT = STUDY.on ? beltSlowT : Math.max(0, beltSlowT - dt);
 const beltK = (fire.keypad || STUDY.on || jam.active) ? 0 : (slowT > 0 ? 0.35 : (beltSlowT > 0 ? 0.6 : 1));
 let best = null, bd = 2.8;
+/* طابور الحزام: كل صندوق يتقدم حتى يبقى BELT_GAP خلف الذي أمامه */
+const beltLim = new Map();
+{ const q = items.filter(i => i.st === 'belt').sort((a, b) => b.m.position.x - a.m.position.x); for(let k = 1; k < q.length; k++) beltLim.set(q[k], q[k - 1].m.position.x - BELT_GAP); }
 for(const it of items.slice()){
 it.csh.visible = it.st !== 'held' && it.st !== 'lifting';
 if(it.fall){ it.vy -= 32 * dt; it.m.position.y += it.vy * dt; if(it.m.position.y <= it.ty){ it.m.position.y = it.ty; it.fall = false; if(it.st === 'floor'){ snd('bump'); const dd = Math.hypot(it.m.position.x - px.x, it.m.position.z - px.z); if(dd < 9) addShake(.45 * (1 - dd / 9)); } } }
 if(it.st === 'belt'){
-it.m.position.x += beltSpeed() * beltK * dt;
+{ const nx = it.m.position.x + beltSpeed() * beltK * dt, lim = beltLim.get(it); it.m.position.x = lim === undefined ? nx : Math.max(it.m.position.x, Math.min(nx, lim)); }
 /* نقطة تفتيش CAO: تُوقف الشحنة قبل التحميل لطلب قرار القبول/الرفض */
 if(it.data.cao && !it.caoChecked && !caoQ.active && it.m.position.x > 8) caoOpen(it);
 if(it.m.position.x > 23.5){
