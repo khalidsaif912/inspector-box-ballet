@@ -1454,13 +1454,18 @@ for (const b of BOLLARDS){
 const dx = p.x - b.x, dz = p.z - b.z, d = Math.hypot(dx, dz), m = rad + b.r;
 if(d < m && d > 1e-6){ p.x += dx/d*(m-d); p.z += dz/d*(m-d); hit = true; }
 }
+// المفتش جسم صلب بهامش أوسع أمام الرافعة الشوكية كي تبقى على مسافة مناسبة منه
+if(inspector.active && inspector.g.visible){
+const ix = inspector.g.position.x, iz = inspector.g.position.z, dx = p.x - ix, dz = p.z - iz, d = Math.hypot(dx, dz), m = rad + (FD.on ? INSP_FK_GAP : .45);
+if(d < m){ const nx = d > 1e-6 ? dx/d : -mvx, nz = d > 1e-6 ? dz/d : -mvz; p.x = ix + nx*m; p.z = iz + nz*m; hit = true; }
+}
 // الرافعة المتوقفة جسم صلب ما دام اللاعب لا يقودها
 if(!FD.on){ const fh = fkHalf(); if(pushOutAABB(p, fk.position.x-fh.hx, fk.position.x+fh.hx, fk.position.z-fh.hz, fk.position.z+fh.hz, rad)) hit = true; }
 p.x = Math.max(WALK.minX, Math.min(WALK.maxX, p.x));
 p.z = Math.max(WALK.minZ, Math.min(WALK.maxZ, p.z));
 for (const it of items) {
 if (it.st === 'held' || it.st === 'lifting' || it.st === 'belt') continue;
-const h = it.data.isHeavy ? 0.78 : 0.68, bx = it.m.position.x, bz = it.m.position.z;
+const h = it.data.isHeavy ? 0.78 * HVS : 0.68, bx = it.m.position.x, bz = it.m.position.z;
 if(it.st === 'floor' && !it.data.isHeavy){   // الطرد الثقيل جسم صلب لا يُدفع (يُنقل بالرافعة فقط)
 // الطرود على الأرض تُدفع بلطف عند ملامستها
 const cx = Math.max(bx-h, Math.min(p.x, bx+h)), cz = Math.max(bz-h, Math.min(p.z, bz+h));
@@ -1922,6 +1927,7 @@ const t=rawTex(cv);
 return tc[k]=t;
 }
 const BOXG = new THREE.BoxGeometry(1.35, 1.35, 1.35), EDGEG = new THREE.EdgesGeometry(BOXG);
+const HVS = 1.18;   // مقياس الطرد الثقيل
 const EDGEM = new THREE.LineBasicMaterial({color:0x2b1a0d, transparent:true, opacity:0.5});
 const SHT = canvasTex(128, 128, (g, w, h) => { const gr=g.createRadialGradient(w/2,h/2,w*.2,w/2,h/2,w/2); gr.addColorStop(0,'rgba(0,0,0,.6)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.fillRect(0,0,w,h); });
 SHT.wrapS = SHT.wrapT = THREE.ClampToEdgeWrapping;
@@ -2164,11 +2170,15 @@ function resetTruck(){ truckState=gameRules.reset();fearT=0;recklessTruck.visibl
 function updateTruck(dt){
 fearT=Math.max(0,fearT-dt);
 const steps=Math.max(1,Math.ceil(dt/.016)), step=dt/steps;
+/* عوائق تتفاداها الرافعة المتهورة: المفتش والرافعة الشوكية (التي يقودها اللاعب أو المتوقفة) */
+const obs=[{x:fk.position.x,z:fk.position.z,r:FK_HX}];
+if(inspector.active && inspector.g.visible) obs.push({x:inspector.g.position.x,z:inspector.g.position.z,r:.7});
 for(let i=0;i<steps;i++){
+gameRules.dodge(truckState,step,obs);
 const before=gameRules.position(truckState), event=gameRules.advance(truckState,step,px.z), after=gameRules.position(truckState);
 if(event.entered){snd('horn');addShake(.35);tip('forklift' + (event.trip || 0), '⚠️ رافعة متهورة تعبر المستودع!' + (event.trip ? ' (' + (event.trip + 1) + '/3)' : ''), '#ffd54a');}
 if(event.drop) dropFod(after.x,after.z,event.trip);
-if(!demo.truck && truckState.active && !truckState.hit && gameRules.touches(before.x,before.z,after.x,after.z,px.x,px.z)){
+if(!demo.truck && !FD.on && truckState.active && !truckState.hit && gameRules.touches(before.x,before.z,after.x,after.z,px.x,px.z)){
 truckState.hit=true;fearT=gameRules.fearDuration;snd('bump');tip('bump', '😨 اصطدام! حركة أبطأ مؤقتًا', '#ffd54a');
 }
 }
@@ -2603,18 +2613,20 @@ function heavyTex(){
   const t = rawTex(cv); t.anisotropy = 4; return t;
 }
 function spawnHeavy(){
-  const m = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({ map: heavyTex(), roughness: .55, metalness: .25 }));
+  /* الطرد الثقيل أكبر قليلاً (HVS): يكبر للأعلى والجانبين وتبقى قاعدته على الباليت */
+  if(!spawnHeavy.g){ spawnHeavy.g = BOXG.clone(); spawnHeavy.g.scale(HVS, HVS, HVS); spawnHeavy.g.translate(0, (HVS - 1) * BH, 0); spawnHeavy.e = new THREE.EdgesGeometry(spawnHeavy.g); }
+  const m = new THREE.Mesh(spawnHeavy.g, new THREE.MeshStandardMaterial({ map: heavyTex(), roughness: .55, metalness: .25 }));
   m.castShadow = m.receiveShadow = true;
   m.position.set(21 + Math.random() * 2, BH + .02, 3.4 + Math.random() * 1.4);
-  m.add(new THREE.LineSegments(EDGEG, EDGEM));
-  const csh = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 2.1), SHM);
+  m.add(new THREE.LineSegments(spawnHeavy.e, EDGEM));
+  const csh = new THREE.Mesh(new THREE.PlaneGeometry(2.1 * HVS, 2.1 * HVS), SHM);
   /* منصة خشبية (باليت) أسفل الطرد: سطح من ألواح + ثلاث عوارض + ألواح سفلية */
   const PH = .22, wood = new THREE.MeshStandardMaterial({ color: 0xa9763f, roughness: .92 }), woodD = new THREE.MeshStandardMaterial({ color: 0x7d5329, roughness: .95 });
   const pal = new THREE.Group(), bx = (w, h, d, x, y, z, mt) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mt); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; pal.add(o); };
   for(let i = 0; i < 5; i++) bx(1.5, .04, .24, 0, -BH - .02, -.6 + i * .3, wood);
   [-.62, 0, .62].forEach(x => bx(.16, .12, 1.5, x, -BH - .04 - .06, 0, woodD));
   [-.62, 0, .62].forEach(z => bx(1.5, .04, .2, 0, -BH - PH + .02, z, wood));
-  m.add(pal); m.position.y += PH;
+  pal.scale.set(HVS, 1, HVS); m.add(pal); m.position.y += PH;
   csh.rotation.x = -Math.PI / 2; csh.position.y = -BH - PH + .015; m.add(csh);
   S.add(m);
   const data = { t: 'gen', emoji: '🏗️', name: I18N.t('معدات ثقيلة'), imp: 'HVY', div: gameRules.heavy.kg + 'kg', isHz: false, isMys: false, isFrz: false, isHeavy: true, cao: false };
@@ -2758,12 +2770,69 @@ if(cardsEl.root) cardsEl.root.addEventListener('pointerdown', e => e.stopPropaga
 
 /* ===== تجميعات FOD: ٣ خانات أعلى الشاشة ترفع مستوى الاندفاع مع احتفال عند كل جسم ===== */
 const FOD_NAMES = ['١', '٢', '٣', '٤'];
+/* ===== زر الاندفاع = محرك طائرة نفاث يتطور مع كل ترقية FOD =====
+   ٠: مروحة فولاذية بسيطة • ١: برونزية بحلقة موجِّهات • ٢: تيتانيوم بشفرات مقوّسة وتوهج أزرق • ٣: ذهبية بلهب احتراق لاحق */
+const ENG_LV = [
+  { n: 5,  sw: 0,   rim: '#7d8b98', rim2: '#3c4650', bl: '#aeb9c3', hub: '#d0d6dc', glow: 'rgba(120,170,220,0)',  spin: 900 },
+  { n: 8,  sw: .35, rim: '#e0a066', rim2: '#7a4520', bl: '#d9b089', hub: '#f2c48f', glow: 'rgba(255,150,70,.35)', spin: 1300 },
+  { n: 12, sw: .7,  rim: '#e8eef2', rim2: '#6b7e8c', bl: '#cfe0ec', hub: '#ffffff', glow: 'rgba(90,190,255,.6)',  spin: 1800 },
+  { n: 16, sw: 1,   rim: '#ffd84d', rim2: '#9a6a00', bl: '#ffe48a', hub: '#fff6cf', glow: 'rgba(255,120,30,.85)', spin: 2500 }
+];
+const ENG = { a: 0, w: 0, lv: -1, fan: null, blades: null, blur: null, glow: null };
+function engineSVG(lv){
+  const c = ENG_LV[lv], n = c.n, hw = Math.max(1.05, 2.6 - n * .09), sw = c.sw * 6;
+  /* شفرة واحدة متجهة للأعلى من المحور (r≈5) إلى الطرف (r≈17)، تُقوَّس للأمام في المستويات العليا */
+  const blade = `M${24 - hw * .7} 19 Q${24 - hw + sw * .4} 13 ${24 - hw + sw} 7.2 L${24 + hw + sw} 7.6 Q${24 + hw + sw * .5} 13.5 ${24 + hw * .7} 19 Z`;
+  let bl = '';
+  for(let i = 0; i < n; i++) bl += `<path d="${blade}" transform="rotate(${(i * 360 / n).toFixed(2)} 24 24)"/>`;
+  const stator = lv >= 1 ? `<circle cx="24" cy="24" r="19.6" fill="none" stroke="${c.rim2}" stroke-width=".9" stroke-dasharray="1.2 1.6" opacity=".9"/>` : '';
+  const flame = lv >= 3 ? `<circle class="eflame" cx="24" cy="24" r="23" fill="none" stroke="url(#eFl)" stroke-width="2.2"/>` : '';
+  const rivets = lv >= 2 ? Array.from({ length: 12 }, (_, i) => { const t = i * Math.PI / 6; return `<circle cx="${(24 + Math.cos(t) * 21.3).toFixed(2)}" cy="${(24 + Math.sin(t) * 21.3).toFixed(2)}" r=".55" fill="${c.rim2}"/>`; }).join('') : '';
+  return `<svg viewBox="0 0 48 48" aria-hidden="true"><defs>
+<radialGradient id="eIn" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${lv >= 2 ? '#0d2a44' : '#141a20'}"/><stop offset=".8" stop-color="#05080b"/><stop offset="1" stop-color="${c.glow}"/></radialGradient>
+<linearGradient id="eRim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.rim}"/><stop offset=".55" stop-color="${c.rim2}"/><stop offset="1" stop-color="${c.rim}"/></linearGradient>
+<radialGradient id="eHub" cx="38%" cy="32%" r="70%"><stop offset="0" stop-color="${c.hub}"/><stop offset="1" stop-color="${c.rim2}"/></radialGradient>
+<radialGradient id="eBlur" cx="50%" cy="50%" r="50%"><stop offset=".25" stop-color="${c.bl}" stop-opacity=".1"/><stop offset=".8" stop-color="${c.bl}" stop-opacity=".55"/><stop offset="1" stop-color="${c.bl}" stop-opacity=".15"/></radialGradient>
+${lv >= 3 ? '<linearGradient id="eFl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff2a8"/><stop offset=".5" stop-color="#ff7a1a"/><stop offset="1" stop-color="#ff2d55"/></linearGradient>' : ''}
+</defs>
+${flame}
+<circle class="eglow" cx="24" cy="24" r="21.5" fill="none" stroke="${c.glow}" stroke-width="3"/>
+<circle cx="24" cy="24" r="21" fill="url(#eRim)" stroke="rgba(0,0,0,.55)" stroke-width="1"/>
+<circle cx="24" cy="24" r="18.4" fill="url(#eIn)"/>
+${stator}${rivets}
+<circle class="eblur" cx="24" cy="24" r="17.6" fill="url(#eBlur)" opacity="0"/>
+<g class="efan"><g class="eblades" fill="${c.bl}" stroke="rgba(0,0,0,.45)" stroke-width=".5" stroke-linejoin="round">${bl}</g>
+<circle cx="24" cy="24" r="5.2" fill="url(#eHub)" stroke="rgba(0,0,0,.5)" stroke-width=".6"/>
+<path d="M24 24 m0 -4.6 a4.6 4.6 0 0 1 3.2 7.9 a2.6 2.6 0 0 0 -3.2 -3.3" fill="none" stroke="rgba(255,255,255,.85)" stroke-width=".9" stroke-linecap="round"/></g>
+</svg>`;
+}
+function engineRender(){
+  const b = $('dash-btn'); if(!b) return;
+  const lv = Math.min(FODQ.n, 3);
+  if(ENG.lv === lv && ENG.fan) return;
+  ENG.lv = lv; b.innerHTML = engineSVG(lv);
+  ENG.fan = b.querySelector('.efan'); ENG.blades = b.querySelector('.eblades'); ENG.blur = b.querySelector('.eblur'); ENG.glow = b.querySelector('.eglow');
+}
+/* الدوران: يقلع بسرعة عند الضغط (سرعة كل مستوى أعلى) ثم يتباطأ تدريجياً؛ قرص ضبابي يخفي تقطّع الشفرات عند السرعات العالية */
+function engineTick(dt){
+  if(!ENG.fan) return;
+  const c = ENG_LV[ENG.lv], target = dashT > 0 ? c.spin : (run ? 40 : 0);
+  ENG.w += (target - ENG.w) * Math.min(1, dt * (target > ENG.w ? 14 : 1.6));
+  ENG.a = (ENG.a + ENG.w * dt) % 360;
+  ENG.fan.setAttribute('transform', 'rotate(' + ENG.a.toFixed(1) + ' 24 24)');
+  const f = Math.min(1, ENG.w / 1100);
+  ENG.blades.style.opacity = (1 - .6 * f).toFixed(2);
+  ENG.blur.setAttribute('opacity', (.9 * f).toFixed(2));
+  ENG.glow.setAttribute('stroke-width', (2 + 3 * f).toFixed(2));
+}
 function fodRender(){
+  engineRender();
   const el = $('fod-col'); if(!el) return;
   el.dataset.lv = FODQ.n; el.querySelectorAll('.fs').forEach((s, i) => s.classList.toggle('on', i < FODQ.n));
   const b = $('dash-btn'); if(b) b.dataset.lv = FODQ.n;
   const l = $('fod-lv'); if(l) l.textContent = I18N.T('اندفاع ⚡ ' + FOD_NAMES[FODQ.n] + '/٤', 'Dash ⚡ ' + (FODQ.n + 1) + '/4');
 }
+engineRender();
 function fodCollect(){
   const was = FODQ.n; FODQ.n = Math.min(3, FODQ.n + 1);
   const up = FODQ.n > was, el = $('fod-col'), slot = el && el.querySelector('.fs[data-i="' + FODQ.n + '"]');
@@ -2773,7 +2842,7 @@ function fodCollect(){
     snd('fever'); hitStopNow();
     if(slot){ slot.classList.remove('pop'); void slot.offsetWidth; slot.classList.add('pop'); }
     if(el){ el.classList.remove('cele'); void el.offsetWidth; el.classList.add('cele'); }
-    const b = $('dash-btn'); if(b){ b.classList.remove('lvup'); void b.offsetWidth; b.classList.add('lvup'); }
+    const b = $('dash-btn'); if(b){ b.classList.remove('lvup', 'lvdown'); void b.offsetWidth; b.classList.add('lvup'); }
     try { if(slot && fwCv){ const r = slot.getBoundingClientRect(), c = fwCv.getBoundingClientRect(); fwBurst(r.left - c.left + r.width / 2, r.top - c.top + r.height / 2, 38, [28, 200, 48][FODQ.n - 1]); } } catch(e){}
     fwShow(FODQ.n === 3 ? 5 : FODQ.n + 1);
     const c = dashCfg();
@@ -2784,6 +2853,18 @@ function fodCollect(){
     snd('ok'); fwShow(1);
     toast(I18N.T('⭐ اندفاعك في أقصى مستوى', '⭐ Dash already at max level'), '#ffd54a');
   }
+}
+/* كل فرز خاطئ يُسقط ترقية اندفاع واحدة (تدريجياً حتى المستوى الأساسي) */
+function fodLose(){
+  if(FODQ.n <= 0) return;
+  FODQ.n--;
+  if(dashT > 0) dashT = Math.min(dashT, dashCfg().t);
+  fodRender(); setDashButton();
+  const b = $('dash-btn'); if(b){ b.classList.remove('lvdown', 'lvup'); void b.offsetWidth; b.classList.add('lvdown'); }
+  const el = $('fod-col'), slot = el && el.querySelector('.fs[data-i="' + (FODQ.n + 1) + '"]');
+  if(slot){ slot.classList.remove('lost'); void slot.offsetWidth; slot.classList.add('lost'); }
+  spawnFloatTag('⚡ ' + I18N.T('−ترقية', '−upgrade'), '#ff8a65');
+  tip('fodlose', I18N.T('⚠️ الفرز الخاطئ يُفقدك ترقية من سرعة الاندفاع', '⚠️ Wrong sorts cost you a dash speed upgrade'), '#ff8a65');
 }
 function resolvePlacement(z, it){
 const d = it.data;
@@ -2866,6 +2947,7 @@ score = Math.max(0, score - pen);
 combo = 1; streak = 0; streakT = 0;
 snd('error');
 penaltyFx(lost, conflict);
+fodLose();
 balletReset();
 spawnFloatTag('−' + pen, '#ff5252', conflict ? 'big' : undefined);
 if(conflict){
@@ -3705,6 +3787,8 @@ pa.x = Math.max(-33, Math.min(33, pa.x)); pa.z = Math.max(-11.9, Math.min(9.6, p
 // ===== المفتش: يمر بسرعة مرة واحدة ويخالف الطرود المتروكة خارج المناطق =====
 /* ممرات المشاة الآمنة للمفتش — على المستوى الأعلى لأن resetInspector و caoOpen تستخدمانها خارج الإغلاق */
 const INSP_SAFE = { minZ: -2.2, maxZ: 5.8, zebraZ: 2.5, minX: -33.2, maxX: 33.2 };
+/* الحد الأدنى للمسافة بين المفتش والرافعة الشوكية (يُضاف إلى نصف عرض الرافعة) */
+const INSP_FK_GAP = 1.5;
 const inspector = (() => {
 const g = new THREE.Group();
 const procMesh = new THREE.Group();
@@ -3909,6 +3993,28 @@ if(I_.state === 'verdict_pause'){
 }
 
 // 3. مرحلة المشي والدورية في ممرات المستودع الطبيعية (walk)
+/* الرافعة الشوكية أمامه: ينحرف عنها جانبياً، وإن كانت قريبة جداً يتوقف حتى تبتعد */
+const fkx = fk.position.x - I_.x, fkz = fk.position.z - I_.z, fkAhead = fkx * I_.dir, fkD = Math.hypot(fkx, fkz);
+const fkNeed = FK_HX + INSP_FK_GAP + .6;
+let fkAvoid = 0, fkWait = false;
+if(fkAhead > -(FK_HX + 1.8) && fkAhead < fkNeed + 3.5 && Math.abs(fkz) < fkNeed){
+  let side = fkz >= 0 ? -1 : 1, goal = fk.position.z + side * fkNeed;
+  if(goal < INSP_SAFE.minZ || goal > INSP_SAFE.maxZ){ side = -side; goal = fk.position.z + side * fkNeed; }
+  if(goal >= INSP_SAFE.minZ && goal <= INSP_SAFE.maxZ) fkAvoid = goal - (I_.targetZ || I_.z);
+  fkWait = fkAhead > 0 && fkAhead < fkNeed + .4 && Math.abs(fkz) < fkNeed - .3;
+}
+if(fkWait){
+  I_.waitT = (I_.waitT || 0) + dt;
+  if(I_.rig && I_.rig.pose) I_.rig.pose({ dt, phase: I_.t * 5, moving: false });
+  I_.z = lrp(I_.z, Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, (I_.targetZ || I_.z) + fkAvoid)), Math.min(1, dt * 3));
+  I_.g.position.set(I_.x, 0, I_.z);
+  /* انتظار طويل (الرافعة تسد الممر): يستدير ويكمل دوريته في الاتجاه المعاكس */
+  if(I_.waitT > 2.5){ I_.dir = -I_.dir; I_.waitT = 0; }
+  const ta = I_.dir > 0 ? Math.PI/2 : -Math.PI/2;
+  I_.g.rotation.y = lrp(I_.g.rotation.y, ta, Math.min(1, dt * 6));
+  return;
+}
+I_.waitT = 0;
 I_.t += dt;
 I_.x += I_.dir * (I_.demo ? 5.5 : 3.4) * dt;
 
@@ -3930,7 +4036,7 @@ for(const it of items){
   }
 }
 
-const curGoalZ = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, (I_.targetZ || I_.z) + avoidZ));
+const curGoalZ = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, (I_.targetZ || I_.z) + (fkAvoid || avoidZ)));
 I_.z = lrp(I_.z, curGoalZ, Math.min(1, dt * 4.5));
 
 const targetWalkAngle = I_.dir > 0 ? Math.PI/2 : -Math.PI/2;
@@ -4225,6 +4331,7 @@ animSpd += (l - animSpd) * (1 - Math.exp(-dt * 12));
 if(fire.active) updateFire(dt);
 /* مؤقتات الاندفاع والحمى */
 if(dashT > 0){ dashT = Math.max(0, dashT - dt); if(dashT === 0) $('dash-fx').classList.remove('on'); }
+engineTick(dt);
 if(dashCD > 0) dashCD = Math.max(0, dashCD - dt);
 if(feverT > 0){ feverT = Math.max(0, feverT - dt); if(feverT === 0) $('stage').classList.remove('fever'); }
 shakeTrauma = Math.max(0, shakeTrauma - dt * TRAUMA_DECAY);

@@ -56,7 +56,44 @@
         hit: false,
         trip: 0,
         trips: rules.trips,
+        dz: 0,
       };
+    },
+    // تفادي العوائق: الرافعة المتهورة تنحرف جانبياً عن المفتش والرافعة التي يقودها اللاعب
+    // obstacles: [{x, z, r}] — r نصف قطر العائق. تعيد إزاحة z الحالية بعد التنعيم.
+    dodgeClear: 2.2,
+    dodgeAhead: 14,
+    dodgeRate: 8,
+    laneMin: -4,
+    laneMax: 8.5,
+    dodge(state, dt, obstacles) {
+      if (!state.active) {
+        state.dz = 0;
+        return 0;
+      }
+      const p = rules.position(state);
+      const z0 = p.z - (state.dz || 0);
+      let target = 0;
+      for (const o of obstacles || []) {
+        const ahead = o.x - p.x;
+        if (ahead < -(2.6 + (o.r || 0)) || ahead > rules.dodgeAhead) continue;
+        const need = (o.r || 0) + rules.dodgeClear;
+        const curZ = z0 + target;
+        if (Math.abs(o.z - curZ) >= need) continue;
+        // الجهة البعيدة عن العائق، والعكس إن خرجت عن حدود الممر
+        // الجهة تُحسب من الموضع الفعلي (مع الإزاحة الحالية) كي لا تتأرجح عند تطابق الممر مع العائق
+        let side = (target === 0 ? p.z : curZ) >= o.z ? 1 : -1;
+        let goal = o.z + side * need;
+        if (goal < rules.laneMin || goal > rules.laneMax) {
+          side = -side;
+          goal = o.z + side * need;
+        }
+        target = Math.max(rules.laneMin, Math.min(rules.laneMax, goal)) - z0;
+      }
+      const cur = state.dz || 0;
+      const step = rules.dodgeRate * dt;
+      state.dz = cur + Math.max(-step, Math.min(step, target - cur));
+      return state.dz;
     },
     advance(state, dt, playerZ) {
       const result = { drop: false, entered: false, trip: state.trip || 0 };
@@ -88,6 +125,7 @@
           state.turned = false;
           state.dropped = false;
           state.hit = false;
+          state.dz = 0;
         } else state.done = true;
       }
       return result;
@@ -98,6 +136,7 @@
         x: state.x + (state.x === 0 && !state.turned ? Math.sin(angle) * rules.turnRadius : 0),
         z:
           state.lane +
+          (state.dz || 0) +
           (state.x === 0 && !state.turned ? (1 - Math.cos(angle)) * rules.turnRadius : 0),
         yaw: Math.PI / 2 + (state.x === 0 && !state.turned ? angle : 0),
       };

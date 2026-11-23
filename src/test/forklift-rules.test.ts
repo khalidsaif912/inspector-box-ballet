@@ -4,6 +4,10 @@ import { describe, expect, it } from "vitest";
 
 type ForkliftState = {
   done: boolean;
+  active?: boolean;
+  x?: number;
+  lane?: number;
+  dz?: number;
   turn: number;
   turned: boolean;
 };
@@ -13,6 +17,11 @@ type Rules = {
   advance(state: ForkliftState, dt: number, playerZ: number): { drop: boolean; entered: boolean; trip: number };
   touches(ax: number, az: number, bx: number, bz: number, px: number, pz: number): boolean;
   movementMultiplier(remaining: number): number;
+  dodge(state: ForkliftState, dt: number, obstacles: { x: number; z: number; r: number }[]): number;
+  position(state: ForkliftState): { x: number; z: number; yaw: number };
+  dodgeClear: number;
+  laneMin: number;
+  laneMax: number;
   fearDuration: number;
   turnDuration: number;
   fodZoneX: number;
@@ -88,5 +97,43 @@ describe("Reckless forklift", () => {
     expect(rules.forklift.forkZ(0, 0)).toBeCloseTo(rules.forklift.forkOffset);
     expect(rules.forklift.forkX(0, Math.PI)).toBeCloseTo(0);
     expect(rules.forklift.carryY).toBeLessThan(1.2);
+  });
+});
+
+describe("Reckless forklift dodging", () => {
+  const cruising = (x: number, lane: number) => {
+    const s = rules.reset();
+    Object.assign(s, { active: true, x, lane, turned: true });
+    return s;
+  };
+  const run = (s: ForkliftState, obs: { x: number; z: number; r: number }[], secs = 2) => {
+    for (let t = 0; t < secs; t += 0.016) rules.dodge(s, 0.016, obs);
+    return rules.position(s);
+  };
+
+  it("steers sideways around the inspector ahead with a clear gap", () => {
+    const s = cruising(5, 2);
+    const p = run(s, [{ x: 10, z: 2, r: 0.7 }]);
+    expect(Math.abs(p.z - 2)).toBeGreaterThanOrEqual(0.7 + rules.dodgeClear - 1e-6);
+  });
+
+  it("steers around the player's forklift and picks the in-bounds side", () => {
+    const s = cruising(0, 7);
+    const p = run(s, [{ x: 6, z: 7, r: 2.06 }]);
+    expect(p.z).toBeLessThan(7);
+    expect(p.z).toBeGreaterThanOrEqual(rules.laneMin);
+    expect(Math.abs(p.z - 7)).toBeGreaterThanOrEqual(2.06 + rules.dodgeClear - 1e-6);
+  });
+
+  it("ignores obstacles already passed and returns to its lane", () => {
+    const s = cruising(5, 2);
+    run(s, [{ x: 10, z: 2, r: 0.7 }]);
+    const p = run(s, [{ x: -10, z: 2, r: 0.7 }], 3);
+    expect(p.z).toBeCloseTo(2);
+  });
+
+  it("does not offset an inactive forklift", () => {
+    const s = rules.reset();
+    expect(rules.dodge(s, 0.1, [{ x: s.x ?? 0, z: 3, r: 1 }])).toBe(0);
   });
 });
