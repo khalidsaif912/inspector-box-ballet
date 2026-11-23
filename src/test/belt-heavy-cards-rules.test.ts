@@ -4,8 +4,22 @@ import { describe, expect, it } from "vitest";
 
 type Card = { id: string; key: string; kind: "label" | "code" | "wild"; data: unknown };
 type Rules = {
-  belt: { jamAt: number; clearAt: number; clearReward: number; warnAt: number; jammed(n: number): boolean; cleared(n: number): boolean };
-  heavy: { kg: number; deliverReward: number; solveReward: number; failPenalty: number; window: number[]; canLiftByHand(i: unknown): boolean };
+  belt: {
+    jamAt: number;
+    clearAt: number;
+    clearReward: number;
+    warnAt: number;
+    jammed(n: number): boolean;
+    cleared(n: number): boolean;
+  };
+  heavy: {
+    kg: number;
+    deliverReward: number;
+    solveReward: number;
+    failPenalty: number;
+    window: number[];
+    canLiftByHand(i: unknown): boolean;
+  };
   cards: {
     seconds: number;
     pairs: number;
@@ -23,7 +37,7 @@ const r = context["WarehouseRules"] as Rules;
 const pool = ["RXS", "RFG", "RPG", "RFL", "RFS", "ROX"].map((key) => ({ key }));
 function seeded(seed: number) {
   let s = seed;
-  return () => ((s = (s * 1664525 + 1013904223) % 4294967296) / 4294967296);
+  return () => (s = (s * 1664525 + 1013904223) % 4294967296) / 4294967296;
 }
 
 describe("Belt overload", () => {
@@ -56,7 +70,9 @@ describe("Forklift card puzzle", () => {
     expect(new Set(deck.map((c) => c.id)).size).toBe(9);
     const keys = deck.filter((c) => c.kind === "label").map((c) => c.key);
     expect(new Set(keys).size).toBe(4);
-    keys.forEach((k) => expect(deck.filter((c) => c.kind === "code" && c.key === k)).toHaveLength(1));
+    keys.forEach((k) =>
+      expect(deck.filter((c) => c.kind === "code" && c.key === k)).toHaveLength(1),
+    );
   });
 
   it("matches only a label with its own code, never the spark card or two of a kind", () => {
@@ -74,7 +90,10 @@ describe("Forklift card puzzle", () => {
   it("is won once all eight real cards are matched, with a 60 second limit", () => {
     const deck = r.cards.build(pool, seeded(5));
     const matched = new Set<string>();
-    deck.filter((c) => c.kind !== "wild").slice(0, 7).forEach((c) => matched.add(c.id));
+    deck
+      .filter((c) => c.kind !== "wild")
+      .slice(0, 7)
+      .forEach((c) => matched.add(c.id));
     expect(r.cards.won(deck, matched)).toBe(false);
     deck.filter((c) => c.kind !== "wild").forEach((c) => matched.add(c.id));
     expect(r.cards.won(deck, matched)).toBe(true);
@@ -82,8 +101,18 @@ describe("Forklift card puzzle", () => {
   });
 
   it("uses distinct classes even if the pool repeats an entry", () => {
-    const dup = [{ key: "A" }, { key: "A" }, { key: "B" }, { key: "C" }, { key: "D" }, { key: "E" }];
-    const keys = r.cards.build(dup, seeded(1)).filter((c) => c.kind === "label").map((c) => c.key);
+    const dup = [
+      { key: "A" },
+      { key: "A" },
+      { key: "B" },
+      { key: "C" },
+      { key: "D" },
+      { key: "E" },
+    ];
+    const keys = r.cards
+      .build(dup, seeded(1))
+      .filter((c) => c.kind === "label")
+      .map((c) => c.key);
     expect(new Set(keys).size).toBe(keys.length);
   });
 });

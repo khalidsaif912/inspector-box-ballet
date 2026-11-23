@@ -14,7 +14,11 @@ type ForkliftState = {
 
 type Rules = {
   reset(): ForkliftState;
-  advance(state: ForkliftState, dt: number, playerZ: number): { drop: boolean; entered: boolean; trip: number };
+  advance(
+    state: ForkliftState,
+    dt: number,
+    playerZ: number,
+  ): { drop: boolean; entered: boolean; trip: number };
   touches(ax: number, az: number, bx: number, bz: number, px: number, pz: number): boolean;
   movementMultiplier(remaining: number): number;
   dodge(state: ForkliftState, dt: number, obstacles: { x: number; z: number; r: number }[]): number;
@@ -58,7 +62,10 @@ describe("Reckless forklift", () => {
   it("drops one foreign object per crossing, each of a different kind (trip 0, 1, 2)", () => {
     const state = rules.reset();
     const trips: number[] = [];
-    for (let i = 0; i < 6000; i++) { const r = rules.advance(state, 0.05, 3); if (r.drop) trips.push(r.trip); }
+    for (let i = 0; i < 6000; i++) {
+      const r = rules.advance(state, 0.05, 3);
+      if (r.drop) trips.push(r.trip);
+    }
     expect(trips).toEqual([0, 1, 2]);
     expect(state.turned).toBe(true);
   });
