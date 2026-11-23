@@ -3134,6 +3134,7 @@ hud();
 function start(){
 if(window.Online && !Online.user() && !Online.guest){ const l = $('login'); if(l){ l.classList.remove('shake'); void l.offsetWidth; l.classList.add('shake'); const i = $('emp-id'); if(i) i.focus(); } return; }
 try { if(parent !== window) parent.postMessage({ type: 'acg-state', playing: true }, location.origin); } catch(e){}
+try { if(window.Online && Online.playStart) Online.playStart().catch(() => {}); } catch(e){}
 const td = tutorialDone();
 initAudio();
 stopVib();

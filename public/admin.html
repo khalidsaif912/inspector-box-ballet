@@ -112,6 +112,7 @@ tr.top1 td{background:#fff3cd!important}
 <button role="tab" data-t="top" aria-selected="true" data-k="t_top">الأرقام القياسية</button>
 <button role="tab" data-t="logins" aria-selected="false" data-k="t_logins">سجل الدخول</button>
 <button role="tab" data-t="scores" aria-selected="false" data-k="t_scores">كل النتائج</button>
+<button role="tab" data-t="guests" aria-selected="false" data-k="t_guests">الضيوف</button>
 <button role="tab" data-t="absent" aria-selected="false" data-k="t_absent">لم يدخلوا بعد</button>
 </nav>
 <div class="tools"><input id="q" type="search" data-kp="search" placeholder="ابحث بالاسم أو الرقم الوظيفي أو القسم"></div>
@@ -129,11 +130,11 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&am
 const L = {
  ar: { title:'لوحة الإدارة', gate:'أدخل الرمز السري للإدارة', enter:'دخول', refresh:'تحديث', lock:'قفل', warn:'الاتصال بـ Firebase غير مُفعَّل بعد، لذلك لا توجد بيانات.', t_top:'الأرقام القياسية', t_logins:'سجل الدخول', t_scores:'كل النتائج', t_absent:'لم يدخلوا بعد', search:'ابحث بالاسم أو الرقم الوظيفي أو القسم',
   wipeBtn:'مسح الأرقام', wipeT:'مسح الأرقام القياسية', wipeP:'عملية نهائية لا يمكن التراجع عنها. تتطلب إدخال الرمز السري من جديد.', wAll:'كل الأرقام', wOne:'موظف واحد', wDate:'تاريخ محدد', wIdPh:'الرقم الوظيفي أو الاسم', wCodePh:'الرمز السري للتأكيد', wCheck:'معاينة', wCancel:'إلغاء', wConfirm:'حذف نهائي', wNoCfg:'Firebase غير مُفعَّل', wBadCode:'الرمز غير صحيح أو حساب المدير غير مُنشأ في Firebase', wNoEmp:'اختر موظفاً صحيحاً', wNoDate:'اختر تاريخاً', wNothing:'لا توجد أرقام مطابقة للمسح', wPlan:(a,b)=>`سيُحذف ${a} سجل نتيجة ويُعاد ضبط ${b} رقم قياسي. اضغط «حذف نهائي» للتأكيد.`, wDone:n=>`تم المسح (${n} عملية)`, wFail:'تعذّر المسح — تحقّق من قواعد Firebase', wTrunc:' (يُعالَج آخر 1000 نتيجة فقط)',
-  bad:'الرمز غير صحيح', loading:'جارٍ التحميل…', upd:'آخر تحديث: ', fail:'تعذّر الاتصال بقاعدة البيانات', s_seen:'موظفون دخلوا اللعبة', s_today:'دخلوا اليوم', s_plays:'مرات اللعب', s_best:'أعلى رقم', s_bestby:'أعلى رقم — ', none:'لا توجد بيانات',
+  bad:'الرمز غير صحيح', loading:'جارٍ التحميل…', upd:'آخر تحديث: ', fail:'تعذّر الاتصال بقاعدة البيانات', s_seen:'موظفون دخلوا اللعبة', s_today:'دخلوا اليوم', s_plays:'مرات اللعب', s_best:'أعلى رقم', s_bestby:'أعلى رقم — ', none:'لا توجد بيانات', s_guests:'ضيوف لعبوا بلا حساب', guest:'ضيف', g_mobile:'ضيف بلا حساب · جوال', g_desktop:'ضيف بلا حساب · حاسوب', t_guests:'الضيوف',
   h_name:'الاسم', h_id:'الرقم', h_dept:'القسم', h_best:'أفضل نتيجة', h_plays:'مرات اللعب', h_time:'الوقت', h_score:'النتيجة', loc:'ar-OM-u-nu-latn', btn:'EN' },
  en: { title:'Admin Panel', gate:'Enter the admin passcode', enter:'Sign in', refresh:'Refresh', lock:'Lock', warn:'Firebase is not connected yet, so there is no data.', t_top:'Leaderboard', t_logins:'Login log', t_scores:'All scores', t_absent:'Not yet joined', search:'Search by name, employee ID or department',
   wipeBtn:'Reset records', wipeT:'Reset records', wipeP:'This is permanent and cannot be undone. You must enter the passcode again.', wAll:'All records', wOne:'One employee', wDate:'A specific date', wIdPh:'Employee ID or name', wCodePh:'Passcode to confirm', wCheck:'Preview', wCancel:'Cancel', wConfirm:'Delete permanently', wNoCfg:'Firebase is not connected', wBadCode:'Wrong passcode, or the admin account is not set up in Firebase', wNoEmp:'Pick a valid employee', wNoDate:'Pick a date', wNothing:'Nothing matches to reset', wPlan:(a,b)=>`This will delete ${a} score entries and reset ${b} records. Press “Delete permanently” to confirm.`, wDone:n=>`Reset complete (${n} operations)`, wFail:'Reset failed — check the Firebase rules', wTrunc:' (only the latest 1000 scores are processed)',
-  bad:'Wrong passcode', loading:'Loading…', upd:'Last updated: ', fail:'Could not reach the database', s_seen:'Employees who joined', s_today:'Joined today', s_plays:'Games played', s_best:'Top score', s_bestby:'Top score — ', none:'No data',
+  bad:'Wrong passcode', loading:'Loading…', upd:'Last updated: ', fail:'Could not reach the database', s_seen:'Employees who joined', s_today:'Joined today', s_plays:'Games played', s_best:'Top score', s_bestby:'Top score — ', none:'No data', s_guests:'Guests who played without an account', guest:'Guest', g_mobile:'Guest, no account · phone', g_desktop:'Guest, no account · computer', t_guests:'Guests',
   h_name:'Name', h_id:'ID', h_dept:'Department', h_best:'Best score', h_plays:'Games', h_time:'Time', h_score:'Score', loc:'en-GB', btn:'العربية' }
 };
 let lang = 'ar'; try { lang = localStorage.getItem('acg_admin_lang') === 'en' ? 'en' : 'ar'; } catch(e){}
@@ -160,21 +161,25 @@ async function load(){
   render();
 }
 function render(){
-  const nm = r => Online.nameOf(r.id, lang, r.name), dp = r => Online.deptOf(r.id, lang, r.dept);
-  const total = Object.keys(D.dir).length, seen = D.players.length, today = new Date().toDateString();
+  /* الضيوف (G-xxxxxx) يظهرون في كل السجلات بوسم «ضيف» ونوع الجهاز */
+  const G = r => Online.isGuest(r.id);
+  const nm = r => G(r) ? tr('guest') + ' #' + String(r.id).slice(2) : Online.nameOf(r.id, lang, r.name);
+  const dp = r => G(r) ? tr(/mobile/.test(r.dept) ? 'g_mobile' : 'g_desktop') : Online.deptOf(r.id, lang, r.dept);
+  const total = Object.keys(D.dir).length, seen = D.players.filter(p => !G(p)).length, guests = D.players.filter(G), today = new Date().toDateString();
   const todayN = new Set(D.logins.filter(x => x.at && x.at.toDateString() === today).map(x => x.id)).size;
   const best = D.players.slice().sort((a, b) => b.best - a.best)[0];
   const plays = D.players.reduce((n, p) => n + (p.plays || 0), 0);
-  $('stats').innerHTML = [['hot', seen + ' / ' + total, tr('s_seen')], ['ok', todayN, tr('s_today')], ['', plays, tr('s_plays')], ['gold', best && best.best > 0 ? best.best : '—', best && best.best > 0 ? tr('s_bestby') + esc(nm(best)) : tr('s_best')]]
+  $('stats').innerHTML = [['hot', seen + ' / ' + total, tr('s_seen')], ['ok', todayN, tr('s_today')], ['', plays, tr('s_plays')], ['', guests.length, tr('s_guests')], ['gold', best && best.best > 0 ? best.best : '—', best && best.best > 0 ? tr('s_bestby') + esc(nm(best)) : tr('s_best')]]
     .map(([c, n, l]) => `<div class="stat ${c}"><b>${n}</b><span>${l}</span></div>`).join('');
   const q = $('q').value.trim().toLowerCase(), hit = r => !q || (Object.values(r).join(' ') + ' ' + nm(r) + ' ' + dp(r)).toLowerCase().includes(q);
   const T = {
     top: [['#', tr('h_name'), tr('h_id'), tr('h_dept'), tr('h_best'), tr('h_plays')], () => D.players.filter(p => p.best > 0).sort((a, b) => b.best - a.best).filter(hit).map((p, i) => [i + 1, nm(p), p.id, dp(p), p.best, p.plays], i => i === 0)],
     logins: [[tr('h_time'), tr('h_name'), tr('h_id'), tr('h_dept')], () => D.logins.filter(hit).map(l => [fmt(l.at), nm(l), l.id, dp(l)])],
     scores: [[tr('h_time'), tr('h_name'), tr('h_id'), tr('h_dept'), tr('h_score')], () => D.scores.filter(hit).map(s => [fmt(s.at), nm(s), s.id, dp(s), s.score])],
+    guests: [[tr('h_name'), tr('h_dept'), tr('h_best'), tr('h_plays'), tr('h_time')], () => guests.slice().sort((a, b) => (b.last || 0) - (a.last || 0)).filter(hit).map(p => [nm(p), dp(p), p.best, p.plays, fmt(p.last)])],
     absent: [[tr('h_name'), tr('h_id'), tr('h_dept')], () => { const have = new Set(D.players.map(p => p.id)); return Object.entries(D.dir).filter(([id]) => !have.has(id)).map(([id, v]) => ({ id, name: v[0], dept: v[1] })).filter(hit).map(r => [nm(r), r.id, dp(r)]); }]
   }[tab];
-  const rows = T[1](), numCol = { top: [2, 4, 5], logins: [2], scores: [2, 4], absent: [1] }[tab];
+  const rows = T[1](), numCol = { top: [2, 4, 5], logins: [2], scores: [2, 4], guests: [2, 3], absent: [1] }[tab];
   $('th').innerHTML = '<tr>' + T[0].map(h => `<th>${h}</th>`).join('') + '</tr>';
   $('tb').innerHTML = rows.length ? rows.map(r => `<tr${tab === 'top' && r[0] === 1 ? ' class="top1"' : ''}>` + r.map((c, i) => `<td data-l="${esc(T[0][i])}" class="${numCol.includes(i) ? 'n' : ''}${tab === 'top' && i === 0 ? ' rk' : ''}">${esc(c)}</td>`).join('') + '</tr>').join('') : `<tr><td class="empty" colspan="${T[0].length}">${tr('none')}</td></tr>`;
 }

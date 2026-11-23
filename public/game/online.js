@@ -3,9 +3,17 @@
 (function(root){
 'use strict';
 const CFG = { projectId: 'game1-21af4', apiKey: 'AIzaSyBa5CcYG3aXHVZ1p6NGjy23MqBDHSjAGdY' };
-const KEY = 'acg_emp';
+const KEY = 'acg_emp', GKEY = 'acg_guest';
 const ADMIN_EMAIL = 'admin@game1.app';
-let emp = null, dir = null, tok = null;
+let emp = null, dir = null, tok = null, guestLogged = false;
+/* الضيف (بلا رقم وظيفي): رقم ثابت لكل جهاز G-xxxxxx يُحفظ محلياً، فتظهر جلساته ونتائجه في صفحة الإدارة */
+const isGuest = id => /^G-/.test(String(id || ''));
+function guestMe(){
+  let id = null; try { id = localStorage.getItem(GKEY); } catch(e){}
+  if(!isGuest(id)){ id = 'G-' + String(Math.floor(100000 + Math.random() * 900000)); try { localStorage.setItem(GKEY, id); } catch(e){} }
+  const mobile = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  return { id, name: 'Guest ' + id.slice(2), dept: mobile ? 'guest/mobile' : 'guest/desktop', guest: true };
+}
 
 const base = () => `https://firestore.googleapis.com/v1/projects/${CFG.projectId}/databases/(default)/documents`;
 const on = () => !!(CFG.projectId && CFG.apiKey);
@@ -24,7 +32,17 @@ const norm = s => String(s || '').replace(/[٠-٩]/g, c => '٠١٢٣٤٥٦٧٨٩
 
 const Online = {
   config: CFG, enabled: on,
-  directory,
+  directory, isGuest,
+  /* من يلعب الآن: الموظف المسجَّل، أو هوية الضيف إن اختار اللعب كضيف */
+  player(){ return this.user() || (this.guest ? guestMe() : null); },
+  /* يُستدعى عند بدء كل وردية: يسجّل دخول الضيف مرة واحدة في الجلسة (الموظف يُسجَّل عند إدخال رقمه) */
+  async playStart(){
+    if(!on() || this.user() || !this.guest || guestLogged) return;
+    guestLogged = true;
+    const g = guestMe(), now = new Date();
+    send('POST', url('logins'), encDoc({ id: g.id, name: g.name, dept: g.dept, at: now })).catch(() => {});
+    await this._touch(now, g);
+  },
   user(){ if(emp) return emp; try { emp = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e){} return emp; },
   /* الاسم/القسم بحسب اللغة (ar افتراضياً) من الدليل المحمّل */
   nameOf(id, lang, fallback){ const r = dir && dir[id]; return r ? (lang === 'en' ? r[0] : r[2] || r[0]) : (fallback || id); },
@@ -43,20 +61,22 @@ const Online = {
     }
     return emp;
   },
-  async _touch(now){
-    const u = url('players/' + emp.id); let cur = null;
+  async _touch(now, who){
+    const p = who || emp, u = url('players/' + p.id); let cur = null;
     try { cur = dec(await send('GET', u)); } catch(e){}
-    const doc = { id: emp.id, name: emp.name, dept: emp.dept, best: cur ? cur.best : 0, plays: cur ? cur.plays : 0, logins: (cur ? cur.logins : 0) + 1, last: now };
+    const doc = { id: p.id, name: p.name, dept: p.dept, best: cur ? cur.best : 0, plays: cur ? cur.plays : 0, logins: (cur ? cur.logins : 0) + 1, last: now };
     await send('PATCH', u, encDoc(doc));
   },
   /* يسجل نتيجة اللعبة ويرفع الرقم القياسي إن تجاوزه */
   async submit(score){
-    if(!on() || !emp || !(score > 0)) return;
-    const now = new Date(), u = url('players/' + emp.id); let cur = null;
+    const p = this.player();
+    if(!on() || !p || !(score >= 0)) return;
+    if(!p.guest && !(score > 0)) return;   // الضيف تُسجَّل نتيجته حتى لو صفراً ليظهر أنه لعب
+    const now = new Date(), u = url('players/' + p.id); let cur = null;
     try { cur = dec(await send('GET', u)); } catch(e){}
-    send('POST', url('scores'), encDoc({ id: emp.id, name: emp.name, dept: emp.dept, score, at: now })).catch(() => {});
+    send('POST', url('scores'), encDoc({ id: p.id, name: p.name, dept: p.dept, score, at: now })).catch(() => {});
     const best = Math.max(score, cur ? cur.best : 0);
-    await send('PATCH', u, encDoc({ id: emp.id, name: emp.name, dept: emp.dept, best, plays: (cur ? cur.plays : 0) + 1, logins: cur ? cur.logins : 1, last: now }));
+    await send('PATCH', u, encDoc({ id: p.id, name: p.name, dept: p.dept, best, plays: (cur ? cur.plays : 0) + 1, logins: cur ? cur.logins : 1, last: now }));
   },
   async _query(coll, field, limit){
     const r = await send('POST', `${base()}:runQuery?key=${CFG.apiKey}`, { structuredQuery: { from: [{ collectionId: coll }], orderBy: [{ field: { fieldPath: field }, direction: 'DESCENDING' }], limit } });
@@ -90,7 +110,8 @@ const Online = {
     }
     return writes.length;
   },
-  async top(n){ if(!on()) return []; return (await this._query('players', 'best', n || 10)).filter(p => p.best > 0); },
+  /* لوحة المتصدرين العامة للموظفين فقط؛ الضيوف يظهرون في صفحة الإدارة */
+  async top(n){ if(!on()) return []; return (await this._query('players', 'best', (n || 10) + 20)).filter(p => p.best > 0 && !isGuest(p.id)).slice(0, n || 10); },
   async logins(n){ if(!on()) return []; return this._query('logins', 'at', n || 200); },
   async scores(n){ if(!on()) return []; return this._query('scores', 'at', n || 200); },
   async players(n){ if(!on()) return []; return this._query('players', 'last', n || 500); }
