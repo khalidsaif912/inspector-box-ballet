@@ -4,3 +4,5 @@
   (https://creativecommons.org/licenses/by/4.0/). Source: https://sketchfab.com/3d-models/low-poly-forklift-truck-81b895de490646de8c6fb1ba03099e08
   Changes: repacked from glTF to a single GLB; scaled, re-centred and positioned in `game.js`.
 - `mixamo-worker.glb`, `mixamo-timmy.glb` — characters and animations from Mixamo (Adobe), converted to GLB.
+- `inspector-resto.jpg` — restoration atlas for `inspector-mx.glb` (front photo cleaned of its background halo +
+  a reconstructed back view). Built from the model's own texture by `scripts/inspector-resto/build.py`; the GLB is unchanged.
