@@ -1664,7 +1664,7 @@ toast('🔥 وضع الحمى! النقاط مضاعفة ×2', '#ffd54a');
 function doDash(){
 if(dashCD > 0 || dashT > 0 || !run || introHold || fire.keypad) return;
 dashT = dashCfg().t; dashCD = dashCfg().cd;
-addShake(.22); snd('dash');
+addShake(.22); engineSnd(Math.min(FODQ.n, 3));
 $('dash-fx').classList.add('on');
 setDashButton();
 }
@@ -2770,40 +2770,108 @@ if(cardsEl.root) cardsEl.root.addEventListener('pointerdown', e => e.stopPropaga
 
 /* ===== تجميعات FOD: ٣ خانات أعلى الشاشة ترفع مستوى الاندفاع مع احتفال عند كل جسم ===== */
 const FOD_NAMES = ['١', '٢', '٣', '٤'];
-/* ===== زر الاندفاع = محرك طائرة نفاث يتطور مع كل ترقية FOD =====
-   ٠: مروحة فولاذية بسيطة • ١: برونزية بحلقة موجِّهات • ٢: تيتانيوم بشفرات مقوّسة وتوهج أزرق • ٣: ذهبية بلهب احتراق لاحق */
+/* ===== زر الاندفاع = مسرّع يتطور مع كل ترقية FOD =====
+   ٠: محرك مروحي كلاسيكي (غطاء أحمر، أسطوانات نجمية، مروحة بيضاء بطرفين أحمرين)
+   ١: توربوفان تيتانيوم بشفرات مقوّسة • ٢: توربوفان رقمي بشبكة سيان متوهجة
+   ٣: مفاعل بلازما مدرّع بحلقة احتراق برتقالية */
 const ENG_LV = [
-  { n: 5,  sw: 0,   rim: '#7d8b98', rim2: '#3c4650', bl: '#aeb9c3', hub: '#d0d6dc', glow: 'rgba(120,170,220,0)',  spin: 900 },
-  { n: 8,  sw: .35, rim: '#e0a066', rim2: '#7a4520', bl: '#d9b089', hub: '#f2c48f', glow: 'rgba(255,150,70,.35)', spin: 1300 },
-  { n: 12, sw: .7,  rim: '#e8eef2', rim2: '#6b7e8c', bl: '#cfe0ec', hub: '#ffffff', glow: 'rgba(90,190,255,.6)',  spin: 1800 },
-  { n: 16, sw: 1,   rim: '#ffd84d', rim2: '#9a6a00', bl: '#ffe48a', hub: '#fff6cf', glow: 'rgba(255,120,30,.85)', spin: 2500 }
+  { id: 'prop',  ar: 'المحرك المروحي',    en: 'Prop engine',       bl: '#f2f4f5', glow: 'rgba(255,80,70,.35)',  spin: 1500, fade: .7 },
+  { id: 'fan',   ar: 'توربوفان التيتانيوم', en: 'Titanium turbofan', bl: '#e3e9ed', glow: 'rgba(205,222,235,.5)', spin: 1800, fade: .6 },
+  { id: 'cyber', ar: 'التوربوفان الرقمي',  en: 'Digital turbofan',  bl: '#b8f2ff', glow: 'rgba(63,227,255,.8)',  spin: 2200, fade: .6 },
+  { id: 'core',  ar: 'مفاعل البلازما',     en: 'Plasma reactor',    bl: '#ffb347', glow: 'rgba(255,150,40,.9)',  spin: 700,  fade: 0 }
 ];
-const ENG = { a: 0, w: 0, lv: -1, fan: null, blades: null, blur: null, glow: null };
+const engName = lv => I18N.T(ENG_LV[lv].ar, ENG_LV[lv].en);
+const ENG = { a: 0, w: 0, lv: -1, fan: null, blades: null, blur: null, glow: null, net: null };
+/* نقطة على دائرة: الزاوية بالدرجات من الأعلى مع عقارب الساعة */
+const eP = (r, d) => { const a = d * Math.PI / 180; return [(24 + r * Math.sin(a)).toFixed(2), (24 - r * Math.cos(a)).toFixed(2)]; };
+const eRot = (d, s) => `<g transform="rotate(${d.toFixed(2)} 24 24)">${s}</g>`;
 function engineSVG(lv){
-  const c = ENG_LV[lv], n = c.n, hw = Math.max(1.05, 2.6 - n * .09), sw = c.sw * 6;
-  /* شفرة واحدة متجهة للأعلى من المحور (r≈5) إلى الطرف (r≈17)، تُقوَّس للأمام في المستويات العليا */
-  const blade = `M${24 - hw * .7} 19 Q${24 - hw + sw * .4} 13 ${24 - hw + sw} 7.2 L${24 + hw + sw} 7.6 Q${24 + hw + sw * .5} 13.5 ${24 + hw * .7} 19 Z`;
-  let bl = '';
-  for(let i = 0; i < n; i++) bl += `<path d="${blade}" transform="rotate(${(i * 360 / n).toFixed(2)} 24 24)"/>`;
-  const stator = lv >= 1 ? `<circle cx="24" cy="24" r="19.6" fill="none" stroke="${c.rim2}" stroke-width=".9" stroke-dasharray="1.2 1.6" opacity=".9"/>` : '';
-  const flame = lv >= 3 ? `<circle class="eflame" cx="24" cy="24" r="23" fill="none" stroke="url(#eFl)" stroke-width="2.2"/>` : '';
-  const rivets = lv >= 2 ? Array.from({ length: 12 }, (_, i) => { const t = i * Math.PI / 6; return `<circle cx="${(24 + Math.cos(t) * 21.3).toFixed(2)}" cy="${(24 + Math.sin(t) * 21.3).toFixed(2)}" r=".55" fill="${c.rim2}"/>`; }).join('') : '';
-  return `<svg viewBox="0 0 48 48" aria-hidden="true"><defs>
-<radialGradient id="eIn" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${lv >= 2 ? '#0d2a44' : '#141a20'}"/><stop offset=".8" stop-color="#05080b"/><stop offset="1" stop-color="${c.glow}"/></radialGradient>
-<linearGradient id="eRim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.rim}"/><stop offset=".55" stop-color="${c.rim2}"/><stop offset="1" stop-color="${c.rim}"/></linearGradient>
-<radialGradient id="eHub" cx="38%" cy="32%" r="70%"><stop offset="0" stop-color="${c.hub}"/><stop offset="1" stop-color="${c.rim2}"/></radialGradient>
-<radialGradient id="eBlur" cx="50%" cy="50%" r="50%"><stop offset=".25" stop-color="${c.bl}" stop-opacity=".1"/><stop offset=".8" stop-color="${c.bl}" stop-opacity=".55"/><stop offset="1" stop-color="${c.bl}" stop-opacity=".15"/></radialGradient>
-${lv >= 3 ? '<linearGradient id="eFl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff2a8"/><stop offset=".5" stop-color="#ff7a1a"/><stop offset="1" stop-color="#ff2d55"/></linearGradient>' : ''}
-</defs>
-${flame}
-<circle class="eglow" cx="24" cy="24" r="21.5" fill="none" stroke="${c.glow}" stroke-width="3"/>
-<circle cx="24" cy="24" r="21" fill="url(#eRim)" stroke="rgba(0,0,0,.55)" stroke-width="1"/>
-<circle cx="24" cy="24" r="18.4" fill="url(#eIn)"/>
-${stator}${rivets}
-<circle class="eblur" cx="24" cy="24" r="17.6" fill="url(#eBlur)" opacity="0"/>
-<g class="efan"><g class="eblades" fill="${c.bl}" stroke="rgba(0,0,0,.45)" stroke-width=".5" stroke-linejoin="round">${bl}</g>
-<circle cx="24" cy="24" r="5.2" fill="url(#eHub)" stroke="rgba(0,0,0,.5)" stroke-width=".6"/>
-<path d="M24 24 m0 -4.6 a4.6 4.6 0 0 1 3.2 7.9 a2.6 2.6 0 0 0 -3.2 -3.3" fill="none" stroke="rgba(255,255,255,.85)" stroke-width=".9" stroke-linecap="round"/></g>
+  const c = ENG_LV[lv];
+  const blurDef = `<radialGradient id="egBlur" cx="50%" cy="50%" r="50%"><stop offset=".2" stop-color="${c.bl}" stop-opacity="${lv === 3 ? .55 : .08}"/><stop offset=".8" stop-color="${c.bl}" stop-opacity=".5"/><stop offset="1" stop-color="${c.bl}" stop-opacity=".1"/></radialGradient>`;
+  const spinDef = `<radialGradient id="egSpin" cx="38%" cy="32%" r="70%"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#c9ced3"/><stop offset="1" stop-color="#5f676e"/></radialGradient>`;
+  let defs = blurDef + spinDef, body = '', fan = '', after = '', blurR = 17.6;
+
+  if(lv === 0){
+    /* محرك نجمي بغطاء أحمر ومروحة ثنائية تتجاوز الإطار */
+    defs += `<radialGradient id="egCowl" cx="40%" cy="32%" r="70%"><stop offset="0" stop-color="#ff7a6b"/><stop offset=".55" stop-color="#d81b1b"/><stop offset="1" stop-color="#6e0909"/></radialGradient>
+<linearGradient id="egBlade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#e8ebed"/><stop offset="1" stop-color="#aab2b9"/></linearGradient>`;
+    let cyl = '';
+    for(let i = 0; i < 9; i++){
+      let fins = '';
+      for(let k = 0; k < 4; k++) fins += `<line x1="22.5" x2="25.5" y1="${(10 + k * 1.7).toFixed(1)}" y2="${(10 + k * 1.7).toFixed(1)}" stroke="#8c959d" stroke-width=".45"/>`;
+      cyl += eRot(i * 40, `<rect x="22.4" y="8.6" width="3.2" height="7.6" rx="1" fill="#3a4047" stroke="#111" stroke-width=".35"/>${fins}`);
+      cyl += eRot(i * 40 + 20, `<line x1="24" y1="10.5" x2="24" y2="17" stroke="#6d757c" stroke-width=".55" stroke-linecap="round"/>`);
+    }
+    body = `<circle cx="24" cy="24" r="21" fill="url(#egCowl)" stroke="rgba(0,0,0,.6)" stroke-width="1"/>
+<path d="M9.5 15 A17 17 0 0 1 30 5.6" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.4" stroke-linecap="round"/>
+<circle cx="24" cy="24" r="16.4" fill="#141619" stroke="#4a0606" stroke-width="1"/>${cyl}
+<circle cx="24" cy="24" r="7.2" fill="#262a2f" stroke="#0b0c0e" stroke-width=".6"/>`;
+    const blade = `<path d="M22.6 21.5 C21.4 15 21.1 6 22 -.4 Q24 -2.2 26 -.4 C26.9 6 26.6 15 25.4 21.5 Z" fill="url(#egBlade)" stroke="rgba(0,0,0,.35)" stroke-width=".4"/>
+<path d="M22 -.4 Q24 -2.2 26 -.4 L26.3 2.8 L21.7 2.8 Z" fill="#e53935"/>`;
+    fan = `<g class="eblades">${eRot(8, blade)}${eRot(188, blade)}</g>
+<circle cx="24" cy="24" r="4.8" fill="url(#egSpin)" stroke="rgba(0,0,0,.5)" stroke-width=".5"/>`;
+    blurR = 25.4;
+  } else if(lv <= 2){
+    /* توربوفان: إطار تيتانيوم وشفرات منجلية ومخروط داكن؛ المستوى ٢ يضيف شبكة رقمية سيان */
+    const n = lv === 1 ? 18 : 22, cy = lv === 2;
+    defs += `<linearGradient id="egRim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7f9"/><stop offset=".5" stop-color="#7f8b94"/><stop offset="1" stop-color="#dfe6eb"/></linearGradient>
+<radialGradient id="egIn" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${cy ? '#0c2a3c' : '#20272e'}"/><stop offset="1" stop-color="#05080b"/></radialGradient>
+<linearGradient id="egFan" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fbfdfe"/><stop offset=".55" stop-color="${cy ? '#bcd6e2' : '#bcc6ce'}"/><stop offset="1" stop-color="#5f6b75"/></linearGradient>`;
+    let net = '';
+    if(cy){
+      /* شبكة مضلعات وخطوط دارات ثابتة (حتمية) حول الإطار */
+      const pts = Array.from({ length: 28 }, (_, i) => eP(20.6 + 2.8 * Math.abs(Math.sin(i * 2.37)), i * 360 / 28 + 6 * Math.sin(i * 1.7)));
+      let l = '';
+      pts.forEach((p, i) => { const q = pts[(i + 1) % 28], s = pts[(i + 3) % 28]; l += `M${p[0]} ${p[1]}L${q[0]} ${q[1]}` + (i % 2 ? `M${p[0]} ${p[1]}L${s[0]} ${s[1]}` : ''); });
+      const dots = pts.filter((_, i) => i % 3 === 0).map(p => `<circle cx="${p[0]}" cy="${p[1]}" r=".55" fill="#bff6ff"/>`).join('');
+      const trace = [64, 92, 118].map(d => { const a = eP(21.4, d), b = eP(25.5, d), e = eP(25.5, d + 9); return `<path d="M${a[0]} ${a[1]}L${b[0]} ${b[1]}L${e[0]} ${e[1]}" fill="none"/><circle cx="${e[0]}" cy="${e[1]}" r=".6" fill="#3fe3ff"/>`; }).join('');
+      net = `<g class="enet" stroke="#3fe3ff" stroke-width=".32" stroke-opacity=".75" fill="none"><path d="${l}"/>${dots}${trace}</g>`;
+    }
+    body = `${net}<circle cx="24" cy="24" r="21" fill="url(#egRim)" stroke="rgba(0,0,0,.55)" stroke-width="1"/>
+<circle cx="24" cy="24" r="19" fill="#2a3138" stroke="#0d1013" stroke-width=".5"/>
+<circle cx="24" cy="24" r="18.5" fill="url(#egIn)"/>
+${cy ? '<circle cx="24" cy="24" r="20" fill="none" stroke="#3fe3ff" stroke-width=".6" stroke-dasharray="2 1.2" opacity=".85"/>' : ''}`;
+    const blade = `<path d="M23 18 C22.1 13.5 22 9.5 23.4 5.8 L27.9 6.6 C27 10.2 26.5 14 25.4 18.1 Z" fill="url(#egFan)" stroke="rgba(0,0,0,.42)" stroke-width=".32" stroke-linejoin="round"/>`;
+    let bl = '';
+    for(let i = 0; i < n; i++) bl += eRot(i * 360 / n, blade);
+    fan = `<g class="eblades">${bl}</g>
+<circle cx="24" cy="24" r="6.6" fill="#c7cfd5" stroke="rgba(0,0,0,.5)" stroke-width=".5"/>
+<circle cx="24" cy="24" r="5" fill="#0b0f13"/>
+<circle cx="24" cy="24" r="1.7" fill="${cy ? '#3fe3ff' : '#5d7489'}"/>
+<path d="M21.4 21.6 A3.6 3.6 0 0 1 25.8 20.6" fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".6" stroke-linecap="round"/>`;
+    blurR = 18.2;
+  } else {
+    /* مفاعل: درع معدني بكتل تثبيت، حلقة احتراق برتقالية دوّارة، ومحور فضي */
+    defs += `<radialGradient id="egArm" cx="42%" cy="35%" r="70%"><stop offset="0" stop-color="#6a737b"/><stop offset=".6" stop-color="#2c3238"/><stop offset="1" stop-color="#121518"/></radialGradient>
+<radialGradient id="egCore" gradientUnits="userSpaceOnUse" cx="24" cy="24" r="15"><stop offset=".55" stop-color="#fff3c2"/><stop offset=".75" stop-color="#ffab2e"/><stop offset="1" stop-color="#d9480a"/></radialGradient>
+<linearGradient id="eFl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff2a8"/><stop offset=".5" stop-color="#ff8a1a"/><stop offset="1" stop-color="#ff3d00"/></linearGradient>`;
+    let plates = '', glints = '';
+    for(let i = 0; i < 8; i++) plates += eRot(i * 45 + 22.5, `<rect x="21.2" y=".9" width="5.6" height="4.6" rx=".8" fill="#4c545c" stroke="#15181b" stroke-width=".5"/><line x1="21.9" x2="26.1" y1="1.8" y2="1.8" stroke="#9aa3ab" stroke-width=".4"/>`);
+    [[200, 230], [300, 318], [20, 40], [110, 128]].forEach(([a0, a1]) => { const p = eP(21.6, a0), q = eP(21.6, a1); glints += `<path d="M${p[0]} ${p[1]} A21.6 21.6 0 0 1 ${q[0]} ${q[1]}"/>`; });
+    body = `<circle class="eflame" cx="24" cy="24" r="23.3" fill="none" stroke="url(#eFl)" stroke-width="1.6"/>
+<circle cx="24" cy="24" r="21.6" fill="url(#egArm)" stroke="#0a0c0e" stroke-width=".8"/>${plates}
+<g fill="none" stroke="#ffae3a" stroke-width="1.1" stroke-linecap="round" opacity=".95">${glints}</g>
+<circle cx="24" cy="24" r="16.6" fill="#16191d" stroke="#6d757d" stroke-width=".9"/>`;
+    let seg = '';
+    for(let i = 0; i < 12; i++){
+      const a = i * 30, p1 = eP(8.6, a + 3), p2 = eP(15, a + 3), p3 = eP(15, a + 26), p4 = eP(8.6, a + 26);
+      seg += `<path d="M${p1[0]} ${p1[1]}L${p2[0]} ${p2[1]}A15 15 0 0 1 ${p3[0]} ${p3[1]}L${p4[0]} ${p4[1]}A8.6 8.6 0 0 0 ${p1[0]} ${p1[1]}Z"/>`;
+    }
+    let vanes = '';
+    for(let i = 0; i < 6; i++) vanes += eRot(i * 60 + 15, '<rect x="23.2" y="8.4" width="1.6" height="7" rx=".5"/>');
+    fan = `<g class="eblades" fill="url(#egCore)">${seg}</g>
+<g fill="#30363c" stroke="#0e1012" stroke-width=".4">${vanes}</g>
+<circle cx="24" cy="24" r="7.6" fill="#2a2f35" stroke="#8a929a" stroke-width=".7"/>
+<circle cx="24" cy="24" r="5.4" fill="url(#egSpin)"/>
+<circle cx="24" cy="24" r="3.1" fill="#d5dade" stroke="#59616a" stroke-width=".6"/>
+<circle cx="24" cy="24" r="1.4" fill="#7f8890"/>`;
+    blurR = 15.2;
+  }
+  return `<svg viewBox="0 0 48 48" aria-hidden="true"><defs>${defs}</defs>
+<circle class="eglow" cx="24" cy="24" r="21.8" fill="none" stroke="${c.glow}" stroke-width="3"/>
+${body}
+<circle class="eblur" cx="24" cy="24" r="${blurR}" fill="url(#egBlur)" opacity="0"/>
+<g class="efan">${fan}</g>${after}
 </svg>`;
 }
 function engineRender(){
@@ -2811,26 +2879,96 @@ function engineRender(){
   const lv = Math.min(FODQ.n, 3);
   if(ENG.lv === lv && ENG.fan) return;
   ENG.lv = lv; b.innerHTML = engineSVG(lv);
-  ENG.fan = b.querySelector('.efan'); ENG.blades = b.querySelector('.eblades'); ENG.blur = b.querySelector('.eblur'); ENG.glow = b.querySelector('.eglow');
+  b.dataset.eng = ENG_LV[lv].id;
+  b.setAttribute('aria-label', I18N.T('اندفاع — ', 'Dash — ') + engName(lv)); b.title = engName(lv);
+  ENG.fan = b.querySelector('.efan'); ENG.blades = b.querySelector('.eblades'); ENG.blur = b.querySelector('.eblur'); ENG.glow = b.querySelector('.eglow'); ENG.net = b.querySelector('.enet');
 }
-/* الدوران: يقلع بسرعة عند الضغط (سرعة كل مستوى أعلى) ثم يتباطأ تدريجياً؛ قرص ضبابي يخفي تقطّع الشفرات عند السرعات العالية */
+/* الدوران: يقلع بسرعة عند الضغط ثم يتباطأ؛ قرص ضبابي يخفي تقطّع الشفرات، والمفاعل يزداد توهجاً بدل أن يختفي */
 function engineTick(dt){
   if(!ENG.fan) return;
-  const c = ENG_LV[ENG.lv], target = dashT > 0 ? c.spin : (run ? 40 : 0);
+  const c = ENG_LV[ENG.lv], target = dashT > 0 ? c.spin : (run ? (ENG.lv === 3 ? 30 : 40) : 0);
   ENG.w += (target - ENG.w) * Math.min(1, dt * (target > ENG.w ? 14 : 1.6));
   ENG.a = (ENG.a + ENG.w * dt) % 360;
   ENG.fan.setAttribute('transform', 'rotate(' + ENG.a.toFixed(1) + ' 24 24)');
-  const f = Math.min(1, ENG.w / 1100);
-  ENG.blades.style.opacity = (1 - .6 * f).toFixed(2);
+  const f = Math.min(1, ENG.w / (ENG.lv === 3 ? 600 : 1100));
+  ENG.blades.style.opacity = (1 - c.fade * f).toFixed(2);
   ENG.blur.setAttribute('opacity', (.9 * f).toFixed(2));
   ENG.glow.setAttribute('stroke-width', (2 + 3 * f).toFixed(2));
+  if(ENG.net) ENG.net.setAttribute('transform', 'rotate(' + (-ENG.a * .04).toFixed(2) + ' 24 24)');
+}
+/* ===== أصوات المسرّعات: توليف Web Audio أصلي لكل محرك، وتُفصل كل العقد بعد انتهائها ===== */
+let engNoise = null;
+function engNoiseBuf(){
+  if(engNoise && engNoise.sampleRate === actx.sampleRate) return engNoise;
+  const len = (actx.sampleRate * 1.3) | 0, b = actx.createBuffer(1, len, actx.sampleRate), d = b.getChannelData(0);
+  for(let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  return (engNoise = b);
+}
+function engineSnd(lv){
+  if(!soundEnabled || !actx || document.hidden) return;
+  const t = actx.currentTime + .005, nodes = [], srcs = [];
+  const mk = n => { nodes.push(n); return n; };
+  const osc = (type, f) => { const o = mk(actx.createOscillator()); o.type = type; o.frequency.setValueAtTime(f, t); srcs.push(o); return o; };
+  const amp = v => { const g = mk(actx.createGain()); g.gain.setValueAtTime(v, t); return g; };
+  const filt = (type, f, q) => { const b = mk(actx.createBiquadFilter()); b.type = type; b.frequency.setValueAtTime(f, t); b.Q.value = q || 1; return b; };
+  const noise = () => { const s = mk(actx.createBufferSource()); s.buffer = engNoiseBuf(); srcs.push(s); return s; };
+  /* غلاف: صعود ← ثبات ← خفوت أسي، مع بداية مؤجلة اختيارية */
+  const env = (g, peak, at, a, hold, rel) => { g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(peak, t + at + a); g.gain.setValueAtTime(peak, t + at + hold); g.gain.exponentialRampToValueAtTime(.0001, t + at + hold + rel); };
+  const chain = (...ns) => { for(let i = 0; i < ns.length - 1; i++) ns[i].connect(ns[i + 1]); };
+  const out = amp(.9); out.connect(actx.destination);
+  let dur;
+  if(lv === 0){
+    /* مروحي: سعال المُشغِّل ثم احتراقات مكبس تتسارع (نبض مربع يقطّع منشارياً مفلتراً) */
+    const o = osc('sawtooth', 46); o.frequency.exponentialRampToValueAtTime(98, t + .7);
+    const lfo = osc('square', 12); lfo.frequency.exponentialRampToValueAtTime(44, t + .7);
+    const am = amp(.5), depth = amp(.5), g = amp(0);
+    chain(lfo, depth); depth.connect(am.gain);
+    chain(o, filt('lowpass', 560, 2.5), am, g, out); env(g, .2, 0, .04, .6, .32);
+    const ng = amp(0); chain(noise(), filt('bandpass', 850, 1.4), ng, out); env(ng, .16, 0, .005, .05, .12);
+    dur = 1;
+  } else if(lv === 1){
+    /* توربوفان: صفير توربيني صاعد + هسيس هواء يتسع + هدير منخفض */
+    const w1 = osc('triangle', 380), w2 = osc('sine', 571);
+    w1.frequency.exponentialRampToValueAtTime(2300, t + .6); w2.frequency.exponentialRampToValueAtTime(3450, t + .6);
+    const wg = amp(0); chain(w1, wg); chain(w2, wg); wg.connect(out); env(wg, .06, 0, .08, .5, .35);
+    const bp = filt('bandpass', 300, .8); bp.frequency.exponentialRampToValueAtTime(2800, t + .55);
+    const ng = amp(0); chain(noise(), bp, ng, out); env(ng, .28, 0, .12, .42, .4);
+    const r = osc('sine', 62), rg = amp(0); chain(r, rg, out); env(rg, .14, 0, .05, .5, .3);
+    dur = 1;
+  } else if(lv === 2){
+    /* رقمي: صفير متدرّج بخطوات (كمّي) + نغمات بيانات متتابعة + هسيس عالي النبرة */
+    const w = osc('square', 500), lp = filt('lowpass', 3200, 1), wg = amp(0);
+    for(let i = 1; i <= 14; i++) w.frequency.setValueAtTime(500 * Math.pow(1.13, i), t + i * .038);
+    chain(w, lp, wg, out); env(wg, .045, 0, .02, .55, .25);
+    const b = osc('sine', 1760), bg = amp(0); chain(b, bg, out);
+    bg.gain.setValueAtTime(0, t);
+    [1760, 2349, 3136, 4186].forEach((f, i) => { const s = t + .06 + i * .085; b.frequency.setValueAtTime(f, s); bg.gain.setValueAtTime(.07, s); bg.gain.setValueAtTime(0, s + .045); });
+    const hp = filt('bandpass', 1200, 1.2); hp.frequency.exponentialRampToValueAtTime(5200, t + .6);
+    const ng = amp(0); chain(noise(), hp, ng, out); env(ng, .16, 0, .1, .45, .3);
+    const r = osc('triangle', 80), rg = amp(0); chain(r, rg, out); env(rg, .12, 0, .04, .4, .3);
+    dur = .95;
+  } else {
+    /* مفاعل: طنين نووي عميق + شحن رنّان يتصاعد + انفجار اشتعال مع لمعان */
+    const sub = osc('sine', 38), sg = amp(0); sub.frequency.exponentialRampToValueAtTime(66, t + .9);
+    chain(sub, sg, out); env(sg, .3, 0, .1, .8, .3);
+    const saw = osc('sawtooth', 70); saw.frequency.exponentialRampToValueAtTime(300, t + .55);
+    const lp = filt('lowpass', 160, 9); lp.frequency.exponentialRampToValueAtTime(2600, t + .55);
+    const cg = amp(0); chain(saw, lp, cg, out); env(cg, .09, 0, .3, .3, .25);
+    const ng = amp(0), nl = filt('lowpass', 2200, .7); chain(noise(), nl, ng, out); env(ng, .34, .52, .01, .08, .5);
+    const sh = osc('sine', 1250), tr = osc('sine', 22), td = amp(.012), shg = amp(0);
+    sh.frequency.exponentialRampToValueAtTime(2500, t + 1); chain(tr, td); td.connect(shg.gain);
+    chain(sh, shg, out); env(shg, .025, .5, .05, .25, .4);
+    dur = 1.25;
+  }
+  let left = srcs.length;
+  srcs.forEach(s => { s.onended = () => { if(--left === 0) nodes.forEach(n => { try { n.disconnect(); } catch(e){} }); }; s.start(t); s.stop(t + dur); });
 }
 function fodRender(){
   engineRender();
   const el = $('fod-col'); if(!el) return;
   el.dataset.lv = FODQ.n; el.querySelectorAll('.fs').forEach((s, i) => s.classList.toggle('on', i < FODQ.n));
   const b = $('dash-btn'); if(b) b.dataset.lv = FODQ.n;
-  const l = $('fod-lv'); if(l) l.textContent = I18N.T('اندفاع ⚡ ' + FOD_NAMES[FODQ.n] + '/٤', 'Dash ⚡ ' + (FODQ.n + 1) + '/4');
+  const l = $('fod-lv'); if(l) l.textContent = engName(Math.min(FODQ.n, 3)) + ' ' + I18N.T(FOD_NAMES[FODQ.n] + '/٤', (FODQ.n + 1) + '/4');
 }
 engineRender();
 function fodCollect(){
@@ -2847,7 +2985,7 @@ function fodCollect(){
     fwShow(FODQ.n === 3 ? 5 : FODQ.n + 1);
     const c = dashCfg();
     spawnFloatTag('⚡ ' + I18N.T('المستوى ', 'Level ') + (FODQ.n + 1), '#ffd54a', 'big');
-    toast(I18N.T('⚡ تطوّر الاندفاع! المستوى ' + (FODQ.n + 1) + ' — مدة ' + c.t + ' ث وأسرع ×' + c.k, '⚡ Dash upgraded! Level ' + (FODQ.n + 1) + ' — ' + c.t + 's and ×' + c.k + ' faster'), '#ffd54a');
+    toast(I18N.T('⚡ مسرّع جديد: ' + engName(FODQ.n) + ' — المستوى ' + (FODQ.n + 1) + ' — مدة ' + c.t + ' ث وأسرع ×' + c.k, '⚡ New booster: ' + engName(FODQ.n) + ' — Level ' + (FODQ.n + 1) + ' — ' + c.t + 's and ×' + c.k + ' faster'), '#ffd54a');
     if(FODQ.n === 3) tip('fodmax', I18N.T('🏆 اكتملت تجميعات FOD — اندفاع بأقصى مستوى', '🏆 FOD collection complete — max dash'), '#ffd54a');
   } else {
     snd('ok'); fwShow(1);
