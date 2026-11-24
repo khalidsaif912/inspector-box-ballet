@@ -1651,8 +1651,11 @@ screenFlash.t = setTimeout(() => { el.className = ''; }, 340);
 }
 function setDashButton(){
 const b = $('dash-btn'); if(!b) return;
-b.classList.toggle('cool', dashCD > 0);
-b.style.setProperty('--cd', (dashCD > 0 ? (dashCD / dashCfg().cd) * 100 : 0) + '%');
+/* أثناء الاندفاع: برتقالي متوهج بدل رمادي التبريد */
+const boosting = dashT > 0;
+b.classList.toggle('boosting', boosting);
+b.classList.toggle('cool', dashCD > 0 && !boosting);
+b.style.setProperty('--cd', (dashCD > 0 && !boosting ? (dashCD / dashCfg().cd) * 100 : 0) + '%');
 }
 function startFever(){
 if(feverT > 0) return;
@@ -1664,7 +1667,7 @@ toast('🔥 وضع الحمى! النقاط مضاعفة ×2', '#ffd54a');
 function doDash(){
 if(dashCD > 0 || dashT > 0 || !run || introHold || fire.keypad) return;
 dashT = dashCfg().t; dashCD = dashCfg().cd;
-addShake(.22); engineSnd(Math.min(FODQ.n, 3));
+addShake(.22); engineSnd(Math.min(FODQ.n, 3)); spinSnd(Math.min(FODQ.n, 3), dashT);
 $('dash-fx').classList.add('on');
 setDashButton();
 }
@@ -2886,7 +2889,8 @@ function engineRender(){
 /* الدوران: يقلع بسرعة عند الضغط ثم يتباطأ؛ قرص ضبابي يخفي تقطّع الشفرات، والمفاعل يزداد توهجاً بدل أن يختفي */
 function engineTick(dt){
   if(!ENG.fan) return;
-  const c = ENG_LV[ENG.lv], target = dashT > 0 ? c.spin : (run ? (ENG.lv === 3 ? 30 : 40) : 0);
+  const c = ENG_LV[ENG.lv], target = dashT > 0 ? c.spin * 1.8 : (run ? (ENG.lv === 3 ? 30 : 40) : 0);
+  if(ENG.boost !== dashT > 0){ ENG.boost = dashT > 0; setDashButton(); if(!ENG.boost) spinSndStop(); }
   ENG.w += (target - ENG.w) * Math.min(1, dt * (target > ENG.w ? 14 : 1.6));
   ENG.a = (ENG.a + ENG.w * dt) % 360;
   ENG.fan.setAttribute('transform', 'rotate(' + ENG.a.toFixed(1) + ' 24 24)');
@@ -2962,6 +2966,40 @@ function engineSnd(lv){
   }
   let left = srcs.length;
   srcs.forEach(s => { s.onended = () => { if(--left === 0) nodes.forEach(n => { try { n.disconnect(); } catch(e){} }); }; s.start(t); s.stop(t + dur); });
+}
+/* صوت الدوران المستمر طوال الاندفاع: أزيز توربين يتقطّع بإيقاع مرور الشفرات ويتصاعد، ثم يخفت عند التوقف */
+let spinNode = null;
+function spinSndStop(){
+  const s = spinNode; spinNode = null;
+  if(!s || !actx) return;
+  const t = actx.currentTime;
+  try { s.g.gain.cancelScheduledValues(t); s.g.gain.setValueAtTime(Math.max(.0001, s.g.gain.value), t); s.g.gain.exponentialRampToValueAtTime(.0001, t + .35); } catch(e){}
+  s.srcs.forEach(o => { try { o.stop(t + .4); } catch(e){} });
+}
+function spinSnd(lv, dur){
+  spinSndStop();
+  if(!soundEnabled || !actx || document.hidden) return;
+  const t = actx.currentTime + .01, nodes = [], srcs = [];
+  const mk = n => { nodes.push(n); return n; };
+  const base = [90, 140, 180, 60][lv], rate = [18, 26, 32, 14][lv];
+  const g = mk(actx.createGain()); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.16, t + .15);
+  g.connect(actx.destination);
+  /* نبض الشفرات: LFO يقطّع المستوى بإيقاع يتسارع */
+  const chop = mk(actx.createGain()); chop.gain.value = .55; chop.connect(g);
+  const lfo = mk(actx.createOscillator()); lfo.type = 'triangle'; lfo.frequency.setValueAtTime(rate * .5, t); lfo.frequency.exponentialRampToValueAtTime(rate, t + .3);
+  const depth = mk(actx.createGain()); depth.gain.value = .45; lfo.connect(depth); depth.connect(chop.gain); srcs.push(lfo);
+  /* أزيز منشاري مفلتر يرتفع نغمه */
+  const o = mk(actx.createOscillator()); o.type = 'sawtooth'; o.frequency.setValueAtTime(base, t); o.frequency.exponentialRampToValueAtTime(base * 2.4, t + .35);
+  const lp = mk(actx.createBiquadFilter()); lp.type = 'lowpass'; lp.frequency.value = lv === 3 ? 900 : 1600; lp.Q.value = 3;
+  const og = mk(actx.createGain()); og.gain.value = .35; o.connect(lp); lp.connect(og); og.connect(chop); srcs.push(o);
+  /* هواء مندفع */
+  const n = mk(actx.createBufferSource()); n.buffer = engNoiseBuf(); n.loop = true;
+  const bp = mk(actx.createBiquadFilter()); bp.type = 'bandpass'; bp.frequency.setValueAtTime(600, t); bp.frequency.exponentialRampToValueAtTime(lv === 3 ? 1400 : 2600, t + .35); bp.Q.value = 1.2;
+  const ng = mk(actx.createGain()); ng.gain.value = .5; n.connect(bp); bp.connect(ng); ng.connect(chop); srcs.push(n);
+  let left = srcs.length;
+  srcs.forEach(s => { s.onended = () => { if(--left === 0) nodes.forEach(x => { try { x.disconnect(); } catch(e){} }); }; s.start(t); s.stop(t + dur + .5); });
+  g.gain.setValueAtTime(.16, t + Math.max(.16, dur - .1)); g.gain.exponentialRampToValueAtTime(.0001, t + dur + .4);
+  spinNode = { g, srcs };
 }
 function fodRender(){
   engineRender();
