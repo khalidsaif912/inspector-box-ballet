@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 type ForkliftState = {
   done: boolean;
+  trip?: number;
   active?: boolean;
   x?: number;
   lane?: number;
@@ -24,6 +25,8 @@ type Rules = {
   dodge(state: ForkliftState, dt: number, obstacles: { x: number; z: number; r: number }[]): number;
   position(state: ForkliftState): { x: number; z: number; yaw: number };
   dodgeClear: number;
+  touchRadius: number;
+  playerObstacle(x: number, z: number): { x: number; z: number; r: number };
   laneMin: number;
   laneMax: number;
   fearDuration: number;
@@ -137,6 +140,27 @@ describe("Reckless forklift dodging", () => {
     run(s, [{ x: 10, z: 2, r: 0.7 }]);
     const p = run(s, [{ x: -10, z: 2, r: 0.7 }], 3);
     expect(p.z).toBeCloseTo(2);
+  });
+
+  it("keeps a wider gap from the player than the collision distance", () => {
+    const o = rules.playerObstacle(0, 0);
+    expect(o.r + rules.dodgeClear).toBeGreaterThan(rules.touchRadius + 0.3);
+  });
+
+  it("never runs over a player standing in its lane, wherever they stand", () => {
+    for (const playerX of [-20, -6, -1, 0, 1, 3, 10, 25]) {
+      const s = rules.reset();
+      const playerZ = 3;
+      let hits = 0;
+      for (let i = 0; i < 2500 && !s.done && (s.trip ?? 0) === 0; i++) {
+        rules.dodge(s, 0.016, [rules.playerObstacle(playerX, playerZ)]);
+        const a = rules.position(s);
+        rules.advance(s, 0.016, playerZ);
+        const b = rules.position(s);
+        if (s.active && rules.touches(a.x, a.z, b.x, b.z, playerX, playerZ)) hits++;
+      }
+      expect({ playerX, hits }).toEqual({ playerX, hits: 0 });
+    }
   });
 
   it("does not offset an inactive forklift", () => {

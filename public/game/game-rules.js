@@ -66,6 +66,12 @@
     dodgeRate: 8,
     laneMin: -4,
     laneMax: 8.5,
+    // مسافة التلامس مع اللاعب (touches)، واللاعب عائق تتفاداه بهامش أوسع منها
+    touchRadius: 2.3,
+    playerR: 0.75,
+    playerObstacle(x, z) {
+      return { x, z, r: rules.playerR };
+    },
     dodge(state, dt, obstacles) {
       if (!state.active) {
         state.dz = 0;
@@ -146,7 +152,7 @@
         dz = bz - az,
         length = dx * dx + dz * dz;
       const t = length ? Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / length)) : 0;
-      return Math.hypot(px - ax - dx * t, pz - az - dz * t) < 2.3;
+      return Math.hypot(px - ax - dx * t, pz - az - dz * t) < rules.touchRadius;
     },
     reward(isFod, zone) {
       return isFod && zone === "fod" ? rules.fodReward : 0;

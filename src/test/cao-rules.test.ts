@@ -164,7 +164,10 @@ describe("CAO wiring in the game", () => {
   it("brings the inspector in person and anchors his speech bubble", () => {
     expect(game).toContain("function updateCaoScene(");
     expect(game).toContain("I_.g.visible = true;");
-    expect(game).toContain("I_.x = Math.min(32, x0 + 7.4);");
+    // يأتي من الجهة التي فيها متسع ويقف على مسافة CAO_GAP من الموظف دون أن يعبر من خلاله
+    expect(game).toContain("I_.x = Math.max(-32, Math.min(32, x0 - I_.caoDir * 7.4));");
+    expect(game).toContain("const x0 = fromRight ? px.x + CAO_GAP : Math.max(-24, px.x - CAO_GAP);");
+    expect(game).toMatch(/const CAO_GAP = 3\.2/);
     expect(game).toContain("function caoPlace(");
     expect(game).toContain(".project(C)");
     expect(game).toContain("if(caoQ.active){ dt = 0; updateCaoScene(");

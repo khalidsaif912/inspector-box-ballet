@@ -1369,14 +1369,17 @@ const HIP_REF = 1.824;             // ارتفاع الحوض في قالب ال
 const SEAT = { s: 1, hips: 2.1, z: 0 };
 const FK_SCALE = 0.86, DRV_SCALE = 0.92;   // تصغير الرافعة نسبةً للنموذج الأول، وحجم السائق داخلها
 const SEAT_CREW = { fork: null, truck: null, tried: false };
-function seatCrewInto(parent, at) {
+/* سائق الرافعة المتهورة: قالب الطاقم أطول (3.6م) من شخصية اللاعب (3.1م)، فيُصغَّر بنسبتهما × DRV_SCALE
+   ويُنزَّل المقعد بـ FK_SCALE كما يُفعل باللاعب الجالس، فيبقى الرأس تحت سقف الرافعة (≈3.3م) */
+const TRUCK_SEAT_S = 3.1 / 3.6 * DRV_SCALE;
+function seatCrewInto(parent, at, s = SEAT.s) {
   const g = new THREE.Group();
   // نرفع/نخفض المجموعة بحيث يستقر الحوض على وسادة المقعد بعد التكبير
-  g.position.set(at[0], at[1] - HIP_REF * SEAT.s, at[2]);
+  g.position.set(at[0], at[1] - HIP_REF * s, at[2]);
   g.rotation.y = at[3] || 0;
   parent.add(g);
   return CrewRig.load('game/models/airport-crew.glb').then(o => {
-    g.scale.setScalar(SEAT.s);
+    g.scale.setScalar(s);
     g.add(o.root);
     o.pose({ dt: 0.016, sit: true });
     return o;
@@ -1389,7 +1392,7 @@ function loadSeatCrew() {
     SEAT_CREW.fork = o;
     forkDriver.children.forEach(c => { if (c !== o.root.parent && !c.userData.keep) c.visible = false; });
   });
-  seatCrewInto(truckDriver, [0, SEAT.hips, SEAT.z]).then(o => {
+  seatCrewInto(truckDriver, [0, SEAT.hips * FK_SCALE, SEAT.z * FK_SCALE], TRUCK_SEAT_S).then(o => {
     SEAT_CREW.truck = o;
     truckDriver.children.forEach(c => { if (c !== o.root.parent && !c.userData.keep) c.visible = false; });
   });
@@ -1456,7 +1459,7 @@ if(d < m && d > 1e-6){ p.x += dx/d*(m-d); p.z += dz/d*(m-d); hit = true; }
 }
 // المفتش جسم صلب بهامش أوسع أمام الرافعة الشوكية كي تبقى على مسافة مناسبة منه
 if(inspector.active && inspector.g.visible){
-const ix = inspector.g.position.x, iz = inspector.g.position.z, dx = p.x - ix, dz = p.z - iz, d = Math.hypot(dx, dz), m = rad + (FD.on ? INSP_FK_GAP : .45);
+const ix = inspector.g.position.x, iz = inspector.g.position.z, dx = p.x - ix, dz = p.z - iz, d = Math.hypot(dx, dz), m = rad + (FD.on ? INSP_FK_GAP : INSP_BODY_GAP);
 if(d < m){ const nx = d > 1e-6 ? dx/d : -mvx, nz = d > 1e-6 ? dz/d : -mvz; p.x = ix + nx*m; p.z = iz + nz*m; hit = true; }
 }
 // الرافعة المتوقفة جسم صلب ما دام اللاعب لا يقودها
@@ -2176,6 +2179,8 @@ const steps=Math.max(1,Math.ceil(dt/.016)), step=dt/steps;
 /* عوائق تتفاداها الرافعة المتهورة: المفتش والرافعة الشوكية (التي يقودها اللاعب أو المتوقفة) */
 const obs=[{x:fk.position.x,z:fk.position.z,r:FK_HX}];
 if(inspector.active && inspector.g.visible) obs.push({x:inspector.g.position.x,z:inspector.g.position.z,r:.7});
+/* اللاعب الماشي عائق أيضاً: تنحرف عنه بدل أن تصدمه (أثناء القيادة يكفي عائق الرافعة أعلاه) */
+if(!FD.on) obs.push(gameRules.playerObstacle(px.x, px.z));
 for(let i=0;i<steps;i++){
 gameRules.dodge(truckState,step,obs);
 const before=gameRules.position(truckState), event=gameRules.advance(truckState,step,px.z), after=gameRules.position(truckState);
@@ -3965,6 +3970,8 @@ pa.x = Math.max(-33, Math.min(33, pa.x)); pa.z = Math.max(-11.9, Math.min(9.6, p
 const INSP_SAFE = { minZ: -2.2, maxZ: 5.8, zebraZ: 2.5, minX: -33.2, maxX: 33.2 };
 /* الحد الأدنى للمسافة بين المفتش والرافعة الشوكية (يُضاف إلى نصف عرض الرافعة) */
 const INSP_FK_GAP = 1.5;
+/* المسافة بين المفتش والموظف: وقفة سؤال CAO، وهامش جسده الصلب، ومدى تفاديه للموظف أثناء الدورية */
+const CAO_GAP = 3.2, INSP_BODY_GAP = .8, INSP_PLAYER_SIDE = 1.9;
 const inspector = (() => {
 const g = new THREE.Group();
 const procMesh = new THREE.Group();
@@ -4179,6 +4186,17 @@ if(fkAhead > -(FK_HX + 1.8) && fkAhead < fkNeed + 3.5 && Math.abs(fkz) < fkNeed)
   if(goal >= INSP_SAFE.minZ && goal <= INSP_SAFE.maxZ) fkAvoid = goal - (I_.targetZ || I_.z);
   fkWait = fkAhead > 0 && fkAhead < fkNeed + .4 && Math.abs(fkz) < fkNeed - .3;
 }
+/* الموظف أمامه: يتنحّى جانباً بمسافة INSP_PLAYER_SIDE، وإن كان ملاصقاً يتوقف حتى يبتعد بدل أن يصطدم به */
+let plAvoid = 0;
+if(!FD.on){
+  const plx = px.x - I_.x, plz = px.z - I_.z, plAhead = plx * I_.dir;
+  if(plAhead > -1.2 && plAhead < 5.2 && Math.abs(plz) < INSP_PLAYER_SIDE){
+    let side = plz >= 0 ? -1 : 1, goal = px.z + side * INSP_PLAYER_SIDE;
+    if(goal < INSP_SAFE.minZ || goal > INSP_SAFE.maxZ){ side = -side; goal = px.z + side * INSP_PLAYER_SIDE; }
+    plAvoid = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, goal)) - (I_.targetZ || I_.z);
+    if(plAhead > 0 && plAhead < PLAYER_RADIUS + INSP_BODY_GAP + .5 && Math.abs(plz) < PLAYER_RADIUS + INSP_BODY_GAP){ fkWait = true; if(!fkAvoid) fkAvoid = plAvoid; }
+  }
+}
 if(fkWait){
   I_.waitT = (I_.waitT || 0) + dt;
   if(I_.rig && I_.rig.pose) I_.rig.pose({ dt, phase: I_.t * 5, moving: false });
@@ -4212,7 +4230,7 @@ for(const it of items){
   }
 }
 
-const curGoalZ = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, (I_.targetZ || I_.z) + (fkAvoid || avoidZ)));
+const curGoalZ = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, (I_.targetZ || I_.z) + (fkAvoid || plAvoid || avoidZ)));
 I_.z = lrp(I_.z, curGoalZ, Math.min(1, dt * 4.5));
 
 const targetWalkAngle = I_.dir > 0 ? Math.PI/2 : -Math.PI/2;
@@ -4281,14 +4299,15 @@ caoAnchor(CAO_SAY, 0);
 function updateCaoScene(r){
 const I_ = inspector;
 I_.t += r;
-if(I_.x > I_.toX) I_.x = Math.max(I_.toX, I_.x - 3.8 * r);
-const walking = I_.x > I_.toX + .01;
+const cd = I_.caoDir || -1;
+if((I_.toX - I_.x) * cd > 0) I_.x = cd < 0 ? Math.max(I_.toX, I_.x - 3.8 * r) : Math.min(I_.toX, I_.x + 3.8 * r);
+const walking = (I_.toX - I_.x) * cd > .01;
 const sw = Math.sin(I_.t * 7) * (walking ? .5 : .06);
 if(I_.legs && I_.legs.length >= 2){ I_.legs[0].rotation.x = sw; I_.legs[1].rotation.x = -sw; }
 if(I_.arms && I_.arms.length >= 2){ I_.arms[0].rotation.x = -sw * .7; I_.arms[1].rotation.x = sw * .4 - .62; }
 if(I_.rig && I_.rig.pose){
   if(walking){
-    I_.g.rotation.y = -Math.PI / 2;
+    I_.g.rotation.y = cd * Math.PI / 2;
     I_.rig.pose({ dt: r, phase: I_.t * 7, moving: true });
   } else if(!caoQ.answered){
     const facePlayer = Math.atan2(px.x - I_.x, px.z - I_.z);
@@ -4332,14 +4351,17 @@ const I_ = inspector;
 // ضمان موضع وقوف آمن وطبيعي في مساحة المشي بعيداً عن أقفاص الحاويات والحزام والرافعة
 /* يقف المفتش بجانب الموظف على الخط نفسه (وجهاً لوجه) فيظهر الاثنان جانبياً بوضوح ولا يحجب أحدهما الآخر */
 const z0 = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, px.z));
-const x0 = Math.max(-24, Math.min(22, px.x > 0 ? px.x - 2.7 : px.x + 2.7));
+/* يأتي من الجهة التي فيها متسع ويقف قبل الموظف بمسافة حوار CAO_GAP، فلا يعبر من خلاله أبداً */
+const fromRight = px.x + CAO_GAP <= 22;
+const x0 = fromRight ? px.x + CAO_GAP : Math.max(-24, px.x - CAO_GAP);
+inspector.caoDir = fromRight ? -1 : 1;
 I_.active = true; I_.demo = false; I_.done = false; I_.t = 0;
 I_.g.visible = true;
 I_.z = z0;
 I_.targetZ = z0;
 I_.toX = x0;
-I_.x = Math.min(32, x0 + 7.4);
-I_.g.rotation.y = -Math.PI / 2; // يواجه اتجاه مشيه أثناء الاقتراب
+I_.x = Math.max(-32, Math.min(32, x0 - I_.caoDir * 7.4));
+I_.g.rotation.y = I_.caoDir * Math.PI / 2; // يواجه اتجاه مشيه أثناء الاقتراب
 I_.g.position.set(I_.x, 0, I_.z);
 CAO_BUBBLE.classList.remove('in');
 CAO_SAY.classList.remove('in');
