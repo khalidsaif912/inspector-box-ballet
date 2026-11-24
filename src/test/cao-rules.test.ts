@@ -166,7 +166,10 @@ describe("CAO wiring in the game", () => {
     expect(game).toContain("I_.g.visible = true;");
     // يأتي من الجهة التي فيها متسع ويقف على مسافة CAO_GAP من الموظف دون أن يعبر من خلاله
     expect(game).toContain("I_.x = Math.max(-32, Math.min(32, x0 - I_.caoDir * 7.4));");
-    expect(game).toContain("const x0 = fromRight ? px.x + CAO_GAP : Math.max(-24, px.x - CAO_GAP);");
+    expect(game).toContain("const stand = caoStand(z0);");
+    // نقطة الوقوف وطريق الاقتراب بعيدان عن جسم الرافعة وشوكتيها
+    expect(game).toContain("function fkClearance(x, z)");
+    expect(game).toContain("if(clear >= INSP_FK_GAP) return c;");
     expect(game).toMatch(/const CAO_GAP = 3\.2/);
     expect(game).toContain("function caoPlace(");
     expect(game).toContain(".project(C)");

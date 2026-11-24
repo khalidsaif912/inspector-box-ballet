@@ -4331,6 +4331,32 @@ I_.g.position.set(I_.x, walking ? Math.abs(Math.sin(I_.t * 7)) * .05 : 0, I_.z);
 if(!walking && !caoQ.answered) CAO_BUBBLE.classList.add('in');
 caoPlace();
 }
+/* بُعد نقطة عن الرافعة: عن جسمها (صندوق يدور مع اتجاهها) وعن شوكتيها الممتدتين للأمام */
+function fkClearance(x, z){
+const h = fkHalf(), bx = Math.max(0, Math.abs(x - fk.position.x) - h.hx), bz = Math.max(0, Math.abs(z - fk.position.z) - h.hz);
+const ax = fk.position.x, az = fk.position.z;
+const dx = gameRules.forklift.forkX(ax, fk.rotation.y) - ax, dz = gameRules.forklift.forkZ(az, fk.rotation.y) - az;
+const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
+return Math.min(Math.hypot(bx, bz), Math.hypot(x - ax - dx * t, z - az - dz * t));
+}
+/* نقطة وقوف المفتش للسؤال: على خط الموظف، يميناً أو يساراً، على مسافة CAO_GAP على الأقل،
+   بعيدة عن الرافعة بـ INSP_FK_GAP، وطريق اقترابها (7.4م من الخارج) خالٍ من الرافعة أيضاً */
+function caoStand(z0){
+const pref = px.x + CAO_GAP <= 22 ? 1 : -1;
+let best = null;
+for(let d = CAO_GAP; d <= 10; d += .3){
+  for(const side of [pref, -pref]){
+    const x = px.x + side * d;
+    if(x < -24 || x > 22) continue;
+    let clear = fkClearance(x, z0);
+    for(let s = .5; s <= 7.4 && clear >= INSP_FK_GAP; s += .5) clear = Math.min(clear, fkClearance(x + side * s, z0) + .9);
+    const c = { x, dir: -side, clear };
+    if(clear >= INSP_FK_GAP) return c;
+    if(!best || clear > best.clear) best = c;
+  }
+}
+return best || { x: Math.max(-24, Math.min(22, px.x + pref * CAO_GAP)), dir: -pref, clear: 0 };
+}
 function caoOpen(it){
 const f = gameRules.cao.flightFor(Math.round(it.m.position.x) + totalProcessed);
 caoQ.active = true; caoQ.answered = false; caoQ.it = it; caoQ.flight = f; evt.lastInsp = evt.t;
@@ -4351,10 +4377,11 @@ const I_ = inspector;
 // ضمان موضع وقوف آمن وطبيعي في مساحة المشي بعيداً عن أقفاص الحاويات والحزام والرافعة
 /* يقف المفتش بجانب الموظف على الخط نفسه (وجهاً لوجه) فيظهر الاثنان جانبياً بوضوح ولا يحجب أحدهما الآخر */
 const z0 = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, px.z));
-/* يأتي من الجهة التي فيها متسع ويقف قبل الموظف بمسافة حوار CAO_GAP، فلا يعبر من خلاله أبداً */
-const fromRight = px.x + CAO_GAP <= 22;
-const x0 = fromRight ? px.x + CAO_GAP : Math.max(-24, px.x - CAO_GAP);
-inspector.caoDir = fromRight ? -1 : 1;
+/* يأتي من الجهة التي فيها متسع ويقف قبل الموظف بمسافة حوار CAO_GAP، فلا يعبر من خلاله أبداً،
+   ولا يقف داخل الرافعة (التي يقودها الموظف أو المتوقفة) ولا يمر عبرها أثناء الاقتراب */
+const stand = caoStand(z0);
+const x0 = stand.x;
+inspector.caoDir = stand.dir;
 I_.active = true; I_.demo = false; I_.done = false; I_.t = 0;
 I_.g.visible = true;
 I_.z = z0;
