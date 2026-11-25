@@ -1,0 +1,5 @@
+Cat models (orange-tabby, black-cat, siamese, persian, maine-coon, british-shorthair,
+sphynx, bengal, ragdoll, calico, tuxedo, scottish-fold) by vinish.dev
+https://vinish.dev/free-3d-models/  — licensed under CC BY 4.0
+https://creativecommons.org/licenses/by/4.0/
+Changes: scaled in-game (x2.6). Files are otherwise unmodified.

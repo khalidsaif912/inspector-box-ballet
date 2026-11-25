@@ -384,6 +384,66 @@
 
   /* --- الحيوان الأليف الهارب --- */
   let pet = null, cage = null, cageBol = null;
+  /* قطط vinish.dev (CC BY 4.0): ١٢ سلالة بهيكل عظمي وحركات حقيقية (Idle/Walk/Trot/Run/Sit/Meow).
+     لا تُحمَّل عند فتح اللعبة: قطة واحدة فقط تُجلب حين يكون حدث الوردية هو القطة، وتختلف عن القطة السابقة. */
+  const CATS = [
+    ['orange-tabby', 'القطة البرتقالية', 'The orange tabby'], ['black-cat', 'القطة السوداء', 'The black cat'],
+    ['siamese', 'القطة السيامية', 'The Siamese cat'], ['persian', 'القطة الفارسية', 'The Persian cat'],
+    ['maine-coon', 'قطة الماين كون', 'The Maine Coon'], ['british-shorthair', 'القطة البريطانية', 'The British Shorthair'],
+    ['sphynx', 'قطة السفنكس', 'The Sphynx cat'], ['bengal', 'القطة البنغالية', 'The Bengal cat'],
+    ['ragdoll', 'قطة الراغدول', 'The Ragdoll cat'], ['calico', 'قطة الكاليكو', 'The calico cat'],
+    ['tuxedo', 'قطة التكسيدو', 'The tuxedo cat'], ['scottish-fold', 'القطة الاسكتلندية', 'The Scottish Fold'],
+  ];
+  const CAT_SCALE = 2.6;   // المجسّمات بالمتر (≈٣٣سم)؛ ×2.6 تصير القطة ≈ ربع طول العامل — حجم طبيعي، لا عملاق
+  const CAT_NAT = { Walk: 1.4, Trot: 3.2, Run: 6 };   // سرعة اللعبة التي تطابق كل حركة عند سرعة تشغيل 1.0
+  const CAT_LAST = 'acg_cat_last';
+  let catReq = null;   // { def, p } القطة التالية (قد تكون قيد التنزيل مسبقاً)
+  function pickCat() {
+    let last = null; try { last = localStorage.getItem(CAT_LAST); } catch (e) {}
+    const pool = CATS.filter(c => c[0] !== last);
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  function prepCat() {
+    if (catReq) return catReq;
+    const def = pickCat();
+    const p = new Promise((res, rej) => {
+      if (!THREE.GLTFLoader) { rej(new Error('GLTFLoader missing')); return; }
+      new THREE.GLTFLoader().load('game/models/cats/' + def[0] + '.glb', res, undefined, rej);
+    });
+    p.catch(() => { if (catReq && catReq.p === p) catReq = null; });   // فشل التنزيل: تبقى القطة المرسومة، ويُعاد المحاولة لاحقاً
+    catReq = { def, p };
+    return catReq;
+  }
+  function disposeObj(root) {
+    root.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      (o.material ? [].concat(o.material) : []).forEach(m => { for (const k in m) { const v = m[k]; if (v && v.isTexture) v.dispose(); } m.dispose(); });
+    });
+  }
+  /* تستبدل القطة المرسومة بالمجسّم الحقيقي في مكانها دون أن يتغيّر شيء في منطق الهروب والإمساك */
+  function useGlbCat(gltf, def) {
+    const g = new THREE.Group(), m = gltf.scene;
+    m.scale.setScalar(CAT_SCALE); g.add(m);
+    m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+    const mixer = new THREE.AnimationMixer(m), acts = {};
+    (gltf.animations || []).forEach(c => { acts[c.name] = mixer.clipAction(c); });
+    const old = pet.g;
+    g.position.copy(old.position); g.rotation.copy(old.rotation);
+    S.remove(old); disposeObj(old); S.add(g);
+    Object.assign(pet, { g, legs: [], tail: new THREE.Object3D(), head: new THREE.Object3D(), mixer, acts, clip: null, def });
+    try { localStorage.setItem(CAT_LAST, def[0]); } catch (e) {}
+  }
+  function catClip(name, speed) {
+    const a = pet && pet.acts && pet.acts[name];
+    if (!a) return;
+    if (pet.clip !== name) {
+      const prev = pet.clip && pet.acts[pet.clip];
+      a.reset().play();
+      if (prev) a.crossFadeFrom(prev, 0.25, false);
+      pet.clip = name;
+    }
+    a.setEffectiveTimeScale(CAT_NAT[name] && speed ? Math.max(0.6, Math.min(1.6, speed / CAT_NAT[name])) : 1);
+  }
   function buildCat() {
     const g = new THREE.Group(), fur = 0xe08a2e, dark = 0x8a4a12, cream = 0xffe0b8;
     const mat = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0 });
@@ -443,11 +503,14 @@
     }
     const c = buildCat(); c.g.position.set(sx, 0, sz); S.add(c.g);
     pet = Object.assign(c, { x: sx, z: sz, yaw: 0, held: false, caged: false, t: 0, goal: null, speed: 0 });
-    showIntro('<b class="t">🐈 ' + T('قطة هاربة في المستودع!', 'A cat is loose in the warehouse!') + '</b>' + T('أمسكها (اقترب واضغط ✋) وضعها في القفص الأصفر (+', 'Catch it (get close and press ✋) and put it in the yellow cage (+') + WP.eventById('pet').reward + ').', 3600, false);
+    const req = prepCat(), mine = pet;
+    catReq = null;   // الحدث التالي يأخذ قطة أخرى
+    req.p.then(gltf => { if (pet === mine) useGlbCat(gltf, req.def); else disposeObj(gltf.scene); }, () => {});
+    showIntro('<b class="t">🐈 ' + T(req.def[1] + ' هاربة في المستودع!', req.def[2] + ' is loose in the warehouse!') + '</b>' + T('أمسكها (اقترب واضغط ✋) وضعها في القفص الأصفر (+', 'Catch it (get close and press ✋) and put it in the yellow cage (+') + WP.eventById('pet').reward + ').', 3600, false);
     cue('meow');
   }
   function petOff() {
-    if (pet) { S.remove(pet.g); pet.g.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); pet = null; }
+    if (pet) { if (pet.mixer) pet.mixer.stopAllAction(); S.remove(pet.g); disposeObj(pet.g); pet = null; }
     if (cage) { S.remove(cage.g); cage.g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } }); cage = null; }
     if (cageBol) { const i = BOLLARDS.indexOf(cageBol); if (i >= 0) BOLLARDS.splice(i, 1); cageBol = null; }
   }
@@ -455,13 +518,16 @@
   function petTick(dt) {
     if (!pet) return;
     pet.t += dt;
+    if (pet.mixer) pet.mixer.update(dt);
     if (pet.caged) {   // داخل القفص: تجلس وتهز ذيلها
+      catClip('Sit');
       pet.g.position.set(cage.x, 0.12, cage.z); pet.g.rotation.y += dt * 0.3;
       pet.tail.rotation.z = Math.sin(pet.t * 3) * 0.4; return;
     }
     if (pet.held) {   // محمولة بين يدي اللاعب
       const a = typeof curRotY === 'number' ? curRotY : 0;
-      pet.g.position.set(px.x + Math.sin(a) * 0.9, 1.55 + Math.sin(pet.t * 6) * 0.04, px.z + Math.cos(a) * 0.9);
+      catClip('Meow');
+      pet.g.position.set(px.x + Math.sin(a) * 0.9, (pet.mixer ? 1.5 : 1.55) + Math.sin(pet.t * 6) * 0.04, px.z + Math.cos(a) * 0.9);
       pet.g.rotation.y = a + Math.PI / 2;
       pet.tail.rotation.z = Math.sin(pet.t * 9) * 0.6;
       pet.legs.forEach((l, i) => { l.rotation.x = Math.sin(pet.t * 10 + i) * 0.5; });
@@ -481,6 +547,7 @@
       vx = gx / gd; vz = gz / gd; want = 1.8;
     }
     pet.speed += (want - pet.speed) * Math.min(1, dt * 5);
+    if (pet.mixer) catClip(pet.speed < 0.3 ? 'Idle' : pet.speed < 2.4 ? 'Walk' : pet.speed < 4.4 ? 'Trot' : 'Run', pet.speed);
     let nx = pet.x + vx * pet.speed * dt, nz = pet.z + vz * pet.speed * dt;
     nx = Math.max(WB.minX, Math.min(WB.maxX, nx)); nz = Math.max(WB.minZ, Math.min(WB.maxZ, nz));
     if (blockedAt(nx, nz, 0.55)) {   // عائق أمامها: تنعطف جانباً
@@ -566,6 +633,7 @@
     slowMoT = 0;
     round = { xp0: st.xp, gain: 0, done: [], rankUp: null, unlocked: [], cert: false, allDone: false, fined: false };
     SH = { id: WP.pickShiftEvent(Math.random, st), at: WP.eventStartAt(Math.random), on: false, done: false, left: 0 };
+    if (SH.id === 'pet') prepCat();   // تنزيل القطة في الخلفية قبل ظهورها (الحدث يبدأ بعد ٢٢ ثانية على الأقل)
     renderHud();
   }
   function roundEnd(finalScore) {
@@ -598,7 +666,7 @@
     onPlayer: () => { ensure(); refreshAll(); },
     state: () => ensure(),
     /* للاختبار اليدوي من وحدة التحكم */
-    _debug: { get SH() { return SH; }, get pet() { return pet; }, get vip() { return vip; }, startEvent(id) { SH = { id, at: 0, on: false, done: false, left: 0 }; }, addXp(n) { ensure(); st.xp += n; save(); refreshAll(); } },
+    _debug: { get SH() { return SH; }, get pet() { return pet; }, get vip() { return vip; }, startEvent(id) { cleanupEvent(); SH = { id, at: 0, on: false, done: false, left: 0 }; }, CATS, get catReq() { return catReq; }, addXp(n) { ensure(); st.xp += n; save(); refreshAll(); } },
   };
   /* أول تحميل: بناء الواجهة، والتأكد أن الشخصية المحفوظة مفتوحة لهذا اللاعب */
   ensure(); refreshAll();
