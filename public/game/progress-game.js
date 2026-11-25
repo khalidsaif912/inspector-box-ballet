@@ -110,7 +110,7 @@
     }
     const s = ensure(), r = WP.rankFor(s.xp), done = s.missions.filter(m => m.done).length;
     b.title = nm(r.rank) + ' — ' + T('مهام اليوم', "Today's missions");
-    b.innerHTML = '<span class="mh-sum">' + r.rank.icon + ' <b>🎯 ' + done + '/' + s.missions.length + '</b></span>' +
+    b.innerHTML = '<span class="mh-sum"><i class="mh-ico">' + r.rank.icon + '</i><span class="mh-txt"><span class="mh-l">' + T('مهام اليوم', 'Missions') + '</span><span class="mh-pips">' + s.missions.map(m => '<i' + (m.done ? ' class="on"' : '') + '></i>').join('') + '</span></span><b>' + done + '/' + s.missions.length + '</b></span>' +
       '<span class="mh-pop"><span class="mh-rank">' + rankBadge(s.xp, s.dgr.cert) + '</span><ul class="ms-list">' + missionRows(s, true) + '</ul></span>';
   }
   function refreshAll() { renderCard(); renderHud(); buildPickers(); broadcast(); }

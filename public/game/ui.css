@@ -1021,3 +1021,119 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
 #ov.start .login-who{flex-wrap:wrap}
 #ov.start .who-rank{display:inline-flex;align-items:center;gap:4px;font-size:12px}
 #ov.start .who-rank:empty{display:none}
+
+/* ===================== الشريط العلوي v2: طابع ألعاب موحّد =====================
+   كل عناصر الشريط كبسولة واحدة المادة (أزرق لامع بحافة مضيئة وظل سفلي "سميك")،
+   بنفس الارتفاع، وكل عنصر له أيقونة في ميدالية دائرية تبرز من طرفه. */
+#hud{
+  --cap:clamp(32px,5.8vmin,42px);
+  --menu:max(44px,var(--cap));
+  --hud-bg:linear-gradient(180deg,#2c5ea9 0%,#18407e 47%,#0f2a5a 53%,#0a1d42 100%);
+  --hud-bd:rgba(120,192,255,.95);
+  --hud-sh:0 3px 0 #04102a,0 7px 16px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.4),inset 0 -2px 0 rgba(0,0,0,.28);
+  font-family:'Cairo',system-ui,sans-serif;
+}
+#hud .hud-start,#hud .hud-end,#hud .hud-end .hud-side{align-items:flex-start}
+#hud .hud-start,#hud .hud-end .hud-side{margin-top:calc((var(--menu) - var(--cap)) / 2)}
+#hud .hud-end .hud-side{gap:10px}
+#hud .hgrp{gap:calc(var(--cap)*.45)}
+
+/* ميدالية الأيقونة المشتركة */
+#hud .sg-ico,#hud .mh-ico{
+  position:absolute;inset-inline-start:calc(var(--cap)*-.2);top:50%;transform:translateY(-50%);
+  width:calc(var(--cap)*1.16);height:calc(var(--cap)*1.16);border-radius:50%;
+  display:grid;place-items:center;font-style:normal;font-size:calc(var(--cap)*.5);line-height:1;
+  border:2px solid #fff3c4;box-shadow:0 2px 0 rgba(0,0,0,.45),0 4px 9px rgba(0,0,0,.45),inset 0 2px 3px rgba(255,255,255,.5);
+}
+
+/* النقاط والوقت */
+#hud .pill{
+  height:var(--cap);min-width:calc(var(--cap)*2.6);border-radius:999px;
+  padding:0 calc(var(--cap)*.42) 0 calc(var(--cap)*1.12);
+  background:var(--hud-bg);border:2px solid var(--hud-bd);box-shadow:var(--hud-sh);
+}
+#hud .pill svg{left:calc(var(--cap)*-.22);width:calc(var(--cap)*1.28);height:calc(var(--cap)*1.28)}
+#hud .pill b{font-size:calc(var(--cap)*.56);letter-spacing:.5px}
+#hud #tmbox b{color:#fff;text-shadow:0 2px 0 #071a3d,0 0 8px rgba(130,200,255,.5)}
+#hud #tmbox.urgent{background:linear-gradient(180deg,#ff6a5f 0%,#d92b22 47%,#a5150f 53%,#7a0d09 100%);border-color:#ffd0cb}
+
+/* المرحلة: عنوان + عدّاد + شريط تقدّم ذهبي */
+#hud #stg{
+  position:relative;height:var(--cap);min-width:calc(var(--cap)*4.3);max-width:none;
+  padding:0 calc(var(--cap)*.36);padding-inline-start:calc(var(--cap)*1.08);
+  display:flex;flex-direction:column;justify-content:center;gap:3px;
+  border-radius:999px;background:var(--hud-bg);border:2px solid var(--hud-bd);box-shadow:var(--hud-sh);
+  backdrop-filter:none;color:#fff;line-height:1;
+}
+#hud #stgtxt{display:flex;align-items:baseline;justify-content:space-between;gap:10px;width:100%;overflow:visible}
+#hud .sg-ico{background:radial-gradient(circle at 35% 28%,#c7a6ff,#7c4ddb 58%,#43218f);border-color:#eadcff}
+#hud .sg-l{font-weight:900;font-size:calc(var(--cap)*.33);color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.55)}
+#hud .sg-n{font-weight:900;font-size:calc(var(--cap)*.29);color:#ffd54a;direction:ltr;font-variant-numeric:tabular-nums;text-shadow:0 1px 0 #6a3f00}
+#hud #stgbar{display:block;width:100%;height:max(5px,calc(var(--cap)*.16));border-radius:99px;background:rgba(0,0,0,.45);box-shadow:inset 0 1px 2px rgba(0,0,0,.65),0 1px 0 rgba(255,255,255,.12)}
+#hud #stgfill{background:linear-gradient(180deg,#fff1a8 0%,#ffcf33 50%,#f5a000 100%);box-shadow:0 0 8px rgba(255,200,40,.8)}
+#hud #stg.final #stgbar{display:block}
+#hud #stg.final .sg-n{display:inline;color:#ffe9a0}
+
+/* مهام اليوم: ميدالية الرتبة + ثلاث نقاط تمتلئ */
+#hud #mhud{
+  position:relative;min-height:var(--cap);margin:0;
+  padding:0 calc(var(--cap)*.34);padding-inline-start:calc(var(--cap)*1.08);
+  border-radius:calc(var(--cap)*.5);background:var(--hud-bg);border:2px solid var(--hud-bd);box-shadow:var(--hud-sh);
+  backdrop-filter:none;color:#fff;transition:transform .12s;
+}
+#hud #mhud:active{transform:scale(.95)}
+#hud #mhud .mh-sum{display:flex;align-items:center;gap:9px;height:calc(var(--cap) - 4px)}
+#hud .mh-ico{background:radial-gradient(circle at 35% 28%,#fff0a0,#f5b400 58%,#b36b00);border-color:#fff6cf}
+#hud .mh-txt{display:flex;flex-direction:column;gap:3px;line-height:1}
+#hud .mh-l{font-weight:800;font-size:calc(var(--cap)*.26);color:#cfe6ff;white-space:nowrap}
+#hud .mh-pips{display:flex;gap:4px}
+#hud .mh-pips i{width:calc(var(--cap)*.22);height:calc(var(--cap)*.22);border-radius:50%;background:rgba(0,0,0,.4);border:1.5px solid rgba(255,255,255,.5);box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
+#hud .mh-pips i.on{background:radial-gradient(circle at 35% 30%,#b9ffd5,#2fd47a 60%,#13894a);border-color:#e6fff0;box-shadow:0 0 6px rgba(60,230,140,.9)}
+#hud #mhud .mh-sum b{font-weight:900;font-size:calc(var(--cap)*.42);color:#ffd54a;direction:ltr;font-variant-numeric:tabular-nums;text-shadow:0 2px 0 #6a3f00}
+/* القائمة المنسدلة تحت الكبسولة: لا تغيّر حجمها ولا تزحزح ما بجانبها */
+#hud #mhud .mh-pop{
+  position:absolute;top:calc(100% + 8px);inset-inline-end:-2px;z-index:20;
+  margin:0;min-width:min(270px,70vw);padding:10px 12px;border-radius:14px;cursor:default;
+  background:linear-gradient(180deg,rgba(24,58,112,.97),rgba(8,22,50,.97));
+  border:2px solid var(--hud-bd);box-shadow:0 10px 24px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.25);
+}
+#hud #mhud .mh-pop::before{content:"";position:absolute;top:-8px;inset-inline-end:calc(var(--cap)*.4);border:7px solid transparent;border-top:0;border-bottom:8px solid var(--hud-bd)}
+
+/* مضاعف النقاط: يبقى ملوّناً حتى وهو خامل (لا يبدو معطّلاً) */
+#hud .cbadge{width:calc(var(--cap)*1.12);height:calc(var(--cap)*1.12);filter:saturate(.35) brightness(.9) drop-shadow(0 3px 4px rgba(0,0,0,.45))}
+#hud .cbadge.hot{filter:drop-shadow(0 0 12px rgba(255,190,20,1))}
+#hud .cbadge b{font-size:calc(var(--cap)*.42)}
+#hud .cbwrap{gap:4px}
+
+/* زر القائمة بنفس المادة */
+#hud #tui-menu{
+  width:var(--menu);height:var(--menu);min-width:44px;min-height:44px;border-radius:14px;opacity:1;color:#fff;
+  background:var(--hud-bg);border:2px solid var(--hud-bd);box-shadow:var(--hud-sh);
+}
+
+/* لوحة FOD في الوسط */
+#hud .fodcol{
+  top:calc(var(--tui-sat,0px) + 6px + (var(--menu) - var(--cap)) / 2);height:var(--cap);box-sizing:border-box;
+  padding:0 14px 0 8px;gap:10px;border-radius:999px;
+  background:var(--hud-bg);border:2px solid var(--hud-bd);box-shadow:var(--hud-sh);backdrop-filter:none;
+}
+#hud .fodcol .fc-t{background:linear-gradient(180deg,#ff6b5e,#c62828);color:#fff;border:1.5px solid #ffd0cb;border-radius:999px;padding:4px 9px;letter-spacing:.1em;box-shadow:0 2px 0 #5a0a06}
+#hud .fodcol .fs{width:calc(var(--cap)*.68);height:calc(var(--cap)*.75)}
+#hud .fodcol .fs .hx{fill:rgba(0,0,0,.35);stroke:rgba(255,255,255,.45)}
+#hud .fodcol .fs .bolt{stroke:rgba(255,255,255,.4)}
+#hud .fodcol .fc-l{font-weight:900;font-size:calc(var(--cap)*.3);color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.5)}
+
+/* شاشات متوسطة (هواتف أفقية): تصغير النصوص الثانوية كي لا تتزاحم مع لوحة FOD */
+@media (max-width:1240px){
+  #hud .mh-l,#hud .fodcol .fc-l{display:none}
+  #hud #stg{min-width:calc(var(--cap)*3.4)}
+}
+/* أضيق من ذلك: لوحة FOD تنزل سطراً تحت الشريط بدل أن تغطي المضاعف ×1 */
+@media (max-width:900px){
+  #hud .fodcol{top:calc(var(--tui-sat,0px) + 6px + var(--menu) + 8px);height:calc(var(--cap)*.9)}
+}
+@media (max-width:760px){
+  #hud .sg-n{display:none}
+  #hud #stg{min-width:calc(var(--cap)*2.9)}
+  #hud .hud-end .hud-side{gap:7px}
+}

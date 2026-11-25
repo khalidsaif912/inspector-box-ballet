@@ -2265,14 +2265,16 @@ function hud(){
 $('sc').textContent = score;
 const stageIcons = ['','🎓','🚀','⚡','🏁'];
 const stgTxt = $('stgtxt'), stgFill = $('stgfill');
+/* شارة المرحلة: أيقونة في ميدالية + العنوان + العدّاد (نصوص داخلية فقط، لا مدخلات مستخدم) */
+const stgSet = (ico, label, num) => { stgTxt.innerHTML = `<i class="sg-ico">${ico}</i><span class="sg-l">${label}</span>` + (num ? `<span class="sg-n">${num}</span>` : ''); };
 if(stage < 4){
 const prog = gameRules.layout.stageProgress(stage, score), cap = prog.cap;
 const shown = prog.shown;
-if(stgTxt) stgTxt.textContent = `${stageIcons[stage]} ${I18N.T('المرحلة','Stage')} ${stage} • ${shown}/${cap}`;
+if(stgTxt) stgSet(stageIcons[stage], `${I18N.T('المرحلة','Stage')} ${stage}`, `${shown}/${cap}`);
 if(stgFill) stgFill.style.width = prog.percent + '%';
-$('stg').classList.remove('final');
+$('stg').classList.remove('final'); $('stg').title = '';
 } else {
-if(stgTxt) stgTxt.textContent = I18N.t('🏁 المرحلة ٤ • مستوى الخبراء — مواد خطرة فقط');
+if(stgTxt){ stgSet('🏁', I18N.T('المرحلة ٤','Stage 4'), I18N.T('خبير ⭐','Expert ⭐')); $('stg').title = I18N.t('🏁 المرحلة ٤ • مستوى الخبراء — مواد خطرة فقط'); }
 if(stgFill) stgFill.style.width = '100%';
 $('stg').classList.add('final');
 }
