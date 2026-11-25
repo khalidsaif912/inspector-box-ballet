@@ -1098,7 +1098,11 @@ const MIX = {
   timmy:  { seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null }
 };
 /* الشخصيات: worker و timmy (Mixamo) · hero (3D) · crew (المجسّم الثابت) · rig (الإجرائي) */
-const CHAR_IDS = ['worker', 'timmy'];
+/* safety و supervisor شخصيتان مشتقتان من مجسّم العامل نفسه بزيّ مختلف (تفتحهما الرتبة، progress-rules.js) */
+const CHAR_IDS = ['worker', 'timmy', 'safety', 'supervisor'];
+const CHAR_BASE = { safety: 'worker', supervisor: 'worker' };
+const mixId = id => CHAR_BASE[id] || id;
+const charUnlocked = id => !window.Prog || Prog.charUnlocked(id);
 const CHAR = { id: 'worker' };
 /* ترحيل لمرة واحدة: من بقي على الافتراضي القديم (hero) ينتقل إلى عامل المستودع الافتراضي الجديد */
 try { if(localStorage.getItem('acg_char_v') !== '2'){ const o = localStorage.getItem('acg_char'); if(!o || o === 'hero') localStorage.setItem('acg_char', 'worker'); localStorage.setItem('acg_char_v', '2'); } } catch(e){}
@@ -1106,12 +1110,13 @@ try { const saved = localStorage.getItem('acg_char'); if(CHAR_IDS.indexOf(saved)
 try { if(new URLSearchParams(location.search).get('crew') === 'rig') CREW.mode = 'rig'; } catch(e){}
 /* أثناء تنزيل الشخصية المختارة يبقى ظاهراً مجسّم الشخصية السابقة الجاهز بدل أن يختفي اللاعب */
 function shownMixId(){
-  if(MIX[CHAR.id] && MIX[CHAR.id].ready) return CHAR.id;
+  const want = mixId(CHAR.id);
+  if(MIX[want] && MIX[want].ready) return want;
   for(const id in MIX) if(MIX[id].ready) return id;
   return null;
 }
 function activeCharRig(){
-  if(MIX[CHAR.id]){ const id = shownMixId(); return id ? MIX[id].inst : null; }
+  if(MIX[mixId(CHAR.id)]){ const id = shownMixId(); return id ? MIX[id].inst : null; }
   if(CHAR.id === 'hero') return HERO.ready ? HERO.inst : null;
   if(CHAR.id === 'crew') return (CREW.ready && CREW.mode === 'glb') ? CREW.inst : null;
   return null; // الإجرائي: يحل محلّه rig المجسّم
@@ -1120,14 +1125,16 @@ function crewShow(v){
   const act = activeCharRig();
   if(CREW.obj) CREW.obj.visible = v && CHAR.id === 'crew' && !!act;
   if(HERO.obj) HERO.obj.visible = v && CHAR.id === 'hero' && !!act;
-  const shown = MIX[CHAR.id] ? shownMixId() : null;
+  const mid = mixId(CHAR.id), shown = MIX[mid] ? shownMixId() : null;
   for(const id in MIX) if(MIX[id].obj) MIX[id].obj.visible = v && shown === id && !!act;
-  rig.visible = v && !act && !(MIX[CHAR.id] && !MIX[CHAR.id].err);   // الإجرائي احتياطاً فقط إن فشل تنزيل الشخصية
+  rig.visible = v && !act && !(MIX[mid] && !MIX[mid].err);   // الإجرائي احتياطاً فقط إن فشل تنزيل الشخصية
 }
 function applyCrewMode(){
-  if(MIX[CHAR.id]) loadMixamo(CHAR.id);
+  const mid = mixId(CHAR.id);
+  if(MIX[mid]) loadMixamo(mid);
   else if(CHAR.id === 'hero') loadHero(); else if(CHAR.id === 'crew') loadCrewGLB();
   crewShow(true);
+  if(window.Prog) Prog.applyOutfit();   // زيّ الشخصية المشتقة + لون سترة الرتبة
 }
 /* حالة تحميل الشخصية: تظهر تحت أزرار الاختيار (وكإشعار داخل اللعب) بدل أن يظهر
    الموظف الكلاسيكي بصمت أثناء تنزيل المجسّم الكبير أو عند فشله. */
@@ -1141,7 +1148,7 @@ function charStatus(text){
   }
   if(el) el.textContent = text || '';
 }
-const CHAR_NAMES = { worker: ['عامل المستودع', 'warehouse worker'], timmy: ['تيمي المرح', 'Timmy'], hero: ['شخصية 3D', '3D character'], crew: ['طاقم أرضي', 'ground crew'] };
+const CHAR_NAMES = { worker: ['عامل المستودع', 'warehouse worker'], timmy: ['تيمي المرح', 'Timmy'], safety: ['ضابط السلامة', 'Safety Officer'], supervisor: ['مشرف الوردية', 'Shift Supervisor'], hero: ['شخصية 3D', '3D character'], crew: ['طاقم أرضي', 'ground crew'] };
 function loadMixamo(id, attempt){
   const M = MIX[id];
   if(!M || M.loading || M.ready || !window.MixamoWorker) return;
@@ -1152,14 +1159,14 @@ function loadMixamo(id, attempt){
   MixamoWorker.load(M.url, (e) => {
     if(!e || !e.total) return;
     lt.set(e.loaded / e.total);
-    if(CHAR.id !== id) return;
+    if(mixId(CHAR.id) !== id) return;
     const p = Math.min(99, Math.round(e.loaded / e.total * 100));
     charStatus(I18N.T('⏳ جاري تحميل ' + n[0] + '… ' + p + '%', '⏳ Loading ' + n[1] + '… ' + p + '%'));
   }).then(o => {
     lt.done();
     M.obj = o.root; M.inst = o; M.ready = true; M.loading = false;
     o.seatZ = M.seat.z; o.seatY = M.seat.hips; Object.assign(o.sitCfg, { arm: M.seat.arm, fore: M.seat.fore });   // وضع الجلوس مضبوط لكل شخصية على مقعد الرافعة ومقودها
-    pl.add(o.root); if(CHAR.id === id) charStatus(''); applyCrewMode();
+    pl.add(o.root); if(mixId(CHAR.id) === id) charStatus(''); applyCrewMode();
     loadSeatCrew();
     console.log('[' + id + '] mixamo glb ready');
   }).catch(err => {
@@ -1168,7 +1175,7 @@ function loadMixamo(id, attempt){
     if(tries < 2){ console.warn('[' + id + '] glb failed, retrying', M.err); setTimeout(() => loadMixamo(id, tries + 1), tries ? 4000 : 1500); return; }   // ثلاث محاولات قبل الاستسلام (شبكة الجوال تنقطع أحياناً)
     lt.fail();
     crewShow(true);
-    if(CHAR.id === id) charLoadFailed(id, err);
+    if(mixId(CHAR.id) === id) charLoadFailed(id, err);
   });
 }
 function charLoadFailed(id, err){
@@ -1217,7 +1224,7 @@ function loadHero(attempt){
   });
 }
 function setCharacter(id){
-  CHAR.id = CHAR_IDS.indexOf(id) >= 0 ? id : 'worker';
+  CHAR.id = CHAR_IDS.indexOf(id) >= 0 && charUnlocked(id) ? id : 'worker';
   try { localStorage.setItem('acg_char', CHAR.id); } catch(e){}
   try { if(parent !== window) parent.postMessage({ type: 'acg-character-changed', id: CHAR.id }, location.origin); } catch(e){}
   charStatus('');                                   // دوال التحميل تعيد كتابة الحالة إن كان المجسّم قيد التنزيل
@@ -1508,6 +1515,7 @@ function balletOnSort(){
 const r = gameRules.ballet.onSort(ballet);
 ballet = r.state;
 if(!r.triggered) return;
+progEmit('ballet', { count: r.count });
 score += r.bonus;
 balletSpinT = gameRules.ballet.spinSeconds;
 const el = $('ballet-banner');
@@ -1633,6 +1641,8 @@ hd.rotation.y = isMoving ? sw * 0.06 : Math.sin(performance.now()*0.0015) * 0.12
 pl.position.set(0, 0, 3);
 let items=[], run=false, score=0, combo=1, time=100, spawnT=0, held=null, near=null, stage=1;
 let streak=0, streakT=0, maxStreak=0, rushT=25, rushN=0, rushDelay=0;
+/* أحداث اللعب للمهام اليومية والخبرة وشهادة DGR (progress-game.js) */
+const progEmit = (e, p) => { if(window.Prog) Prog.emit(e, p); };
 /* ===== إثارة: اندفاع + اهتزاز كاميرا + وضع الحمى ===== */
 let dashT = 0, dashCD = 0, feverT = 0, shakeTrauma = 0, hitStop = 0;
 const FEVER_TIME = 6, FEVER_BOOST = 1.15;
@@ -1663,6 +1673,7 @@ b.style.setProperty('--cd', (dashCD > 0 && !boosting ? (dashCD / dashCfg().cd) *
 function startFever(){
 if(feverT > 0) return;
 feverT = FEVER_TIME;
+progEmit('fever');
 $('stage').classList.add('fever');
 snd('fever');
 toast('🔥 وضع الحمى! النقاط مضاعفة ×2', '#ffd54a');
@@ -1753,7 +1764,7 @@ demo.truck=true;truckState=gameRules.reset();truckState.trips=1;truckState.elaps
 /* جولة حية دون إيقاف سير اللعبة */
 showIntro(I18N.T('<b class="t">🚜 الرافعة الشوكية</b>تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.<small>جولة تدريبية مباشرة — انتبه أثناء العمل!</small>', '<b class="t">🚜 Forklift Operating</b>Drops foreign objects (FOD); collect them and put them in the red bin.<small>Live training round — stay alert!</small>'), 4500, false);
 }
-const beltSpeed=()=> gameRules.layout.beltSpeed(stage, feverT > 0);
+const beltSpeed=()=> gameRules.layout.beltSpeed(stage, feverT > 0) * (window.Prog ? Prog.beltK() : 1);
 let sortedCount=0, totalProcessed=0;
 const px = pl.position, key = {}, joy = {x:0, y:0};
 const tc = {};
@@ -2001,7 +2012,7 @@ function evtAllowPatrol(){
   return evt.patrol < 3 && evt.t >= 14 && evt.t - evt.lastInsp >= 40 && !items.some(i => i.data.cao && !i.caoChecked);
 }
 function fireSafe(){
-  return time > 20 && !jam.active && !cardP.active && !inspector.active && !caoQ.active && !truckState.active && !STUDY.on && !FD.on && !frzP.active && !FRZ.pending &&
+  return time > 20 && !(window.Prog && Prog.busy()) && !jam.active && !cardP.active && !inspector.active && !caoQ.active && !truckState.active && !STUDY.on && !FD.on && !frzP.active && !FRZ.pending &&
     !introHold && !liftAnim.active && rushN === 0 && !items.some(i => i.data.cao && !i.caoChecked) && evt.t - evt.lastInsp >= 12;
 }
 function caoSwap(raw){
@@ -2041,6 +2052,7 @@ S.add(m);
 const it = {m, data:itObj, st:'belt', csh};
 makeCrit(it);
 items.push(it);
+if(window.Prog) Prog.onSpawn(it);   // شحنة VIP عند حدث الوردية
 }
 /* ===== طرد حرج بمؤقت تفجير (15%) ===== */
 /* المؤقت خاص بطرود سلسلة التبريد (❄️) فقط. نسبة الاختيار 45% من طرود التبريد
@@ -2187,11 +2199,12 @@ const before=gameRules.position(truckState), event=gameRules.advance(truckState,
 if(event.entered){snd('horn');addShake(.35);tip('forklift' + (event.trip || 0), '⚠️ رافعة متهورة تعبر المستودع!' + (event.trip ? ' (' + (event.trip + 1) + '/3)' : ''), '#ffd54a');}
 if(event.drop) dropFod(after.x,after.z,event.trip);
 if(!demo.truck && !FD.on && truckState.active && !truckState.hit && gameRules.touches(before.x,before.z,after.x,after.z,px.x,px.z)){
-truckState.hit=true;fearT=gameRules.fearDuration;snd('bump');tip('bump', '😨 اصطدام! حركة أبطأ مؤقتًا', '#ffd54a');
+truckState.hit=true;fearT=gameRules.fearDuration;progEmit('hit');snd('bump');tip('bump', '😨 اصطدام! حركة أبطأ مؤقتًا', '#ffd54a');
 }
 }
 if(demo.truck && truckState.done){ demo.truck=false; demo.truckDone=true; if(demo.inspDone) saveTutorialDone(); hideIntro(); }
 const pos=gameRules.position(truckState);
+if(window.Prog) Prog.truckTick(pos, truckState);   // النجاة في اللحظة الأخيرة
 recklessTruck.visible=truckState.active;recklessTruck.position.set(pos.x,0,pos.z);recklessTruck.rotation.y=pos.yaw;
 // اهتزاز كاميرا خفيف عند مرور الرافعة المتهورة قرب اللاعب
 if(truckState.active && Math.abs(pos.x - px.x) < 7 && Math.abs(pos.z - px.z) < 5) addShake(dt * 1.8);
@@ -3051,7 +3064,7 @@ function resolvePlacement(z, it){
 const d = it.data;
 if(d.isFod){
 const bonus=gameRules.reward(true,z.k);
-if(bonus){score+=bonus;rm(it);fodCollect();snd('ok');spawnFloatTag('+'+bonus+' FOD','#69f0ae');toast(I18N.T('✔ جمع الجسم الغريب +','✔ FOD collected +')+bonus+I18N.T(' نقطة',' pts'),'#69f0ae');}
+if(bonus){score+=bonus;rm(it);fodCollect();progEmit('fod');snd('ok');spawnFloatTag('+'+bonus+' FOD','#69f0ae');toast(I18N.T('✔ جمع الجسم الغريب +','✔ FOD collected +')+bonus+I18N.T(' نقطة',' pts'),'#69f0ae');}
 else {it.st='floor';it.fall=false;it.m.position.set(px.x, .2, Math.max(-4,px.z+1.5));snd('warn');tip('fodbox', '🔩 ضعه في صندوق FOD الأحمر','#ffd54a');}
 hud();return;
 }
@@ -3083,7 +3096,10 @@ conflictReason = 'منطقة فرز غير مطابقة لنوع الشحنة!';
 }
 if(ok){
 sortedCount++;
-const p = gameRules.economy.sortReward({ isHz: !!d.isHz, combo, fever: feverT > 0 });
+progEmit('sort', { ok: true }); if(d.isHz) progEmit('dgr', { ok: true });
+if(window.Prog) Prog.onSorted(it, true);
+/* ذروة الشحن تضاعف نقاط الفرز */
+const p = Math.round(gameRules.economy.sortReward({ isHz: !!d.isHz, combo, fever: feverT > 0 }) * (window.Prog ? Prog.scoreK() : 1));
 score += p;
 streak++; streakT = streakWindow(); maxStreak = Math.max(maxStreak, streak);
 combo = gameRules.economy.comboAfter(streak);
@@ -3126,6 +3142,8 @@ const pen = gameRules.economy.penalty(conflict);
 const lost = Math.min(score, pen);
 score = Math.max(0, score - pen);
 combo = 1; streak = 0; streakT = 0;
+progEmit('sort', { ok: false }); if(d.isHz || conflict) progEmit('dgr', { ok: false });
+if(window.Prog) Prog.onSorted(it, false);
 snd('error');
 penaltyFx(lost, conflict);
 fodLose();
@@ -3217,6 +3235,8 @@ if(held) forkUnload();
 else { const it = forkCargo(); if(it) forkLoad(it); else stopDrive(); }
 return;
 }
+/* الحيوان الأليف: الإمساك به ووضعه في القفص له الأولوية حين يكون قريباً */
+if(window.Prog && Prog.act()) return;
 if(!held && FD.near && FD.left > 0){ mountDrive(); return; }
 // تشغيل زر إبطاء الحزام بالوقوف بجانبه والضغط على ✋
 if(!held && !near && !beltSlowUsed && Math.hypot(px.x - BELT_BTN_XZ.x, px.z - BELT_BTN_XZ.z) < 2.4){ useBeltSlow(); return; }
@@ -3416,6 +3436,7 @@ demo = {insp:false,truck:false,inspDone:td,truckDone:td,truckIn:0}; inspector.de
 sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false;
 /* كل وردية جديدة تبدأ بحصة ٣ أسئلة للمفتش وشحنة ملصق واحدة */
 resetCaoRun(); evtReset();
+if(window.Prog) Prog.roundStart();
 $('rules').style.display = 'none';
 resetExitGate();
 resetFire();
@@ -3433,7 +3454,7 @@ $('go').onclick = () => start();
 function loginUI(){
 if(!window.Online || !$('login')) return;
 const f = $('login-form'), who = $('login-who'), msg = $('login-msg'), go = $('go');
-const refresh = () => { const u = Online.user(); f.hidden = !!u; who.hidden = !u; go.disabled = !u && !Online.guest; if(u) $('who-name').textContent = '👤 ' + Online.nameOf(u.id, I18N.lang, u.name); };
+const refresh = () => { const u = Online.user(); f.hidden = !!u; who.hidden = !u; go.disabled = !u && !Online.guest; if(u) $('who-name').textContent = '👤 ' + Online.nameOf(u.id, I18N.lang, u.name); if(window.Prog) Prog.onPlayer(); };
 f.onsubmit = async e => { e.preventDefault(); msg.textContent = '…'; const u = await Online.login($('emp-id').value); if(!u){ msg.textContent = I18N.t('الرقم الوظيفي غير موجود'); return; } msg.textContent = ''; refresh(); globalTop(); };
 $('guest').onclick = () => { Online.guest = true; refresh(); start(); };
 $('who-out').onclick = () => { Online.guest = false; Online.logout(); $('emp-id').value = ''; refresh(); $('emp-id').focus(); };
@@ -3484,6 +3505,8 @@ const record = score > best && score > 0;
 if(record) saveBest(score);
 const topList = score > 0 ? pushTop(score) : getTop();
 try { if(window.Online) Online.submit(score).then(() => globalTop()).catch(() => {}); } catch(e){}
+/* الخبرة والمهام والترقية: تُحسب مرة واحدة بنهاية الوردية وتُعرض في شاشة النتائج */
+const career = window.Prog ? Prog.roundEnd(score) : '';
 const grade = gameRules.scoreboard.grade(score, acc);
 const titles = { s:I18N.t('خبير DGR معتمد'), a:I18N.t('مشرف فرز متمكن'), b:I18N.t('فني مستودع واعد'), c:I18N.t('متدرب قيد التأهيل') };
 const stars = gameRules.scoreboard.stars(grade);
@@ -3516,9 +3539,10 @@ o.innerHTML = `<div class="shift-panel">
 <h1 class="main-title">${I18N.t('انتهت الوردية')}</h1>
 <div class="rank-chip">
 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-<span>${I18N.t('الرتبة:')}</span><strong>${titles[grade]}</strong>
+<span>${I18N.T('تقييم الوردية:','Shift grade:')}</span><strong>${titles[grade]}</strong>
 </div>
 </section>
+${career}
 <section class="stats-grid">
 <div class="stat-card c-amber">
 <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -4137,6 +4161,7 @@ if(I_.state === 'inspect'){
 
   if(I_.inspectT >= 2.0){
     it.fined = true;
+    if(window.Prog) Prog.fined();
     score = Math.max(0, score - 15);
     combo = 1;
     time = Math.max(0, time - 4);
@@ -4428,6 +4453,7 @@ function caoAnswer(opt){
 const it = caoQ.it;
 if(!it || !caoQ.active || caoQ.answered) return;
 const ok = gameRules.cao.correct(opt);
+progEmit('cao', { ok }); progEmit('dgr', { ok });
 it.caoChecked = true;
 caoQ.answered = true;
 caoQ.lastOk = ok;
@@ -4501,6 +4527,8 @@ if(caoQ.active){ dt = 0; updateCaoScene(Math.min(rawDt, .05)); }
 if(frzP.active || cardP.active) dt = 0;
 /* Hit-stop: تجميد لحظي لكل المحاكاة لإبراز الأثر الكبير */
 if(hitStop > 0){ hitStop = Math.max(0, hitStop - Math.max(rawDt, 0)); dt = 0; }
+/* تباطؤ الزمن لحظة النجاة من الرافعة */
+if(window.Prog) dt = Prog.timeScale(dt, rawDt);
 if(!document.hidden && rawDt > 0 && rawDt < 1){
 // حماية الأداء: أقل من 35 إطاراً/ث لعدّتين متتاليتين ⇒ خفض مؤقت للنسبة؛ وعند الاستقرار نعود للنسبة الهدف
 if(perfWarm < 2.5) perfWarm += rawDt;
@@ -4663,6 +4691,7 @@ if(zz){ it.st = 'sorting'; resolvePlacement(zz, it); }
 separateBoxes();
 if(!fire.active && !STUDY.on && !jam.active && !caoQ.active && (stage>=2 || demo.insp)) updateInspector(dt);
 updateEvents(dt);
+if(window.Prog) Prog.tick(dt);   // أحداث الوردية: الانقطاع، الذروة، VIP، الحيوان الأليف
 if(jy){
   const tp2 = gameRules.position(truckState);
   const nearTruck = truckState.active && tp2.x < px.x + 4 && Math.abs(tp2.x - px.x) < 14;
@@ -4834,31 +4863,7 @@ try{ R.compile(S, C); }catch(e){}
 loading.phase(96, I18N.t('اكتمل التجهيز — لحظة واحدة...'));
 requestAnimationFrame(loop);
 
-// ===== تخصيص لون سترة العامل =====
-(() => {
-const vestMats = []; rig.traverse(o => { if(o.isMesh && o.material && o.material.color && o.material.color.getHex() === C_VEST) vestMats.push(o.material); });
-vestMats.push(forkVest.material);
-const COLORS = [[0xd4ff00,I18N.t('أصفر فوسفوري')],[0xff6d00,I18N.t('برتقالي سلامة')],[0x00e676,I18N.t('أخضر نيون')]];
-const apply = c => { vestMats.forEach(m => m.color.setHex(c)); try { localStorage.setItem('acg_vest', c); } catch(e){} document.querySelectorAll('#skins button').forEach(b => b.classList.toggle('on', +b.dataset.c === c)); };
-const row = document.getElementById('skins'); if(!row) return;
-COLORS.forEach(([c,n]) => { const b = document.createElement('button'); b.dataset.c = c; b.style.background = '#' + c.toString(16).padStart(6,'0'); b.setAttribute('aria-label', n); b.title = n; b.onclick = e => { e.stopPropagation(); apply(c); }; row.appendChild(b); });
-let saved = COLORS[0][0]; try { saved = +(localStorage.getItem('acg_vest') || COLORS[0][0]); } catch(e){}
-apply(COLORS.some(([c]) => c === saved) ? saved : COLORS[0][0]);
-})();
-
-// ===== اختيار الشخصية =====
-(() => {
-const row = document.getElementById('chars'); if(!row) return;
-const LIST = [['worker', I18N.t('عامل المستودع'), I18N.t('الأساسية'), '👷'], ['timmy', I18N.t('تيمي المرح'), I18N.t('كرتوني'), '🧢']];
-LIST.forEach(([id, n, hint, ico]) => {
-  const b = document.createElement('button'); b.type = 'button'; b.dataset.char = id;
-  b.setAttribute('role', 'radio');
-  b.innerHTML = '<span class="pk-ico" aria-hidden="true">' + ico + '</span><span class="pk-tx"><b>' + n + '</b><small>' + hint + '</small></span>';
-  b.onclick = e => { e.stopPropagation(); window.__setCharacter(id); };
-  row.appendChild(b);
-});
-row.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.char === CHAR.id));
-})();
+// ===== لون السترة واختيار الشخصية: يبنيهما progress-game.js بحسب رتبة الموظف (Prog.buildPickers) =====
 
 // ===== معاينة حيّة للشخصية المختارة في شاشة البداية (عرض ثانٍ لنفس المشهد بكاميرا قريبة) =====
 (() => {

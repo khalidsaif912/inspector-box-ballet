@@ -35,30 +35,52 @@
           /* ألوان الملابس: الأجزاء تتشارك خامة الجسم، فنعطي كل قطعة نسخة مادة خاصة تستبدل
              لون الخامة باللون المطلوب مع إبقاء ظلال الطيّات (من سطوع الخامة) وخريطة التضاريس.
              القيم بالفضاء الخطي: قميص أبيض · بنطال كحلي · حذاء أسود. */
+          /* اللون قابل للتغيير وقت اللعب (uTint/uMix): سترة الرتبة وأزياء الشخصيات المشتقة من العامل.
+             mix=0 يُبقي لون الخامة الأصلي (السترة البرتقالية والخوذة)، و keep يحفظ الأجزاء الساطعة جداً
+             (الأشرطة العاكسة في السترة) بلونها الفضي. */
           var OUTFIT = [
-            { re: /Shirt/, rgb: '0.86, 0.86, 0.86', lo: 0.72, rough: 0.85 },
-            { re: /Pants/, rgb: '0.0065, 0.010, 0.032', lo: 0.6, rough: 0.9 },
-            { re: /Boots/, rgb: '0.018, 0.018, 0.02', lo: 0.55, rough: 0.42 }
+            { part: 'Shirt', re: /Shirt/, rgb: [0.86, 0.86, 0.86], mix: 1, lo: 0.72, keep: 2, rough: 0.85 },
+            { part: 'Pants', re: /Pants/, rgb: [0.0065, 0.010, 0.032], mix: 1, lo: 0.6, keep: 2, rough: 0.9 },
+            { part: 'Boots', re: /Boots/, rgb: [0.018, 0.018, 0.02], mix: 1, lo: 0.55, keep: 2, rough: 0.42 },
+            { part: 'Vest', re: /Vest/, rgb: [1, 1, 1], mix: 0, lo: 0.5, keep: 0.42, rough: 0.7 },
+            { part: 'Helmet', re: /Helmet|Hat|Cap/, rgb: [1, 1, 1], mix: 0, lo: 0.55, keep: 2, rough: 0.35 }
           ];
+          var outfitU = {};   // part → [uniforms...]
           model.traverse(function (o) {
             if (!o.isMesh) return;
-            OUTFIT.forEach(function (c, i) {
+            OUTFIT.forEach(function (c) {
               if (!c.re.test(o.name)) return;
               var m = o.material.clone();
               m.color.setHex(0xffffff); m.roughness = c.rough;
+              var U = { uTint: { value: new THREE.Color(c.rgb[0], c.rgb[1], c.rgb[2]) }, uMix: { value: c.mix } };
+              (outfitU[c.part] = outfitU[c.part] || []).push({ U: U, def: c });
               m.onBeforeCompile = function (sh) {
-                sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', [
+                sh.uniforms.uTint = U.uTint; sh.uniforms.uMix = U.uMix;
+                sh.fragmentShader = 'uniform vec3 uTint;\nuniform float uMix;\n' + sh.fragmentShader.replace('#include <map_fragment>', [
                   '#ifdef USE_MAP',
                   '  vec4 texelColor = mapTexelToLinear( texture2D( map, vUv ) );',
                   '  float lum = dot( texelColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );',
-                  '  diffuseColor.rgb *= vec3( ' + c.rgb + ' ) * ( ' + c.lo + ' + ' + (1 - c.lo).toFixed(2) + ' * smoothstep( 0.0, 0.06, lum ) );',
+                  '  vec3 tinted = uTint * ( ' + c.lo.toFixed(2) + ' + ' + (1 - c.lo).toFixed(2) + ' * smoothstep( 0.0, 0.06, lum ) );',
+                  '  tinted = mix( tinted, texelColor.rgb, smoothstep( ' + c.keep.toFixed(2) + ', ' + (c.keep + 0.2).toFixed(2) + ', lum ) );',
+                  '  diffuseColor.rgb *= mix( texelColor.rgb, tinted, uMix );',
                   '#endif'
                 ].join('\n'));
               };
-              m.customProgramCacheKey = function () { return 'outfit-' + i; };
+              m.customProgramCacheKey = function () { return 'outfit-' + c.part; };
               o.material = m;
             });
           });
+          /* parts: { Vest: 0xRRGGBB | null, Helmet, Shirt, Pants, Boots } — null أو غياب الجزء يعيده إلى لونه الافتراضي */
+          function setOutfit(parts) {
+            parts = parts || {};
+            Object.keys(outfitU).forEach(function (part) {
+              var hex = parts[part];
+              outfitU[part].forEach(function (e) {
+                if (hex === null || hex === undefined) { e.U.uTint.value.setRGB(e.def.rgb[0], e.def.rgb[1], e.def.rgb[2]); e.U.uMix.value = e.def.mix; }
+                else { e.U.uTint.value.setHex(hex).convertSRGBToLinear(); e.U.uMix.value = 1; }
+              });
+            });
+          }
           model.updateMatrixWorld(true);
           var box = new THREE.Box3().setFromObject(model);
           var h = Math.max(0.1, box.max.y - box.min.y), sc = TARGET_H / h;
@@ -125,6 +147,7 @@
 
           var inst = {
             root: root, height: TARGET_H, sitCfg: sitCfg, hipsHeight: hipsH,
+            setOutfit: setOutfit, outfitParts: Object.keys(outfitU),
             holdPoint: function (out) {
               if (!handL || !handR) return null;
               if (!out) out = new THREE.Vector3();

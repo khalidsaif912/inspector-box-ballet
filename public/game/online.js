@@ -21,6 +21,8 @@ const enc = v => typeof v === 'number' ? { integerValue: String(Math.round(v)) }
 const encDoc = o => { const f = {}; for(const k in o) f[k] = enc(o[k]); return { fields: f }; };
 const dec = d => { const o = {}; for(const k in (d.fields || {})){ const v = d.fields[k]; o[k] = v.integerValue !== undefined ? +v.integerValue : v.timestampValue !== undefined ? new Date(v.timestampValue) : v.stringValue; } o._id = (d.name || '').split('/').pop(); return o; };
 const url = (p, q) => `${base()}/${p}${q || ''}${(q || '').indexOf('?') < 0 ? '?' : '&'}key=${CFG.apiKey}`;
+/* تحديث جزئي: يكتب الحقول المرسلة فقط ويُبقي غيرها (الخبرة والرتبة لا تُمسح عند تسجيل الدخول أو رفع النتيجة) */
+const mask = o => '?' + Object.keys(o).map(k => 'updateMask.fieldPaths=' + encodeURIComponent(k)).join('&');
 const send = (m, u, b) => fetch(u, { method: m, headers: { 'Content-Type': 'application/json' }, body: b ? JSON.stringify(b) : undefined }).then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)));
 
 async function directory(){
@@ -64,8 +66,8 @@ const Online = {
   async _touch(now, who){
     const p = who || emp, u = url('players/' + p.id); let cur = null;
     try { cur = dec(await send('GET', u)); } catch(e){}
-    const doc = { id: p.id, name: p.name, dept: p.dept, best: cur ? cur.best : 0, plays: cur ? cur.plays : 0, logins: (cur ? cur.logins : 0) + 1, last: now };
-    await send('PATCH', u, encDoc(doc));
+    const doc = { id: p.id, name: p.name, dept: p.dept, best: cur ? cur.best || 0 : 0, plays: cur ? cur.plays || 0 : 0, logins: (cur ? cur.logins || 0 : 0) + 1, last: now };
+    await send('PATCH', url('players/' + p.id, mask(doc)), encDoc(doc));
   },
   /* يسجل نتيجة اللعبة ويرفع الرقم القياسي إن تجاوزه */
   async submit(score){
@@ -75,8 +77,26 @@ const Online = {
     const now = new Date(), u = url('players/' + p.id); let cur = null;
     try { cur = dec(await send('GET', u)); } catch(e){}
     send('POST', url('scores'), encDoc({ id: p.id, name: p.name, dept: p.dept, score, at: now })).catch(() => {});
-    const best = Math.max(score, cur ? cur.best : 0);
-    await send('PATCH', u, encDoc({ id: p.id, name: p.name, dept: p.dept, best, plays: (cur ? cur.plays : 0) + 1, logins: cur ? cur.logins : 1, last: now }));
+    const best = Math.max(score, cur ? cur.best || 0 : 0);
+    const doc = { id: p.id, name: p.name, dept: p.dept, best, plays: (cur ? cur.plays || 0 : 0) + 1, logins: cur ? cur.logins || 1 : 1, last: now };
+    await send('PATCH', url('players/' + p.id, mask(doc)), encDoc(doc));
+  },
+  /* تقدّم الموظف (الخبرة، الرتبة، شهادة DGR) لعرض اللقب في صفحة الإدارة والغلاف. الخبرة لا تنقص أبداً عن المحفوظ. */
+  async saveProgress(prog){
+    const p = this.player();
+    if(!on() || !p || !prog) return;
+    const u = url('players/' + p.id); let cur = null;
+    try { cur = dec(await send('GET', u)); } catch(e){}
+    if(!cur) return;   // لا سجل بعد (يُنشأ عند الدخول أو رفع النتيجة مع best): لا ننشئ سجلاً ناقصاً
+    const xp = Math.max(Math.floor(+prog.xp || 0), cur && cur.xp ? cur.xp : 0);
+    const doc = { id: p.id, name: p.name, dept: p.dept, xp, rank: String(prog.rank || ''), dgr: prog.dgr ? 1 : 0, dgrBest: Math.floor(+prog.dgrBest || 0) };
+    await send('PATCH', url('players/' + p.id, mask(doc)), encDoc(doc));
+  },
+  /* الخبرة المحفوظة على الخادم (لاستعادة التقدّم على جهاز آخر) */
+  async remoteProgress(){
+    const p = this.player();
+    if(!on() || !p) return null;
+    try { const d = dec(await send('GET', url('players/' + p.id))); return { xp: d.xp || 0, dgr: !!d.dgr, dgrBest: d.dgrBest || 0 }; } catch(e){ return null; }
   },
   async _query(coll, field, limit){
     const r = await send('POST', `${base()}:runQuery?key=${CFG.apiKey}`, { structuredQuery: { from: [{ collectionId: coll }], orderBy: [{ field: { fieldPath: field }, direction: 'DESCENDING' }], limit } });

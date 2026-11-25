@@ -139,6 +139,13 @@ header{width:100%;flex:0 0 auto;padding:12px clamp(14px,2.6vw,32px) 8px;backgrou
 .brand img{width:44px;height:44px;border-radius:4px;box-shadow:none;outline:3px solid var(--ink);outline-offset:0}
 .brand h1{font-size:clamp(20px,2.8vw,32px);font-weight:900;color:var(--ink);letter-spacing:0;line-height:1.1}
 .brand p{margin:3px 0 0;color:var(--mute);font-size:clamp(12px,1.3vw,14px);font-weight:500}
+/* اسم الموظف ولقبه (الرتبة) وشهادة DGR */
+.brand .profile{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:5px;color:var(--ink);font-size:clamp(12px,1.3vw,14px)}
+.brand .profile b{font-weight:900}
+.brand .profile .rk{display:inline-flex;align-items:center;padding:1px 9px;border-radius:3px;background:var(--ink);color:#fff;font-weight:900;font-size:.9em;line-height:1.7;white-space:nowrap}
+.brand .profile .rk-trainee{background:#4b5c69}.brand .profile .rk-handler{background:#1c4e8a}.brand .profile .rk-senior{background:#1f8a52}
+.brand .profile .rk-assistant{background:#6a3fa0}.brand .profile .rk-supervisor{background:#b33a12}.brand .profile .rk-chief{background:linear-gradient(90deg,#b8860b,#ffc107);color:#1b1200}
+.brand .profile .dgr{display:inline-flex;align-items:center;padding:1px 8px;border-radius:3px;background:#fff3cd;color:#7a5200;border:1px solid #e0b300;font-weight:900;font-size:.85em;line-height:1.7;white-space:nowrap}
 .btn{
   border-radius:4px;border:2px solid var(--ink);background:transparent;color:var(--ink);box-shadow:none;
   padding:7px 14px;min-height:40px;font-weight:700;
@@ -253,6 +260,7 @@ header{width:100%;flex:0 0 auto;padding:12px clamp(14px,2.6vw,32px) 8px;backgrou
     <div>
       <h1>مستودع الشحن الجوي 3D</h1>
       <p>تدرّب على فرز المواد الخطرة وفق IATA DGR</p>
+      <p class="profile" id="profile" hidden></p>
     </div>
   </div>
   <div class="actions">
@@ -353,9 +361,12 @@ document.addEventListener('click', (e) => {
 });
 
 /* ===== اختيار الشخصية: الأساسية 3D + الشخصيتان السابقتان ===== */
+/* safety و supervisor تفتحهما الرتبة؛ اللعبة نفسها ترفض المقفلة وتعود للعامل، فلا تُعرض هنا إلا للمزامنة */
 const CHARS = [
   { id: 'worker', ico: '👷', name: 'عامل المستودع', hint: 'الأساسية' },
-  { id: 'timmy', ico: '🧢', name: 'تيمي المرح', hint: 'كرتوني' }
+  { id: 'timmy', ico: '🧢', name: 'تيمي المرح', hint: 'كرتوني' },
+  { id: 'safety', ico: '🦺', name: 'ضابط السلامة', hint: 'رتبة مفتش مساعد', locked: true },
+  { id: 'supervisor', ico: '🎖️', name: 'مشرف الوردية', hint: 'رتبة مشرف وردية', locked: true }
 ];
 const CHAR_KEY = 'acg_char';
 const charOpts = document.getElementById('char-opts');
@@ -373,7 +384,7 @@ function renderChars(){
   if (charGo) charGo.textContent = I18N.t('ثم اضغط «العب الآن» داخل اللعبة');
   charOpts.setAttribute('aria-label', I18N.t('اختيار الشخصية'));
   charOpts.innerHTML = '';
-  CHARS.forEach((c) => {
+  CHARS.filter((c) => !c.locked || c.id === charNow).forEach((c) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'char-opt' + (c.id === charNow ? ' on' : '');
@@ -416,6 +427,26 @@ function pickChar(id){
   try { game.contentWindow.postMessage({ type: 'acg-character', id: charNow }, location.origin); } catch(e){}
 }
 renderChars();
+
+/* اسم الموظف ولقبه بجانبه: من آخر ملف شخصي حفظته اللعبة، ويتحدّث فوراً عند الترقية (رسالة acg-profile) */
+const profileEl = document.getElementById('profile');
+const RANK_NAMES = { trainee: ['🔰', 'متدرب', 'Trainee'], handler: ['📦', 'مناول شحن', 'Cargo Handler'], senior: ['🧰', 'مناول أول', 'Senior Handler'], assistant: ['🔍', 'مفتش مساعد', 'Assistant Inspector'], supervisor: ['🎖️', 'مشرف وردية', 'Shift Supervisor'], chief: ['👑', 'مدير العمليات', 'Operations Chief'] };
+function renderProfile(p){
+  if (!profileEl) return;
+  const r = p && RANK_NAMES[p.rank];
+  if (!r) { profileEl.hidden = true; return; }
+  const en = I18N.lang === 'en';
+  profileEl.textContent = '';
+  if (p.name) { const n = document.createElement('b'); n.textContent = '👤 ' + p.name; profileEl.appendChild(n); }
+  const rk = document.createElement('span'); rk.className = 'rk rk-' + p.rank; rk.textContent = r[0] + ' ' + (en ? r[2] : r[1]); profileEl.appendChild(rk);
+  if (p.dgr) { const d = document.createElement('span'); d.className = 'dgr'; d.textContent = '🎓 ' + (en ? 'DGR certified' : 'معتمد DGR'); profileEl.appendChild(d); }
+  profileEl.hidden = false;
+}
+try { renderProfile(JSON.parse(localStorage.getItem('acg_profile') || 'null')); } catch(e){}
+addEventListener('message', (e) => {
+  const d = e.data;
+  if (e.origin === location.origin && d && d.type === 'acg-profile') renderProfile(d);
+});
 
 document.getElementById('full').addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();

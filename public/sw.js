@@ -1,5 +1,5 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v130";
+const VERSION = "v131";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
@@ -18,6 +18,8 @@ const SHELL = [
   "./game/models/inspector-resto.jpg",
   "./game/touch-ui.js",
   "./game/game-rules.js",
+  "./game/progress-rules.js",
+  "./game/progress-game.js",
   "./game/online.js",
   "./game/employees.json",
   "./game/game-hub.js",

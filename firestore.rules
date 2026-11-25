@@ -3,11 +3,19 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function okStr(v) { return v is string && v.size() < 80; }
     function isAdmin() { return request.auth != null && request.auth.token.email == 'admin@game1.app'; }
+    // تقدّم الموظف (اختياري): xp الخبرة، rank معرّف الرتبة، dgr شهادة المواد الخطرة 0/1، dgrBest أطول سلسلة صحيحة
+    function okProgress(d) {
+      return (!('xp' in d) || (d.xp is int && d.xp >= 0 && d.xp <= 1000000))
+        && (!('rank' in d) || (d.rank is string && d.rank.size() < 24))
+        && (!('dgr' in d) || d.dgr in [0, 1])
+        && (!('dgrBest' in d) || (d.dgrBest is int && d.dgrBest >= 0 && d.dgrBest <= 100000));
+    }
     match /players/{id} {
       allow read: if true;
-      allow create, update: if request.resource.data.keys().hasOnly(['id','name','dept','best','plays','logins','last'])
+      allow create, update: if request.resource.data.keys().hasOnly(['id','name','dept','best','plays','logins','last','xp','rank','dgr','dgrBest'])
         && okStr(request.resource.data.name) && request.resource.data.best is int
-        && request.resource.data.best >= 0 && request.resource.data.best <= 100000;
+        && request.resource.data.best >= 0 && request.resource.data.best <= 100000
+        && okProgress(request.resource.data);
       allow delete: if isAdmin();
     }
     match /logins/{doc} {

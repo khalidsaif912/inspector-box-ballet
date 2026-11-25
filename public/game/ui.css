@@ -936,3 +936,88 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
 #dash-btn.boosting svg{filter:drop-shadow(0 0 6px #ff9a1f) sepia(.6) saturate(2.2) hue-rotate(-12deg)}
 @keyframes dashBoost{from{transform:scale(1);opacity:.75}to{transform:scale(1.12);opacity:1}}
 @media (prefers-reduced-motion:reduce){#dash-btn.boosting::after{animation:none}}
+
+/* ================================================================
+   تقدّم الموظف (progress-game.js): الرتبة، مهام اليوم، الأقفال، أحداث الوردية
+   ================================================================ */
+/* شارة الرتبة وشهادة DGR */
+.rk-badge{display:inline-flex;align-items:center;gap:4px;font-weight:900;white-space:nowrap;padding:1px 8px;border-radius:3px;background:#12212e;color:#fff;font-size:.86em;line-height:1.6}
+.rk-badge.rk-trainee{background:#4b5c69}.rk-badge.rk-handler{background:#1c4e8a}.rk-badge.rk-senior{background:#1f8a52}
+.rk-badge.rk-assistant{background:#6a3fa0}.rk-badge.rk-supervisor{background:#b33a12}.rk-badge.rk-chief{background:linear-gradient(90deg,#b8860b,#ffc107);color:#1b1200}
+.rk-dgr{display:inline-flex;align-items:center;gap:3px;margin-inline-start:6px;padding:1px 7px;border-radius:3px;background:#fff3cd;color:#7a5200;border:1px solid #e0b300;font-weight:900;font-size:.8em;white-space:nowrap;line-height:1.6}
+
+/* بطاقة مهام اليوم في شاشة البداية */
+#ov.start .missions-card{margin:10px 0 2px;padding:9px 11px 10px;background:var(--field);border-inline-start:6px solid var(--ink);border-radius:3px;color:var(--ink);text-align:start;font-size:12.5px}
+#ov.start .mc-rank{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#ov.start .mc-xp{font:800 11.5px ui-monospace,Consolas,monospace;color:var(--mute);direction:ltr}
+#ov.start .mc-bar,#ov .cr-bar{display:block;height:6px;margin:6px 0 8px;background:#aab6bd;border-radius:2px;overflow:hidden}
+#ov.start .mc-bar b,#ov .cr-bar b{display:block;height:100%;background:repeating-linear-gradient(-45deg,var(--red,#d4281e) 0 6px,#a81d14 6px 12px);transition:width .6s}
+#ov.start .mc-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px;font-size:12px}
+#ov.start .mc-head span{font-weight:800;color:var(--mute)}
+.ms-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.ms-list .ms{display:grid;grid-template-columns:auto 1fr auto;align-items:center;column-gap:7px;row-gap:3px;font-weight:700;line-height:1.35}
+.ms-list .ms-ck{width:16px;height:16px;border:2px solid currentColor;border-radius:3px;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:900;opacity:.75}
+.ms-list .ms.done .ms-ck{background:#1f8a52;border-color:#1f8a52;color:#fff;opacity:1}
+.ms-list .ms.done .ms-t{text-decoration:line-through;opacity:.65}
+.ms-list .ms-n{font:800 11px ui-monospace,Consolas,monospace;white-space:nowrap;direction:ltr}
+.ms-list .ms.done .ms-n{color:#1f8a52}
+.ms-list .ms-bar{grid-column:2 / 4;display:block;height:3px;background:rgba(18,33,46,.15);border-radius:2px;overflow:hidden}
+.ms-list .ms-bar b{display:block;height:100%;background:#1c4e8a}
+#ov.start .mc-dgr{margin-top:7px;padding-top:6px;border-top:1px dashed #aab6bd;font-size:11px;font-weight:700;color:var(--mute)}
+@media (max-height:520px){#ov.start .missions-card{font-size:11px;padding:6px 9px;margin-top:6px}#ov.start .ms-list .ms-bar{display:none}#ov.start .mc-dgr{display:none}}
+
+/* شارة المهام داخل اللعب: ملخّص صغير يتوسع باللمس */
+#mhud{pointer-events:auto;cursor:pointer;margin-top:6px;padding:4px 10px 5px;font:inherit;font-size:clamp(10.5px,2.8vmin,13px);color:#e8f4ff;border-radius:10px;display:block;text-align:start;position:relative;font-weight:800}
+#mhud .mh-pop{display:none}
+#mhud[aria-expanded="true"] .mh-pop{display:block;margin-top:6px;min-width:min(260px,62vw);white-space:normal}
+#mhud .mh-rank{display:block;margin-bottom:5px}
+#mhud .ms-list .ms{font-size:11px;color:#dbe6f2}
+#mhud .ms-list .ms-ck{border-color:#8fb3d1}
+#mhud:focus-visible{outline:2px solid #8fd0ff;outline-offset:2px}
+
+/* الأقفال في اختيار السترة والشخصية */
+#ov .vest-colors button.lock{position:relative;filter:grayscale(.75) brightness(.8);cursor:not-allowed}
+#ov .vest-colors button.lock i{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;font-style:normal;filter:none}
+#ov .char-row button.lock{opacity:.6;cursor:not-allowed;border-style:dashed}
+#ov .char-row button.lock:hover{border-color:var(--field,rgba(255,255,255,.22))}
+
+/* شاشة النتائج: الخبرة والرتبة والمهام */
+#ov .career{margin:10px 0 4px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);text-align:start;color:#e8f0f8}
+#ov .career .cr-head{display:flex;align-items:center;gap:10px}
+#ov .career .cr-ico{font-size:26px;line-height:1}
+#ov .career .cr-tx{flex:1;min-width:0;display:flex;flex-direction:column}
+#ov .career .cr-tx b{font-weight:900;font-size:15px}
+#ov .career .cr-tx small{font-size:11px;color:#9fb3c8;font-weight:700}
+#ov .career .cr-gain{font-style:normal;font:900 15px ui-monospace,Consolas,monospace;color:#64ffda;white-space:nowrap}
+#ov .career .cr-bar{background:rgba(255,255,255,.15)}
+#ov .career .cr-up{margin:6px 0;padding:6px 9px;border-radius:8px;background:rgba(255,193,7,.16);border:1px solid rgba(255,193,7,.5);color:#ffe082;font-weight:800;font-size:13px}
+#ov .career .cr-up small{display:block;font-size:11px;color:#ffd54a;font-weight:700;margin-top:2px}
+#ov .career .ms-list .ms{font-size:11.5px}
+#ov .career .ms-list .ms-ck{border-color:#8fb3d1}
+
+/* شارة حدث الوردية (أعلى الوسط) */
+.shift-chip{position:absolute;left:50%;transform:translateX(-50%) translateY(-6px);top:calc(env(safe-area-inset-top,0px) + 62px);z-index:7;pointer-events:none;opacity:0;transition:opacity .25s,transform .25s;
+  padding:5px 14px;border-radius:999px;font-weight:900;font-size:clamp(11px,3vmin,14px);white-space:nowrap;background:rgba(18,28,40,.92);color:#fff;border:1px solid rgba(255,255,255,.3);box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.shift-chip.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.shift-chip b{font-family:ui-monospace,Consolas,monospace;margin-inline-start:4px}
+.shift-chip.gold{border-color:#ffc107;color:#ffe082}
+.shift-chip.peak{border-color:#00e5ff;color:#b9f6ff;animation:shiftPulse 1s ease-in-out infinite}
+.shift-chip.dark{background:rgba(4,6,10,.95);border-color:#5c6bc0;color:#c5cae9}
+.shift-chip.urgent{border-color:#ff5252;color:#ffcdd2;animation:shiftPulse .5s ease-in-out infinite}
+@keyframes shiftPulse{50%{box-shadow:0 0 18px currentColor}}
+
+/* انقطاع الكهرباء: إطار معتم حول الشاشة · الذروة: حواف سماوية · النجاة: وميض تباطؤ */
+#stage.blackout::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse 60% 55% at 50% 52%,rgba(0,0,0,0) 0,rgba(0,0,8,.55) 70%,rgba(0,0,8,.85) 100%)}
+#stage.peak::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;box-shadow:inset 0 0 60px rgba(0,229,255,.35)}
+#stage.slowmo::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:radial-gradient(ellipse at center,rgba(100,255,218,0) 45%,rgba(100,255,218,.28) 100%);animation:slowFade .9s ease-out forwards}
+@keyframes slowFade{from{opacity:1}to{opacity:0}}
+
+/* حلقات زر التسريع التي تفتحها الرتب */
+#dash-btn[data-rim="neon"]{box-shadow:0 0 0 3px #00e5ff,0 0 14px #00e5ff,0 6px 16px rgba(0,0,0,.5)}
+#dash-btn[data-rim="gold"]{box-shadow:0 0 0 3px #ffc107,0 0 16px #ffb300,0 6px 16px rgba(0,0,0,.5)}
+#dash-btn.boosting[data-rim]{box-shadow:0 0 0 4px rgba(255,138,26,.35),0 0 22px #ff8a1a,0 6px 16px rgba(0,0,0,.5)}
+@media (prefers-reduced-motion:reduce){.shift-chip.peak,.shift-chip.urgent,#stage.slowmo::before{animation:none}}
+/* اللقب بجانب اسم الموظف في شاشة البداية */
+#ov.start .login-who{flex-wrap:wrap}
+#ov.start .who-rank{display:inline-flex;align-items:center;gap:4px;font-size:12px}
+#ov.start .who-rank:empty{display:none}
