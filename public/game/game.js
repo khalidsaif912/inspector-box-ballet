@@ -3031,6 +3031,30 @@ function fodRender(){
   const l = $('fod-lv'); if(l) l.textContent = engName(Math.min(FODQ.n, 3)) + ' ' + I18N.T(FOD_NAMES[FODQ.n] + '/٤', (FODQ.n + 1) + '/4');
 }
 engineRender();
+/* لوحة FOD تبقى في سطر الشريط نفسه: إن غطّى توسيطُها الكبسولاتِ المجاورة (شاشات صغيرة)
+   تنتقل إلى منتصف الفراغ بين المجموعتين وتصغر قليلاً بقدر الحاجة؛ لا تنزل سطراً إلا إن ضاق الفراغ جداً */
+function placeFod(){
+  const el = $('fod-col'), hud = $('hud'); if(!el || !hud) return;
+  const a = hud.querySelector('.hud-start'), b = hud.querySelector('.hud-end'); if(!a || !b) return;
+  el.style.left = ''; el.style.transform = ''; el.classList.remove('fod-low');
+  const H = hud.getBoundingClientRect(), f = el.getBoundingClientRect(), ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+  if(!f.width || !H.width) return;
+  const lg = ra.left < rb.left ? ra : rb, rg = lg === ra ? rb : ra, M = 8;
+  const lo = lg.right + M, hi = rg.left - M;
+  if(f.left >= lo && f.right <= hi) return;   // التوسيط العادي لا يغطي شيئاً
+  const s = Math.min(1, (hi - lo) / f.width);
+  if(s < 0.62){ el.classList.add('fod-low'); return; }
+  el.style.left = ((lo + hi) / 2 - H.left) + 'px';
+  el.style.transform = 'translateX(-50%) scale(' + s.toFixed(3) + ')';
+}
+{
+  let fodRaf = 0;
+  const q = () => { if(!fodRaf) fodRaf = requestAnimationFrame(() => { fodRaf = 0; placeFod(); }); };
+  addEventListener('resize', q); addEventListener('orientationchange', q);
+  if(window.ResizeObserver){ const ro = new ResizeObserver(q); document.querySelectorAll('#hud .hud-start, #hud .hud-end, #fod-col').forEach(e => ro.observe(e)); }
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(q);
+  q();
+}
 function fodCollect(){
   const was = FODQ.n; FODQ.n = Math.min(3, FODQ.n + 1);
   const up = FODQ.n > was, el = $('fod-col'), slot = el && el.querySelector('.fs[data-i="' + FODQ.n + '"]');
