@@ -63,25 +63,26 @@ const withMissions = (ids: string[], extra: Partial<State> = {}): State => ({
   missions: ids.map((id) => ({ id, n: 0, done: false })),
   ...extra,
 });
+const at = <T>(a: T[], i: number): T => a[i] as T;
 const def = (id: string) => P.MISSIONS.find((m) => m.id === id) as Def;
 
 describe("Ranks", () => {
   it("are ordered by XP and start at zero", () => {
-    expect(P.RANKS[0].xp).toBe(0);
+    expect(at(P.RANKS, 0).xp).toBe(0);
     for (let i = 1; i < P.RANKS.length; i++)
-      expect(P.RANKS[i].xp).toBeGreaterThan(P.RANKS[i - 1].xp);
+      expect(at(P.RANKS, i).xp).toBeGreaterThan(at(P.RANKS, i - 1).xp);
   });
   it("maps XP to the right rank at the thresholds", () => {
     expect(P.rankFor(0).rank.id).toBe("trainee");
-    expect(P.rankFor(P.RANKS[1].xp - 1).rank.id).toBe("trainee");
-    expect(P.rankFor(P.RANKS[1].xp).rank.id).toBe(P.RANKS[1].id);
+    expect(P.rankFor(at(P.RANKS, 1).xp - 1).rank.id).toBe("trainee");
+    expect(P.rankFor(at(P.RANKS, 1).xp).rank.id).toBe(at(P.RANKS, 1).id);
     expect(P.rankFor(999999).rank.id).toBe("chief");
     expect(P.rankFor(999999).next).toBe(null);
   });
   it("reports the remaining XP and progress to the next rank", () => {
     const r = P.rankFor(200);
-    expect(r.toNext).toBe(P.RANKS[1].xp - 200);
-    expect(r.frac).toBeCloseTo(200 / P.RANKS[1].xp);
+    expect(r.toNext).toBe(at(P.RANKS, 1).xp - 200);
+    expect(r.frac).toBeCloseTo(200 / at(P.RANKS, 1).xp);
   });
   it("gives an icon and a title in both languages", () => {
     expect(P.rankTitle(0, "ar")).toContain("متدرب");
@@ -133,13 +134,13 @@ describe("Daily missions", () => {
       xp: 777,
       dgr: { streak: 3, best: 9, cert: true },
     };
-    s.missions[0].n = 1;
+    at(s.missions, 0).n = 1;
     const next = P.ensureDay(s, "2026-11-25");
     expect(next.day).toBe("2026-11-25");
     expect(next.missions.every((m) => m.n === 0 && !m.done)).toBe(true);
     expect(next.xp).toBe(777);
     expect(next.dgr.cert).toBe(true);
-    expect(P.ensureDay(s, DAY).missions[0].n).toBe(1);
+    expect(at(P.ensureDay(s, DAY).missions, 0).n).toBe(1);
   });
   it("normalizes broken or missing saved data", () => {
     const s = P.normalize({ xp: "abc", dgr: null }, DAY);
@@ -155,11 +156,11 @@ describe("Mission progress", () => {
     s = P.apply(s, "fod").state;
     s = P.apply(s, "fod").state;
     s = P.apply(s, "hit").state;
-    expect(s.missions[0].n).toBe(0);
+    expect(at(s.missions, 0).n).toBe(0);
     s = P.apply(s, "fod").state;
     s = P.apply(s, "fod").state;
     const r = P.apply(s, "fod");
-    expect(r.state.missions[0].done).toBe(true);
+    expect(at(r.state.missions, 0).done).toBe(true);
     expect(r.completed.map((d) => d.id)).toEqual(["fod_safe"]);
     expect(r.xp).toBe(def("fod_safe").xp);
   });
@@ -167,22 +168,22 @@ describe("Mission progress", () => {
     let s = withMissions(["cao_streak", "fever2", "sort30"]);
     for (let i = 0; i < 4; i++) s = P.apply(s, "cao", { ok: true }).state;
     s = P.apply(s, "cao", { ok: false }).state;
-    expect(s.missions[0].n).toBe(0);
+    expect(at(s.missions, 0).n).toBe(0);
     for (let i = 0; i < 5; i++) s = P.apply(s, "cao", { ok: true }).state;
-    expect(s.missions[0].done).toBe(true);
+    expect(at(s.missions, 0).done).toBe(true);
   });
   it("does not go back once a mission is done", () => {
     let s = withMissions(["fod_safe", "fever2", "sort30"]);
     for (let i = 0; i < 3; i++) s = P.apply(s, "fod").state;
     s = P.apply(s, "hit").state;
-    expect(s.missions[0]).toMatchObject({ n: 3, done: true });
+    expect(at(s.missions, 0)).toMatchObject({ n: 3, done: true });
   });
   it("counts only correct sorts and stops at the goal", () => {
     let s = withMissions(["sort30", "fever2", "pet"]);
     s = P.apply(s, "sort", { ok: false }).state;
-    expect(s.missions[0].n).toBe(0);
+    expect(at(s.missions, 0).n).toBe(0);
     for (let i = 0; i < 40; i++) s = P.apply(s, "sort", { ok: true }).state;
-    expect(s.missions[0].n).toBe(30);
+    expect(at(s.missions, 0).n).toBe(30);
   });
   it("uses the round result for score and clean-shift missions", () => {
     let s = withMissions(["score500", "clean", "pet"]);
