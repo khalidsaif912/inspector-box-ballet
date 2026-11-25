@@ -394,9 +394,12 @@
     ['ragdoll', 'قطة الراغدول', 'The Ragdoll cat'], ['calico', 'قطة الكاليكو', 'The calico cat'],
     ['tuxedo', 'قطة التكسيدو', 'The tuxedo cat'], ['scottish-fold', 'القطة الاسكتلندية', 'The Scottish Fold'],
   ];
-  const CAT_SCALE = 2.6;   // المجسّمات بالمتر (≈٣٣سم)؛ ×2.6 تصير القطة ≈ ربع طول العامل — حجم طبيعي، لا عملاق
+  const CAT_SCALE = 3.0;   // المجسّمات بالمتر (≈٣٣سم)؛ ×3 تصير القطة ≈ ٢٨٪ من طول العامل — أوضح قليلاً دون أن تصير عملاقة
   const CAT_NAT = { Walk: 1.4, Trot: 3.2, Run: 6 };   // سرعة اللعبة التي تطابق كل حركة عند سرعة تشغيل 1.0
   const CAT_LAST = 'acg_cat_last';
+  /* الإمساك يُقاس من عظمة ظهر القطة نفسها (تختلف بين السلالات): الظهر فوق الكفّين بنصف سُمك الجسم */
+  const PET_BACK = 0.075 * CAT_SCALE, PET_HOLD_FWD = 0.1;
+  const petHand = new THREE.Vector3(), petBack = new THREE.Vector3();
   let catReq = null;   // { def, p } القطة التالية (قد تكون قيد التنزيل مسبقاً)
   function pickCat() {
     let last = null; try { last = localStorage.getItem(CAT_LAST); } catch (e) {}
@@ -430,7 +433,7 @@
     const old = pet.g;
     g.position.copy(old.position); g.rotation.copy(old.rotation);
     S.remove(old); disposeObj(old); S.add(g);
-    Object.assign(pet, { g, legs: [], tail: new THREE.Object3D(), head: new THREE.Object3D(), mixer, acts, clip: null, def });
+    Object.assign(pet, { g, legs: [], tail: new THREE.Object3D(), head: new THREE.Object3D(), mixer, acts, clip: null, def, spine: m.getObjectByName('Spine') || null, backDy: 0 });
     try { localStorage.setItem(CAT_LAST, def[0]); } catch (e) {}
   }
   function catClip(name, speed) {
@@ -527,7 +530,20 @@
     if (pet.held) {   // محمولة بين يدي اللاعب
       const a = typeof curRotY === 'number' ? curRotY : 0;
       catClip('Meow');
-      pet.g.position.set(px.x + Math.sin(a) * 0.9, (pet.mixer ? 1.5 : 1.55) + Math.sin(pet.t * 6) * 0.04, px.z + Math.cos(a) * 0.9);
+      /* بين الكفّين فعلاً: بطن القطة فوق اليدين وجسمها ملاصق للصدر، لا معلّقة في الهواء أمام اللاعب */
+      const acr = typeof activeCharRig === 'function' ? activeCharRig() : null;
+      const hp = (acr && acr.root.visible && acr.holdPoint) ? acr.holdPoint(petHand) : null;
+      const bob = Math.sin(pet.t * 6) * 0.02;
+      if (hp && pet.mixer) {
+        let dy = pet.backDy || 0.3 * CAT_SCALE;   // ارتفاع الظهر عن قدمي المجسّم (يُصحَّح كل إطار من العظمة)
+        if (pet.spine) {
+          pet.g.updateMatrixWorld(true); pet.spine.getWorldPosition(petBack);
+          dy += ((petBack.y - pet.g.position.y) - dy) * (pet.backDy ? Math.min(1, dt * 8) : 1);
+          pet.backDy = dy;
+        }
+        pet.g.position.set(hp.x + Math.sin(a) * PET_HOLD_FWD, hp.y + PET_BACK - dy + bob, hp.z + Math.cos(a) * PET_HOLD_FWD);
+      }
+      else pet.g.position.set(px.x + Math.sin(a) * 0.9, (pet.mixer ? 1.5 : 1.55) + bob * 2, px.z + Math.cos(a) * 0.9);
       pet.g.rotation.y = a + Math.PI / 2;
       pet.tail.rotation.z = Math.sin(pet.t * 9) * 0.6;
       pet.legs.forEach((l, i) => { l.rotation.x = Math.sin(pet.t * 10 + i) * 0.5; });

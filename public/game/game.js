@@ -1539,7 +1539,8 @@ torsoTwist:0, torsoLean:0, torsoRoll:0, pelvisDrop:0
 /* سرعة المشي الفعلية: من إزاحة اللاعب الحقيقية لا من الإدخال، فتتوقف الخطوات عند الاصطدام بجدار */
 let animPrevX = null, animPrevZ = null, animVel = 0;
 function anim(dt, spd, vx, vz){
-const isHeld = !!held;
+/* حمل القطة يأخذ وضعية الحمل نفسها (الذراعان أمام الصدر) كي تستقر بين اليدين */
+const isHeld = !!held || !!(window.Prog && Prog.petHeld && Prog.petHeld());
 const sprinting = !isHeld && !!(key.ShiftLeft || key.ShiftRight);
 let moved = 0;
 if(animPrevX !== null) moved = Math.hypot(px.x - animPrevX, px.z - animPrevZ);
