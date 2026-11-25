@@ -1094,7 +1094,7 @@ const HERO = { obj: null, inst: null, ready: false, loading: false, err: null };
 window.__hero = HERO;
 /* شخصيات Mixamo: مجسّم + حركات مسجّلة حقيقية، يحمّلها مُحمّل واحد مشترك (mixamo-rig.js) */
 const MIX = {
-  worker: { seat: { z: 0, hips: 2.1, arm: 1.0, fore: -0.5 }, url: 'game/models/mixamo-worker.glb', obj: null, inst: null, ready: false, loading: false, err: null },
+  worker: { grow: 1.15, seat: { z: 0, hips: 2.1, arm: 1.0, fore: -0.5 }, url: 'game/models/mixamo-worker.glb', obj: null, inst: null, ready: false, loading: false, err: null },
   timmy:  { seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null }
 };
 /* الشخصيات: worker و timmy (Mixamo) · hero (3D) · crew (المجسّم الثابت) · rig (الإجرائي) */
@@ -1165,6 +1165,7 @@ function loadMixamo(id, attempt){
   }).then(o => {
     lt.done();
     M.obj = o.root; M.inst = o; M.ready = true; M.loading = false;
+    if(M.grow && o.setGrow) o.setGrow(M.grow);   // عامل المستودع أكبر قليلاً وهو يمشي
     o.seatZ = M.seat.z; o.seatY = M.seat.hips; Object.assign(o.sitCfg, { arm: M.seat.arm, fore: M.seat.fore });   // وضع الجلوس مضبوط لكل شخصية على مقعد الرافعة ومقودها
     pl.add(o.root); if(mixId(CHAR.id) === id) charStatus(''); applyCrewMode();
     loadSeatCrew();
@@ -4622,7 +4623,7 @@ if(FD.seated){
 const sc = FD.seated, yw = fk.rotation.y;
 /* الرافعة أصغر (FK_SCALE) فيصغر السائق قليلاً (DRV_SCALE) ويُنزَّل مقعده بالنسبة نفسها كي يتناسق مع المقعد والسقف */
 if(sc.baseScale === undefined) sc.baseScale = sc.root.scale.x || 1;
-sc.root.scale.setScalar(sc.baseScale * DRV_SCALE);
+sc.root.scale.setScalar(sc.baseScale / (sc.grow || 1) * DRV_SCALE);   // التكبير للمشي فقط: السائق يبقى بمقاس المقعد
 const sz = (sc.seatZ !== undefined ? sc.seatZ : SEAT.z) * FK_SCALE;
 sc.root.position.set(Math.sin(yw) * sz, (sc.seatY !== undefined ? sc.seatY : SEAT.hips) * FK_SCALE - (sc.hipsHeight || 1.8) * DRV_SCALE, Math.cos(yw) * sz);
 sc.root.rotation.set(0, yw, 0);

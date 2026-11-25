@@ -146,8 +146,13 @@
           }
 
           var inst = {
-            root: root, height: TARGET_H, sitCfg: sitCfg, hipsHeight: hipsH,
+            root: root, height: TARGET_H, sitCfg: sitCfg, hipsHeight: hipsH, grow: 1,
             setOutfit: setOutfit, outfitParts: Object.keys(outfitU),
+            /* تكبير الشخصية وهي تمشي (المقعد في الرافعة يبقى بالمقاس الأصلي): الخطوة أطول فتُبطّأ الحركة بالنسبة نفسها */
+            setGrow: function (g) {
+              g = Math.max(0.5, Math.min(2, +g || 1));
+              inst.grow = g; inst.height = TARGET_H * g; root.scale.setScalar(sc * g);
+            },
             holdPoint: function (out) {
               if (!handL || !handR) return null;
               if (!out) out = new THREE.Vector3();
@@ -166,7 +171,8 @@
                 cur = next;
               }
               var a = actions[cur];
-              a.setEffectiveTimeScale(NATURAL[cur] ? Math.max(0.55, Math.min(1.6, (p.speed || NATURAL[cur]) / NATURAL[cur])) : 1);
+              var nat = NATURAL[cur] ? NATURAL[cur] * inst.grow : 0;
+              a.setEffectiveTimeScale(nat ? Math.max(0.55, Math.min(1.6, (p.speed || nat) / nat)) : 1);
               mixer.update(dt);
               if (p.sit) applySit();
             }
