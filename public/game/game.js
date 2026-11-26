@@ -954,7 +954,7 @@ const dz = new THREE.Mesh(new THREE.PlaneGeometry(1.4,1.4), new THREE.MeshStanda
 }
 });
 // ===== غرفة التجميد: غرفة معزولة على يسار المستودع بباب منزلق مقفل (يُفتح بحل اللغز) =====
-const frzP = { active: false, cells: [], moves: 0, solved: false, timer: 0 };
+const frzP = { active: false, cells: [], moves: 0, solved: false, timer: 0, t: 0, raf: 0, last: 0 };
 const cardP = { active: false, deck: [], open: [], matched: new Set(), t: 0, lock: false, mistakes: 0, wild: false, raf: 0, last: 0, closing: 0 };
 const jam = { active: false, siren: 0 };
 const hv = { done: false, failed: false, item: null };
@@ -1407,8 +1407,34 @@ function loadSeatCrew() {
   });
   seatCrewInto(truckDriver, [0, SEAT.hips * FK_SCALE, SEAT.z * FK_SCALE], TRUCK_SEAT_S).then(o => {
     SEAT_CREW.truck = o;
+    styleRecklessDriver(o.root, o.state.bones[CrewRig.bones.head]);
     truckDriver.children.forEach(c => { if (c !== o.root.parent && !c.userData.keep) c.visible = false; });
   });
+}
+/* سائق الرافعة المتهورة: بلا قبعة، شعر أسود، وبشرة حنطية فاتحة (أغمق قليلاً من القالب).
+   القالب يُحمَّل لكل سائق بمواد مستقلة، فلا يتأثر سائق الرافعة المتوقفة. */
+const RECKLESS_LOOK = { Skin: 0xc8956b, SkinShadow: 0xa5714c, Hair: 0x0d0b0a, Lip: 0xa8604c };
+function styleRecklessDriver(root, head){
+  let band = null;
+  root.traverse(o => {
+    if(!o.isMesh || !o.material) return;
+    const n = o.material.name || '';
+    if(/^Cap/.test(n)){ o.visible = false; if(n === 'CapBand') band = o; return; }
+    if(RECKLESS_LOOK[n] !== undefined){ o.material.color.setHex(RECKLESS_LOOK[n]).convertSRGBToLinear(); o.material.needsUpdate = true; }
+  });
+  /* القالب بلا شعر فوق الرأس (كانت القبعة تغطيه): قبة شعر سوداء على محيط شريط القبعة، تتبع عظمة الرأس */
+  if(band && head){
+    band.geometry.computeBoundingBox();
+    const bb = band.geometry.boundingBox, c = bb.getCenter(new THREE.Vector3()), sz = bb.getSize(new THREE.Vector3());
+    const r = Math.max(sz.x, sz.z) / 2;
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: new THREE.Color(RECKLESS_LOOK.Hair).convertSRGBToLinear(), roughness: 0.85 }));
+    hair.scale.set(sz.x / 2 * 1.02, r * 0.62, sz.z / 2 * 1.02);
+    hair.position.set(c.x, bb.min.y + sz.y * 0.2, c.z - sz.z * 0.03);
+    hair.castShadow = true;
+    root.add(hair); root.updateMatrixWorld(true);
+    head.attach(hair);
+  }
 }
 /* حدود الأرضية القابلة للمشي: تُستخدم في دفع التصادم أيضاً حتى لا يُقذف اللاعب خارج المستودع */
 const WALK = { minX: -33.6, maxX: 33.6, minZ: -11.5, maxZ: 10.1 };
@@ -2417,11 +2443,11 @@ hud();
 }
 }
 /* ===== لغز غرفة التجميد: انزلاق قطع COL / CRT / FRZ إلى صفوف نطاقاتها الحرارية ===== */
-const frzEl = { root: $('frz'), tiles: $('frz-tiles'), moves: $('frz-moves'), lock: $('frz-lock'), title: $('frz-title'), sub: $('frz-sub'), x: $('frz-x'), again: $('frz-new'), board: $('frz-board') };
+const frzEl = { fill: $('frz-fill'), time: $('frz-time'), bar: document.querySelector('.frz-bar'), root: $('frz'), tiles: $('frz-tiles'), moves: $('frz-moves'), lock: $('frz-lock'), title: $('frz-title'), sub: $('frz-sub'), x: $('frz-x'), again: $('frz-new'), board: $('frz-board') };
 const FRZ_TIP = { COL: '2–8°C', CRT: '15–25°C', FRZ: '0°C' };
 function frzText(){
   frzEl.title.textContent = frzP.solved ? I18N.T('تم فتح الباب!', 'Door unlocked!') : I18N.T('غرفة التجميد مقفلة', 'Freezer room locked');
-  frzEl.sub.textContent = frzP.solved ? I18N.T('أدخل الطرد المجمّد الآن', 'Load the frozen parcel now') : I18N.T('رتّب القطع في صف نطاق حرارتها لفتح الباب', 'Slide each tile into its temperature row to unlock');
+  frzEl.sub.textContent = frzP.solved ? I18N.T('أدخل الطرد المجمّد الآن', 'Load the frozen parcel now') : I18N.T('رتّب القطع في صف نطاق حرارتها — لديك ' + gameRules.freezer.seconds + ' ثانية وإلا تُخصم ' + gameRules.freezer.timeoutPenalty + ' نقطة', 'Slide each tile into its temperature row — ' + gameRules.freezer.seconds + 's or lose ' + gameRules.freezer.timeoutPenalty + ' points');
   frzEl.moves.textContent = I18N.T('الحركات: ', 'Moves: ') + frzP.moves;
   frzEl.again.textContent = I18N.T('خلط جديد', 'New shuffle');
   frzEl.x.setAttribute('aria-label', I18N.T('إغلاق', 'Close'));
@@ -2475,14 +2501,39 @@ function frzOpenPuzzle(){
   frzEl.root.style.display = 'flex';
   frzBuild();
   snd('warn', .8);
+  /* مهلة الحل: تبدأ مع فتح اللغز، والخلط الجديد لا يعيدها */
+  frzP.t = gameRules.freezer.seconds; frzP.last = performance.now();
+  cancelAnimationFrame(frzP.raf); frzP.raf = requestAnimationFrame(frzTick);
   setTimeout(() => { try { const t = frzEl.tiles.querySelector('.frz-t'); if(t) t.focus({ preventScroll: true }); } catch(e){} }, 50);
 }
-function frzClose(solvedNow){
-  clearTimeout(frzP.timer);
+function frzTick(now){
+  if(!frzP.active) return;
+  const dt = Math.min(.1, (now - frzP.last) / 1000); frzP.last = now;
+  if(!document.hidden && !frzP.solved) frzP.t -= dt;
+  if(frzEl.fill){
+    frzEl.fill.style.transform = 'scaleX(' + Math.max(0, frzP.t / gameRules.freezer.seconds) + ')';
+    frzEl.bar.classList.toggle('low', frzP.t <= 10);
+    frzEl.time.textContent = Math.max(0, Math.ceil(frzP.t)) + I18N.T(' ث', 's');
+  }
+  if(frzP.t <= 0 && !frzP.solved){ frzTimeout(); return; }
+  frzP.raf = requestAnimationFrame(frzTick);
+}
+/* انتهت المهلة دون حل: خصم نقاط وإغلاق اللغز (يمكن المحاولة مجدداً بالاقتراب من الباب) */
+function frzTimeout(){
+  const lost = gameRules.freezer.timeoutLoss(score); score -= lost;
+  if(FRZ.pending) FRZ.pending.frzPen = true;   // لا غرامة ثانية لترك الباب مقفلاً لنفس الطرد
+  snd('error'); addShake(.3); penaltyFx(lost, false);
+  spawnFloatTag('−' + gameRules.freezer.timeoutPenalty + ' ⏱', '#ff5252', 'big');
+  toast(I18N.T('⏱ انتهى وقت لغز غرفة التجميد −' + gameRules.freezer.timeoutPenalty, '⏱ Freezer puzzle time is up −' + gameRules.freezer.timeoutPenalty), '#ff8a5c', 2600);
+  frzClose(false, true);
+}
+function frzClose(solvedNow, timedOut){
+  clearTimeout(frzP.timer); cancelAnimationFrame(frzP.raf);
   if(!frzP.active) return;
   frzP.active = false;
   frzEl.root.style.display = 'none';
   if(solvedNow) frzUnlock();
+  else if(timedOut){}
   else if(FRZ.pending){
     const p = FRZ.pending;
     if(!p.frzPen){ p.frzPen = true; const lost = Math.min(score, gameRules.freezer.penalty); score -= lost; snd('error'); penaltyFx(lost, false); spawnFloatTag('−' + gameRules.freezer.penalty + ' ❄️', '#ff5252', 'big'); toast(I18N.T('❌ لم تفتح غرفة التجميد −' + gameRules.freezer.penalty, '❌ Freezer door not opened −' + gameRules.freezer.penalty), '#ff8a5c'); }
@@ -2556,7 +2607,7 @@ function updateFreezer(dt){
   if(FRZ.pending && !items.includes(FRZ.pending)) FRZ.pending = null;
 }
 function resetFreezer(){
-  frzP.active = false; clearTimeout(frzP.timer); if(frzEl.root) frzEl.root.style.display = 'none';
+  frzP.active = false; clearTimeout(frzP.timer); cancelAnimationFrame(frzP.raf); if(frzEl.root) frzEl.root.style.display = 'none';
   FRZ.open = false; FRZ.openAmt = 0; FRZ.closeT = 0; FRZ.pending = null; FRZ.items = []; FRZ.solved = 0;
   if(FRZ.door) FRZ.door.position.x = FRZ.x;
 }
@@ -2692,7 +2743,7 @@ function resetEvents(){
 const cardsEl = { root: $('cards'), grid: $('cards-grid'), fill: $('cards-fill'), time: $('cards-time'), bar: document.querySelector('.cards-bar'), info: $('cards-info'), title: $('cards-title'), sub: $('cards-sub'), x: $('cards-x') };
 function cardsText(){
   cardsEl.title.textContent = I18N.T('تشغيل الرافعة الشوكية', 'Start the forklift');
-  cardsEl.sub.textContent = I18N.T('اقلب ملصق المادة الخطرة ثم كودها الصحيح — لديك دقيقة واحدة', 'Flip a hazard label, then its matching code — you have one minute');
+  cardsEl.sub.textContent = I18N.T('اقلب ملصق المادة الخطرة ثم كودها الصحيح — لديك دقيقة واحدة، وانتهاؤها يخصم ' + gameRules.heavy.failPenalty + ' نقطة', 'Flip a hazard label, then its matching code — one minute, or lose ' + gameRules.heavy.failPenalty + ' points');
   cardsEl.x.setAttribute('aria-label', I18N.T('إغلاق', 'Close'));
 }
 function cardsPool(){
@@ -2796,7 +2847,15 @@ function cardsFail(){
   } else toast(I18N.T('⏱ انتهى الوقت — جرّب مجدداً', '⏱ Time is up — try again'), '#ffd54a');
   cardP.closing = setTimeout(cardsHide, 1100);
 }
-function cardsClose(){ if(cardP.closing) return; cardsHide(); }
+/* إغلاق اللغز قبل حلّه استسلام: يُخصم quitPenalty (الوقت المنتهي له غرامته الخاصة في cardsFail) */
+function cardsClose(){
+  if(cardP.closing) return;
+  const q = gameRules.cards.quitPenalty, lost = Math.min(score, q);
+  score -= lost; snd('error'); penaltyFx(lost, false);
+  spawnFloatTag('−' + q, '#ff5252', 'big');
+  toast(I18N.T('🚜 تركت لغز تشغيل الرافعة −' + q, '🚜 Forklift puzzle abandoned −' + q), '#ff8a5c', 2200);
+  hud(); cardsHide();
+}
 if(cardsEl.x) cardsEl.x.addEventListener('click', cardsClose);
 if(cardsEl.root) cardsEl.root.addEventListener('pointerdown', e => e.stopPropagation());
 
@@ -3498,7 +3557,10 @@ function loginUI(){
 if(!window.Online || !$('login')) return;
 const f = $('login-form'), who = $('login-who'), msg = $('login-msg'), go = $('go');
 const refresh = () => { const u = Online.user(); f.hidden = !!u; who.hidden = !u; go.disabled = !u && !Online.guest; if(u) $('who-name').textContent = '👤 ' + Online.nameOf(u.id, I18N.lang, u.name); if(window.Prog) Prog.onPlayer(); };
-f.onsubmit = async e => { e.preventDefault(); msg.textContent = '…'; const u = await Online.login($('emp-id').value); if(!u){ msg.textContent = I18N.t('الرقم الوظيفي غير موجود'); return; } msg.textContent = ''; refresh(); globalTop(); };
+f.onsubmit = async e => { e.preventDefault();
+  /* رمز خاص في خانة الرقم الوظيفي: يفتح كل الشخصيات على هذا الجهاز بدل تسجيل الدخول */
+  if(window.Prog && Prog.isAllCharsCode($('emp-id').value)){ Prog.unlockAllChars(); $('emp-id').value = ''; msg.textContent = I18N.T('🔓 تم فتح كل الشخصيات', '🔓 All characters unlocked'); return; }
+  msg.textContent = '…'; const u = await Online.login($('emp-id').value); if(!u){ msg.textContent = I18N.t('الرقم الوظيفي غير موجود'); return; } msg.textContent = ''; refresh(); globalTop(); };
 $('guest').onclick = () => { Online.guest = true; refresh(); start(); };
 $('who-out').onclick = () => { Online.guest = false; Online.logout(); $('emp-id').value = ''; refresh(); $('emp-id').focus(); };
 Online.directory().then(refresh); refresh(); globalTop();

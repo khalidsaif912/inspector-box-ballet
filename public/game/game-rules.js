@@ -522,6 +522,13 @@
       // فتح الباب بحل اللغز، وغرامة فوات الطرد المجمّد أو ترك الباب مقفلاً.
       unlockBonus: 30,
       penalty: 20,
+      // مهلة حل اللغز؛ انتهاؤها دون حل يخصم timeoutPenalty ويُغلق اللغز (الطرد يبقى بجانب الباب لمحاولة أخرى)
+      seconds: 45,
+      timeoutPenalty: 25,
+      // غرامة انتهاء المهلة: لا تتكرر مع غرامة ترك الباب مقفلاً لنفس الطرد
+      timeoutLoss(score) {
+        return Math.max(0, Math.min(+score || 0, freezer.timeoutPenalty));
+      },
       // بعد إدخال الطرد يبقى الباب مفتوحاً ثوانيَ ثم يُقفل من جديد؛ ويبقى أطول إن حُلّ اللغز بلا طرد.
       closeAfterDelivery: 2.6,
       closeIdle: 18,
@@ -565,6 +572,8 @@
     pairs: 4,
     size: 9,
     wildTimeBonus: 10,
+    // إغلاق اللغز قبل حلّه = استسلام: يُخصم quitPenalty (الطرد الثقيل يبقى، وانتهاء الوقت له غرامته الأكبر)
+    quitPenalty: 20,
     build(pool, rng) {
       const rnd = typeof rng === "function" ? rng : Math.random;
       const seen = new Set();

@@ -74,6 +74,28 @@
     { id: "pet", icon: "🐈", dur: 45, reward: 80, ar: "حيوان أليف هارب", en: "Loose pet" },
   ];
   const eventById = (id) => SHIFT_EVENTS.find((e) => e.id === id);
+  /* صعوبة مطاردة الحيوان الهارب بحسب الثواني منذ ظهوره (سرعة اللاعب 8.2 مشياً و≈11 مع الجري):
+     القطة: أول 15 ث صعبة جداً، ثم 10 ث صعبة، ثم سهلة. الكلب أصعب في كل مرحلة ولا يصير سهلاً تماماً.
+     flee: مسافة بدء الهروب · speed: سرعة الهروب · catch: مسافة الإمساك · juke: احتمال المراوغة الجانبية كل ثانية */
+  const PET_CHASE = {
+    cat: [
+      { until: 15, flee: 7, speed: 10.2, catch: 1.35, juke: 0.9 },
+      { until: 25, flee: 5.5, speed: 8, catch: 1.6, juke: 0.5 },
+      { until: Infinity, flee: 3.5, speed: 4.5, catch: 2, juke: 0 },
+    ],
+    dog: [
+      { until: 18, flee: 8, speed: 11, catch: 1.25, juke: 1.1 },
+      { until: 30, flee: 6.5, speed: 9.4, catch: 1.45, juke: 0.7 },
+      { until: Infinity, flee: 4.8, speed: 6.6, catch: 1.75, juke: 0.25 },
+    ],
+  };
+  const petChase = (kind, t) => {
+    const ph = PET_CHASE[kind] || PET_CHASE.cat, s = Math.max(0, +t || 0);
+    return ph.find((p) => s < p.until) || ph[ph.length - 1];
+  };
+  // رمز يفتح كل الشخصيات على هذا الجهاز عند إدخاله في خانة الرقم الوظيفي
+  const ALL_CHARS_CODE = "996785538715";
+  const isAllCharsCode = (v) => String(v == null ? "" : v).replace(/\s+/g, "") === ALL_CHARS_CODE;
   const EVENT_WINDOW = [22, 55]; // ثوانٍ من بداية الوردية
 
   /* ---------- أدوات ---------- */
@@ -94,7 +116,7 @@
 
   const P = {
     RANKS, UNLOCKS, MISSIONS, SHIFT_EVENTS, BASE_CHARS, DAILY_COUNT, DAILY_BONUS, DGR_GOAL, NEAR_MISS, EVENT_WINDOW, ROUND_XP_CAP,
-    dayKey, missionById, eventById, roundXp,
+    dayKey, missionById, eventById, roundXp, PET_CHASE, petChase, isAllCharsCode,
 
     /* الرتبة الحالية وما بعدها */
     rankFor(xp) {

@@ -1,0 +1,6 @@
+Dog models by Quaternius (https://quaternius.com), downloaded from Poly Pizza.
+- dog.glb       "Dog"            https://poly.pizza/m/2kUk0QqpCg  — Public Domain (CC0 1.0)
+- shiba.glb     "Shiba Inu"      https://poly.pizza/m/y4wdQpg767  — Public Domain (CC0 1.0)
+- shepherd.glb  "German Shepard" https://poly.pizza/m/Hssa6NPc6W  — Creative Commons Attribution (CC BY)
+  https://creativecommons.org/licenses/by/4.0/
+Changes: none to the files; scaled to a fixed in-game height and clip names mapped in progress-game.js.

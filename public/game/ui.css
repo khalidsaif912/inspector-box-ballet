@@ -1395,3 +1395,7 @@ html[lang="en"] #ov.start .pager>*{direction:ltr}
 
 /* رسالة الشخصية المقفلة تحت شبكة الشخصيات (الإشعار العائم يقع خلف شاشة البداية) */
 #ov.start #char-status.char-lock-msg{opacity:1!important;font-size:12px!important;font-weight:700;line-height:1.5;text-align:start!important;padding:7px 9px;border-inline-start:4px solid #e0b300;background:#fff3cd;color:#5c4200;border-radius:2px}
+/* مؤقّت لغز غرفة التجميد (نفس شريط لغز البطاقات) */
+.frz-bar{margin:0 0 10px}
+.frz-ttl small{max-width:34ch}
+@media (max-height:420px){.frz-bar{margin:0 0 6px;height:12px}}

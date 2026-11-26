@@ -152,6 +152,14 @@
     const b = document.getElementById('dash-btn');
     if (b) { const rim = WP.isUnlocked('rim', 'gold', xpNow()) ? 'gold' : WP.isUnlocked('rim', 'neon', xpNow()) ? 'neon' : ''; if (rim) b.dataset.rim = rim; else delete b.dataset.rim; }
   }
+  /* رمز فتح كل الشخصيات (يُدخل في خانة الرقم الوظيفي) يُحفظ على هذا الجهاز */
+  const ALL_KEY = 'acg_all_chars';
+  const allChars = () => { try { return localStorage.getItem(ALL_KEY) === '1'; } catch (e) { return false; } };
+  const charOpen = (id, xp) => allChars() || WP.isUnlocked('char', id, xp);
+  function unlockAllChars() {
+    try { localStorage.setItem(ALL_KEY, '1'); } catch (e) {}
+    buildPickers(); cue('rank');
+  }
   const lockText = u => '🔒 ' + T('تُفتح برتبة ', 'Unlocks at ') + nm(WP.rankOf(u.rank));
   /* رسالة الشخصية المقفلة: ما الرتبة المطلوبة، وكم نقطة خبرة بقيت، وكيف تُجمع */
   function charLockMsg(c, u) {
@@ -186,7 +194,7 @@
     if (chars) {
       chars.innerHTML = '';
       CHAR_LIST.forEach(c => {
-        const u = WP.unlock('char', c.id), open = WP.isUnlocked('char', c.id, xp);
+        const u = WP.unlock('char', c.id), open = charOpen(c.id, xp);
         const b = el('button', open ? '' : 'lock'); b.type = 'button'; b.dataset.char = c.id; b.setAttribute('role', 'radio');
         /* المقفلة تظهر خافتة خلف القفل مع اسمها والرتبة المطلوبة */
         b.innerHTML = '<span class="pk-ph" aria-hidden="true"><span class="pk-ico">' + c.ico + '</span>' + (open ? '' : '<i class="pk-lock">🔒</i>') + '</span><span class="pk-tx"><b>' + esc(en() ? c.en : c.ar) + '</b><small>' + esc(open ? (en() ? c.hintEn : c.hintAr) : WP.rankOf(u.rank).icon + ' ' + nm(WP.rankOf(u.rank))) + '</small></span>';
@@ -203,7 +211,7 @@
       try { syncCharButtons(); } catch (e) {}
     }
     /* الشخصية المحفوظة أُقفلت (لاعب آخر على الجهاز نفسه): نعود للعامل */
-    try { if (!WP.isUnlocked('char', CHAR.id, xp)) window.__setCharacter('worker'); else applyOutfit(); } catch (e) {}
+    try { if (!charOpen(CHAR.id, xp)) window.__setCharacter('worker'); else applyOutfit(); } catch (e) {}
   }
 
   /* ================= تنبيهات الإنجاز ================= */
@@ -228,7 +236,8 @@
       n.connect(bp); bp.connect(g); g.connect(actx.destination); n.start(t0); n.stop(t0 + 0.6);
       n.onended = () => { n.disconnect(); bp.disconnect(); g.disconnect(); };
       tone(660, 0.12, 0.22, 'triangle', 0.07, 1320);
-    } else if (kind === 'meow') { tone(820, 0, 0.18, 'sine', 0.06, 1180); tone(1180, 0.17, 0.26, 'sine', 0.05, 640); }
+    } else if (kind === 'bark') { tone(330, 0, 0.09, 'sawtooth', 0.07, 210); tone(300, 0.16, 0.11, 'sawtooth', 0.07, 190); }
+    else if (kind === 'meow') { tone(820, 0, 0.18, 'sine', 0.06, 1180); tone(1180, 0.17, 0.26, 'sine', 0.05, 640); }
     else if (kind === 'powerdown') tone(420, 0, 0.9, 'sawtooth', 0.05, 55);
     else if (kind === 'powerup') tone(80, 0, 0.6, 'sawtooth', 0.04, 520);
     else if (kind === 'vip') [[1047, 0], [1319, 0.08], [1568, 0.16], [2093, 0.26]].forEach(([f, a]) => tone(f, a, 0.14, 'triangle', 0.07));
@@ -409,6 +418,20 @@
     ['ragdoll', 'قطة الراغدول', 'The Ragdoll cat'], ['calico', 'قطة الكاليكو', 'The calico cat'],
     ['tuxedo', 'قطة التكسيدو', 'The tuxedo cat'], ['scottish-fold', 'القطة الاسكتلندية', 'The Scottish Fold'],
   ];
+  /* كلاب Quaternius (Dog وShiba Inu بترخيص CC0، والراعي الألماني CC BY): أصعب إمساكاً من القطط (WP.petChase).
+     [ملف، اسم عربي، اسم إنجليزي، الارتفاع في اللعبة، أسماء المقاطع {مشي، جري}] */
+  const DOGS = [
+    ['dog', 'الكلب البني', 'The brown dog', 1.25, { Walk: 'Walk', Run: 'Run' }],
+    ['shiba', 'كلب الشيبا', 'The Shiba Inu', 1.05, { Walk: 'Walk', Run: 'Gallop' }],
+    ['shepherd', 'كلب الراعي الألماني', 'The German Shepherd', 1.4, { Walk: 'Walk', Run: 'Run' }],
+  ];
+  const DOG_NAT = { Walk: 2.2, Run: 8 };
+  const isDog = def => !!def && DOGS.indexOf(def) >= 0;
+  const petKind = () => (pet && isDog(pet.def) ? 'dog' : 'cat');
+  /* أيقونة الحيوان واسمه الحالي في الرسائل */
+  const PI_ = () => petKind() === 'dog' ? '🐕' : '🐈';
+  const PN = () => petKind() === 'dog' ? T('الكلب', 'the dog') : T('القطة', 'the cat');
+  const PNc = () => petKind() === 'dog' ? T('الكلب', 'The dog') : T('القطة', 'The cat');
   const CAT_SCALE = 3.0;   // المجسّمات بالمتر (≈٣٣سم)؛ ×3 تصير القطة ≈ ٢٨٪ من طول العامل — أوضح قليلاً دون أن تصير عملاقة
   const CAT_NAT = { Walk: 1.4, Trot: 3.2, Run: 6 };   // سرعة اللعبة التي تطابق كل حركة عند سرعة تشغيل 1.0
   const CAT_LAST = 'acg_cat_last';
@@ -418,7 +441,7 @@
   let catReq = null;   // { def, p } القطة التالية (قد تكون قيد التنزيل مسبقاً)
   function pickCat() {
     let last = null; try { last = localStorage.getItem(CAT_LAST); } catch (e) {}
-    const pool = CATS.filter(c => c[0] !== last);
+    const pool = (Math.random() < 0.5 ? DOGS : CATS).filter(c => c[0] !== last);   // كلب أو قطة بالتساوي
     return pool[Math.floor(Math.random() * pool.length)];
   }
   function prepCat() {
@@ -426,7 +449,7 @@
     const def = pickCat();
     const p = new Promise((res, rej) => {
       if (!THREE.GLTFLoader) { rej(new Error('GLTFLoader missing')); return; }
-      new THREE.GLTFLoader().load('game/models/cats/' + def[0] + '.glb', res, undefined, rej);
+      new THREE.GLTFLoader().load('game/models/' + (isDog(def) ? 'dogs/' : 'cats/') + def[0] + '.glb', res, undefined, rej);
     });
     p.catch(() => { if (catReq && catReq.p === p) catReq = null; });   // فشل التنزيل: تبقى القطة المرسومة، ويُعاد المحاولة لاحقاً
     catReq = { def, p };
@@ -440,27 +463,35 @@
   }
   /* تستبدل القطة المرسومة بالمجسّم الحقيقي في مكانها دون أن يتغيّر شيء في منطق الهروب والإمساك */
   function useGlbCat(gltf, def) {
-    const g = new THREE.Group(), m = gltf.scene;
-    m.scale.setScalar(CAT_SCALE); g.add(m);
+    const g = new THREE.Group(), m = gltf.scene, dog = isDog(def);
+    if (dog) {   // مجسّمات الكلاب بمقاييس مختلفة: نوحّد ارتفاعها في اللعبة
+      m.updateMatrixWorld(true);
+      const bb = new THREE.Box3().setFromObject(m);
+      m.scale.setScalar(def[3] / Math.max(0.01, bb.max.y - bb.min.y));
+    } else m.scale.setScalar(CAT_SCALE);
+    g.add(m);
     m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
     const mixer = new THREE.AnimationMixer(m), acts = {};
-    (gltf.animations || []).forEach(c => { acts[c.name] = mixer.clipAction(c); });
+    (gltf.animations || []).forEach(c => { acts[c.name.replace(/^.*\|/, '')] = mixer.clipAction(c); });   // "AnimalArmature|Run" → "Run"
+    if (dog) { const cm = def[4]; acts.Walk = acts[cm.Walk] || acts.Walk; acts.Trot = acts[cm.Run]; acts.Run = acts[cm.Run]; }
     const old = pet.g;
     g.position.copy(old.position); g.rotation.copy(old.rotation);
     S.remove(old); disposeObj(old); S.add(g);
-    Object.assign(pet, { g, legs: [], tail: new THREE.Object3D(), head: new THREE.Object3D(), mixer, acts, clip: null, def, spine: m.getObjectByName('Spine') || null, backDy: 0 });
+    Object.assign(pet, { g, legs: [], tail: new THREE.Object3D(), head: new THREE.Object3D(), mixer, acts, clip: null, def, spine: m.getObjectByName(dog ? 'Torso' : 'Spine') || m.getObjectByName('Body') || null, backDy: 0 });
     try { localStorage.setItem(CAT_LAST, def[0]); } catch (e) {}
   }
   function catClip(name, speed) {
     const a = pet && pet.acts && pet.acts[name];
     if (!a) return;
+    if (pet.clip !== name && pet.clip && pet.acts[pet.clip] === a) pet.clip = name;   // اسمان لمقطع واحد (الكلب: Trot و Run)
     if (pet.clip !== name) {
       const prev = pet.clip && pet.acts[pet.clip];
       a.reset().play();
       if (prev) a.crossFadeFrom(prev, 0.25, false);
       pet.clip = name;
     }
-    a.setEffectiveTimeScale(CAT_NAT[name] && speed ? Math.max(0.6, Math.min(1.6, speed / CAT_NAT[name])) : 1);
+    const NAT = petKind() === 'dog' ? DOG_NAT : CAT_NAT, nat = NAT[name] || (name === 'Trot' ? NAT.Run : 0);
+    a.setEffectiveTimeScale(nat && speed ? Math.max(0.6, Math.min(1.8, speed / nat)) : 1);
   }
   function buildCat() {
     const g = new THREE.Group(), fur = 0xe08a2e, dark = 0x8a4a12, cream = 0xffe0b8;
@@ -503,7 +534,7 @@
     for (let i = 0; i <= 6; i++) { const xx = -w / 2 + i * w / 6; CY(0.025, 0.025, h, bar, xx, h / 2, d / 2, g, 0.4, 0.7, 6); CY(0.025, 0.025, h, bar, xx, h / 2, -d / 2, g, 0.4, 0.7, 6); }
     for (let i = 1; i < 5; i++) { const zz = -d / 2 + i * d / 5; CY(0.025, 0.025, h, bar, -w / 2, h / 2, zz, g, 0.4, 0.7, 6); CY(0.025, 0.025, h, bar, w / 2, h / 2, zz, g, 0.4, 0.7, 6); }
     B(0.5, 0.06, 0.5, 0xc62828, 0, 0.1, 0, g, 0.8, 0);   // وسادة حمراء
-    const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: rawTex((() => { const cv = document.createElement('canvas'); cv.width = 256; cv.height = 96; const c = cv.getContext('2d'); c.fillStyle = '#ffc107'; c.fillRect(0, 0, 256, 96); c.strokeStyle = '#1b1b1b'; c.lineWidth = 8; c.strokeRect(4, 4, 248, 88); c.fillStyle = '#1b1b1b'; c.font = '900 46px system-ui,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🐈 ' + (en() ? 'PET' : 'قفص'), 128, 50); return cv; })()), transparent: true, depthTest: false }));
+    const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: rawTex((() => { const cv = document.createElement('canvas'); cv.width = 256; cv.height = 96; const c = cv.getContext('2d'); c.fillStyle = '#ffc107'; c.fillRect(0, 0, 256, 96); c.strokeStyle = '#1b1b1b'; c.lineWidth = 8; c.strokeRect(4, 4, 248, 88); c.fillStyle = '#1b1b1b'; c.font = '900 46px system-ui,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🐾 ' + (en() ? 'PET' : 'قفص'), 128, 50); return cv; })()), transparent: true, depthTest: false }));
     sign.position.set(0, h + 0.75, 0); sign.scale.set(1.5, 0.56, 1); sign.renderOrder = 5; g.add(sign);
     const ring = new THREE.Mesh(new THREE.RingGeometry(1.4, 1.62, 40), new THREE.MeshBasicMaterial({ color: 0xffc107, transparent: true, opacity: 0.7, depthWrite: false }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; g.add(ring);
@@ -522,10 +553,14 @@
     const c = buildCat(); c.g.position.set(sx, 0, sz); S.add(c.g);
     pet = Object.assign(c, { x: sx, z: sz, yaw: 0, held: false, caged: false, t: 0, goal: null, speed: 0 });
     const req = prepCat(), mine = pet;
+    pet.def = req.def;   // نوع الحيوان معروف قبل تنزيل مجسّمه: الصعوبة والرسائل صحيحة من أول لحظة
     catReq = null;   // الحدث التالي يأخذ قطة أخرى
     req.p.then(gltf => { if (pet === mine) useGlbCat(gltf, req.def); else disposeObj(gltf.scene); }, () => {});
-    showIntro('<b class="t">🐈 ' + T(req.def[1] + ' هاربة في المستودع!', req.def[2] + ' is loose in the warehouse!') + '</b>' + T('أمسكها (اقترب واضغط ✋) وضعها في القفص الأصفر (+', 'Catch it (get close and press ✋) and put it in the yellow cage (+') + WP.eventById('pet').reward + ').', 3600, false);
-    cue('meow');
+    const dg = isDog(req.def);
+    showIntro('<b class="t">' + PI_() + ' ' + T(req.def[1] + (dg ? ' هارب' : ' هاربة') + ' في المستودع!', req.def[2] + ' is loose in the warehouse!') + '</b>' +
+      T((dg ? 'أمسكه' : 'أمسكها') + ' (اقترب واضغط ✋) وضعه في القفص الأصفر (+', 'Catch it (get close and press ✋) and put it in the yellow cage (+') + WP.eventById('pet').reward + ').' +
+      '<br><small>' + T(dg ? '⚠️ الكلب سريع جداً في البداية — يتعب مع الوقت' : '⚠️ القطة سريعة جداً في أول ٢٥ ثانية — ثم تتعب', dg ? '⚠️ Dogs are very fast at first — they tire over time' : '⚠️ The cat is very fast for the first 25 seconds — then it tires') + '</small>', 3600, false);
+    cue(dg ? 'bark' : 'meow');
   }
   function petOff() {
     if (pet) { if (pet.mixer) pet.mixer.stopAllAction(); S.remove(pet.g); disposeObj(pet.g); pet = null; }
@@ -568,7 +603,13 @@
     /* الهروب من اللاعب حين يقترب، والتجوّل الهادئ غير ذلك */
     const dx = pet.x - px.x, dz = pet.z - px.z, dp = Math.hypot(dx, dz) || 1;
     let vx = 0, vz = 0, want = 0;
-    if (dp < 4.2 && !FD.on) { vx = dx / dp; vz = dz / dp; want = 5.6; pet.goal = null; }
+    const ch = WP.petChase(petKind(), pet.t);
+    if (dp < ch.flee && !FD.on) {
+      vx = dx / dp; vz = dz / dp; want = ch.speed; pet.goal = null;
+      /* مراوغة جانبية مفاجئة في المراحل الصعبة */
+      if (pet.jukeT > 0) { pet.jukeT -= dt; vx += -vz * pet.jukeS * 0.9; vz += (dx / dp) * pet.jukeS * 0.9; const n = Math.hypot(vx, vz) || 1; vx /= n; vz /= n; }
+      else if (ch.juke && Math.random() < ch.juke * dt) { pet.jukeT = 0.35 + Math.random() * 0.25; pet.jukeS = Math.random() < 0.5 ? 1 : -1; }
+    }
     else {
       if (!pet.goal || Math.hypot(pet.goal.x - pet.x, pet.goal.z - pet.z) < 0.6 || pet.t > (pet.goalT || 0)) {
         pet.goal = { x: WB.minX + Math.random() * (WB.maxX - WB.minX), z: WB.minZ + Math.random() * (WB.maxZ - WB.minZ) };
@@ -602,17 +643,17 @@
         pet.held = false; pet.caged = true;
         const R_ = WP.eventById('pet').reward;
         score += R_; hud();
-        spawnFloatTag('🐈 +' + R_, '#ffd54a', 'big'); fwShow(2); cue('meow');
-        toast('🐈 ' + T('أعدت القطة إلى قفصها! +', 'The cat is back in its cage! +') + R_, '#ffd54a');
+        spawnFloatTag(PI_() + ' +' + R_, '#ffd54a', 'big'); fwShow(2); cue(petKind() === 'dog' ? 'bark' : 'meow');
+        toast(PI_() + ' ' + T('أعدت ' + PN() + ' إلى القفص! +', PNc() + ' is back in the cage! +') + R_, '#ffd54a');
         emit('pet');
         SH.cagedT = 1.8;   // تبقى لحظة في القفص ثم ينتهي الحدث (بزمن اللعبة، فيتوقف مع الإيقاف المؤقت)
-      } else tip('pet-cage', '🐈 ' + T('ضع القطة في القفص الأصفر', 'Put the cat in the yellow cage'), '#ffd54a');
+      } else tip('pet-cage', PI_() + ' ' + T('ضع ' + PN() + ' في القفص الأصفر', 'Put ' + PN() + ' in the yellow cage'), '#ffd54a');
       return true;
     }
-    if (Math.hypot(px.x - pet.x, px.z - pet.z) < 1.9) {
-      if (held) { tip('pet-hands', '🐈 ' + T('أنزل الطرد أولاً لتمسك القطة', 'Put the parcel down first to catch the cat'), '#ffd54a'); return true; }
-      pet.held = true; cue('meow'); snd('pick');
-      toast('🐈 ' + T('أمسكت القطة! خذها إلى القفص', 'Got the cat! Take it to the cage'), '#ffd54a');
+    if (Math.hypot(px.x - pet.x, px.z - pet.z) < WP.petChase(petKind(), pet.t).catch) {
+      if (held) { tip('pet-hands', PI_() + ' ' + T('أنزل الطرد أولاً لتمسك ' + PN(), 'Put the parcel down first to catch ' + PN()), '#ffd54a'); return true; }
+      pet.held = true; cue(petKind() === 'dog' ? 'bark' : 'meow'); snd('pick');
+      toast(PI_() + ' ' + T('أمسكت ' + PN() + '! خذه إلى القفص', 'Got ' + PN() + '! Take it to the cage'), '#ffd54a');
       return true;
     }
     return false;
@@ -633,7 +674,7 @@
     SH.on = false; SH.done = true;
     if (SH.id === 'blackout') { blackoutOff(); cue('powerup'); toast('💡 ' + T('عادت الكهرباء', 'Power is back'), '#fff'); }
     if (SH.id === 'peak') { const s = document.getElementById('stage'); if (s) s.classList.remove('peak'); }
-    if (SH.id === 'pet') { if (pet && !pet.caged) toast('🐈 ' + T('هربت القطة من المستودع', 'The cat slipped out of the warehouse'), '#ffb020'); petOff(); }
+    if (SH.id === 'pet') { if (pet && !pet.caged) toast(PI_() + ' ' + T('هرب ' + PN() + ' من المستودع', PNc() + ' slipped out of the warehouse'), '#ffb020'); petOff(); }
     if (SH.id === 'vip') vipClear();
     chipHide();
   }
@@ -649,8 +690,8 @@
     else if (SH.id === 'peak') chipShow('⏩ ' + T('ذروة', 'Peak') + ' ×' + d.mult + ' <b>' + s + T(' ث', 's') + '</b>', 'peak');
     else if (SH.id === 'pet') {
       petTick(dt);
-      if (pet && pet.caged) { chipShow('🐈 ' + T('في القفص', 'Caged') + ' <b>✓</b>', 'gold'); SH.cagedT -= dt; if (SH.cagedT <= 0) { endEvent(); return; } }
-      else chipShow('🐈 ' + (pet && pet.held ? T('إلى القفص', 'To the cage') : T('أمسك القطة', 'Catch the cat')) + ' <b>' + s + T(' ث', 's') + '</b>', 'gold');
+      if (pet && pet.caged) { chipShow(PI_() + ' ' + T('في القفص', 'Caged') + ' <b>✓</b>', 'gold'); SH.cagedT -= dt; if (SH.cagedT <= 0) { endEvent(); return; } }
+      else chipShow(PI_() + ' ' + (pet && pet.held ? T('إلى القفص', 'To the cage') : T('أمسك ', 'Catch ') + PN()) + ' <b>' + s + T(' ث', 's') + '</b>', 'gold');
     }
     if (SH.left <= 0 && !(SH.id === 'pet' && pet && pet.caged)) endEvent();
   }
@@ -693,7 +734,8 @@
   window.Prog = {
     emit, tick, act, onSpawn, onSorted, truckTick, timeScale, beltK, scoreK, roundStart, roundEnd, fined, applyOutfit,
     busy: () => SH.on, petHeld,
-    charUnlocked: id => WP.isUnlocked('char', id, xpNow()),
+    charUnlocked: id => charOpen(id, xpNow()),
+    isAllCharsCode: v => WP.isAllCharsCode(v), unlockAllChars,
     onPlayer: () => { ensure(); refreshAll(); },
     state: () => ensure(),
     /* للاختبار اليدوي من وحدة التحكم */

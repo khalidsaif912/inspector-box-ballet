@@ -8,3 +8,5 @@
   Unchanged; clip mapping, carry arms and seat height are applied in `mixamo-rig.js` / `game.js`.
 - `inspector-resto.jpg` — restoration atlas for `inspector-mx.glb` (front photo cleaned of its background halo +
   a reconstructed back view). Built from the model's own texture by `scripts/inspector-resto/build.py`; the GLB is unchanged.
+- `dogs/dog.glb`, `dogs/shiba.glb` — "Dog" and "Shiba Inu" by Quaternius, Public Domain (CC0 1.0);
+  `dogs/shepherd.glb` — "German Shepard" by Quaternius, Creative Commons Attribution 4.0. See `dogs/CREDITS.txt`.

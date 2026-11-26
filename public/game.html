@@ -176,7 +176,7 @@
 <section class="login" id="login" aria-label="تسجيل الدخول">
 <form id="login-form" class="login-form" autocomplete="off">
 <label for="emp-id">الرقم الوظيفي</label>
-<div class="login-row"><input id="emp-id" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="مثال: 82645" dir="ltr"><button type="submit" class="login-ok">دخول</button></div>
+<div class="login-row"><input id="emp-id" inputmode="numeric" pattern="[0-9]*" maxlength="12" placeholder="مثال: 82645" dir="ltr"><button type="submit" class="login-ok">دخول</button></div>
 <p class="login-msg" id="login-msg" role="status"></p>
 <button type="button" id="guest" class="login-guest">جرّب بدون رقم وظيفي (لا تُسجَّل نتيجتك)</button>
 </form>
@@ -266,6 +266,7 @@
 <div class="frz-ttl"><b id="frz-title">غرفة التجميد مقفلة</b><small id="frz-sub">رتّب القطع في صف نطاق حرارتها لفتح الباب</small></div>
 <button id="frz-x" class="frz-x" type="button" aria-label="إغلاق">✕</button>
 </div>
+<div class="cards-bar frz-bar" role="timer" aria-live="off"><i id="frz-fill"></i><span id="frz-time"></span></div>
 <div class="frz-board" id="frz-board">
 <div class="frz-bands" aria-hidden="true">
 <div class="frz-band b-col" data-band="COL"><b>2–8°C</b><small></small></div>
