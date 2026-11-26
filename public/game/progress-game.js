@@ -89,8 +89,14 @@
       wr.innerHTML = pid === 'local' ? '' : rankBadge(ensure().xp, ensure().dgr.cert);
     }
     let c = document.getElementById('missions');
-    if (!c) { c = el('section', 'missions-card'); c.id = 'missions'; c.setAttribute('aria-label', T('مهام اليوم', "Today's missions")); login.parentNode.insertBefore(c, login.nextSibling); }
+    if (!c) {
+      c = el('section', 'missions-card'); c.id = 'missions'; c.setAttribute('aria-label', T('مهام اليوم', "Today's missions"));
+      const slot = document.getElementById('missions-slot');   // نافذة «المهام» المنبثقة في شاشة البداية
+      if (slot) slot.appendChild(c); else login.parentNode.insertBefore(c, login.nextSibling);
+    }
     const s = ensure(), r = WP.rankFor(s.xp), done = s.missions.filter(m => m.done).length;
+    const cnt = document.getElementById('tool-ms');
+    if (cnt) { cnt.textContent = done + '/' + s.missions.length; cnt.classList.toggle('all', done === s.missions.length); }
     c.innerHTML =
       '<div class="mc-rank">' + rankBadge(s.xp, s.dgr.cert) +
         '<span class="mc-xp">' + s.xp + (r.next ? ' / ' + r.next.xp : '') + ' XP</span></div>' +
@@ -185,6 +191,12 @@
         b.onclick = e => { e.stopPropagation(); if (!open) { toast(lockText(u), '#ffd54a'); return; } window.__setCharacter(c.id); };
         chars.appendChild(b);
       });
+      /* شبكة 3×2: الخانات الفارغة محجوزة لشخصيات قادمة */
+      for (let i = CHAR_LIST.length; i < 6; i++) {
+        const q = el('div', 'char-soon'); q.setAttribute('aria-hidden', 'true');
+        q.innerHTML = '<span class="pk-ico">?</span><span class="pk-tx"><b>' + T('قريباً', 'Coming soon') + '</b></span>';
+        chars.appendChild(q);
+      }
       try { syncCharButtons(); } catch (e) {}
     }
     /* الشخصية المحفوظة أُقفلت (لاعب آخر على الجهاز نفسه): نعود للعامل */

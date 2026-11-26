@@ -146,22 +146,27 @@
 <button id="act" aria-label="الالتقاط والتفاعل"><svg class="ic-pick" viewBox="0 0 48 48"><path d="M24 6l16 8v20l-16 8-16-8V14z" fill="#e8b36a" stroke="#5a3510" stroke-width="2.6" stroke-linejoin="round"/><path d="M8 14l16 8 16-8M24 22v20" stroke="#5a3510" stroke-width="2.6" fill="none" stroke-linejoin="round"/><path d="M17 10l15 7.5" stroke="#fff" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/></svg><svg class="ic-drop" viewBox="0 0 48 48"><path d="M24 3v15M16.5 11.5L24 19l7.5-7.5" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 26l13 6.5v13L24 52 11 45.5v-13z" transform="translate(0 -9)" fill="#e8b36a" stroke="#5a3510" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 32.5l13 6.5 13-6.5M24 39v13" transform="translate(0 -9)" stroke="#5a3510" stroke-width="2.4" fill="none"/></svg></button>
 </div>
 <div id="dash-fx" aria-hidden="true"></div>
-<div class="ov start" id="ov">
+<div class="ov lobby" id="ov">
 <canvas id="dust" aria-hidden="true"></canvas>
 <div class="bloom b1" aria-hidden="true"></div>
 <div class="bloom b2" aria-hidden="true"></div>
-<div class="pager" id="pager">
-<main class="start-card">
-<div class="emblem-wrap">
-<div class="emblem-ring"></div>
-<svg class="emblem-plane" width="36" height="36" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+<main class="lob-card">
+<header class="lob-head">
+<div class="lob-emblem" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>
+<div class="lob-brand">
+<h1 class="lob-title">مستودع الشحن الجوي</h1>
+<p class="lob-tag">التقط · افحص · افرز — قبل أن يفوت الحزام</p>
 </div>
-<h1 class="game-title">مستودع الشحن الجوي</h1>
-<p class="tagline-pill">التقط · افحص · افرز — قبل أن يفوت الحزام</p>
-<section class="pick" aria-label="اختر شخصيتك">
+</header>
+<div class="lob-body">
+<section class="lob-pick" aria-label="اختر شخصيتك">
+<div class="lob-sec-t">اختر شخصيتك</div>
+<div class="lob-pick-in">
 <div class="pick-stage"><canvas id="pick-cv" width="240" height="300" aria-hidden="true"></canvas></div>
-<div class="pick-side"><div class="pick-title">اختر شخصيتك</div><div class="char-row" id="chars" role="radiogroup" aria-label="اختيار الشخصية"></div></div>
+<div class="char-grid" id="chars" role="radiogroup" aria-label="اختيار الشخصية"></div>
+</div>
 </section>
+<section class="lob-go">
 <section class="login" id="login" aria-label="تسجيل الدخول">
 <form id="login-form" class="login-form" autocomplete="off">
 <label for="emp-id">الرقم الوظيفي</label>
@@ -171,26 +176,48 @@
 </form>
 <div class="login-who" id="login-who" hidden><span class="login-badge" id="who-name"></span><button type="button" id="who-out" class="login-out">تغيير</button></div>
 </section>
-<button id="go" class="btn-play" type="button">
+<button id="go" class="lob-play" type="button">
 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>
 <span>العب الآن</span>
 </button>
 <p class="keyhint" id="keyhint">🎮 الحركة [WASD أو الأسهم] • الالتقاط والتفاعل [E أو F أو مسافة] • الجري [Shift] • الإيقاف [Esc]</p>
-
+</section>
+</div>
+<nav class="lob-tools" aria-label="النوافذ">
+<button type="button" class="lob-tool" data-sheet="missions"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg><span>المهام</span><b class="lob-count" id="tool-ms"></b></button>
+<button type="button" class="lob-tool" data-sheet="records"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg><span>المتصدرون</span></button>
+<button type="button" class="lob-tool" data-sheet="settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>الإعدادات</span></button>
+<button type="button" class="lob-tool" id="how"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg><span>الدليل</span></button>
+</nav>
 </main>
-<div class="side-stack" id="side-stack">
-<aside class="records-dock" id="rec-dock">
-<section class="records-box" aria-label="أفضل النتائج">
+
+<div class="lob-sheet" id="sheet-missions" role="dialog" aria-modal="true" aria-labelledby="sheet-missions-t" hidden>
+<div class="sheet-card">
+<header class="sheet-head"><h2 id="sheet-missions-t">🎯 مهام اليوم</h2><button type="button" class="sheet-x" aria-label="إغلاق">✕</button></header>
+<div class="sheet-body" id="missions-slot"></div>
+</div>
+</div>
+
+<div class="lob-sheet" id="sheet-records" role="dialog" aria-modal="true" aria-labelledby="sheet-records-t" hidden>
+<div class="sheet-card">
+<header class="sheet-head"><h2 id="sheet-records-t">🏆 الأرقام القياسية</h2><button type="button" class="sheet-x" aria-label="إغلاق">✕</button></header>
+<div class="sheet-body" id="rec-dock">
 <div class="best-row">
-<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg>
 <span id="best">كن أول الأبطال</span>
 </div>
 <div class="lb-title">لوحة المتصدرين</div>
 <div id="top5" class="lb-chips"></div>
-<div class="lb-title gl-title">المتصدرون عالمياً</div>
+<div class="lb-title">المتصدرون عالمياً</div>
 <ol id="gtop" class="gl-list"><li class="gl-empty">…</li></ol>
-</section>
-</aside>
+</div>
+</div>
+</div>
+
+<div class="lob-sheet" id="sheet-settings" role="dialog" aria-modal="true" aria-labelledby="sheet-settings-t" hidden>
+<div class="sheet-card">
+<header class="sheet-head"><h2 id="sheet-settings-t">⚙️ الإعدادات</h2><button type="button" class="sheet-x" aria-label="إغلاق">✕</button></header>
+<div class="sheet-body">
 <aside class="settings-dock" id="corner-opts">
 <div class="setting-item vest-item">
 <span class="setting-label"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>لون سترتك</span>
@@ -210,15 +237,12 @@
 </button>
 <button class="setting-item" type="button" id="chars-room" title="غرفة الشخصيات" aria-label="غرفة الشخصيات">
 <span class="setting-label"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>غرفة الشخصيات</span>
+<i class="go-arrow" aria-hidden="true">‹</i>
 </button>
 </aside>
 </div>
 </div>
-<div class="pager-dots" id="pager-dots" role="tablist" aria-label="النوافذ"><button type="button" class="pd on" data-i="0" aria-label="الدخول والشخصية"></button><button type="button" class="pd" data-i="1" aria-label="النتائج والإعدادات"></button></div>
-<button class="guide-btn" id="how" type="button" title="دليل سريع" aria-label="دليل سريع">
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
-<span>دليل سريع</span>
-</button>
+</div>
 </div>
 <div id="jam-banner" role="alert" aria-live="assertive">
 <div class="jb-t">⚠️ توقف الحزام عن العمل</div>
