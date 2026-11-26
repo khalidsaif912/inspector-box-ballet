@@ -3497,14 +3497,17 @@ loginUI();
 /* نوافذ الغلاف في الشاشات الضيقة: تمرير بالسحب/اللمس بين «الدخول والشخصية» و«النتائج والإعدادات» */
 (function(){
 const p = $('pager'), dots = document.querySelectorAll('#pager-dots .pd'); if(!p) return;
-const page = () => p.children.length > 1 ? (p.children[1].offsetLeft - p.children[0].offsetLeft) : p.clientWidth;
-const go = i => p.scrollTo({ left: i * page(), behavior: 'smooth' });
+/* الصفحات بعروض مختلفة (البطاقة أعرض من اللوحات): نحسب موضع كل صفحة بمركزها */
+const pages = () => [...p.children];
+const target = i => { const c = pages()[i]; if(!c) return p.scrollLeft; const pr = p.getBoundingClientRect(), r = c.getBoundingClientRect(); return p.scrollLeft + (r.left + r.width / 2) - (pr.left + pr.width / 2); };
+const current = () => { const pr = p.getBoundingClientRect(), mid = pr.left + pr.width / 2; let best = 0, bd = Infinity; pages().forEach((c, k) => { const r = c.getBoundingClientRect(), d = Math.abs(r.left + r.width / 2 - mid); if(d < bd){ bd = d; best = k; } }); return best; };
+const go = i => p.scrollTo({ left: target(i), behavior: 'smooth' });
 dots.forEach(d => d.onclick = () => go(+d.dataset.i));
-p.addEventListener('scroll', () => { const i = Math.round(p.scrollLeft / (page() || 1)); dots.forEach((d, k) => d.classList.toggle('on', k === Math.min(i, dots.length - 1))); }, { passive: true });
+p.addEventListener('scroll', () => { const i = current(); dots.forEach((d, k) => d.classList.toggle('on', k === Math.min(i, dots.length - 1))); }, { passive: true });
 let d = null;
 p.addEventListener('pointerdown', e => { if(e.pointerType !== 'mouse' || e.button !== 0 || e.target.closest('input,button,a,label,canvas')) return; d = { x: e.clientX, s: p.scrollLeft, m: false }; });
 window.addEventListener('pointermove', e => { if(!d) return; const dx = e.clientX - d.x; if(!d.m && Math.abs(dx) < 6) return; if(!d.m){ d.m = true; p.classList.add('drag'); } p.scrollLeft = d.s - dx; });
-window.addEventListener('pointerup', () => { if(!d) return; const m = d.m; d = null; p.classList.remove('drag'); if(m) go(Math.max(0, Math.min(dots.length - 1, Math.round(p.scrollLeft / (page() || 1))))); });
+window.addEventListener('pointerup', () => { if(!d) return; const m = d.m; d = null; p.classList.remove('drag'); if(m) go(current()); });
 })();
 let pz = false;
 const openRules = () => {
@@ -3542,62 +3545,56 @@ const hubStars = gameRules.scoreboard.hubStars(stars);
 let hub = null;
 try { if(window.GameHub) hub = GameHub.saveGameScore('game1', score, hubStars); } catch(e){}
 const totalScore = hub ? hub.totalScore : score;
-const p = stars / 5;
-const dash = (351.86 * (1 - p)).toFixed(2);
-const deg = p * 360;
-const rad = deg * Math.PI / 180;
-const planeX = (70 + 56 * Math.sin(rad)).toFixed(2);
-const planeY = (70 - 56 * Math.cos(rad)).toFixed(2);
 const starPath = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
 const starsHTML = Array.from({ length: 5 }, (_, i) => `<svg class="star${i < stars ? ' lit' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="${starPath}"/></svg>`).join('');
-const recLine = record ? '<span class="new-record"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg>' + I18N.t('رقم قياسي جديد!') + '</span>' : '';
 const tipTxt = totalProcessed === 0 ? I18N.t('لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!') : acc >= 80 ? I18N.t('أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.') : I18N.t('راجع دليل الفرز السريع ثم عُد لكسر رقمك.');
-const lbRows = topList.length ? topList.slice(0, 4).map((e, i) => `<li class="${e.s === score && score > 0 ? 'me' : ''}"><b class="rank-dot r${i + 1}"></b><span>#${i + 1}</span><em>${e.s}</em></li>`).join('') : `<li class="lb-none">${I18N.t('العب لتسجّل أول نتيجة')}</li>`;
+/* تقرير الوردية على هيئة بوليصة شحن جوي: رقم الوردية والتاريخ والباركود مشتقة من النتيجة */
+const now = new Date();
+const shiftNo = 'SH-' + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(score % 10000).padStart(4, '0');
+const dateTxt = now.toLocaleDateString('en-GB');
+const bars = String(score * 7919 + sortedCount * 104729 + maxStreak + 31337).repeat(8).slice(0, 56).split('').map(d => `<i style="width:${1 + (+d % 3)}px"></i>`).join('');
+const lbChips = topList.length ? topList.slice(0, 4).map((e, i) => `<span class="score-chip${e.s === score && score > 0 ? ' me' : ''}"><i class="rank-dot r${i + 1}"></i> ${e.s} ${I18N.t('نقطة')}</span>`).join('') : `<span class="lb-empty">${I18N.t('العب لتسجّل أول نتيجة')}</span>`;
 o.classList.add('ended');
-o.innerHTML = `<div class="end-panel g-${grade}" role="dialog" aria-labelledby="ep-title">
-<div class="ep-side">
-<header class="ep-hero">
-<div class="ep-dial">
-<svg class="dial-svg" viewBox="0 0 140 140" aria-hidden="true">
-<defs><linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#fbbf24"/></linearGradient></defs>
-<circle cx="70" cy="70" r="64" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="2 6"/>
-<circle cx="70" cy="70" r="56" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="6"/>
-<circle cx="70" cy="70" r="56" fill="none" stroke="url(#arcGrad)" stroke-width="6" stroke-linecap="round" stroke-dasharray="351.86" stroke-dashoffset="${dash}" transform="rotate(-90 70 70)"/>
-<g transform="translate(${planeX}, ${planeY}) rotate(${deg})"><path d="M 8 0 L -2 -7 L -4 -7 L -1 -1 L -6 -1 L -8 -4 L -9 -4 L -8 0 L -9 4 L -8 4 L -6 1 L -1 1 L -4 7 L -2 7 Z" fill="#fbbf24"/></g>
-</svg>
-<div class="ep-grade">${grade.toUpperCase()}</div>
-</div>
-<div class="ep-head">
-<span class="ep-kicker">${I18N.T('تقرير الوردية','Shift report')}</span>
+o.innerHTML = `<div class="end-wrap g-${grade}">
+<section class="ep-main" role="dialog" aria-labelledby="ep-title">
+<header class="ep-top"><span class="ep-kick"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>${I18N.T('تقرير الوردية','Shift report')}</span><span class="ep-no">${shiftNo} · ${dateTxt}</span></header>
+<div class="ep-hero">
+<div class="ep-stamp" aria-label="${I18N.T('التقييم','Grade')} ${grade.toUpperCase()}"><b>${grade.toUpperCase()}</b><small>${I18N.T('التقييم','GRADE')}</small></div>
+<div class="ep-hd">
 <h1 class="ep-title" id="ep-title">${I18N.t('انتهت الوردية')}</h1>
 <div class="ep-stars">${starsHTML}</div>
-<div class="ep-rank"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg><strong>${titles[grade]}</strong></div>
+<span class="ep-rank">${titles[grade]}</span>
 </div>
-</header>
-${recLine}
-<section class="ep-stats">
-<div class="ep-stat c-amber"><svg class="ep-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><strong>${score}</strong><span>${I18N.t('النقاط')}</span></div>
-<div class="ep-stat c-cyan"><svg class="ep-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/></svg><strong>${sortedCount}</strong><span>${I18N.t('طرود مصنّفة')}</span></div>
-<div class="ep-stat c-emerald"><svg class="ep-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg><strong>${acc}%</strong><span>${I18N.t('دقة IATA')}</span><i class="ep-meter"><b style="width:${acc}%"></b></i></div>
-<div class="ep-stat c-orange"><svg class="ep-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><strong>${maxStreak}</strong><span>${I18N.t('أطول سلسلة')}</span></div>
-</section>
 </div>
-<div class="ep-main">
-${career}
-<section class="ep-records">
-<div class="ep-rec-top">
-<div class="ep-rec gold"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg><span>${I18N.T('أفضل نتيجة','Best score')}</span><b>${Math.max(best, score)}</b></div>
-<div class="ep-rec sky"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3M3 12h18"/></svg><span>${I18N.T('المجموع التراكمي','Total score')}</span><b>${totalScore}</b></div>
+<div class="ep-score">
+<span class="ep-score-l">${I18N.t('النقاط')}</span>
+<b class="ep-score-n">${score}</b>
+${record ? `<em class="ep-new">${I18N.t('رقم قياسي جديد!')}</em>` : ''}
 </div>
-<div class="ep-lb"><span class="ep-lb-t">${I18N.T('لوحة المتصدرين','Leaderboard')}</span><ol>${lbRows}</ol></div>
-</section>
+<div class="ep-stats">
+<div class="ep-cell"><b>${sortedCount}</b><span>${I18N.t('طرود مصنّفة')}</span></div>
+<div class="ep-cell"><b>${acc}%</b><span>${I18N.t('دقة IATA')}</span><i class="ep-meter"><b style="width:${acc}%"></b></i></div>
+<div class="ep-cell"><b>${maxStreak}</b><span>${I18N.t('أطول سلسلة')}</span></div>
+</div>
 <p class="ep-tip">${tipTxt}</p>
-</div>
+<div class="ep-tear" aria-hidden="true"></div>
 <div class="ep-actions">
-<button id="go" class="btn btn-primary ep-replay" type="button"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg><span>${I18N.T('إعادة المحاولة','Replay level')}</span></button>
-<button id="rb2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg><span>${I18N.t('الدليل')}</span></button>
-<button id="ex2" class="btn btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>${I18N.t('الغلاف')}</span></button>
+<button id="go" class="ep-btn ep-replay" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg><span>${I18N.T('إعادة المحاولة','Replay level')}</span></button>
+<button id="rb2" class="ep-btn" type="button"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg><span>${I18N.t('الدليل')}</span></button>
+<button id="ex2" class="ep-btn" type="button"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>${I18N.t('الغلاف')}</span></button>
 </div>
+<div class="ep-code" aria-hidden="true"><span class="ep-bars">${bars}</span><span class="ep-code-t">${shiftNo}</span></div>
+</section>
+<aside class="ep-side" aria-labelledby="ep-side-t">
+<h2 class="panel-t" id="ep-side-t"><span aria-hidden="true">🧰</span> ${I18N.T('سجل الموظف','Employee record')}</h2>
+${career}
+<h2 class="panel-t"><span aria-hidden="true">🏆</span> ${I18N.T('الأرقام القياسية','Records')}</h2>
+<div class="ep-recs">
+<div class="ep-rec"><span>${I18N.T('أفضل نتيجة','Best score')}</span><b>${Math.max(best, score)}</b></div>
+<div class="ep-rec"><span>${I18N.T('المجموع التراكمي','Total score')}</span><b>${totalScore}</b></div>
+</div>
+<div class="lb-chips">${lbChips}</div>
+</aside>
 </div>`;
 if(dock) o.appendChild(dock);
 $('go').onclick = () => start();
