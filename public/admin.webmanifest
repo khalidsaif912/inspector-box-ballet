@@ -5,7 +5,7 @@
   "description": "لوحة إدارة لعبة مستودع الشحن الجوي: الأرقام القياسية، سجل الدخول، وأسئلة المفتش.",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./admin.html",
+  "start_url": "./admin.html?app=1",
   "scope": "./admin.html",
   "display": "standalone",
   "orientation": "portrait",

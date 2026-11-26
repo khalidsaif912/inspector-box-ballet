@@ -176,9 +176,23 @@ tr.top1 td{background:#fff3cd!important}
 .btn.inst:active{transform:translateY(3px);box-shadow:0 1px 0 #136339}
 #gate .inst{margin-top:14px;width:100%}
 .ins-hint{margin:10px 0 0;padding:10px 12px;border:2px dashed var(--ok);border-radius:3px;background:#fff;font-weight:800;font-size:13.5px;line-height:1.6;text-align:start}
+/* طبقة «أدر الهاتف» عندما يكون الهاتف عرضياً ولم يُسمح بقفل الاتجاه */
+.rot{position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;background:var(--paper);color:var(--ink)}
+.rot[hidden]{display:none}
+.rot svg{color:var(--red);animation:rotTilt 1.8s ease-in-out infinite}
+.rot-t{margin:0;font-size:20px;font-weight:900}
+.rot-s{margin:0 0 6px;font-weight:800;color:var(--mute);direction:ltr}
+@keyframes rotTilt{0%,100%{transform:rotate(-90deg)}50%{transform:rotate(0)}}
+@media (prefers-reduced-motion:reduce){.rot svg{animation:none}}
 </style>
 </head>
 <body>
+<div id="rot" class="rot" role="alertdialog" aria-labelledby="rot-t" hidden>
+<svg viewBox="0 0 64 64" width="72" height="72" aria-hidden="true"><rect x="20" y="6" width="24" height="44" rx="4" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="32" cy="43" r="2.5" fill="currentColor"/><path d="M10 40a24 24 0 0 0 16 18" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M22 54l4 4-5 3" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<p class="rot-t" id="rot-t">أدِر الهاتف إلى الوضع الطولي</p>
+<p class="rot-s">Rotate your phone to portrait</p>
+<button class="btn red" id="rot-go" type="button">عرض طولي · Portrait</button>
+</div>
 <main class="sheet">
 <section id="gate">
 <h1 data-k="title">لوحة الإدارة</h1>
@@ -265,15 +279,37 @@ tr.top1 td{background:#fff3cd!important}
 </section>
 </main>
 <script>
-/* صفحة الإدارة طولية على الهاتف: تطبيق اللعبة المثبّت يفرض الوضع العرضي على كل صفحاته، فنطلب هنا الطولي */
+/* صفحة الإدارة طولية على الهاتف في كل الحالات:
+   1) نطلب القفل الطولي (ينجح في التطبيق المثبّت).
+   2) في تبويب المتصفح العادي لا يُسمح بالقفل إلا بملء الشاشة، فعند أول لمسة والهاتف عرضي ندخل ملء الشاشة ثم نقفل طولياً.
+   3) إن بقي عرضياً (iPhone أو رفض المتصفح) تظهر طبقة «أدر الهاتف». الاتجاه يُقرأ من الشاشة لا من نافذة العرض،
+      حتى لا تظهر الطبقة عند فتح لوحة المفاتيح في الوضع الطولي. */
 (function(){
   var so = window.screen && screen.orientation;
-  if(!so || typeof so.lock !== 'function') return;
+  var gate = document.getElementById('rot');
   var phone = function(){ return matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 900; };
-  var lock = function(){ if(phone() && so.type.indexOf('portrait') !== 0) so.lock('portrait').catch(function(){}); };
-  lock();
-  addEventListener('pointerdown', lock, {passive:true});
-  document.addEventListener('visibilitychange', function(){ if(!document.hidden) lock(); });
+  var landscape = function(){
+    if(so && so.type) return so.type.indexOf('landscape') === 0;
+    if(typeof window.orientation === 'number') return Math.abs(window.orientation) === 90;
+    return screen.width > screen.height;
+  };
+  var lock = function(){ if(so && typeof so.lock === 'function') return so.lock('portrait').catch(function(){}); return Promise.resolve(); };
+  var sync = function(){ gate.hidden = !(phone() && landscape()); };
+  var fix = function(){
+    if(!phone() || !landscape()) return;
+    var el = document.documentElement, fs = document.fullscreenElement || document.webkitFullscreenElement;
+    var req = el.requestFullscreen || el.webkitRequestFullscreen;
+    (fs || !req ? lock() : Promise.resolve(req.call(el)).then(lock, lock)).then(function(){ setTimeout(sync, 300); });
+  };
+  if(phone()) lock();
+  sync();
+  addEventListener('pointerdown', fix, {passive:true});
+  document.getElementById('rot-go').onclick = fix;
+  var later = function(){ setTimeout(sync, 250); };
+  addEventListener('orientationchange', later);
+  addEventListener('resize', later);
+  if(so && so.addEventListener) so.addEventListener('change', later);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden){ if(phone()) lock(); sync(); } });
 })();
 </script>
 <script src="game/online.js"></script>
@@ -287,14 +323,14 @@ const sha = async s => [...new Uint8Array(await crypto.subtle.digest('SHA-256', 
 const fmt = d => d ? new Intl.DateTimeFormat(L[lang].loc, { dateStyle: 'short', timeStyle: 'short' }).format(d) : '—';
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const L = {
- ar: { inst:'تثبيت على الهاتف', insIos:'للتثبيت على iPhone: اضغط زر المشاركة ⎋ في Safari ثم «إضافة إلى الشاشة الرئيسية».', insDone:'تم التثبيت — افتح «إدارة المستودع» من الشاشة الرئيسية.', title:'لوحة الإدارة', gate:'أدخل الرمز السري للإدارة', enter:'دخول', refresh:'تحديث', lock:'قفل', warn:'الاتصال بـ Firebase غير مُفعَّل بعد، لذلك لا توجد بيانات.', t_top:'الأرقام القياسية', t_logins:'سجل الدخول', t_scores:'كل النتائج', t_absent:'لم يدخلوا بعد', search:'ابحث بالاسم أو الرقم الوظيفي أو القسم',
+ ar: { inst:'تثبيت على الهاتف', insAndroid:'للتثبيت: افتح قائمة Chrome ⋮ (أعلى الشاشة) واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية» ثم «تثبيت».', insInGame:'أنت داخل تطبيق اللعبة. افتح هذه الصفحة في متصفح Chrome، ثم من القائمة ⋮ اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».', insIos:'للتثبيت على iPhone: اضغط زر المشاركة ⎋ في Safari ثم «إضافة إلى الشاشة الرئيسية».', insDone:'تم التثبيت — افتح «إدارة المستودع» من الشاشة الرئيسية.', title:'لوحة الإدارة', gate:'أدخل الرمز السري للإدارة', enter:'دخول', refresh:'تحديث', lock:'قفل', warn:'الاتصال بـ Firebase غير مُفعَّل بعد، لذلك لا توجد بيانات.', t_top:'الأرقام القياسية', t_logins:'سجل الدخول', t_scores:'كل النتائج', t_absent:'لم يدخلوا بعد', search:'ابحث بالاسم أو الرقم الوظيفي أو القسم',
   wipeBtn:'مسح الأرقام', wipeT:'مسح الأرقام القياسية', wipeP:'عملية نهائية لا يمكن التراجع عنها. تتطلب إدخال الرمز السري من جديد.', wAll:'كل الأرقام', wOne:'موظف واحد', wDate:'تاريخ محدد', wIdPh:'الرقم الوظيفي أو الاسم', wCodePh:'الرمز السري للتأكيد', wCheck:'معاينة', wCancel:'إلغاء', wConfirm:'حذف نهائي', wNoCfg:'Firebase غير مُفعَّل', wBadCode:'الرمز غير صحيح أو حساب المدير غير مُنشأ في Firebase', wNoEmp:'اختر موظفاً صحيحاً', wNoDate:'اختر تاريخاً', wNothing:'لا توجد أرقام مطابقة للمسح', wPlan:(a,b)=>`سيُحذف ${a} سجل نتيجة ويُعاد ضبط ${b} رقم قياسي. اضغط «حذف نهائي» للتأكيد.`, wDone:n=>`تم المسح (${n} عملية)`, wFail:'تعذّر المسح — تحقّق من قواعد Firebase', wTrunc:' (يُعالَج آخر 1000 نتيجة فقط)',
   bad:'الرمز غير صحيح', loading:'جارٍ التحميل…', upd:'آخر تحديث: ', fail:'تعذّر الاتصال بقاعدة البيانات', s_seen:'موظفون دخلوا اللعبة', s_today:'دخلوا اليوم', s_plays:'مرات اللعب', s_best:'أعلى رقم', s_bestby:'أعلى رقم — ', none:'لا توجد بيانات', s_guests:'ضيوف لعبوا بلا حساب', guest:'ضيف', g_mobile:'ضيف بلا حساب · جوال', g_desktop:'ضيف بلا حساب · حاسوب', t_guests:'الضيوف',
   h_name:'الاسم', h_rank:'الرتبة', s_dgr:'معتمدون DGR', h_id:'الرقم', h_dept:'القسم', h_best:'أفضل نتيجة', h_plays:'مرات اللعب', h_time:'الوقت', h_score:'النتيجة', loc:'ar-OM-u-nu-latn', btn:'EN', t_quiz:'أسئلة المفتش', qzTitle:'أسئلة المفتش', qzAdd:'+ سؤال جديد', qzHow:'يظهر المفتش مرتين في كل وردية ويطرح سؤالاً عشوائياً من الأسئلة المفعّلة. الخانة الأولى في الإجابات هي الصحيحة دائماً، وتُعرض الإجابات للاعب بترتيب عشوائي.', qzSeedNote:'تُعرض الآن الأسئلة الافتراضية. أول تعديل أو حذف يحفظ القائمة كاملة في قاعدة البيانات، ومن بعدها تظهر تعديلاتك للاعبين.', qzAuthT:'أدخل الرمز السري لتفعيل التعديل', qzAuthGo:'تفعيل التعديل', qzAuthOk:'تم تفعيل التعديل', qzSum:(n,a)=>`${n} سؤال · ${a} مفعّل في اللعبة`, qzEmpty:'لا توجد أسئلة. أضف أول سؤال.', qzSearch:'ابحث في الأسئلة والإجابات', qzNoHit:'لا توجد أسئلة مطابقة للبحث', qzLoadFail:'تعذّر تحميل الأسئلة من قاعدة البيانات — تُعرض الأسئلة الافتراضية',
   qfNew:'سؤال جديد', qfEdit:'تعديل السؤال', qfQ:'نص السؤال', qfAns:'الإجابات — من اثنتين إلى ثلاث', qfRight:'✓ الإجابة الصحيحة', qfWrong:'✗ إجابة خاطئة', qfWrong2:'✗ خاطئة (اختيارية)', qfAnsHint:'اكتب الإجابة الصحيحة في الخانة الأولى؛ اللعبة تخلط الترتيب في كل مرة.', qfEn:'الترجمة الإنجليزية (اختيارية)', qfQEn:'السؤال بالإنجليزية', qfOn:'السؤال مفعّل في اللعبة', qfNoImg:'بلا صورة', qfPick:'إضافة صورة', qfChange:'تغيير الصورة', qfRm:'إزالة الصورة', qfImgHint:'الصورة اختيارية، وتُصغَّر وتُضغط تلقائياً.', qfPrev:'معاينة كما يراها اللاعب', qfShuf:'خلط', qfPrevEmpty:'اكتب السؤال والإجابات لتظهر المعاينة', qfSave:'حفظ السؤال', qfSaving:'جارٍ الحفظ…', qfSaved:'تم الحفظ ✓', qfImgBad:'تعذّرت قراءة الصورة — جرّب صورة PNG أو JPG', qfImgBig:'الصورة كبيرة جداً حتى بعد الضغط',
   e_noQuestion:'اكتب نص السؤال', e_noCorrect:'اكتب الإجابة الصحيحة في الخانة الأولى', e_fewAnswers:'أضف إجابة خاطئة واحدة على الأقل', e_gapAnswer:'املأ الخانة الثانية قبل الثالثة', e_dupAnswer:'الإجابات متكررة — اجعل كل إجابة مختلفة', e_auth:'أدخل الرمز السري أولاً لتفعيل التعديل', e_save:'تعذّر الحفظ — تأكد من نشر قواعد Firestore الجديدة وحساب المدير',
   qEdit:'تعديل', qOff:'إيقاف', qOn:'تفعيل', qDel:'حذف', qSure:'تأكيد الحذف', qStOn:'مفعّل', qStOff:'موقوف', qDeleted:'تم حذف السؤال' },
- en: { inst:'Install on phone', insIos:'To install on iPhone: tap the Share button in Safari, then “Add to Home Screen”.', insDone:'Installed — open “إدارة المستودع” from your home screen.', title:'Admin Panel', gate:'Enter the admin passcode', enter:'Sign in', refresh:'Refresh', lock:'Lock', warn:'Firebase is not connected yet, so there is no data.', t_top:'Leaderboard', t_logins:'Login log', t_scores:'All scores', t_absent:'Not yet joined', search:'Search by name, employee ID or department',
+ en: { inst:'Install on phone', insAndroid:'To install: open the Chrome menu ⋮ (top of the screen) and choose “Install app” or “Add to Home screen”, then “Install”.', insInGame:'You are inside the game app. Open this page in Chrome, then choose “Install app” or “Add to Home screen” from the ⋮ menu.', insIos:'To install on iPhone: tap the Share button in Safari, then “Add to Home Screen”.', insDone:'Installed — open “إدارة المستودع” from your home screen.', title:'Admin Panel', gate:'Enter the admin passcode', enter:'Sign in', refresh:'Refresh', lock:'Lock', warn:'Firebase is not connected yet, so there is no data.', t_top:'Leaderboard', t_logins:'Login log', t_scores:'All scores', t_absent:'Not yet joined', search:'Search by name, employee ID or department',
   wipeBtn:'Reset records', wipeT:'Reset records', wipeP:'This is permanent and cannot be undone. You must enter the passcode again.', wAll:'All records', wOne:'One employee', wDate:'A specific date', wIdPh:'Employee ID or name', wCodePh:'Passcode to confirm', wCheck:'Preview', wCancel:'Cancel', wConfirm:'Delete permanently', wNoCfg:'Firebase is not connected', wBadCode:'Wrong passcode, or the admin account is not set up in Firebase', wNoEmp:'Pick a valid employee', wNoDate:'Pick a date', wNothing:'Nothing matches to reset', wPlan:(a,b)=>`This will delete ${a} score entries and reset ${b} records. Press “Delete permanently” to confirm.`, wDone:n=>`Reset complete (${n} operations)`, wFail:'Reset failed — check the Firebase rules', wTrunc:' (only the latest 1000 scores are processed)',
   bad:'Wrong passcode', loading:'Loading…', upd:'Last updated: ', fail:'Could not reach the database', s_seen:'Employees who joined', s_today:'Joined today', s_plays:'Games played', s_best:'Top score', s_bestby:'Top score — ', none:'No data', s_guests:'Guests who played without an account', guest:'Guest', g_mobile:'Guest, no account · phone', g_desktop:'Guest, no account · computer', t_guests:'Guests',
   h_name:'Name', h_rank:'Rank', s_dgr:'DGR certified', h_id:'ID', h_dept:'Department', h_best:'Best score', h_plays:'Games', h_time:'Time', h_score:'Score', loc:'en-GB', btn:'العربية', t_quiz:'Inspector questions', qzTitle:'Inspector questions', qzAdd:'+ New question', qzHow:'The inspector visits twice per shift and asks a random active question. The first answer box is always the correct one; the game shows the answers in random order.', qzSeedNote:'You are seeing the built-in questions. Your first edit or delete saves the whole list to the database, and from then on players get your changes.', qzAuthT:'Enter the passcode to enable editing', qzAuthGo:'Enable editing', qzAuthOk:'Editing enabled', qzSum:(n,a)=>`${n} questions · ${a} active in the game`, qzEmpty:'No questions yet. Add the first one.', qzSearch:'Search questions and answers', qzNoHit:'No questions match the search', qzLoadFail:'Could not load questions from the database — showing the built-in ones',
@@ -537,25 +573,32 @@ $('qf').onsubmit = async e => {
   catch(er){ qfMsg(errText(er), 'err'); }
   finally { btn.disabled = false; btn.textContent = tr('qfSave'); }
 };
-/* تثبيت لوحة الإدارة كتطبيق مستقل (طولي) — منفصل عن تطبيق اللعبة */
+/* تثبيت لوحة الإدارة كتطبيق مستقل (طولي) — منفصل عن تطبيق اللعبة.
+   الزر يظهر دائماً على الهاتف: إن سمح Chrome بالتثبيت المباشر تفتح نافذته، وإلا تظهر خطوات التثبيت اليدوي.
+   يُخفى فقط داخل تطبيق الإدارة نفسه (يُفتح بالرابط admin.html?app=1 من ملف التثبيت). */
 (function(){
+  if('serviceWorker' in navigator && !/^(localhost|127\.0\.0\.1|\[::1\]|.*\.localhost)$/.test(location.hostname))
+    addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   const btns = [$('inst'), $('inst-g')], hints = [$('ins-hint'), $('ins-hint-g')];
-  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const standalone = matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches || navigator.standalone === true;
+  let mine = false;
+  try {
+    if(/[?&]app=1\b/.test(location.search)) sessionStorage.setItem('acg_admin_app', '1');
+    mine = standalone && sessionStorage.getItem('acg_admin_app') === '1';
+  } catch(e){}
+  if(mine || (standalone && navigator.standalone === true)) return;
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const phone = matchMedia('(pointer: coarse)').matches;
   let deferred = null;
   const show = on => btns.forEach(b => b.hidden = !on);
   const hint = k => hints.forEach(h => { h.textContent = k ? tr(k) : ''; h.hidden = !k; });
-  if(standalone) return;
-  if(ios) show(true);
-  addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; show(true); });
+  if(phone || ios) show(true);
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; show(true); hint(''); });
   addEventListener('appinstalled', () => { deferred = null; show(false); hint('insDone'); });
   btns.forEach(b => b.onclick = async () => {
     if(deferred){ deferred.prompt(); const r = await deferred.userChoice.catch(() => null); deferred = null; if(r && r.outcome === 'accepted') show(false); return; }
-    if(ios) hint('insIos');
+    hint(ios ? 'insIos' : standalone ? 'insInGame' : 'insAndroid');
   });
-  if(!('serviceWorker' in navigator)) return;
-  if(/^(localhost|127\.0\.0\.1|\[::1\]|.*\.localhost)$/.test(location.hostname)) return;
-  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();
 applyLang();
 try { if(sessionStorage.getItem(SK) === HASH){ $('gate').hidden = true; $('app').hidden = false; load(); } } catch(e){}
