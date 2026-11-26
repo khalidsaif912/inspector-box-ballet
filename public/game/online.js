@@ -175,6 +175,15 @@ const Online = {
     } else writes.push({ delete: `${root}/questions/${id}` });
     await this._commit(writes);
   },
+  /* إعادة ضبط الأسئلة: يحذف كل الأسئلة المحفوظة ومستند _meta، فتعود اللعبة وصفحة الإدارة إلى الأسئلة الافتراضية */
+  async quizReset(){
+    if(!tok) throw new Error('auth');
+    const root = `projects/${CFG.projectId}/databases/(default)/documents`;
+    const r = await this.quizList();
+    const ids = (r ? r.list.map(d => d._id) : []).concat('_meta');
+    await this._commit(ids.map(id => ({ delete: `${root}/questions/${id}` })));
+    return ids.length - 1;
+  },
   /* لوحة المتصدرين العامة للموظفين فقط؛ الضيوف يظهرون في صفحة الإدارة */
   async top(n){ if(!on()) return []; return (await this._query('players', 'best', (n || 10) + 20)).filter(p => p.best > 0 && !isGuest(p.id)).slice(0, n || 10); },
   async logins(n){ if(!on()) return []; return this._query('logins', 'at', n || 200); },

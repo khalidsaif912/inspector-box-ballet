@@ -8,7 +8,7 @@
 <meta name="x5-orientation" content="portrait">
 <link rel="manifest" href="admin.webmanifest">
 <meta name="theme-color" content="#12212e">
-<link rel="apple-touch-icon" href="icons/admin-apple.png">
+<link rel="apple-touch-icon" href="icons/admin-app-apple.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="إدارة المستودع">
@@ -65,6 +65,10 @@ tr.top1 td{background:#fff3cd!important}
 .warn{background:#fff3cd;border:2px solid var(--gold);border-radius:3px;padding:10px 14px;font-weight:700;margin-bottom:12px}
 /* ===== تبويب أسئلة المفتش ===== */
 .quiz h2{margin:0;font-size:20px;font-weight:900}
+.hbtns{display:grid;gap:6px;min-width:min(100%,300px)}
+.hrow{display:flex;gap:6px}.hrow .btn{flex:1 1 0;white-space:nowrap}
+.qz-btns{display:flex;gap:8px;flex-wrap:wrap}.qz-btns .btn{flex:1 1 auto;white-space:nowrap}
+#qz-reset.sure{background:var(--red);border-color:var(--red);color:#fff}
 .qz-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
 .qz-note{margin:0 0 10px;font-size:13px;font-weight:700;color:var(--mute);line-height:1.6}
 .qz-info{background:#e8f0fb;border:2px solid var(--blue);border-radius:3px;padding:9px 12px;font-size:13px;font-weight:800;color:var(--blue);margin-bottom:10px}
@@ -147,7 +151,8 @@ tr.top1 td{background:#fff3cd!important}
   body{padding:max(10px,env(safe-area-inset-top)) 10px 24px}
   .sheet{padding:14px 12px 20px;border-width:6px}
   header{gap:8px;padding-bottom:10px;margin-bottom:12px}
-  header>div:last-child{display:flex;gap:6px;flex-wrap:wrap}
+  header>div:last-child{width:100%}
+  .qz-btns{width:100%}
   .btn{padding:9px 12px}
   .stats{grid-template-columns:1fr 1fr;gap:8px}
   .stat{padding:10px 12px}.stat b{font-size:24px}.stat span{font-size:12px}
@@ -206,7 +211,7 @@ tr.top1 td{background:#fff3cd!important}
 <section id="app" hidden>
 <header>
 <div><h1 data-k="title">لوحة الإدارة</h1><p class="sub" id="upd"></p></div>
-<div><button class="btn lang" id="lang" type="button" aria-label="Language">EN</button> <button class="btn" id="wipeBtn" type="button" data-k="wipeBtn">مسح الأرقام</button> <button class="btn" id="refresh" type="button" data-k="refresh">تحديث</button> <button class="btn ghost" id="lock" type="button" data-k="lock">قفل</button> <button class="btn inst" id="inst" type="button" data-k="inst" hidden>تثبيت</button></div>
+<div class="hbtns"><div class="hrow"><button class="btn lang" id="lang" type="button" aria-label="Language">EN</button><button class="btn" id="refresh" type="button" data-k="refresh">تحديث</button><button class="btn ghost" id="lock" type="button" data-k="lock">قفل</button></div><div class="hrow"><button class="btn" id="wipeBtn" type="button" data-k="wipeBtn">مسح الأرقام</button><button class="btn inst" id="inst" type="button" data-k="inst" hidden>تثبيت</button></div></div>
 <p class="ins-hint" id="ins-hint" hidden></p>
 </header>
 <section id="wipe" class="wipe" hidden>
@@ -232,7 +237,7 @@ tr.top1 td{background:#fff3cd!important}
 <section id="quiz" class="quiz" hidden>
 <div class="qz-head">
 <div><h2 data-k="qzTitle">أسئلة المفتش</h2><p class="sub" id="qz-sum"></p></div>
-<button class="btn red" id="qz-add" type="button" data-k="qzAdd">+ سؤال جديد</button>
+<div class="qz-btns"><button class="btn red" id="qz-add" type="button" data-k="qzAdd">+ سؤال جديد</button><button class="btn line" id="qz-reset" type="button" data-k="qzReset">↺ إعادة الضبط</button></div>
 </div>
 <p class="msg" id="qz-msg" role="status"></p>
 <p class="qz-note" data-k="qzHow">يظهر المفتش مرتين في كل وردية ويطرح سؤالاً عشوائياً من الأسئلة المفعّلة. الخانة الأولى في الإجابات هي الصحيحة دائماً، وتُعرض الإجابات للاعب بترتيب عشوائي.</p>
@@ -331,14 +336,14 @@ const L = {
   h_name:'الاسم', h_rank:'الرتبة', s_dgr:'معتمدون DGR', h_id:'الرقم', h_dept:'القسم', h_best:'أفضل نتيجة', h_plays:'مرات اللعب', h_time:'الوقت', h_score:'النتيجة', loc:'ar-OM-u-nu-latn', btn:'EN', t_quiz:'أسئلة المفتش', qzTitle:'أسئلة المفتش', qzAdd:'+ سؤال جديد', qzHow:'يظهر المفتش مرتين في كل وردية ويطرح سؤالاً عشوائياً من الأسئلة المفعّلة. الخانة الأولى في الإجابات هي الصحيحة دائماً، وتُعرض الإجابات للاعب بترتيب عشوائي.', qzSeedNote:'تُعرض الآن الأسئلة الافتراضية. أول تعديل أو حذف يحفظ القائمة كاملة في قاعدة البيانات، ومن بعدها تظهر تعديلاتك للاعبين.', qzAuthT:'أدخل الرمز السري لتفعيل التعديل', qzAuthGo:'تفعيل التعديل', qzAuthOk:'تم تفعيل التعديل', qzSum:(n,a)=>`${n} سؤال · ${a} مفعّل في اللعبة`, qzEmpty:'لا توجد أسئلة. أضف أول سؤال.', qzSearch:'ابحث في الأسئلة والإجابات', qzNoHit:'لا توجد أسئلة مطابقة للبحث', qzLoadFail:'تعذّر تحميل الأسئلة من قاعدة البيانات — تُعرض الأسئلة الافتراضية',
   qfNew:'سؤال جديد', qfEdit:'تعديل السؤال', qfQ:'نص السؤال', qfAns:'الإجابات — من اثنتين إلى ثلاث', qfRight:'✓ الإجابة الصحيحة', qfWrong:'✗ إجابة خاطئة', qfWrong2:'✗ خاطئة (اختيارية)', qfAnsHint:'اكتب الإجابة الصحيحة في الخانة الأولى؛ اللعبة تخلط الترتيب في كل مرة.', qfEn:'الترجمة الإنجليزية (اختيارية)', qfQEn:'السؤال بالإنجليزية', qfOn:'السؤال مفعّل في اللعبة', qfNoImg:'بلا صورة', qfPick:'إضافة صورة', qfChange:'تغيير الصورة', qfRm:'إزالة الصورة', qfImgHint:'الصورة اختيارية، وتُصغَّر وتُضغط تلقائياً.', qfPrev:'معاينة كما يراها اللاعب', qfShuf:'خلط', qfPrevEmpty:'اكتب السؤال والإجابات لتظهر المعاينة', qfSave:'حفظ السؤال', qfSaving:'جارٍ الحفظ…', qfSaved:'تم الحفظ ✓', qfImgBad:'تعذّرت قراءة الصورة — جرّب صورة PNG أو JPG', qfImgBig:'الصورة كبيرة جداً حتى بعد الضغط',
   e_noQuestion:'اكتب نص السؤال', e_noCorrect:'اكتب الإجابة الصحيحة في الخانة الأولى', e_fewAnswers:'أضف إجابة خاطئة واحدة على الأقل', e_gapAnswer:'املأ الخانة الثانية قبل الثالثة', e_dupAnswer:'الإجابات متكررة — اجعل كل إجابة مختلفة', e_auth:'أدخل الرمز السري أولاً لتفعيل التعديل', e_save:'تعذّر الحفظ — تأكد من نشر قواعد Firestore الجديدة وحساب المدير',
-  qEdit:'تعديل', qOff:'إيقاف', qOn:'تفعيل', qDel:'حذف', qSure:'تأكيد الحذف', qStOn:'مفعّل', qStOff:'موقوف', qDeleted:'تم حذف السؤال' },
+  qzReset:'↺ إعادة الضبط', qzResetSure:'تأكيد إعادة الضبط', qzResetDone:'تمت إعادة الضبط: عادت الأسئلة الافتراضية ({n} سؤالاً) وحُذفت الأسئلة المعدّلة.', qzResetNone:'الأسئلة هي الافتراضية أصلاً، لا شيء لإعادة ضبطه.', qzResetHint:'إعادة الضبط تحذف كل الأسئلة المضافة والمعدّلة وتعيد الأسئلة الافتراضية. اضغط مرة أخرى للتأكيد.', qEdit:'تعديل', qOff:'إيقاف', qOn:'تفعيل', qDel:'حذف', qSure:'تأكيد الحذف', qStOn:'مفعّل', qStOff:'موقوف', qDeleted:'تم حذف السؤال' },
  en: { inst:'Install on phone', insAndroid:'To install: open the Chrome menu ⋮ (top of the screen) and choose “Install app” or “Add to Home screen”, then “Install”.', insInGame:'You are inside the game app, which cannot install another app. Open the page in Chrome (green button), then tap “Install on phone” there. If Chrome does not open, copy the link and paste it into Chrome.', insInGameIos:'You are inside the game app. Copy the page link, open it in Safari, then Share → “Add to Home Screen”.', insOpen:'Open in Chrome', insCopy:'Copy link', insCopied:'Copied ✓', insIos:'To install on iPhone: tap the Share button in Safari, then “Add to Home Screen”.', insDone:'Installed — open “إدارة المستودع” from your home screen.', title:'Admin Panel', gate:'Enter the admin passcode', enter:'Sign in', refresh:'Refresh', lock:'Lock', warn:'Firebase is not connected yet, so there is no data.', t_top:'Leaderboard', t_logins:'Login log', t_scores:'All scores', t_absent:'Not yet joined', search:'Search by name, employee ID or department',
   wipeBtn:'Reset records', wipeT:'Reset records', wipeP:'This is permanent and cannot be undone. You must enter the passcode again.', wAll:'All records', wOne:'One employee', wDate:'A specific date', wIdPh:'Employee ID or name', wCodePh:'Passcode to confirm', wCheck:'Preview', wCancel:'Cancel', wConfirm:'Delete permanently', wNoCfg:'Firebase is not connected', wBadCode:'Wrong passcode, or the admin account is not set up in Firebase', wNoEmp:'Pick a valid employee', wNoDate:'Pick a date', wNothing:'Nothing matches to reset', wPlan:(a,b)=>`This will delete ${a} score entries and reset ${b} records. Press “Delete permanently” to confirm.`, wDone:n=>`Reset complete (${n} operations)`, wFail:'Reset failed — check the Firebase rules', wTrunc:' (only the latest 1000 scores are processed)',
   bad:'Wrong passcode', loading:'Loading…', upd:'Last updated: ', fail:'Could not reach the database', s_seen:'Employees who joined', s_today:'Joined today', s_plays:'Games played', s_best:'Top score', s_bestby:'Top score — ', none:'No data', s_guests:'Guests who played without an account', guest:'Guest', g_mobile:'Guest, no account · phone', g_desktop:'Guest, no account · computer', t_guests:'Guests',
   h_name:'Name', h_rank:'Rank', s_dgr:'DGR certified', h_id:'ID', h_dept:'Department', h_best:'Best score', h_plays:'Games', h_time:'Time', h_score:'Score', loc:'en-GB', btn:'العربية', t_quiz:'Inspector questions', qzTitle:'Inspector questions', qzAdd:'+ New question', qzHow:'The inspector visits twice per shift and asks a random active question. The first answer box is always the correct one; the game shows the answers in random order.', qzSeedNote:'You are seeing the built-in questions. Your first edit or delete saves the whole list to the database, and from then on players get your changes.', qzAuthT:'Enter the passcode to enable editing', qzAuthGo:'Enable editing', qzAuthOk:'Editing enabled', qzSum:(n,a)=>`${n} questions · ${a} active in the game`, qzEmpty:'No questions yet. Add the first one.', qzSearch:'Search questions and answers', qzNoHit:'No questions match the search', qzLoadFail:'Could not load questions from the database — showing the built-in ones',
   qfNew:'New question', qfEdit:'Edit question', qfQ:'Question', qfAns:'Answers — two or three', qfRight:'✓ Correct answer', qfWrong:'✗ Wrong answer', qfWrong2:'✗ Wrong (optional)', qfAnsHint:'Put the correct answer in the first box; the game shuffles the order every time.', qfEn:'English translation (optional)', qfQEn:'Question in English', qfOn:'Question is active in the game', qfNoImg:'No image', qfPick:'Add image', qfChange:'Change image', qfRm:'Remove image', qfImgHint:'The image is optional and is resized and compressed automatically.', qfPrev:'Preview as the player sees it', qfShuf:'Shuffle', qfPrevEmpty:'Type the question and answers to see a preview', qfSave:'Save question', qfSaving:'Saving…', qfSaved:'Saved ✓', qfImgBad:'Could not read the image — try a PNG or JPG', qfImgBig:'The image is too large even after compression',
   e_noQuestion:'Type the question', e_noCorrect:'Type the correct answer in the first box', e_fewAnswers:'Add at least one wrong answer', e_gapAnswer:'Fill the second box before the third', e_dupAnswer:'Answers repeat — make each one different', e_auth:'Enter the passcode first to enable editing', e_save:'Save failed — make sure the new Firestore rules and the admin account are deployed',
-  qEdit:'Edit', qOff:'Turn off', qOn:'Turn on', qDel:'Delete', qSure:'Confirm delete', qStOn:'Active', qStOff:'Off', qDeleted:'Question deleted' }
+  qzReset:'↺ Reset', qzResetSure:'Confirm reset', qzResetDone:'Reset done: the {n} default questions are back and edited questions were removed.', qzResetNone:'The questions are already the defaults; nothing to reset.', qzResetHint:'Reset deletes every added or edited question and restores the defaults. Tap again to confirm.', qEdit:'Edit', qOff:'Turn off', qOn:'Turn on', qDel:'Delete', qSure:'Confirm delete', qStOn:'Active', qStOff:'Off', qDeleted:'Question deleted' }
 };
 let lang = 'ar'; try { lang = localStorage.getItem('acg_admin_lang') === 'en' ? 'en' : 'ar'; } catch(e){}
 const tr = k => L[lang][k];
@@ -445,6 +450,7 @@ function renderQuiz(){
   $('qz-seed').hidden = QZ.seeded || !QZ.loaded || QZ.fail;
   $('qz-sum').textContent = !QZ.loaded ? tr('loading') : QZ.fail ? tr('qzLoadFail') : tr('qzSum')(QZ.list.length, QZ.list.filter(q => q.on).length);
   $('qz-add').disabled = !QZ.loaded || QZ.fail;
+  const rs = $('qz-reset'); rs.disabled = !QZ.loaded || QZ.fail; rs.classList.toggle('sure', !!QZ.resetSure); rs.textContent = tr(QZ.resetSure ? 'qzResetSure' : 'qzReset');
   const term = $('q').value.trim().toLowerCase();
   const rows = QZ.list.map((q, i) => ({ q, i })).filter(({ q }) => !term || [q.q, q.qEn, ...q.a, ...q.aEn].join(' ').toLowerCase().includes(term));
   $('qz-list').innerHTML = !QZ.loaded ? '' : !QZ.list.length ? `<div class="qz-empty">${tr('qzEmpty')}</div>` : !rows.length ? `<div class="qz-empty">${tr('qzNoHit')}</div>` : rows.map(({ q, i }) => {
@@ -497,6 +503,20 @@ $('qz-auth').onsubmit = async e => {
   catch(err){ m.textContent = tr('wBadCode'); m.className = 'msg err'; }
 };
 $('qz-add').onclick = () => qfOpen(null);
+$('qz-reset').onclick = async () => {
+  if(!QZ.seeded){ QZ.resetSure = false; renderQuiz(); return qzMsg(tr('qzResetNone'), 'ok'); }
+  if(!guard()) return;
+  if(!QZ.resetSure){ QZ.resetSure = true; clearTimeout(QZ.resetT); QZ.resetT = setTimeout(() => { QZ.resetSure = false; renderQuiz(); }, 5000); qzMsg(tr('qzResetHint'), 'err'); return renderQuiz(); }
+  QZ.resetSure = false; clearTimeout(QZ.resetT);
+  const b = $('qz-reset'); b.disabled = true;
+  try {
+    await Online.quizReset();
+    QZ.seeded = false; QZ.list = IQ.defaults(); QZ.sure = null;
+    if(!$('qf').hidden) qfClose();
+    qzMsg(tr('qzResetDone').replace('{n}', QZ.list.length), 'ok');
+  } catch(err){ qzMsg(errText(err), 'err'); }
+  renderQuiz();
+};
 
 /* ----- محرر السؤال ----- */
 const F = ['q', 'qEn', 'a0', 'a1', 'a2', 'e0', 'e1', 'e2'];

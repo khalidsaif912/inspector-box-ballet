@@ -1,5 +1,5 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v146";
+const VERSION = "v147";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
@@ -41,9 +41,9 @@ const SHELL = [
   "./manifest.webmanifest",
   "./admin.html",
   "./admin.webmanifest",
-  "./icons/admin-192.png",
-  "./icons/admin-512.png",
-  "./icons/admin-apple.png",
+  "./icons/admin-app-192.png",
+  "./icons/admin-app-512.png",
+  "./icons/admin-app-apple.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
