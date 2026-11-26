@@ -3594,6 +3594,10 @@ if(o){ pz = run; run = false; } else if(pz){ run = true; pz = false; }
 };
 $('rc').onclick = openRules;
 $('how').onclick = openRules;
+document.querySelectorAll('#rules .rtab').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#rules .rtab').forEach(t => { const on = t === b; t.classList.toggle('on', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); const p = $(t.dataset.p); if(p) p.hidden = !on; });
+  $('rules').scrollTop = 0;
+}));
 function end(){
 try { if(parent !== window) parent.postMessage({ type: 'acg-state', playing: false }, location.origin); } catch(e){}
 run = false; resetEvents();
