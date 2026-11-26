@@ -212,7 +212,7 @@ describe("Game assets and shared rules", () => {
   it("lays the start and shift-end screens out for landscape phones", () => {
     expect(ui).toContain("@media (orientation:landscape) and (max-height:560px)");
     expect(ui).toContain("grid-template-columns:minmax(0,1fr) minmax(146px,190px)");
-    expect(ui).toMatch(/#ov \.shift-panel\{[\s\S]{0,260}display:grid/);
+    expect(ui).toMatch(/@media \(orientation:landscape\) and \(max-height:560px\)\{\s*#ov \.ep-main\{/);
     expect(ui).toContain("@media (orientation:landscape) and (max-height:360px)");
   });
 

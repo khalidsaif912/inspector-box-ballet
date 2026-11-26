@@ -298,6 +298,8 @@
     'جولة تعريفية — بلا غرامات': 'Intro round — no fines',
     'جولة تعريفية — لن تصطدم بك': 'Intro round — it won\'t hit you',
     'المفتش': 'Inspector',
+    'سؤال': 'Question',
+    'اضغط 1 أو 2 أو 3 للإجابة': 'Press 1, 2 or 3 to answer',
     'الرافعة الشوكية': 'Forklift',
     'يغرّم كل طرد متروك خارج مناطق الفرز.': 'Fines every parcel left outside the sorting zones.',
     'تُسقط أجساماً غريبة (FOD)؛ اجمعها وضعها في الصندوق الأحمر.': 'Drops foreign objects (FOD); collect them and put them in the red bin.',

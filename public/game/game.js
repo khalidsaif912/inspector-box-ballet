@@ -2000,7 +2000,7 @@ const caoRun = { spawned: 0, placardUsed: false };
 /* ===== جدولة أحداث الوردية عشوائياً بلا تعارض =====
    • المفتش (أسئلة CAO) ثلاث مرات في أوقات عشوائية متباعدة، وجولاته مرتبطة بالتباعد نفسه.
    • إنذار الحريق مرة واحدة في وقت عشوائي، ولا يبدأ إلا حين لا يكون هناك مفتش أو سؤال أو شاحنة أو لغز أو قيادة رافعة. */
-const evt = { t: 0, fireAt: 70, caoAt: [30, 75, 130], caoIdx: 0, patrol: 0, lastInsp: -999, heavyAt: 50 };
+const evt = { t: 0, fireAt: 70, caoAt: [30, 75, 130], caoIdx: 0, patrol: 0, lastInsp: -999, heavyAt: 50, quizAt: [40, 90], quizIdx: 0 };
 const rnd = (a, b) => a + Math.random() * (b - a);
 function evtReset(){
   evt.t = 0; evt.caoIdx = 0; evt.patrol = 0; evt.lastInsp = -999;
@@ -2009,6 +2009,8 @@ function evtReset(){
   for(let i = 0; i < 30 && evt.caoAt.some(c => Math.abs(c - f) < 22); i++) f = rnd(45, 120);
   evt.fireAt = f;
   evt.heavyAt = rnd(gameRules.heavy.window[0], gameRules.heavy.window[1]);
+  evt.quizIdx = 0;
+  evt.quizAt = window.InspectorQuiz ? InspectorQuiz.schedule(Math.random, evt.caoAt.concat([evt.fireAt])) : [];
 }
 function evtAllowPatrol(){
   return evt.patrol < 3 && evt.t >= 14 && evt.t - evt.lastInsp >= 40 && !items.some(i => i.data.cao && !i.caoChecked);
@@ -3332,7 +3334,15 @@ clearTimeout(introT);
 addEventListener('keydown', e => {
 if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyQ','KeyX'].includes(e.code)) e.preventDefault();
 if(introHold){ if(['Space','KeyE','KeyF','Enter','NumpadEnter','Escape','KeyP'].includes(e.code)){ e.preventDefault(); if(!e.repeat) resumeFromIntro(); } return; }
-if(caoQ.active){ e.preventDefault(); return; }
+if(caoQ.active){
+  e.preventDefault();
+  if(caoQ.mode === 'quiz' && !e.repeat){
+    const n = { Digit1: 0, Digit2: 1, Digit3: 2, Numpad1: 0, Numpad2: 1, Numpad3: 2 }[e.code];
+    if(n !== undefined && !caoQ.answered && QUIZ_BUBBLE.classList.contains('in')) quizAnswer(n);
+    else if(caoQ.answered && ['Enter','NumpadEnter','Space','Escape'].includes(e.code)) caoEnd();
+  }
+  return;
+}
 if(frzP.active){ frzKey(e); return; }
 if(cardP.active){ e.preventDefault(); if(e.code === 'Escape') cardsClose(); return; }
 if(fire.keypad){ handlePadKey(e); return; }
@@ -4330,9 +4340,10 @@ sy = Math.max(h + 26, Math.min(innerHeight - 12, sy));
 el.style.left = sx + 'px';
 el.style.top = sy + 'px';
 }
+const caoBubble = () => caoQ.mode === 'quiz' && QUIZ_BUBBLE ? QUIZ_BUBBLE : CAO_BUBBLE;
 function caoPlace(){
 if(!caoQ.active) return;
-caoAnchor(CAO_BUBBLE, 0);
+caoAnchor(caoBubble(), 0);
 caoAnchor(CAO_SAY, 0);
 }
 /* المشهد المجمّد: المفتش يمشي حتى يقف أمامك ثم تُفتح فقاعته */
@@ -4368,7 +4379,7 @@ I_.g.position.set(I_.x, walking ? Math.abs(Math.sin(I_.t * 7)) * .05 : 0, I_.z);
   const acr = activeCharRig();
   if(acr && acr.root.visible){ acr.root.rotation.y = curRotY; acr.pose({ dt: r, moving: false, speed: 0, held: false }); }
 }
-if(!walking && !caoQ.answered) CAO_BUBBLE.classList.add('in');
+if(!walking && !caoQ.answered) caoBubble().classList.add('in');
 caoPlace();
 }
 /* بُعد نقطة عن الرافعة: عن جسمها (صندوق يدور مع اتجاهها) وعن شوكتيها الممتدتين للأمام */
@@ -4399,7 +4410,7 @@ return best || { x: Math.max(-24, Math.min(22, px.x + pref * CAO_GAP)), dir: -pr
 }
 function caoOpen(it){
 const f = gameRules.cao.flightFor(Math.round(it.m.position.x) + totalProcessed);
-caoQ.active = true; caoQ.answered = false; caoQ.it = it; caoQ.flight = f; evt.lastInsp = evt.t;
+caoQ.active = true; caoQ.answered = false; caoQ.it = it; caoQ.flight = f; caoQ.mode = 'cao'; evt.lastInsp = evt.t;
 const placardQ = !!it.data.placard;
 $('cao-item').textContent = it.data.name + ' • ' + it.data.imp + ' / ' + it.data.div;
 $('cao-flight').textContent = I18N.T('الرحلة ','Flight ') + (f.id + ' · ' + f.from + ' ✈ ' + f.to) + I18N.T(' — طائرة ركاب',' — passenger aircraft');
@@ -4419,6 +4430,11 @@ const I_ = inspector;
 const z0 = Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, px.z));
 /* يأتي من الجهة التي فيها متسع ويقف قبل الموظف بمسافة حوار CAO_GAP، فلا يعبر من خلاله أبداً،
    ولا يقف داخل الرافعة (التي يقودها الموظف أو المتوقفة) ولا يمر عبرها أثناء الاقتراب */
+caoApproach(z0);
+}
+/* المفتش يمشي حتى يقف بجانب الموظف ثم تُفتح الفقاعة النشطة (CAO أو سؤال) */
+function caoApproach(z0){
+const I_ = inspector;
 const stand = caoStand(z0);
 const x0 = stand.x;
 inspector.caoDir = stand.dir;
@@ -4431,6 +4447,7 @@ I_.x = Math.max(-32, Math.min(32, x0 - I_.caoDir * 7.4));
 I_.g.rotation.y = I_.caoDir * Math.PI / 2; // يواجه اتجاه مشيه أثناء الاقتراب
 I_.g.position.set(I_.x, 0, I_.z);
 CAO_BUBBLE.classList.remove('in');
+if(QUIZ_BUBBLE) QUIZ_BUBBLE.classList.remove('in');
 CAO_SAY.classList.remove('in');
 CAO_PANEL.classList.add('on');
 CAO_PANEL.setAttribute('aria-hidden','false');
@@ -4451,7 +4468,8 @@ CAO_SAY.classList.add('in');
 }
 function caoEnd(){
 clearTimeout(caoHoldT);
-caoQ.active = false; caoQ.answered = false; caoQ.it = null;
+caoQ.active = false; caoQ.answered = false; caoQ.it = null; caoQ.mode = null; caoQ.quiz = null;
+if(QUIZ_BUBBLE) QUIZ_BUBBLE.classList.remove('in');
 CAO_PANEL.classList.remove('on');
 CAO_PANEL.setAttribute('aria-hidden','true');
 CAO_BUBBLE.classList.remove('placard');
@@ -4508,6 +4526,12 @@ if(caoQ.answered){
   caoEnd();
   return;
 }
+const qb = e.target.closest && e.target.closest('button[data-qa]');
+if(qb){
+  e.preventDefault(); e.stopPropagation();
+  if(caoQ.active && caoQ.mode === 'quiz' && QUIZ_BUBBLE.classList.contains('in')) quizAnswer(+qb.dataset.qa);
+  return;
+}
 const b = e.target.closest && e.target.closest('button[data-a]');
 if(!b) return;
 e.preventDefault(); e.stopPropagation();
@@ -4521,6 +4545,81 @@ CAO_SAY.addEventListener('click', e => {
   e.preventDefault(); e.stopPropagation();
   caoEnd();
 });
+}
+/* ===== سؤال المفتش: أسئلة من صفحة الإدارة (أو الافتراضية) تظهر عشوائياً مرتين في الوردية =====
+   الإجابة الأولى المخزّنة هي الصحيحة، وتُخلط الإجابات في كل مرة. */
+const QUIZ_BUBBLE = $('quiz-bubble');
+const QUIZ_CACHE = 'acg_quiz_v1';
+const quizBank = { list: null, recent: [] };
+/* فوراً من التخزين المحلي أو الأسئلة الافتراضية، ثم تحديث من قاعدة البيانات في الخلفية */
+(function quizLoad(){
+  if(!window.InspectorQuiz) return;
+  try { const c = JSON.parse(localStorage.getItem(QUIZ_CACHE) || 'null'); if(c && Array.isArray(c.list)) quizBank.list = c.list; } catch(e){}
+  if(!quizBank.list) quizBank.list = InspectorQuiz.defaults();
+  try { quizBank.recent = JSON.parse(localStorage.getItem(QUIZ_CACHE + '_recent') || '[]').slice(-InspectorQuiz.recentKeep); } catch(e){}
+  if(window.Online && Online.enabled() && Online.quizList){
+    Online.quizList().then(r => {
+      if(!r) return;
+      quizBank.list = r.seeded ? r.list.map(InspectorQuiz.normalize) : InspectorQuiz.defaults();
+      try { localStorage.setItem(QUIZ_CACHE, JSON.stringify({ list: r.seeded ? quizBank.list : null, at: Date.now() })); } catch(e){}
+    }).catch(() => {});
+  }
+})();
+const quizHasAny = () => !!(window.InspectorQuiz && InspectorQuiz.pick(quizBank.list || [], [], () => 0));
+function quizDue(){
+  return run && window.InspectorQuiz && evt.quizIdx < evt.quizAt.length && evt.t >= evt.quizAt[evt.quizIdx] && (stage >= 2 || demo.inspDone);
+}
+function quizSafe(){
+  return time > 12 && !caoQ.active && !inspector.active && !fire.active && !jam.active && !cardP.active && !frzP.active && !FRZ.pending &&
+    !truckState.active && !STUDY.on && !FD.on && !introHold && !liftAnim.active && rushN === 0 && !demo.insp &&
+    !(window.Prog && Prog.busy()) && !items.some(i => i.data.cao && !i.caoChecked) && evt.t - evt.lastInsp >= 15;
+}
+function quizOpen(){
+  evt.quizIdx++;
+  if(!QUIZ_BUBBLE || !quizHasAny()) return;
+  const q = InspectorQuiz.pick(quizBank.list, quizBank.recent);
+  if(!q) return;
+  quizBank.recent = quizBank.recent.filter(id => id !== q.id).concat(q.id).slice(-InspectorQuiz.recentKeep);
+  try { localStorage.setItem(QUIZ_CACHE + '_recent', JSON.stringify(quizBank.recent)); } catch(e){}
+  const sh = InspectorQuiz.shuffle(q), tx = InspectorQuiz.localize(q, I18N.lang);
+  caoQ.active = true; caoQ.answered = false; caoQ.it = null; caoQ.mode = 'quiz';
+  caoQ.quiz = { q, order: sh.order, correct: sh.correct, text: tx };
+  evt.lastInsp = evt.t;
+  const img = $('quiz-img');
+  if(q.img){ img.src = q.img; img.hidden = false; } else { img.hidden = true; img.removeAttribute('src'); }
+  $('quiz-q').textContent = tx.q;
+  $('quiz-tag').textContent = I18N.T('سؤال ', 'Q ') + evt.quizIdx + '/' + evt.quizAt.length;
+  $('quiz-ans').innerHTML = sh.order.map((k, i) => `<button class="cq-b quiz-b" type="button" data-qa="${i}"><kbd>${i + 1}</kbd><span></span></button>`).join('');
+  [...$('quiz-ans').children].forEach((b, i) => { b.lastChild.textContent = tx.a[sh.order[i]]; });
+  $('quiz-keys').hidden = matchMedia('(pointer: coarse)').matches;
+  caoApproach(Math.max(INSP_SAFE.minZ, Math.min(INSP_SAFE.maxZ, px.z)));
+}
+function quizAnswer(i){
+  const Q = caoQ.quiz;
+  if(!Q || !caoQ.active || caoQ.answered || !(i >= 0 && i < Q.order.length)) return;
+  const ok = i === Q.correct, IQ = InspectorQuiz, right = Q.text.a[0];
+  caoQ.answered = true; caoQ.lastOk = ok;
+  [...$('quiz-ans').children].forEach((b, k) => { b.disabled = true; b.classList.toggle('right', k === Q.correct); b.classList.toggle('wrong', k === i && !ok); });
+  QUIZ_BUBBLE.classList.remove('in');
+  progEmit('dgr', { ok });
+  if(ok){
+    score += IQ.reward; time += IQ.timeBonus;
+    streak++; streakT = streakWindow(); maxStreak = Math.max(maxStreak, streak);
+    combo = gameRules.economy.comboAfter(streak);
+    snd('ok', 1.3); screenFlash('gold');
+    spawnFloatTag('+' + IQ.reward + ' 🎓', '#69f0ae');
+    caoSay(I18N.T('إجابة صحيحة، أحسنت! «', 'Correct, well done! “') + right + I18N.T('». +', '”. +') + IQ.reward + I18N.T(' نقطة و +', ' pts and +') + IQ.timeBonus + I18N.T(' ث.', 's.'), true);
+  } else {
+    const lost = Math.min(score, IQ.penalty);
+    score = Math.max(0, score - IQ.penalty);
+    streak = 0; streakT = 0; combo = 1;
+    snd('error'); penaltyFx(lost, true);
+    spawnFloatTag('−' + IQ.penalty, '#ff5252');
+    caoSay(I18N.T('إجابة خاطئة. الإجابة الصحيحة: «', 'Wrong answer. The correct one is: “') + right + I18N.T('». −', '”. −') + IQ.penalty + I18N.T(' نقطة.', ' pts.'), false);
+  }
+  clearTimeout(caoHoldT);
+  caoHoldT = setTimeout(caoEnd, ok ? 3800 : 5200);
+  hud();
 }
 let last = performance.now();
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.12, 40), new THREE.MeshBasicMaterial({color:0xffc94d, transparent:true, opacity:0.85, depthWrite:false}));
@@ -4658,6 +4757,7 @@ if(warnTicker > 1){ snd('warn'); warnTicker = 0; }
 }
 if(time <= 0){ time = 0; hud(); end(); }
 if(!fire.active && !fire.done && evt.t >= evt.fireAt && fireSafe()) startFireDrill();
+if(quizDue() && quizSafe()) quizOpen();
 if(stage===1){
 if(!demo.inspDone){ if(!demo.insp && (score >= 20 || time <= 90) && !fire.active && !caoQ.active && !inspector.active && !items.some(i => i.data.cao && !i.caoChecked)) startInspDemo(); }
 else if(!demo.truckDone && !demo.truck){

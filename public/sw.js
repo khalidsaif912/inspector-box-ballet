@@ -1,5 +1,5 @@
 /* Service worker: يجعل اللعبة قابلة للتثبيت من المتصفح ويعمل دون اتصال. */
-const VERSION = "v140";
+const VERSION = "v141";
 const CACHE = "air-cargo-" + VERSION;
 const SHELL = [
   "./",
@@ -19,6 +19,7 @@ const SHELL = [
   "./game/touch-ui.js",
   "./game/game-rules.js",
   "./game/progress-rules.js",
+  "./game/quiz-rules.js",
   "./game/progress-game.js",
   "./game/online.js",
   "./game/employees.json",

@@ -130,6 +130,51 @@ const Online = {
     }
     return writes.length;
   },
+  /* ===== أسئلة المفتش (مجموعة questions): القراءة للجميع، والكتابة للمدير فقط =====
+     المستند _meta يدل على أن المدير اعتمد قائمة الأسئلة؛ قبل وجوده تستخدم اللعبة الأسئلة الافتراضية. */
+  adminReady(){ return !!tok; },
+  async quizList(){
+    if(!on()) return null;
+    const out = [];
+    let page = '';
+    for(let i = 0; i < 5; i++){
+      const r = await send('GET', url('questions', '?pageSize=300' + (page ? '&pageToken=' + encodeURIComponent(page) : '')));
+      (r.documents || []).forEach(d => out.push(dec(d)));
+      if(!r.nextPageToken) break;
+      page = r.nextPageToken;
+    }
+    const meta = out.find(d => d._id === '_meta') || null;
+    return { seeded: !!meta, list: out.filter(d => d._id !== '_meta') };
+  },
+  _qDoc(q){
+    const a = q.a || [], e = q.aEn || [];
+    return { id: q.id, q: q.q, qEn: q.qEn || '', a1: a[0] || '', a2: a[1] || '', a3: a[2] || '', a1En: e[0] || '', a2En: e[1] || '', a3En: e[2] || '', img: q.img || '', on: q.on ? 1 : 0, ord: Math.round(+q.ord || 0), at: new Date() };
+  },
+  async _commit(writes){
+    if(!tok) throw new Error('auth');
+    for(let i = 0; i < writes.length; i += 400){
+      const r = await fetch(`${base()}:commit?key=${CFG.apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: JSON.stringify({ writes: writes.slice(i, i + 400) }) });
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+    }
+  },
+  /* حفظ سؤال (إضافة أو تعديل). seedWith: الأسئلة الافتراضية تُكتب مع أول تعديل حتى تصبح قابلة للتحرير والحذف */
+  async quizSave(q, seedWith){
+    const root = `projects/${CFG.projectId}/databases/(default)/documents`;
+    const put = x => ({ update: { name: `${root}/questions/${x.id}`, ...encDoc(this._qDoc(x)) } });
+    const writes = (seedWith || []).filter(x => !q || x.id !== q.id).map(put);
+    if(q) writes.push(put(q));
+    if(seedWith) writes.push({ update: { name: `${root}/questions/_meta`, ...encDoc({ seeded: 1, at: new Date() }) } });
+    await this._commit(writes);
+  },
+  async quizDelete(id, seedWith){
+    const root = `projects/${CFG.projectId}/databases/(default)/documents`;
+    const writes = [];
+    if(seedWith){
+      seedWith.filter(x => x.id !== id).forEach(x => writes.push({ update: { name: `${root}/questions/${x.id}`, ...encDoc(this._qDoc(x)) } }));
+      writes.push({ update: { name: `${root}/questions/_meta`, ...encDoc({ seeded: 1, at: new Date() }) } });
+    } else writes.push({ delete: `${root}/questions/${id}` });
+    await this._commit(writes);
+  },
   /* لوحة المتصدرين العامة للموظفين فقط؛ الضيوف يظهرون في صفحة الإدارة */
   async top(n){ if(!on()) return []; return (await this._query('players', 'best', (n || 10) + 20)).filter(p => p.best > 0 && !isGuest(p.id)).slice(0, n || 10); },
   async logins(n){ if(!on()) return []; return this._query('logins', 'at', n || 200); },

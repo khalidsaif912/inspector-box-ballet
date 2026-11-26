@@ -125,6 +125,17 @@
     <button class="cq-b warn" data-a="stow">📦 أقبل وأضعها في حاوية خطرة</button>
     <button class="cq-b good" data-a="reject">🚫 أرفض التحميل — CAO لطائرات الشحن فقط</button>
   </div>
+  <div class="cq quiz" id="quiz-bubble" role="dialog" aria-modal="true" aria-labelledby="quiz-title">
+    <div class="cq-who">
+      <span class="cq-av" aria-hidden="true">🦺</span>
+      <b class="cq-name" id="quiz-title">المفتش</b>
+      <span class="cq-tag quiz-tag" id="quiz-tag">سؤال</span>
+    </div>
+    <img id="quiz-img" alt="" decoding="async" hidden>
+    <div class="cq-q" id="quiz-q"></div>
+    <div class="quiz-ans" id="quiz-ans"></div>
+    <div class="quiz-keys" id="quiz-keys" aria-hidden="true">اضغط 1 أو 2 أو 3 للإجابة</div>
+  </div>
   <div class="cq say" id="cao-say" role="status" aria-live="polite">
     <div class="cq-who">
       <span class="cq-av" aria-hidden="true">🦺</span>
@@ -376,6 +387,7 @@
 <script src="game/i18n.js"></script>
 <script src="game/online.js"></script>
 <script src="game/progress-rules.js"></script>
+<script src="game/quiz-rules.js"></script>
 <script src="game/game.js"></script>
 <script src="game/progress-game.js"></script>
 <script src="game/touch-ui.js"></script>

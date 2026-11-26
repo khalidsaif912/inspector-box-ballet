@@ -55,6 +55,85 @@ tr.top1 td{background:#fff3cd!important}
 .wipe .msg{min-height:20px;font-weight:800;font-size:14px;margin:6px 0 0}
 .wipe .msg.err{color:var(--red)}.wipe .msg.ok{color:var(--ok)}
 .warn{background:#fff3cd;border:2px solid var(--gold);border-radius:3px;padding:10px 14px;font-weight:700;margin-bottom:12px}
+/* ===== تبويب أسئلة المفتش ===== */
+.quiz h2{margin:0;font-size:20px;font-weight:900}
+.qz-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.qz-note{margin:0 0 10px;font-size:13px;font-weight:700;color:var(--mute);line-height:1.6}
+.qz-info{background:#e8f0fb;border:2px solid var(--blue);border-radius:3px;padding:9px 12px;font-size:13px;font-weight:800;color:var(--blue);margin-bottom:10px}
+.qz-auth{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff3cd;border:2px solid var(--gold);border-radius:3px;padding:10px 12px;margin-bottom:10px;font-weight:800;font-size:14px}
+.qz-auth input::placeholder{letter-spacing:0;font:700 13px 'Cairo',system-ui,sans-serif}
+.qz-auth input{height:38px;width:210px;border:2px solid var(--ink);border-radius:3px;padding:0 10px;font:800 16px ui-monospace,Consolas,monospace;background:#fff;letter-spacing:2px}
+.msg{font-weight:800;font-size:13.5px}.msg.err{color:var(--red)}.msg.ok{color:var(--ok)}
+.btn:disabled{opacity:.55;cursor:progress}
+.btn.sm{padding:6px 11px;font-size:13px}
+.btn.line{background:#fff;color:var(--ink);border:2px solid var(--ink);padding:5px 10px}
+.btn.line.red{border-color:var(--red);color:var(--red);box-shadow:none}
+.btn.line.red.sure{background:var(--red);color:#fff}
+.qedit{background:#fff;border:3px solid var(--ink);border-radius:4px;padding:14px 16px 12px;margin-bottom:14px;box-shadow:0 6px 0 rgba(18,33,46,.15)}
+.qedit h3{margin:0 0 10px;font-size:17px;font-weight:900;padding-bottom:8px;border-bottom:3px solid var(--ink)}
+.qf-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+.fl{display:flex;flex-direction:column;gap:4px;font-weight:900;font-size:13.5px;margin-bottom:10px}
+.qedit textarea,.qedit input:not([type=checkbox]){width:100%;border:2px solid var(--ink);border-radius:3px;padding:8px 10px;font:700 15px inherit;font-family:inherit;background:#fff;color:var(--ink);resize:vertical;min-width:0}
+.qedit input:not([type=checkbox]){height:40px}
+.qedit textarea:focus-visible,.qedit input:focus-visible{outline:3px solid var(--blue);outline-offset:1px}
+.qedit .bad{border-color:var(--red)!important;background:#fff4f3!important}
+.qf-ans{border:0;margin:0 0 8px;padding:0;display:grid;gap:6px}
+.qf-ans legend,.qf-en summary{font-weight:900;font-size:13.5px;margin-bottom:6px;padding:0}
+.ar{display:flex;align-items:stretch;border:2px solid var(--ink);border-radius:3px;overflow:hidden;background:#fff}
+.ar .tag{flex:0 0 auto;display:flex;align-items:center;padding:0 10px;background:var(--field);font-size:12px;font-weight:900;color:var(--mute);white-space:nowrap;min-width:118px}
+.ar.ok{border-color:var(--ok)}
+.ar.ok .tag{background:var(--ok);color:#fff}
+.ar input{border:0!important;border-radius:0!important}
+.hint{margin:2px 0 0;font-size:12px;font-weight:700;color:var(--mute)}
+.qf-en{margin:4px 0 10px;padding:8px 10px;border:2px dashed #aab6bd;border-radius:3px}
+.qf-en summary{cursor:pointer;margin:0}
+.qf-en[open] summary{margin-bottom:8px}
+.qf-en .ar{margin-bottom:6px}
+.qf-en .ar .tag{min-width:44px;justify-content:center}
+.qf-on{display:flex;align-items:center;gap:8px;font-weight:900;font-size:14px;cursor:pointer}
+.qf-on input{width:20px;height:20px;accent-color:var(--ok)}
+.qf-img{aspect-ratio:4/3;border:2px dashed #aab6bd;border-radius:3px;background:var(--field) center/contain no-repeat;display:grid;place-items:center;color:var(--mute);font-weight:800;font-size:13px}
+.qf-img.has{border-style:solid;border-color:var(--ink);background-color:#fff}
+.qf-img.has span{display:none}
+.qf-imgb{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.qf-prev{margin-top:10px;background:#f4f6f7;border:2px solid #c7ced3;border-radius:3px;padding:8px 10px}
+.qf-prev-h{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12.5px;margin-bottom:4px}
+.qf-prev .pq{font-weight:900;font-size:13.5px;margin:2px 0 6px;line-height:1.5}
+.qf-prev .pa{display:block;width:100%;text-align:start;margin-top:5px;padding:7px 10px;border-radius:10px;border:1px solid #cfd4da;background:#fff;font:800 13px inherit;font-family:inherit;color:var(--ink)}
+.qf-prev .pa.ok{border-color:#8ed6ab;background:#e6f8ee}
+.qf-prev .pe{color:var(--mute);font-size:12.5px;font-weight:700}
+.qf-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:2px dashed #c7ced3}
+.qz-list{display:grid;gap:10px}
+.qc{display:grid;grid-template-columns:auto 96px minmax(0,1fr) auto;gap:12px;align-items:start;background:#fff;border:2px solid var(--ink);border-radius:3px;padding:10px 12px}
+.qc.noimg{grid-template-columns:auto minmax(0,1fr) auto}
+.qc.off{opacity:.62;border-style:dashed}
+.qc-n{font:900 15px ui-monospace,Consolas,monospace;color:var(--red);min-width:28px}
+.qc-img{width:96px;aspect-ratio:4/3;object-fit:cover;border-radius:3px;border:2px solid var(--ink);background:var(--field)}
+.qc h3{margin:0 0 2px;font-size:15px;font-weight:900;line-height:1.5}
+.qc .en{margin:0 0 4px;font-size:12.5px;font-weight:700;color:var(--mute)}
+.qc ol{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:5px}
+.qc li{font-size:12.5px;font-weight:800;padding:3px 9px;border-radius:2px;background:var(--field)}
+.qc li.ok{background:var(--ok);color:#fff}
+.qc-st{display:inline-block;margin-inline-start:6px;font-size:11px;font-weight:900;padding:1px 7px;border-radius:2px;vertical-align:middle;background:var(--ok);color:#fff}
+.qc.off .qc-st{background:var(--mute)}
+.qc-act{display:flex;flex-direction:column;gap:5px;min-width:96px}
+.qz-empty{padding:26px;text-align:center;color:var(--mute);font-weight:800;border:2px dashed #aab6bd;border-radius:3px}
+@media (max-width:760px){
+  .qf-grid{grid-template-columns:1fr}
+  .qf-side{order:-1;display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;align-items:start}
+  .qf-side .qf-img{grid-row:span 3}
+  .qf-side .qf-prev{grid-column:1/-1}
+}
+@media (max-width:640px){
+  .qedit{padding:12px}
+  .qedit textarea,.qedit input:not([type=checkbox]){font-size:16px}
+  .ar .tag{min-width:0;font-size:11px;padding:0 7px}
+  .qc,.qc.noimg{grid-template-columns:auto minmax(0,1fr)}
+  .qc-img{grid-column:2;width:100%;max-width:220px}
+  .qc-body{grid-column:1/-1}
+  .qc-act{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}
+  .qc-act .btn{flex:1 1 30%}
+}
 /* الهواتف: الصفوف تتحول إلى بطاقات (اسم العمود يسار/يمين القيمة) بدل جدول عريض */
 @media (max-width:640px){
   body{padding:max(10px,env(safe-area-inset-top)) 10px 24px}
@@ -114,13 +193,64 @@ tr.top1 td{background:#fff3cd!important}
 <button role="tab" data-t="scores" aria-selected="false" data-k="t_scores">كل النتائج</button>
 <button role="tab" data-t="guests" aria-selected="false" data-k="t_guests">الضيوف</button>
 <button role="tab" data-t="absent" aria-selected="false" data-k="t_absent">لم يدخلوا بعد</button>
+<button role="tab" data-t="quiz" aria-selected="false" data-k="t_quiz">أسئلة المفتش</button>
 </nav>
 <div class="tools"><input id="q" type="search" data-kp="search" placeholder="ابحث بالاسم أو الرقم الوظيفي أو القسم"></div>
-<div class="tw"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+<div class="tw" id="tw"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+<section id="quiz" class="quiz" hidden>
+<div class="qz-head">
+<div><h2 data-k="qzTitle">أسئلة المفتش</h2><p class="sub" id="qz-sum"></p></div>
+<button class="btn red" id="qz-add" type="button" data-k="qzAdd">+ سؤال جديد</button>
+</div>
+<p class="msg" id="qz-msg" role="status"></p>
+<p class="qz-note" data-k="qzHow">يظهر المفتش مرتين في كل وردية ويطرح سؤالاً عشوائياً من الأسئلة المفعّلة. الخانة الأولى في الإجابات هي الصحيحة دائماً، وتُعرض الإجابات للاعب بترتيب عشوائي.</p>
+<div class="qz-info" id="qz-seed" hidden data-k="qzSeedNote">تُعرض الآن الأسئلة الافتراضية. أول تعديل أو حذف يحفظ القائمة كاملة في قاعدة البيانات، ومن بعدها تظهر تعديلاتك للاعبين.</div>
+<form class="qz-auth" id="qz-auth" hidden>
+<span data-k="qzAuthT">أدخل الرمز السري لتفعيل التعديل</span>
+<input id="qz-code" type="password" inputmode="numeric" autocomplete="off" dir="ltr" data-kp="wCodePh" placeholder="الرمز السري للتأكيد">
+<button class="btn" type="submit" data-k="qzAuthGo">تفعيل التعديل</button>
+<span class="msg" id="qz-auth-msg" role="status"></span>
+</form>
+<form class="qedit" id="qf" hidden novalidate>
+<h3 id="qf-title" data-k="qfNew">سؤال جديد</h3>
+<div class="qf-grid">
+<div class="qf-main">
+<label class="fl"><span data-k="qfQ">نص السؤال</span><textarea id="qf-q" rows="2" maxlength="300"></textarea></label>
+<fieldset class="qf-ans">
+<legend data-k="qfAns">الإجابات — من اثنتين إلى ثلاث</legend>
+<div class="ar ok"><span class="tag" data-k="qfRight">✓ الإجابة الصحيحة</span><input id="qf-a0" maxlength="120"></div>
+<div class="ar"><span class="tag" data-k="qfWrong">✗ إجابة خاطئة</span><input id="qf-a1" maxlength="120"></div>
+<div class="ar"><span class="tag" data-k="qfWrong2">✗ خاطئة (اختيارية)</span><input id="qf-a2" maxlength="120"></div>
+<p class="hint" data-k="qfAnsHint">اكتب الإجابة الصحيحة في الخانة الأولى؛ اللعبة تخلط الترتيب في كل مرة.</p>
+</fieldset>
+<details class="qf-en"><summary data-k="qfEn">الترجمة الإنجليزية (اختيارية)</summary>
+<label class="fl"><span data-k="qfQEn">Question (English)</span><textarea id="qf-qEn" rows="2" maxlength="300" dir="ltr"></textarea></label>
+<div class="ar ok"><span class="tag">✓ 1</span><input id="qf-e0" maxlength="120" dir="ltr"></div>
+<div class="ar"><span class="tag">✗ 2</span><input id="qf-e1" maxlength="120" dir="ltr"></div>
+<div class="ar"><span class="tag">✗ 3</span><input id="qf-e2" maxlength="120" dir="ltr"></div>
+</details>
+<label class="qf-on"><input type="checkbox" id="qf-on" checked> <span data-k="qfOn">السؤال مفعّل في اللعبة</span></label>
+</div>
+<div class="qf-side">
+<div class="qf-img" id="qf-img"><span data-k="qfNoImg">بلا صورة</span></div>
+<input type="file" id="qf-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+<div class="qf-imgb"><button class="btn" type="button" id="qf-pick" data-k="qfPick">إضافة صورة</button><button class="btn ghost" type="button" id="qf-rm" data-k="qfRm" hidden>إزالة الصورة</button></div>
+<p class="hint" data-k="qfImgHint">الصورة اختيارية، وتُصغَّر وتُضغط تلقائياً.</p>
+<div class="qf-prev" aria-live="polite">
+<div class="qf-prev-h"><b data-k="qfPrev">معاينة كما يراها اللاعب</b><button class="btn ghost" type="button" id="qf-shuf" data-k="qfShuf">خلط</button></div>
+<div id="qf-prev"></div>
+</div>
+</div>
+</div>
+<div class="qf-row"><button class="btn red" type="submit" id="qf-save" data-k="qfSave">حفظ السؤال</button><button class="btn" type="button" id="qf-cancel" data-k="wCancel">إلغاء</button><span class="msg" id="qf-msg" role="status"></span></div>
+</form>
+<div class="qz-list" id="qz-list"></div>
+</section>
 </section>
 </main>
 <script src="game/online.js"></script>
 <script src="game/progress-rules.js"></script>
+<script src="game/quiz-rules.js"></script>
 <script>
 /* الرمز السري يُقارَن ببصمته فقط (SHA-256). هذه حماية واجهة بسيطة وليست حماية خادم. */
 const HASH = '6547f192c1fda3b27eeff6606ea172480774cd0f6de3b6e955f47e7037c4d8ad', SK = 'acg_admin';
@@ -132,11 +262,17 @@ const L = {
  ar: { title:'لوحة الإدارة', gate:'أدخل الرمز السري للإدارة', enter:'دخول', refresh:'تحديث', lock:'قفل', warn:'الاتصال بـ Firebase غير مُفعَّل بعد، لذلك لا توجد بيانات.', t_top:'الأرقام القياسية', t_logins:'سجل الدخول', t_scores:'كل النتائج', t_absent:'لم يدخلوا بعد', search:'ابحث بالاسم أو الرقم الوظيفي أو القسم',
   wipeBtn:'مسح الأرقام', wipeT:'مسح الأرقام القياسية', wipeP:'عملية نهائية لا يمكن التراجع عنها. تتطلب إدخال الرمز السري من جديد.', wAll:'كل الأرقام', wOne:'موظف واحد', wDate:'تاريخ محدد', wIdPh:'الرقم الوظيفي أو الاسم', wCodePh:'الرمز السري للتأكيد', wCheck:'معاينة', wCancel:'إلغاء', wConfirm:'حذف نهائي', wNoCfg:'Firebase غير مُفعَّل', wBadCode:'الرمز غير صحيح أو حساب المدير غير مُنشأ في Firebase', wNoEmp:'اختر موظفاً صحيحاً', wNoDate:'اختر تاريخاً', wNothing:'لا توجد أرقام مطابقة للمسح', wPlan:(a,b)=>`سيُحذف ${a} سجل نتيجة ويُعاد ضبط ${b} رقم قياسي. اضغط «حذف نهائي» للتأكيد.`, wDone:n=>`تم المسح (${n} عملية)`, wFail:'تعذّر المسح — تحقّق من قواعد Firebase', wTrunc:' (يُعالَج آخر 1000 نتيجة فقط)',
   bad:'الرمز غير صحيح', loading:'جارٍ التحميل…', upd:'آخر تحديث: ', fail:'تعذّر الاتصال بقاعدة البيانات', s_seen:'موظفون دخلوا اللعبة', s_today:'دخلوا اليوم', s_plays:'مرات اللعب', s_best:'أعلى رقم', s_bestby:'أعلى رقم — ', none:'لا توجد بيانات', s_guests:'ضيوف لعبوا بلا حساب', guest:'ضيف', g_mobile:'ضيف بلا حساب · جوال', g_desktop:'ضيف بلا حساب · حاسوب', t_guests:'الضيوف',
-  h_name:'الاسم', h_rank:'الرتبة', s_dgr:'معتمدون DGR', h_id:'الرقم', h_dept:'القسم', h_best:'أفضل نتيجة', h_plays:'مرات اللعب', h_time:'الوقت', h_score:'النتيجة', loc:'ar-OM-u-nu-latn', btn:'EN' },
+  h_name:'الاسم', h_rank:'الرتبة', s_dgr:'معتمدون DGR', h_id:'الرقم', h_dept:'القسم', h_best:'أفضل نتيجة', h_plays:'مرات اللعب', h_time:'الوقت', h_score:'النتيجة', loc:'ar-OM-u-nu-latn', btn:'EN', t_quiz:'أسئلة المفتش', qzTitle:'أسئلة المفتش', qzAdd:'+ سؤال جديد', qzHow:'يظهر المفتش مرتين في كل وردية ويطرح سؤالاً عشوائياً من الأسئلة المفعّلة. الخانة الأولى في الإجابات هي الصحيحة دائماً، وتُعرض الإجابات للاعب بترتيب عشوائي.', qzSeedNote:'تُعرض الآن الأسئلة الافتراضية. أول تعديل أو حذف يحفظ القائمة كاملة في قاعدة البيانات، ومن بعدها تظهر تعديلاتك للاعبين.', qzAuthT:'أدخل الرمز السري لتفعيل التعديل', qzAuthGo:'تفعيل التعديل', qzAuthOk:'تم تفعيل التعديل', qzSum:(n,a)=>`${n} سؤال · ${a} مفعّل في اللعبة`, qzEmpty:'لا توجد أسئلة. أضف أول سؤال.', qzSearch:'ابحث في الأسئلة والإجابات', qzNoHit:'لا توجد أسئلة مطابقة للبحث', qzLoadFail:'تعذّر تحميل الأسئلة من قاعدة البيانات — تُعرض الأسئلة الافتراضية',
+  qfNew:'سؤال جديد', qfEdit:'تعديل السؤال', qfQ:'نص السؤال', qfAns:'الإجابات — من اثنتين إلى ثلاث', qfRight:'✓ الإجابة الصحيحة', qfWrong:'✗ إجابة خاطئة', qfWrong2:'✗ خاطئة (اختيارية)', qfAnsHint:'اكتب الإجابة الصحيحة في الخانة الأولى؛ اللعبة تخلط الترتيب في كل مرة.', qfEn:'الترجمة الإنجليزية (اختيارية)', qfQEn:'السؤال بالإنجليزية', qfOn:'السؤال مفعّل في اللعبة', qfNoImg:'بلا صورة', qfPick:'إضافة صورة', qfChange:'تغيير الصورة', qfRm:'إزالة الصورة', qfImgHint:'الصورة اختيارية، وتُصغَّر وتُضغط تلقائياً.', qfPrev:'معاينة كما يراها اللاعب', qfShuf:'خلط', qfPrevEmpty:'اكتب السؤال والإجابات لتظهر المعاينة', qfSave:'حفظ السؤال', qfSaving:'جارٍ الحفظ…', qfSaved:'تم الحفظ ✓', qfImgBad:'تعذّرت قراءة الصورة — جرّب صورة PNG أو JPG', qfImgBig:'الصورة كبيرة جداً حتى بعد الضغط',
+  e_noQuestion:'اكتب نص السؤال', e_noCorrect:'اكتب الإجابة الصحيحة في الخانة الأولى', e_fewAnswers:'أضف إجابة خاطئة واحدة على الأقل', e_gapAnswer:'املأ الخانة الثانية قبل الثالثة', e_dupAnswer:'الإجابات متكررة — اجعل كل إجابة مختلفة', e_auth:'أدخل الرمز السري أولاً لتفعيل التعديل', e_save:'تعذّر الحفظ — تأكد من نشر قواعد Firestore الجديدة وحساب المدير',
+  qEdit:'تعديل', qOff:'إيقاف', qOn:'تفعيل', qDel:'حذف', qSure:'تأكيد الحذف', qStOn:'مفعّل', qStOff:'موقوف', qDeleted:'تم حذف السؤال' },
  en: { title:'Admin Panel', gate:'Enter the admin passcode', enter:'Sign in', refresh:'Refresh', lock:'Lock', warn:'Firebase is not connected yet, so there is no data.', t_top:'Leaderboard', t_logins:'Login log', t_scores:'All scores', t_absent:'Not yet joined', search:'Search by name, employee ID or department',
   wipeBtn:'Reset records', wipeT:'Reset records', wipeP:'This is permanent and cannot be undone. You must enter the passcode again.', wAll:'All records', wOne:'One employee', wDate:'A specific date', wIdPh:'Employee ID or name', wCodePh:'Passcode to confirm', wCheck:'Preview', wCancel:'Cancel', wConfirm:'Delete permanently', wNoCfg:'Firebase is not connected', wBadCode:'Wrong passcode, or the admin account is not set up in Firebase', wNoEmp:'Pick a valid employee', wNoDate:'Pick a date', wNothing:'Nothing matches to reset', wPlan:(a,b)=>`This will delete ${a} score entries and reset ${b} records. Press “Delete permanently” to confirm.`, wDone:n=>`Reset complete (${n} operations)`, wFail:'Reset failed — check the Firebase rules', wTrunc:' (only the latest 1000 scores are processed)',
   bad:'Wrong passcode', loading:'Loading…', upd:'Last updated: ', fail:'Could not reach the database', s_seen:'Employees who joined', s_today:'Joined today', s_plays:'Games played', s_best:'Top score', s_bestby:'Top score — ', none:'No data', s_guests:'Guests who played without an account', guest:'Guest', g_mobile:'Guest, no account · phone', g_desktop:'Guest, no account · computer', t_guests:'Guests',
-  h_name:'Name', h_rank:'Rank', s_dgr:'DGR certified', h_id:'ID', h_dept:'Department', h_best:'Best score', h_plays:'Games', h_time:'Time', h_score:'Score', loc:'en-GB', btn:'العربية' }
+  h_name:'Name', h_rank:'Rank', s_dgr:'DGR certified', h_id:'ID', h_dept:'Department', h_best:'Best score', h_plays:'Games', h_time:'Time', h_score:'Score', loc:'en-GB', btn:'العربية', t_quiz:'Inspector questions', qzTitle:'Inspector questions', qzAdd:'+ New question', qzHow:'The inspector visits twice per shift and asks a random active question. The first answer box is always the correct one; the game shows the answers in random order.', qzSeedNote:'You are seeing the built-in questions. Your first edit or delete saves the whole list to the database, and from then on players get your changes.', qzAuthT:'Enter the passcode to enable editing', qzAuthGo:'Enable editing', qzAuthOk:'Editing enabled', qzSum:(n,a)=>`${n} questions · ${a} active in the game`, qzEmpty:'No questions yet. Add the first one.', qzSearch:'Search questions and answers', qzNoHit:'No questions match the search', qzLoadFail:'Could not load questions from the database — showing the built-in ones',
+  qfNew:'New question', qfEdit:'Edit question', qfQ:'Question', qfAns:'Answers — two or three', qfRight:'✓ Correct answer', qfWrong:'✗ Wrong answer', qfWrong2:'✗ Wrong (optional)', qfAnsHint:'Put the correct answer in the first box; the game shuffles the order every time.', qfEn:'English translation (optional)', qfQEn:'Question in English', qfOn:'Question is active in the game', qfNoImg:'No image', qfPick:'Add image', qfChange:'Change image', qfRm:'Remove image', qfImgHint:'The image is optional and is resized and compressed automatically.', qfPrev:'Preview as the player sees it', qfShuf:'Shuffle', qfPrevEmpty:'Type the question and answers to see a preview', qfSave:'Save question', qfSaving:'Saving…', qfSaved:'Saved ✓', qfImgBad:'Could not read the image — try a PNG or JPG', qfImgBig:'The image is too large even after compression',
+  e_noQuestion:'Type the question', e_noCorrect:'Type the correct answer in the first box', e_fewAnswers:'Add at least one wrong answer', e_gapAnswer:'Fill the second box before the third', e_dupAnswer:'Answers repeat — make each one different', e_auth:'Enter the passcode first to enable editing', e_save:'Save failed — make sure the new Firestore rules and the admin account are deployed',
+  qEdit:'Edit', qOff:'Turn off', qOn:'Turn on', qDel:'Delete', qSure:'Confirm delete', qStOn:'Active', qStOff:'Off', qDeleted:'Question deleted' }
 };
 let lang = 'ar'; try { lang = localStorage.getItem('acg_admin_lang') === 'en' ? 'en' : 'ar'; } catch(e){}
 const tr = k => L[lang][k];
@@ -148,13 +284,14 @@ function applyLang(){
 }
 let D = { players: [], logins: [], scores: [], dir: {} }, tab = 'top';
 
-async function unlock(code){ if(await sha('acg|' + code) !== HASH) return false; try { sessionStorage.setItem(SK, HASH); } catch(e){} $('gate').hidden = true; $('app').hidden = false; load(); return true; }
+async function unlock(code){ if(await sha('acg|' + code) !== HASH) return false; try { sessionStorage.setItem(SK, HASH); } catch(e){} $('gate').hidden = true; $('app').hidden = false; Online.adminLogin(code).then(() => { if(tab === 'quiz') renderQuiz(); }).catch(() => {}); load(); return true; }
 $('gf').onsubmit = async e => { e.preventDefault(); $('gerr').textContent = (await unlock($('code').value.trim())) ? '' : 'الرمز غير صحيح'; };
 $('lock').onclick = () => { try { sessionStorage.removeItem(SK); } catch(e){} location.reload(); };
 $('refresh').onclick = () => load();
 
 async function load(){
   $('upd').textContent = tr('loading');
+  quizLoad();
   D.dir = await Online.directory();
   $('warn').hidden = Online.enabled();
   try { const [p, l, s] = await Promise.all([Online.players(1000), Online.logins(500), Online.scores(500)]); D.players = p; D.logins = l; D.scores = s; $('upd').textContent = tr('upd') + fmt(new Date()); }
@@ -174,6 +311,10 @@ function render(){
   const plays = D.players.reduce((n, p) => n + (p.plays || 0), 0);
   $('stats').innerHTML = [['hot', seen + ' / ' + total, tr('s_seen')], ['ok', todayN, tr('s_today')], ['', plays, tr('s_plays')], ['', guests.length, tr('s_guests')], ['ok', D.players.filter(p => p.dgr && !G(p)).length, tr('s_dgr')], ['gold', best && best.best > 0 ? best.best : '—', best && best.best > 0 ? tr('s_bestby') + esc(nm(best)) : tr('s_best')]]
     .map(([c, n, l]) => `<div class="stat ${c}"><b>${n}</b><span>${l}</span></div>`).join('');
+  const isQuiz = tab === 'quiz';
+  $('tw').hidden = isQuiz; $('quiz').hidden = !isQuiz;
+  $('q').placeholder = tr(isQuiz ? 'qzSearch' : 'search');
+  if(isQuiz){ renderQuiz(); return; }
   const q = $('q').value.trim().toLowerCase(), hit = r => !q || (Object.values(r).join(' ') + ' ' + nm(r) + ' ' + dp(r)).toLowerCase().includes(q);
   const T = {
     top: [['#', tr('h_name'), tr('h_rank'), tr('h_id'), tr('h_dept'), tr('h_best'), tr('h_plays')], () => D.players.filter(p => p.best > 0).sort((a, b) => b.best - a.best).filter(hit).map((p, i) => [i + 1, nm(p), rk(p), p.id, dp(p), p.best, p.plays], i => i === 0)],
@@ -187,8 +328,8 @@ function render(){
   $('tb').innerHTML = rows.length ? rows.map(r => `<tr${tab === 'top' && r[0] === 1 ? ' class="top1"' : ''}>` + r.map((c, i) => `<td data-l="${esc(T[0][i])}" class="${numCol.includes(i) ? 'n' : ''}${tab === 'top' && i === 0 ? ' rk' : ''}">${esc(c)}</td>`).join('') + '</tr>').join('') : `<tr><td class="empty" colspan="${T[0].length}">${tr('none')}</td></tr>`;
 }
 $('tabs').onclick = e => { const b = e.target.closest('button'); if(!b) return; tab = b.dataset.t; [...$('tabs').children].forEach(x => x.setAttribute('aria-selected', x === b)); render(); };
-$('q').oninput = render;
-$('lang').onclick = () => { lang = lang === 'ar' ? 'en' : 'ar'; try { localStorage.setItem('acg_admin_lang', lang); } catch(e){} applyLang(); $('upd').textContent = tr('upd') + fmt(new Date()); render(); };
+$('q').oninput = () => tab === 'quiz' ? renderQuiz() : render();
+$('lang').onclick = () => { lang = lang === 'ar' ? 'en' : 'ar'; try { localStorage.setItem('acg_admin_lang', lang); } catch(e){} applyLang(); $('upd').textContent = tr('upd') + fmt(new Date()); render(); if(!$('qf').hidden) qfSync(); };
 
 /* ===== مسح الأرقام القياسية ===== */
 let wmode = 'all', wplan = null;
@@ -216,6 +357,157 @@ $('wgo').onclick = async () => {
       const n = await Online.runWipe(wplan); wplan = null; wmsg(tr('wDone')(n), 'ok'); $('wgo').textContent = tr('wCheck'); $('wgo').dataset.k = 'wCheck'; $('wcode').value = ''; load();
     }
   } catch(e){ wmsg(tr('wFail'), 'err'); } finally { $('wgo').disabled = false; }
+};
+/* ===== أسئلة المفتش: عرض، إضافة، تعديل، إيقاف، حذف ===== */
+const IQ = window.InspectorQuiz;
+const QZ = { seeded: false, list: [], loaded: false, fail: false, edit: null, img: '', sure: null, sureT: 0, seed: 1 + (Math.random() * 2147483645 | 0) };
+const sortQ = l => l.sort((a, b) => (a.ord || 0) - (b.ord || 0));
+async function quizLoad(){
+  try {
+    const r = await Online.quizList();
+    if(r && r.seeded){ QZ.seeded = true; QZ.list = sortQ(r.list.map(IQ.normalize)); }
+    else { QZ.seeded = false; QZ.list = IQ.defaults(); }
+    QZ.fail = false;
+  } catch(e){ QZ.fail = true; QZ.seeded = false; QZ.list = IQ.defaults(); }
+  QZ.loaded = true;
+  if(tab === 'quiz') renderQuiz();
+}
+const qzMsg = (t, c) => { $('qz-msg').textContent = t || ''; $('qz-msg').className = 'msg' + (c ? ' ' + c : ''); };
+function renderQuiz(){
+  const ready = Online.adminReady();
+  $('qz-auth').hidden = ready || !QZ.loaded || QZ.fail;
+  $('qz-seed').hidden = QZ.seeded || !QZ.loaded || QZ.fail;
+  $('qz-sum').textContent = !QZ.loaded ? tr('loading') : QZ.fail ? tr('qzLoadFail') : tr('qzSum')(QZ.list.length, QZ.list.filter(q => q.on).length);
+  $('qz-add').disabled = !QZ.loaded || QZ.fail;
+  const term = $('q').value.trim().toLowerCase();
+  const rows = QZ.list.map((q, i) => ({ q, i })).filter(({ q }) => !term || [q.q, q.qEn, ...q.a, ...q.aEn].join(' ').toLowerCase().includes(term));
+  $('qz-list').innerHTML = !QZ.loaded ? '' : !QZ.list.length ? `<div class="qz-empty">${tr('qzEmpty')}</div>` : !rows.length ? `<div class="qz-empty">${tr('qzNoHit')}</div>` : rows.map(({ q, i }) => {
+    const sure = QZ.sure === q.id;
+    return `<article class="qc${q.on ? '' : ' off'}${q.img ? '' : ' noimg'}" data-id="${esc(q.id)}">
+<span class="qc-n">${i + 1}</span>${q.img ? `<img class="qc-img" src="${esc(q.img)}" alt="" loading="lazy">` : ''}
+<div class="qc-body"><h3>${esc(q.q)} <span class="qc-st">${tr(q.on ? 'qStOn' : 'qStOff')}</span></h3>${q.qEn ? `<p class="en" dir="ltr">${esc(q.qEn)}</p>` : ''}
+<ol>${q.a.map((a, k) => `<li class="${k ? '' : 'ok'}">${k ? '✗' : '✓'} ${esc(a)}</li>`).join('')}</ol></div>
+<div class="qc-act"><button class="btn sm line" type="button" data-act="edit">${tr('qEdit')}</button><button class="btn sm line" type="button" data-act="toggle">${tr(q.on ? 'qOff' : 'qOn')}</button><button class="btn sm line red${sure ? ' sure' : ''}" type="button" data-act="del">${tr(sure ? 'qSure' : 'qDel')}</button></div>
+</article>`;
+  }).join('');
+}
+function guard(){
+  if(QZ.fail){ qzMsg(tr('qzLoadFail'), 'err'); return false; }
+  if(!Online.adminReady()){ qzMsg(tr('e_auth'), 'err'); $('qz-auth').hidden = false; $('qz-code').focus(); return false; }
+  return true;
+}
+/* الحفظ: قبل اعتماد القائمة تُكتب الأسئلة الافتراضية كلها مع أول تعديل */
+async function persist(q){
+  await Online.quizSave(q, QZ.seeded ? null : QZ.list);
+  QZ.seeded = true;
+  const i = QZ.list.findIndex(x => x.id === q.id);
+  if(i >= 0) QZ.list[i] = q; else QZ.list.push(q);
+  sortQ(QZ.list);
+}
+const errText = e => tr(e && e.message === 'auth' ? 'e_auth' : 'e_save');
+$('qz-list').onclick = async e => {
+  const b = e.target.closest('button[data-act]'); if(!b) return;
+  const id = b.closest('.qc').dataset.id, q = QZ.list.find(x => x.id === id); if(!q) return;
+  if(b.dataset.act === 'edit') return qfOpen(q);
+  if(!guard()) return;
+  if(b.dataset.act === 'toggle'){
+    b.disabled = true;
+    try { await persist(Object.assign({}, q, { on: !q.on })); qzMsg(''); } catch(err){ qzMsg(errText(err), 'err'); }
+    return renderQuiz();
+  }
+  if(QZ.sure !== id){ QZ.sure = id; clearTimeout(QZ.sureT); QZ.sureT = setTimeout(() => { QZ.sure = null; renderQuiz(); }, 4000); return renderQuiz(); }
+  QZ.sure = null; b.disabled = true;
+  try {
+    await Online.quizDelete(id, QZ.seeded ? null : QZ.list);
+    QZ.seeded = true; QZ.list = QZ.list.filter(x => x.id !== id); qzMsg(tr('qDeleted'), 'ok');
+    if(QZ.edit && QZ.edit.id === id) qfClose();
+  } catch(err){ qzMsg(errText(err), 'err'); }
+  renderQuiz();
+};
+$('qz-auth').onsubmit = async e => {
+  e.preventDefault();
+  const m = $('qz-auth-msg');
+  try { await Online.adminLogin($('qz-code').value.trim()); $('qz-code').value = ''; m.textContent = ''; qzMsg(tr('qzAuthOk'), 'ok'); renderQuiz(); }
+  catch(err){ m.textContent = tr('wBadCode'); m.className = 'msg err'; }
+};
+$('qz-add').onclick = () => qfOpen(null);
+
+/* ----- محرر السؤال ----- */
+const F = ['q', 'qEn', 'a0', 'a1', 'a2', 'e0', 'e1', 'e2'];
+const fv = k => $('qf-' + k).value;
+function qfOpen(q){
+  QZ.edit = q ? Object.assign({}, q) : null;
+  const x = q || { q: '', qEn: '', a: [], aEn: [], on: true, img: '' };
+  $('qf-q').value = x.q; $('qf-qEn').value = x.qEn || '';
+  for(let i = 0; i < 3; i++){ $('qf-a' + i).value = x.a[i] || ''; $('qf-e' + i).value = (x.aEn || [])[i] || ''; }
+  $('qf-on').checked = x.on !== false;
+  QZ.img = x.img || '';
+  $('qf').querySelector('.qf-en').open = !!(x.qEn || (x.aEn || []).some(Boolean));
+  $('qf-title').dataset.k = q ? 'qfEdit' : 'qfNew'; $('qf-title').textContent = tr($('qf-title').dataset.k);
+  F.forEach(k => $('qf-' + k).classList.remove('bad'));
+  qfMsg(''); $('qf').hidden = false; qfSync();
+  $('qf').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  $('qf-q').focus({ preventScroll: true });
+}
+function qfClose(){ $('qf').hidden = true; QZ.edit = null; }
+const qfMsg = (t, c) => { $('qf-msg').textContent = t || ''; $('qf-msg').className = 'msg' + (c ? ' ' + c : ''); };
+function qfRead(){
+  return {
+    id: QZ.edit ? QZ.edit.id : IQ.newId(), q: fv('q'), qEn: fv('qEn'),
+    a: [fv('a0'), fv('a1'), fv('a2')], aEn: [fv('e0'), fv('e1'), fv('e2')],
+    img: QZ.img, on: $('qf-on').checked,
+    ord: QZ.edit ? QZ.edit.ord : QZ.list.reduce((m, x) => Math.max(m, x.ord || 0), 0) + 1
+  };
+}
+/* معاينة بترتيب عشوائي ثابت (لا يتغير مع كل حرف)؛ زر «خلط» يغيّره */
+function qfSync(){
+  const el = $('qf-img');
+  el.classList.toggle('has', !!QZ.img); el.style.backgroundImage = QZ.img ? `url("${QZ.img}")` : '';
+  $('qf-rm').hidden = !QZ.img; $('qf-pick').textContent = tr(QZ.img ? 'qfChange' : 'qfPick');
+  const n = IQ.normalize(qfRead());
+  if(!n.q && !n.a.some(Boolean)){ $('qf-prev').innerHTML = `<p class="pe">${tr('qfPrevEmpty')}</p>`; return; }
+  let s = QZ.seed; const rng = () => (s = s * 16807 % 2147483647) / 2147483647;
+  const filled = Object.assign({}, n, { a: n.a.filter(Boolean) });
+  const L10 = IQ.localize(filled, lang), sh = IQ.shuffle(filled, rng);
+  $('qf-prev').innerHTML = `<p class="pq">${esc(L10.q || '…')}</p>` + sh.order.map((k, i) => `<span class="pa${i === sh.correct ? ' ok' : ''}">${i + 1}. ${esc(L10.a[k])}</span>`).join('');
+}
+$('qf').addEventListener('input', e => { if(e.target.classList) e.target.classList.remove('bad'); qfSync(); });
+$('qf-shuf').onclick = () => { QZ.seed = 1 + (Math.random() * 2147483645 | 0); qfSync(); };
+$('qf-cancel').onclick = qfClose;
+$('qf-pick').onclick = () => $('qf-file').click();
+$('qf-rm').onclick = () => { QZ.img = ''; qfSync(); };
+/* ضغط الصورة في المتصفح: أطول ضلع 720px ثم JPEG، ويُصغَّر أكثر حتى يناسب حد التخزين */
+async function compress(file){
+  const src = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = src; });
+  let max = 720, qv = .82, out = '';
+  for(let k = 0; k < 7; k++){
+    const sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.naturalWidth * sc)); c.height = Math.max(1, Math.round(img.naturalHeight * sc));
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    out = c.toDataURL('image/jpeg', qv);
+    if(out.length <= 240000) break;
+    max = Math.round(max * .8); qv = Math.max(.5, qv - .07);
+  }
+  return out;
+}
+$('qf-file').onchange = async () => {
+  const f = $('qf-file').files[0]; $('qf-file').value = '';
+  if(!f) return;
+  try { const d = await compress(f); if(d.length > IQ.MAX_IMG) return qfMsg(tr('qfImgBig'), 'err'); QZ.img = d; qfMsg(''); qfSync(); }
+  catch(e){ qfMsg(tr('qfImgBad'), 'err'); }
+};
+const BAD_FIELD = { noQuestion: 'q', noCorrect: 'a0', fewAnswers: 'a1', gapAnswer: 'a1', dupAnswer: 'a1' };
+$('qf').onsubmit = async e => {
+  e.preventDefault();
+  const raw = qfRead(), err = IQ.validate(raw);
+  if(err){ qfMsg(tr('e_' + err), 'err'); const f = $('qf-' + BAD_FIELD[err]); f.classList.add('bad'); f.focus(); return; }
+  if(!guard()) return qfMsg(tr('e_auth'), 'err');
+  const btn = $('qf-save'); btn.disabled = true; btn.textContent = tr('qfSaving');
+  try { await persist(IQ.normalize(raw)); qfMsg(tr('qfSaved'), 'ok'); renderQuiz(); setTimeout(qfClose, 650); }
+  catch(er){ qfMsg(errText(er), 'err'); }
+  finally { btn.disabled = false; btn.textContent = tr('qfSave'); }
 };
 applyLang();
 try { if(sessionStorage.getItem(SK) === HASH){ $('gate').hidden = true; $('app').hidden = false; load(); } } catch(e){}

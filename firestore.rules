@@ -24,6 +24,21 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if isAdmin();
     }
+    // أسئلة المفتش: تقرؤها اللعبة، ويضيفها/يعدّلها/يحذفها المدير فقط من صفحة الإدارة.
+    // الصورة data URL مضغوطة (أقل من 400 ألف حرف)، والمستند _meta يعني أن المدير اعتمد القائمة.
+    function txt(v, n) { return v is string && v.size() <= n; }
+    function okQuestion(d) {
+      return d.keys().hasOnly(['id','q','qEn','a1','a2','a3','a1En','a2En','a3En','img','on','ord','at'])
+        && txt(d.q, 300) && d.q.size() > 0 && txt(d.qEn, 300)
+        && txt(d.a1, 120) && d.a1.size() > 0 && txt(d.a2, 120) && d.a2.size() > 0 && txt(d.a3, 120)
+        && txt(d.a1En, 120) && txt(d.a2En, 120) && txt(d.a3En, 120)
+        && txt(d.img, 400000) && d.on in [0, 1] && d.ord is int;
+    }
+    match /questions/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() && (id == '_meta' ? request.resource.data.keys().hasOnly(['seeded','at']) : okQuestion(request.resource.data));
+      allow delete: if isAdmin();
+    }
     match /scores/{doc} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasOnly(['id','name','dept','score','at'])
