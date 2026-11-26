@@ -1095,12 +1095,17 @@ window.__hero = HERO;
 /* شخصيات Mixamo: مجسّم + حركات مسجّلة حقيقية، يحمّلها مُحمّل واحد مشترك (mixamo-rig.js) */
 const MIX = {
   worker: { grow: 1.15, seat: { z: 0, hips: 2.1, arm: 1.0, fore: -0.5 }, url: 'game/models/mixamo-worker.glb', obj: null, inst: null, ready: false, loading: false, err: null },
-  timmy:  { seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null }
+  timmy:  { seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null },
+  mremireh: { seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-mremireh.glb', obj: null, inst: null, ready: false, loading: false, err: null },
+  /* الروبوت (Quaternius، CC0): هيكل غير Mixamo، فنربط مقاطعه بأسماء اللعبة ونرفع ذراعيه عند الحمل */
+  robot: { seat: { z: 0.3, hips: 1.8, arm: 0, fore: 0 }, url: 'game/models/robot.glb', obj: null, inst: null, ready: false, loading: false, err: null,
+    rig: { clips: { idle: 'Robot_Idle', jog: 'Robot_Walking', run: 'Robot_Running', carry_idle: 'Robot_Idle', carry_jog: 'Robot_Walking', sit: 'Robot_Sitting' },
+      natural: { jog: 5, run: 9, carry_jog: 5 }, hands: ['Palm2L', 'Palm2R'], carryArm: { bones: ['UpperArmL', 'UpperArmR'], axis: [1, 0, 0], ang: 0.8 } } }
 };
 /* الشخصيات: worker و timmy (Mixamo) · hero (3D) · crew (المجسّم الثابت) · rig (الإجرائي) */
-/* safety و supervisor شخصيتان مشتقتان من مجسّم العامل نفسه بزيّ مختلف (تفتحهما الرتبة، progress-rules.js) */
-const CHAR_IDS = ['worker', 'timmy', 'safety', 'supervisor'];
-const CHAR_BASE = { safety: 'worker', supervisor: 'worker' };
+/* robot و mremireh تفتحهما الرتبة (progress-rules.js) */
+const CHAR_IDS = ['worker', 'timmy', 'robot', 'mremireh'];
+const CHAR_BASE = {};   // شخصيات مشتقة من مجسّم آخر بزيّ مختلف (لا يوجد حالياً)
 const mixId = id => CHAR_BASE[id] || id;
 const charUnlocked = id => !window.Prog || Prog.charUnlocked(id);
 const CHAR = { id: 'worker' };
@@ -1148,7 +1153,7 @@ function charStatus(text){
   }
   if(el) el.textContent = text || '';
 }
-const CHAR_NAMES = { worker: ['عامل المستودع', 'warehouse worker'], timmy: ['تيمي المرح', 'Timmy'], safety: ['ضابط السلامة', 'Safety Officer'], supervisor: ['مشرف الوردية', 'Shift Supervisor'], hero: ['شخصية 3D', '3D character'], crew: ['طاقم أرضي', 'ground crew'] };
+const CHAR_NAMES = { worker: ['عامل المستودع', 'warehouse worker'], timmy: ['تيمي المرح', 'Timmy'], robot: ['الروبوت', 'Robot'], mremireh: ['مريمير الغريب', 'Mremireh'], hero: ['شخصية 3D', '3D character'], crew: ['طاقم أرضي', 'ground crew'] };
 function loadMixamo(id, attempt){
   const M = MIX[id];
   if(!M || M.loading || M.ready || !window.MixamoWorker) return;
@@ -1162,7 +1167,7 @@ function loadMixamo(id, attempt){
     if(mixId(CHAR.id) !== id) return;
     const p = Math.min(99, Math.round(e.loaded / e.total * 100));
     charStatus(I18N.T('⏳ جاري تحميل ' + n[0] + '… ' + p + '%', '⏳ Loading ' + n[1] + '… ' + p + '%'));
-  }).then(o => {
+  }, M.rig).then(o => {
     lt.done();
     M.obj = o.root; M.inst = o; M.ready = true; M.loading = false;
     if(M.grow && o.setGrow) o.setGrow(M.grow);   // عامل المستودع أكبر قليلاً وهو يمشي

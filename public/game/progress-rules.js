@@ -22,9 +22,9 @@
     { kind: "vest", id: "lime", rank: "handler", hex: 0xd4ff00, swatch: "#d4ff00", ar: "أصفر فوسفوري", en: "Hi-vis yellow" },
     { kind: "vest", id: "green", rank: "senior", hex: 0x00e676, swatch: "#00e676", ar: "أخضر نيون", en: "Neon green" },
     { kind: "rim", id: "neon", rank: "senior", ar: "حلقة نيون لزر التسريع", en: "Neon boost ring" },
-    { kind: "char", id: "safety", rank: "assistant", ar: "ضابط السلامة", en: "Safety Officer" },
+    { kind: "char", id: "robot", rank: "assistant", ar: "الروبوت", en: "Robot" },
     { kind: "vest", id: "blue", rank: "assistant", hex: 0x1e88e5, swatch: "#1e88e5", ar: "أزرق المفتشين", en: "Inspector blue" },
-    { kind: "char", id: "supervisor", rank: "supervisor", ar: "مشرف الوردية", en: "Shift Supervisor" },
+    { kind: "char", id: "mremireh", rank: "supervisor", ar: "مريمير الغريب", en: "Mremireh" },
     { kind: "rim", id: "gold", rank: "supervisor", ar: "حلقة ذهبية لزر التسريع", en: "Gold boost ring" },
     { kind: "vest", id: "gold", rank: "chief", hex: 0xffc107, swatch: "#ffc107", ar: "ذهبي المدير", en: "Chief gold" },
   ];

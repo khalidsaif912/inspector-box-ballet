@@ -124,14 +124,12 @@
   const OUTFITS = {   // الشخصيات المشتقة من مجسّم العامل
     worker: {},
     timmy: {},
-    safety: { Helmet: 0x2e7d32, Shirt: 0xdfe9f5, Pants: 0x37474f, Boots: 0x3e2723 },
-    supervisor: { Helmet: 0x15171b, Shirt: 0x1f3a68, Pants: 0x2b2d31, Boots: 0x4a2f1b },
   };
   const CHAR_LIST = [
     { id: 'worker', ico: '👷', ar: 'عامل المستودع', en: 'Warehouse worker', hintAr: 'الأساسية', hintEn: 'Default' },
     { id: 'timmy', ico: '🧢', ar: 'تيمي المرح', en: 'Timmy', hintAr: 'كرتوني', hintEn: 'Cartoon' },
-    { id: 'safety', ico: '🦺', ar: 'ضابط السلامة', en: 'Safety Officer', hintAr: 'خوذة خضراء', hintEn: 'Green helmet' },
-    { id: 'supervisor', ico: '🎖️', ar: 'مشرف الوردية', en: 'Shift Supervisor', hintAr: 'زي كحلي', hintEn: 'Navy uniform' },
+    { id: 'robot', ico: '🤖', ar: 'الروبوت', en: 'Robot', hintAr: 'آلي', hintEn: 'Mechanical' },
+    { id: 'mremireh', ico: '👾', ar: 'مريمير الغريب', en: 'Mremireh', hintAr: 'غريب الأطوار', hintEn: 'Weirdo' },
   ];
   const vestOpen = id => WP.isUnlocked('vest', id, xpNow());
   function vestId() {

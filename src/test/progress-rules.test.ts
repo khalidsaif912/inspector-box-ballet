@@ -228,7 +228,7 @@ describe("XP and rank-ups", () => {
     const s = withMissions(["fever2", "pet", "vip"], { xp: need.xp - 10 });
     const r = P.apply(s, "round", { score: 400 });
     expect(r.rankUp?.to.id).toBe("assistant");
-    expect(r.unlocked.map((u) => u.id)).toEqual(expect.arrayContaining(["safety", "blue"]));
+    expect(r.unlocked.map((u) => u.id)).toEqual(expect.arrayContaining(["robot", "blue"]));
   });
   it("does not report a rank-up when the rank stays the same", () => {
     const s = withMissions(["fever2", "pet", "vip"]);

@@ -10,7 +10,10 @@
   var NATURAL = { jog: 7.05, run: 9.55, carry_jog: 5.35 };   // سرعات الحركة الأصلية × (3.1/3.6) لأن الجسم أصغر
   var FADE = 0.22;
 
-  function load(url, onProgress) {
+  /* opts (لشخصيات غير Mixamo مثل الروبوت): clips {idle,jog,run,carry_idle,carry_jog,sit: اسم المقطع الأصلي},
+     natural {jog,run,carry_jog}, hands [يسار, يمين] (أسماء العظام), carryArm {bones,axis,ang} لرفع الذراعين أمام الجسم عند الحمل */
+  function load(url, onProgress, opts) {
+    opts = opts || {};
     return new Promise(function (resolve, reject) {
       if (!THREE.GLTFLoader) return reject(new Error('GLTFLoader missing'));
       new THREE.GLTFLoader().load(url, function (gltf) {
@@ -102,9 +105,11 @@
             });
             var a = mixer.clipAction(clip);
             a.enabled = true; a.setEffectiveWeight(0); a.play();
-            actions[clip.name] = a;
+            actions[clip.name.replace(/^.*\|/, '')] = a;   // "RobotArmature|Robot_Idle" → "Robot_Idle"
           });
-          if (!actions.idle) throw new Error('mixamo-worker.glb: idle clip missing');
+          if (opts.clips) Object.keys(opts.clips).forEach(function (k) { if (actions[opts.clips[k]]) actions[k] = actions[opts.clips[k]]; });
+          if (!actions.idle) throw new Error(url + ': idle clip missing');
+          var nat = opts.natural || NATURAL;
 
           /* وضع الجلوس (قيادة الرافعة): نُبقي حركة الوقوف الحيّة ثم نلوي الفخذين والركبتين والذراعين فوقها.
              الزوايا قابلة للضبط من اللعبة عبر inst.sitCfg. */
@@ -129,16 +134,22 @@
           var hipsB = null; model.traverse(function (o) { if (/Hips$/.test(o.name) && o.isBone) hipsB = o; });
           var hipsH = 0;
           if (hipsB) { mixer.update(0); root.updateMatrixWorld(true); hipsH = hipsB.getWorldPosition(new THREE.Vector3()).y; }
+          /* مقطع جلوس مسجّل (الروبوت) يُنزل الحوض نحو الأرض: نرفع المجسّم ليبقى الحوض على ارتفاع الوقوف فيستقر على المقعد */
+          var baseY = model.position.y, hv0 = new THREE.Vector3(), hipsLocalY = 0;
+          if (hipsB) { root.updateMatrixWorld(true); hipsLocalY = root.worldToLocal(hipsB.getWorldPosition(hv0)).y; }
           var handL = null, handR = null;
           model.traverse(function (o) {
-            if (/LeftHand$/.test(o.name)) handL = o;
-            if (/RightHand$/.test(o.name)) handR = o;
+            if (opts.hands ? o.name === opts.hands[0] : /LeftHand$/.test(o.name)) handL = o;
+            if (opts.hands ? o.name === opts.hands[1] : /RightHand$/.test(o.name)) handR = o;
           });
+          var carryB = [], cA = opts.carryArm;
+          if (cA) model.traverse(function (o) { if (cA.bones.indexOf(o.name) >= 0) carryB.push(o); });
+          var carryK = 0, qC = new THREE.Quaternion(), axC = cA ? new THREE.Vector3(cA.axis[0], cA.axis[1], cA.axis[2]) : null;
           var hv = new THREE.Vector3();
 
           function want(p) {
             var moving = p.moving && (p.speed || 0) > 0.6;
-            if (p.sit) return 'idle';
+            if (p.sit) return actions.sit ? 'sit' : 'idle';
             if (p.held) return moving && actions.carry_jog ? 'carry_jog' : (actions.carry_idle ? 'carry_idle' : 'idle');
             if (!moving) return 'idle';
             if (p.sprint && actions.run) return 'run';
@@ -146,7 +157,7 @@
           }
 
           var inst = {
-            root: root, height: TARGET_H, sitCfg: sitCfg, hipsHeight: hipsH, grow: 1,
+            root: root, height: TARGET_H, sitCfg: sitCfg, carryCfg: cA || null, hipsHeight: hipsH, grow: 1,
             setOutfit: setOutfit, outfitParts: Object.keys(outfitU),
             /* تكبير الشخصية وهي تمشي (المقعد في الرافعة يبقى بالمقاس الأصلي): الخطوة أطول فتُبطّأ الحركة بالنسبة نفسها */
             setGrow: function (g) {
@@ -162,19 +173,29 @@
             pose: function (p) {
               var dt = Math.min(p.dt || 0.016, 0.05);
               var next = want(p);
+              if (next !== cur && actions[next] === actions[cur]) cur = next;   // اسمان لمقطع واحد (الروبوت: jog و carry_jog)
               if (next !== cur) {
                 var from = actions[cur], to = actions[next];
                 to.reset(); to.setEffectiveWeight(1);
                 // الدورة الجديدة تبدأ من نفس موضع القدم تقريباً لتفادي التعثر عند الانتقال جري↔هرولة
-                if (from && NATURAL[cur] && NATURAL[next]) to.time = (from.time / from.getClip().duration) * to.getClip().duration;
+                if (from && nat[cur] && nat[next]) to.time = (from.time / from.getClip().duration) * to.getClip().duration;
                 to.crossFadeFrom(from, FADE, true);
                 cur = next;
               }
               var a = actions[cur];
-              var nat = NATURAL[cur] ? NATURAL[cur] * inst.grow : 0;
-              a.setEffectiveTimeScale(nat ? Math.max(0.55, Math.min(1.6, (p.speed || nat) / nat)) : 1);
+              var nv = nat[cur] ? nat[cur] * inst.grow : 0;
+              a.setEffectiveTimeScale(nv ? Math.max(0.55, Math.min(1.6, (p.speed || nv) / nv)) : 1);
               mixer.update(dt);
-              if (p.sit) applySit();
+              if (p.sit && !actions.sit) applySit();
+              if (actions.sit && hipsB) {
+                model.position.y = baseY;
+                if (cur === 'sit') { root.updateMatrixWorld(true); model.position.y += hipsLocalY - root.worldToLocal(hipsB.getWorldPosition(hv0)).y; }
+              }
+              // حمل بلا مقطع مسجّل: نرفع الذراعين أمام الجسم تدريجياً فوق حركة المشي
+              if (carryB.length) {
+                carryK += ((p.held && !p.sit ? 1 : 0) - carryK) * Math.min(1, dt * 10);
+                if (carryK > 0.001) carryB.forEach(function (b) { qC.setFromAxisAngle(axC.set(cA.axis[0], cA.axis[1], cA.axis[2]).normalize(), cA.ang * carryK); b.quaternion.premultiply(qC); });
+              }
             }
           };
           resolve(inst);

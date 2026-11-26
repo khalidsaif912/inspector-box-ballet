@@ -361,12 +361,12 @@ document.addEventListener('click', (e) => {
 });
 
 /* ===== اختيار الشخصية: الأساسية 3D + الشخصيتان السابقتان ===== */
-/* safety و supervisor تفتحهما الرتبة؛ اللعبة نفسها ترفض المقفلة وتعود للعامل، فلا تُعرض هنا إلا للمزامنة */
+/* robot و mremireh تفتحهما الرتبة؛ اللعبة نفسها ترفض المقفلة وتعود للعامل، فلا تُعرض هنا إلا للمزامنة */
 const CHARS = [
   { id: 'worker', ico: '👷', name: 'عامل المستودع', hint: 'الأساسية' },
   { id: 'timmy', ico: '🧢', name: 'تيمي المرح', hint: 'كرتوني' },
-  { id: 'safety', ico: '🦺', name: 'ضابط السلامة', hint: 'رتبة مفتش مساعد', locked: true },
-  { id: 'supervisor', ico: '🎖️', name: 'مشرف الوردية', hint: 'رتبة مشرف وردية', locked: true }
+  { id: 'robot', ico: '🤖', name: 'الروبوت', hint: 'رتبة مفتش مساعد', locked: true },
+  { id: 'mremireh', ico: '👾', name: 'مريمير الغريب', hint: 'رتبة مشرف وردية', locked: true }
 ];
 const CHAR_KEY = 'acg_char';
 const charOpts = document.getElementById('char-opts');
