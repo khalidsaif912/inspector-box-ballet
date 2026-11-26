@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<meta name="screen-orientation" content="portrait">
+<meta name="x5-orientation" content="portrait">
 <title>لوحة الإدارة — مستودع الشحن الجوي</title>
 <style>
 @font-face{font-family:'Cairo';font-style:normal;font-weight:500 900;font-display:swap;src:url(vendor/fonts/cairo-arabic.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
@@ -248,6 +250,18 @@ tr.top1 td{background:#fff3cd!important}
 </section>
 </section>
 </main>
+<script>
+/* صفحة الإدارة طولية على الهاتف: تطبيق اللعبة المثبّت يفرض الوضع العرضي على كل صفحاته، فنطلب هنا الطولي */
+(function(){
+  var so = window.screen && screen.orientation;
+  if(!so || typeof so.lock !== 'function') return;
+  var phone = function(){ return matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 900; };
+  var lock = function(){ if(phone() && so.type.indexOf('portrait') !== 0) so.lock('portrait').catch(function(){}); };
+  lock();
+  addEventListener('pointerdown', lock, {passive:true});
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) lock(); });
+})();
+</script>
 <script src="game/online.js"></script>
 <script src="game/progress-rules.js"></script>
 <script src="game/quiz-rules.js"></script>
