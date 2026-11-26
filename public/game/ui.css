@@ -262,89 +262,6 @@
 #ov .guide-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(245,158,11,.5);color:#fde68a}
 #ov .guide-btn:focus-visible{outline:2px solid #8fd0ff;outline-offset:3px}
 
-/* ---------- شاشة نهاية الوردية ---------- */
-#ov .shift-panel{
-  position:relative;z-index:2;width:100%;max-width:660px;
-  background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border:1px solid rgba(255,255,255,.14);border-radius:28px;
-  padding:32px 30px 28px;text-align:center;
-  box-shadow:0 30px 80px rgba(0,0,0,.65),inset 0 1px 1px rgba(255,255,255,.16);
-}
-#ov .hero-section{display:flex;flex-direction:column;align-items:center;text-align:center}
-#ov .flight-dial{
-  position:relative;width:136px;height:136px;margin-bottom:10px;
-  display:flex;align-items:center;justify-content:center;
-}
-#ov .dial-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-#ov .grade-core{
-  width:84px;height:84px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:40px;font-weight:900;color:#fff;
-  background:linear-gradient(155deg,#475569 0%,#1e293b 100%);
-  border:2px solid rgba(255,255,255,.35);
-  box-shadow:0 10px 25px rgba(0,0,0,.45);
-  animation:pop .55s cubic-bezier(.2,1.6,.4,1);
-}
-#ov .grade-core.g-s{background:linear-gradient(155deg,#34d399 0%,#065f46 100%)}
-#ov .grade-core.g-a{background:linear-gradient(155deg,#38bdf8 0%,#114f8d 100%)}
-#ov .grade-core.g-b{background:linear-gradient(155deg,#fbbf24 0%,#b26a00 100%);color:#3a1600}
-#ov .grade-core.g-c{background:linear-gradient(155deg,#94a3b8 0%,#48525c 100%)}
-#ov .stars-row{display:flex;gap:7px;margin-bottom:10px}
-#ov .star{width:20px;height:20px;fill:rgba(255,255,255,.15)}
-#ov .star.lit{fill:var(--gold);filter:drop-shadow(0 0 8px rgba(251,191,36,.65))}
-#ov .main-title{
-  margin:0 0 8px;font-size:clamp(24px,5.4vmin,30px);font-weight:900;
-  background:linear-gradient(180deg,#fffbeb 0%,#fbbf24 55%,#d97706 100%);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  filter:drop-shadow(0 6px 16px rgba(0,0,0,.55));
-}
-#ov .rank-chip{
-  display:inline-flex;align-items:center;gap:8px;margin-bottom:24px;
-  padding:6px 16px;border-radius:999px;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-  font-size:13.5px;color:var(--muted);
-}
-#ov .rank-chip strong{color:var(--gold);font-weight:800}
-#ov .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-#ov .stat-card{
-  position:relative;overflow:hidden;text-align:center;
-  padding:15px 10px 13px;border-radius:18px;
-  background:linear-gradient(180deg,rgba(255,255,255,.07) 0%,rgba(255,255,255,.02) 100%);
-  border:1px solid rgba(255,255,255,.1);
-  transition:transform .22s ease,border-color .22s ease;
-}
-#ov .stat-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.22)}
-#ov .stat-card::before{
-  content:"";position:absolute;top:0;left:22%;right:22%;height:2.5px;
-  border-radius:0 0 4px 4px;background:var(--c,var(--gold));box-shadow:0 0 12px var(--c,var(--gold));
-}
-#ov .c-amber{--c:#fbbf24}
-#ov .c-cyan{--c:#38bdf8}
-#ov .c-emerald{--c:#34d399}
-#ov .c-orange{--c:#fb923c}
-#ov .stat-icon{width:22px;height:22px;margin:0 auto 6px;display:block;color:var(--c)}
-#ov .stat-num{display:block;font-size:clamp(20px,4.2vmin,26px);font-weight:900;color:#fff;line-height:1.1}
-#ov .stat-lbl{display:block;font-size:12px;color:var(--muted);margin-top:4px}
-#ov .mini-bar{height:4px;margin-top:8px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,.1)}
-#ov .mini-bar span{display:block;height:100%;border-radius:4px;background:var(--emerald)}
-#ov .records-panel{
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
-  gap:12px;margin-bottom:16px;padding:11px 16px;border-radius:16px;
-  background:rgba(5,10,20,.45);border:1px solid rgba(255,255,255,.08);
-}
-#ov .best-badge{
-  display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:999px;
-  background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.35);
-  color:#fde68a;font-size:13.5px;font-weight:800;
-}
-#ov .new-record{
-  display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;
-  background:rgba(52,211,153,.16);border:1px solid rgba(52,211,153,.45);
-  color:#a7f3d0;font-size:12px;font-weight:800;
-}
-#ov .leaderboard-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
-#ov .tip-msg{margin:0 0 18px;font-size:13px;color:#cbd5e1}
-#ov .actions-row{display:flex;gap:12px;justify-content:center}
 #ov .btn{
   height:48px;border-radius:14px;cursor:pointer;padding:0 22px;
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
@@ -374,15 +291,10 @@
   #ov.start{padding:16px;gap:14px}
   #ov.start .settings-dock{position:static;width:100%;max-width:540px;flex:0 0 auto}
   #ov .guide-btn{position:static;width:100%;max-width:540px;justify-content:center}
-  #ov .shift-panel{max-width:540px}
 }
 @media (max-width:580px){
-  #ov .stats-grid{grid-template-columns:repeat(2,1fr);gap:8px}
-  #ov .records-panel{justify-content:center}
-  #ov .actions-row{flex-direction:column}
   #ov .btn-primary,#ov .btn-secondary{width:100%}
   #ov.start .start-card{padding:20px 18px 16px;border-radius:22px}
-  #ov .shift-panel{padding:24px 18px 20px;border-radius:22px}
   #ov.start{padding:12px;gap:10px}
   #ov.start .records-box{padding:10px 12px}
 }
@@ -456,42 +368,6 @@
   #ov .guide-btn svg{width:14px;height:14px}
 }
 
-/* نهاية الوردية أفقياً: الدرجة والنقاط في صف أفقي بلا تمرير */
-@media (orientation:landscape) and (max-height:560px){
-  #ov .shift-panel{
-    max-width:780px;padding:9px 14px;border-radius:20px;
-    display:grid;grid-template-columns:auto minmax(0,1fr);
-    grid-template-rows:auto auto auto auto;align-items:center;
-    column-gap:14px;row-gap:5px;text-align:start;
-  }
-  #ov .hero-section{grid-column:1;grid-row:1 / span 4;align-self:center;gap:0;max-width:172px}
-  #ov .flight-dial{width:92px;height:92px;margin-bottom:2px}
-  #ov .grade-core{width:58px;height:58px;font-size:26px;border-width:2px}
-  #ov .stars-row{gap:3px;margin-bottom:3px}
-  #ov .star{width:12px;height:12px}
-  #ov .main-title{font-size:17px;margin:0 0 3px}
-  #ov .rank-chip{
-    font-size:10px;padding:2px 8px;margin-bottom:0;gap:4px;
-    max-width:100%;flex-wrap:wrap;justify-content:center;line-height:1.35;
-  }
-  #ov .rank-chip svg{width:12px;height:12px}
-  #ov .stats-grid{grid-column:2;grid-row:1;gap:6px;margin-bottom:0}
-  #ov .stat-card{padding:5px 3px 4px;border-radius:11px}
-  #ov .stat-icon{width:13px;height:13px;margin-bottom:1px}
-  #ov .stat-num{font-size:15px}
-  #ov .stat-lbl{font-size:9px;margin-top:1px}
-  #ov .mini-bar{height:3px;margin-top:3px}
-  #ov .records-panel{
-    grid-column:2;grid-row:2;margin-bottom:0;padding:4px 8px;border-radius:11px;
-    gap:6px;justify-content:flex-start;
-  }
-  #ov .best-badge,#ov .new-record{font-size:10px;padding:2px 8px;gap:5px}
-  #ov .leaderboard-wrap{font-size:10px;gap:5px}
-  #ov .tip-msg{grid-column:2;grid-row:3;margin:0;font-size:10px;text-align:center;line-height:1.4}
-  #ov .actions-row{grid-column:2;grid-row:4;gap:8px;justify-content:center}
-  #ov .btn{height:32px;font-size:12.5px;padding:0 16px;border-radius:10px;gap:7px}
-  #ov .btn svg{width:14px;height:14px}
-}
 
 /* هواتف أفقية صغيرة جداً (مثل 568×320): ضغط إضافي حتى لا يظهر تمرير */
 @media (orientation:landscape) and (max-height:360px){
@@ -514,24 +390,10 @@
   #ov.start .setting-item.off .toggle::after{transform:translateX(10px)}
   #ov.start .vest-colors button{width:12px;height:12px}
   #ov .guide-btn{height:26px;font-size:10px;border-radius:9px}
-  #ov .shift-panel{padding:7px 10px;column-gap:10px;row-gap:3px}
-  #ov .flight-dial{width:72px;height:72px}
-  #ov .grade-core{width:46px;height:46px;font-size:20px}
-  #ov .star{width:10px;height:10px}
-  #ov .main-title{font-size:14px}
-  #ov .rank-chip{font-size:9px;padding:1px 7px;gap:3px}
-  #ov .stat-card{padding:4px 2px 3px}
-  #ov .stat-icon{width:11px;height:11px}
-  #ov .stat-num{font-size:13px}
-  #ov .stat-lbl{font-size:8.5px}
-  #ov .records-panel{padding:3px 7px}
-  #ov .best-badge,#ov .new-record{font-size:9px;padding:1px 7px}
-  #ov .tip-msg{display:none}
   #ov .btn{height:28px;font-size:11.5px;padding:0 13px}
 }
 @media (prefers-reduced-motion:reduce){
   #ov .btn-play::after,#ov .btn-primary::after{display:none}
-  #ov .grade-core{animation:none}
 }
 
 /* English (LTR) */
@@ -539,7 +401,6 @@ html[lang="en"] body{direction:ltr;text-align:left}
 
 /* ===== Interactive transition to the next game ===== */
 #ov.fade-out{opacity:0;transform:scale(.97);pointer-events:none;transition:opacity .42s ease,transform .42s ease}
-#ov .total-badge{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.4);color:#bae6fd}
 #portal-warp{
   position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
   pointer-events:none;opacity:0;visibility:hidden;overflow:hidden;
@@ -982,18 +843,6 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
 #ov .char-row button.lock:hover{border-color:var(--field,rgba(255,255,255,.22))}
 
 /* شاشة النتائج: الخبرة والرتبة والمهام */
-#ov .career{margin:10px 0 4px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);text-align:start;color:#e8f0f8}
-#ov .career .cr-head{display:flex;align-items:center;gap:10px}
-#ov .career .cr-ico{font-size:26px;line-height:1}
-#ov .career .cr-tx{flex:1;min-width:0;display:flex;flex-direction:column}
-#ov .career .cr-tx b{font-weight:900;font-size:15px}
-#ov .career .cr-tx small{font-size:11px;color:#9fb3c8;font-weight:700}
-#ov .career .cr-gain{font-style:normal;font:900 15px ui-monospace,Consolas,monospace;color:#64ffda;white-space:nowrap}
-#ov .career .cr-bar{background:rgba(255,255,255,.15)}
-#ov .career .cr-up{margin:6px 0;padding:6px 9px;border-radius:8px;background:rgba(255,193,7,.16);border:1px solid rgba(255,193,7,.5);color:#ffe082;font-weight:800;font-size:13px}
-#ov .career .cr-up small{display:block;font-size:11px;color:#ffd54a;font-weight:700;margin-top:2px}
-#ov .career .ms-list .ms{font-size:11.5px}
-#ov .career .ms-list .ms-ck{border-color:#8fb3d1}
 
 /* شارة حدث الوردية (أعلى الوسط) */
 .shift-chip{position:absolute;left:50%;transform:translateX(-50%) translateY(-6px);top:calc(env(safe-area-inset-top,0px) + 62px);z-index:7;pointer-events:none;opacity:0;transition:opacity .25s,transform .25s;
@@ -1148,3 +997,210 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
   #hud .hud-end .hud-side{gap:5px}
 }
 
+
+/* ================================================================
+   شاشة نهاية الوردية — لوحة بعمودين: (الدرجة + الأرقام) | (الخبرة + السجلات)
+   لوحة الإعدادات (السترة/الصوت/الشخصيات) تبقى في DOM لكنها مخفية هنا
+   ================================================================ */
+#ov.ended #corner-opts,#ov.ended .settings-dock{display:none!important}
+#ov.ended{justify-content:safe center;align-items:center}
+#ov .end-panel{
+  --ep-acc:#fbbf24;
+  position:relative;z-index:2;width:100%;max-width:880px;margin:auto;
+  display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+  grid-template-areas:"side main" "actions actions";
+  gap:16px 20px;padding:22px 24px 20px;text-align:start;color:#e2e8f0;
+  background:linear-gradient(180deg,rgba(14,24,40,.86),rgba(8,14,26,.9));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.12);border-radius:24px;
+  box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.1);
+  animation:epIn .45s cubic-bezier(.2,1.2,.4,1) both;
+}
+#ov .end-panel::before{
+  content:"";position:absolute;top:0;inset-inline:18%;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--ep-acc),transparent);
+}
+#ov .end-panel.g-s{--ep-acc:#34d399}
+#ov .end-panel.g-a{--ep-acc:#38bdf8}
+#ov .end-panel.g-c{--ep-acc:#94a3b8}
+@keyframes epIn{from{opacity:0;transform:translateY(14px) scale(.98)}}
+#ov .ep-side{grid-area:side;display:flex;flex-direction:column;gap:12px;min-width:0}
+#ov .ep-main{grid-area:main;display:flex;flex-direction:column;gap:12px;min-width:0}
+
+/* الدرجة والعنوان */
+#ov .ep-hero{display:flex;align-items:center;gap:16px}
+#ov .ep-dial{position:relative;flex:0 0 auto;width:112px;height:112px;display:grid;place-items:center}
+#ov .ep-dial .dial-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#ov .ep-grade{
+  width:68px;height:68px;border-radius:50%;display:grid;place-items:center;
+  font-size:34px;font-weight:900;color:#fff;
+  background:linear-gradient(155deg,#94a3b8,#48525c);border:2px solid rgba(255,255,255,.35);
+  box-shadow:0 10px 24px rgba(0,0,0,.45);animation:pop .55s cubic-bezier(.2,1.6,.4,1);
+}
+#ov .g-s .ep-grade{background:linear-gradient(155deg,#34d399,#065f46)}
+#ov .g-a .ep-grade{background:linear-gradient(155deg,#38bdf8,#114f8d)}
+#ov .g-b .ep-grade{background:linear-gradient(155deg,#fbbf24,#b26a00);color:#3a1600}
+#ov .ep-head{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+#ov .ep-kicker{font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted)}
+#ov .ep-title{
+  margin:0;font-size:clamp(22px,4.4vmin,30px);font-weight:900;line-height:1.15;
+  background:linear-gradient(180deg,#fffbeb 0%,#fbbf24 55%,#d97706 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+#ov .ep-stars{display:flex;gap:4px}
+#ov .ep-stars .star{width:17px;height:17px;fill:rgba(255,255,255,.15)}
+#ov .ep-stars .star.lit{fill:var(--gold);filter:drop-shadow(0 0 6px rgba(251,191,36,.6))}
+#ov .ep-rank{
+  display:inline-flex;align-items:center;gap:6px;max-width:100%;
+  padding:3px 11px;border-radius:999px;font-size:12.5px;color:var(--ep-acc);
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+}
+#ov .ep-rank strong{font-weight:800;color:#fde68a}
+#ov .new-record{
+  align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;
+  background:rgba(52,211,153,.16);border:1px solid rgba(52,211,153,.45);color:#a7f3d0;font-size:12px;font-weight:800;
+}
+
+/* بطاقات الأرقام 2×2 */
+#ov .ep-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#ov .ep-stat{
+  position:relative;overflow:hidden;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;
+  align-items:center;column-gap:10px;padding:10px 12px;border-radius:14px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);
+}
+#ov .ep-stat::before{content:"";position:absolute;inset-block:22%;inset-inline-start:0;width:3px;border-radius:3px;background:var(--c);box-shadow:0 0 10px var(--c)}
+#ov .c-amber{--c:#fbbf24}
+#ov .c-cyan{--c:#38bdf8}
+#ov .c-emerald{--c:#34d399}
+#ov .c-orange{--c:#fb923c}
+#ov .ep-ico{grid-row:1 / span 2;width:22px;height:22px;color:var(--c)}
+#ov .ep-stat strong{font-size:clamp(19px,3.6vmin,24px);font-weight:900;color:#fff;line-height:1.1;font-variant-numeric:tabular-nums}
+#ov .ep-stat span{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ov .ep-meter{position:absolute;inset-inline:12px;bottom:5px;height:3px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
+#ov .ep-meter b{display:block;height:100%;border-radius:3px;background:var(--emerald)}
+
+/* بطاقة الخبرة والمهام */
+#ov .end-panel .career{
+  margin:0;padding:12px 14px;border-radius:16px;text-align:start;color:#e8f0f8;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+}
+#ov .end-panel .cr-head{display:flex;align-items:center;gap:10px}
+#ov .end-panel .cr-ico{font-size:26px;line-height:1}
+#ov .end-panel .cr-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+#ov .end-panel .cr-tx b{font-weight:900;font-size:15px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+#ov .end-panel .cr-tx small{font-size:11px;color:#9fb3c8;font-weight:700}
+#ov .end-panel .rk-dgr{margin:0;border-radius:6px}
+#ov .end-panel .cr-gain{
+  font-style:normal;font:900 14px ui-monospace,Consolas,monospace;color:#64ffda;white-space:nowrap;direction:ltr;
+  padding:3px 9px;border-radius:999px;background:rgba(100,255,218,.1);border:1px solid rgba(100,255,218,.3);
+}
+#ov .end-panel .cr-bar{height:7px;margin:10px 0;border-radius:999px;background:rgba(255,255,255,.1)}
+#ov .end-panel .cr-bar b{border-radius:999px;background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+#ov .end-panel .cr-up{margin:8px 0;padding:6px 10px;border-radius:10px;background:rgba(255,193,7,.14);border:1px solid rgba(255,193,7,.45);color:#ffe082;font-weight:800;font-size:13px}
+#ov .end-panel .cr-up small{display:block;font-size:11px;color:#ffd54a;font-weight:700;margin-top:2px}
+#ov .end-panel .ms-list{gap:6px}
+#ov .end-panel .ms{font-size:12px;column-gap:8px}
+#ov .end-panel .ms-ck{border-color:#64748b;border-radius:5px;opacity:1}
+#ov .end-panel .ms.done .ms-ck{background:#16a34a;border-color:#16a34a}
+#ov .end-panel .ms.done .ms-t{opacity:.55}
+#ov .end-panel .ms-n{color:#cbd5e1}
+#ov .end-panel .ms.done .ms-n{color:#4ade80}
+
+/* السجلات ولوحة المتصدرين */
+#ov .ep-records{display:flex;flex-direction:column;gap:8px}
+#ov .ep-rec-top{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#ov .ep-rec{
+  display:flex;align-items:center;gap:7px;padding:7px 11px;border-radius:12px;font-size:12px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);color:var(--muted);min-width:0;
+}
+#ov .ep-rec span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ov .ep-rec b{font-size:15px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums}
+#ov .ep-rec.gold svg{color:#fbbf24}
+#ov .ep-rec.sky svg{color:#38bdf8}
+#ov .ep-lb{display:flex;align-items:center;gap:10px;min-width:0}
+#ov .ep-lb-t{font-size:11.5px;font-weight:800;color:var(--muted);white-space:nowrap}
+#ov .ep-lb ol{list-style:none;margin:0;padding:0;flex:1;min-width:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#ov .ep-lb li{
+  display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:9px;font-size:12px;
+  background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07);color:#cbd5e1;min-width:0;
+}
+#ov .ep-lb li span{font-size:10.5px;color:var(--muted)}
+#ov .ep-lb li em{font-style:normal;font-weight:800;color:#fff;margin-inline-start:auto;font-variant-numeric:tabular-nums}
+#ov .ep-lb li.me{border-color:rgba(251,191,36,.55);background:rgba(251,191,36,.1)}
+#ov .ep-lb li.lb-none{grid-column:1 / -1;justify-content:center;color:var(--muted)}
+#ov .ep-tip{margin:0;font-size:12.5px;line-height:1.5;color:#94a3b8}
+
+/* الأزرار */
+#ov .ep-actions{grid-area:actions;display:flex;gap:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
+#ov .ep-actions .btn{height:46px;min-width:0;flex:1 1 0;white-space:nowrap;padding:0 16px;font-size:15px}
+#ov .ep-actions .ep-replay{flex:1.6 1 0}
+
+/* شاشات عمودية/ضيقة: عمود واحد */
+@media (max-width:760px) and (orientation:portrait),(max-width:600px){
+  #ov .end-panel{grid-template-columns:minmax(0,1fr);grid-template-areas:"side" "main" "actions";padding:18px 16px 16px;gap:12px;border-radius:20px}
+  #ov .ep-stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  #ov .ep-stat{grid-template-columns:1fr;justify-items:center;text-align:center;padding:9px 4px 11px;row-gap:2px}
+  #ov .ep-ico{grid-row:auto;width:18px;height:18px}
+  #ov .ep-stat::before{inset-block:auto 0;inset-inline:25%;width:auto;height:2px}
+  #ov .ep-stat span{font-size:10.5px}
+  #ov .ep-lb{flex-direction:column;align-items:stretch;gap:5px}
+  #ov .ep-lb ol{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:420px){
+  #ov .ep-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #ov .ep-dial{width:92px;height:92px}
+  #ov .ep-grade{width:56px;height:56px;font-size:27px}
+  #ov .ep-actions{flex-wrap:wrap}
+  #ov .ep-actions .ep-replay{flex-basis:100%}
+}
+
+/* الهاتف أفقياً (شاشة قصيرة): كل شيء ظاهر بلا تمرير */
+@media (orientation:landscape) and (max-height:560px){
+  #ov.ended{padding:8px 12px}
+  #ov .end-panel{max-width:820px;padding:12px 16px 10px;gap:8px 16px;border-radius:18px}
+  #ov .ep-side,#ov .ep-main{gap:7px}
+  #ov .ep-hero{gap:10px}
+  #ov .ep-dial{width:74px;height:74px}
+  #ov .ep-grade{width:46px;height:46px;font-size:22px}
+  #ov .ep-kicker{display:none}
+  #ov .ep-title{font-size:18px}
+  #ov .ep-stars .star{width:12px;height:12px}
+  #ov .ep-rank{font-size:10.5px;padding:2px 8px}
+  #ov .ep-rank svg{width:11px;height:11px}
+  #ov .new-record{font-size:10px;padding:2px 9px}
+  #ov .ep-stats{gap:6px}
+  #ov .ep-stat{padding:6px 9px;column-gap:8px;border-radius:11px}
+  #ov .ep-ico{width:16px;height:16px}
+  #ov .ep-stat strong{font-size:16px}
+  #ov .ep-stat span{font-size:10px}
+  #ov .ep-meter{bottom:3px;height:2px}
+  #ov .end-panel .career{padding:8px 10px;border-radius:12px}
+  #ov .end-panel .cr-ico{font-size:20px}
+  #ov .end-panel .cr-tx b{font-size:13px}
+  #ov .end-panel .cr-tx small{font-size:10px}
+  #ov .end-panel .cr-gain{font-size:12px;padding:2px 7px}
+  #ov .end-panel .cr-bar{height:5px;margin:6px 0}
+  #ov .end-panel .cr-up{margin:5px 0;padding:4px 8px;font-size:11px}
+  #ov .end-panel .ms-list{gap:3px}
+  #ov .end-panel .ms{font-size:10.5px}
+  #ov .end-panel .ms-ck{width:13px;height:13px;font-size:9px}
+  #ov .end-panel .ms-n{font-size:10px}
+  #ov .ep-rec{padding:4px 8px;font-size:10.5px;border-radius:9px}
+  #ov .ep-rec b{font-size:13px}
+  #ov .ep-lb li{padding:2px 6px;font-size:10.5px}
+  #ov .ep-lb-t{font-size:10px}
+  #ov .ep-tip{display:none}
+  #ov .ep-actions{padding-top:8px;gap:8px}
+  #ov .ep-actions .btn{height:34px;font-size:12.5px;border-radius:10px;gap:7px}
+  #ov .ep-actions .btn svg{width:15px;height:15px}
+}
+@media (orientation:landscape) and (max-height:360px){
+  #ov .ep-dial{width:60px;height:60px}
+  #ov .ep-grade{width:38px;height:38px;font-size:18px}
+  #ov .ep-title{font-size:15px}
+  #ov .ep-lb{display:none}
+  #ov .ep-actions .btn{height:30px;font-size:11.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  #ov .end-panel,#ov .ep-grade{animation:none}
+}
