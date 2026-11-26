@@ -96,7 +96,7 @@
     'عامل المستودع': 'Warehouse worker',
     'تيمي المرح': 'Funny Timmy',
     'الروبوت': 'Robot',
-    'مريمير الغريب': 'Mremireh the Weird',
+    'فانغارد المدرّع': 'Vanguard',
     'رتبة مفتش مساعد': 'Assistant Inspector rank',
     'رتبة مشرف وردية': 'Shift Supervisor rank',
     'اختر شخصيتك': 'Choose your character',
@@ -398,7 +398,7 @@
     'سترة صفراء فوسفورية': 'Hi-vis yellow vest',
     'سترة خضراء + حلقة نيون لزر التسريع': 'Green vest + neon boost ring',
     '🤖 شخصية الروبوت + سترة زرقاء': '🤖 Robot character + blue vest',
-    '👽 شخصية مريمير + حلقة ذهبية': '👽 Mremireh character + gold ring',
+    '🛡️ شخصية فانغارد + حلقة ذهبية': '🛡️ Vanguard character + gold ring',
     'سترة ذهبية': 'Gold vest',
     'تتقدم المرحلة عند 150 ثم 350 ثم 650 نقطة. التقدير: S عند 500+ بدقة 90% • A عند 350+ بدقة 80% • B عند 200+.': 'Stages advance at 150, 350 and 650 pts. Grade: S at 500+ with 90% accuracy • A at 350+ with 80% • B at 200+.'
   };

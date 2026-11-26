@@ -1096,21 +1096,23 @@ window.__hero = HERO;
 const MIX = {
   worker: { grow: 1.15, seat: { z: 0, hips: 2.1, arm: 1.0, fore: -0.5 }, url: 'game/models/mixamo-worker.glb', obj: null, inst: null, ready: false, loading: false, err: null },
   timmy:  { seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null },
-  mremireh: { seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-mremireh.glb', obj: null, inst: null, ready: false, loading: false, err: null },
+  vanguard: { seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-vanguard.glb', obj: null, inst: null, ready: false, loading: false, err: null },
   /* الروبوت (Quaternius، CC0): هيكل غير Mixamo، فنربط مقاطعه بأسماء اللعبة ونرفع ذراعيه عند الحمل */
   robot: { seat: { z: 0.3, hips: 1.8, arm: 0, fore: 0 }, url: 'game/models/robot.glb', obj: null, inst: null, ready: false, loading: false, err: null,
     rig: { clips: { idle: 'Robot_Idle', jog: 'Robot_Walking', run: 'Robot_Running', carry_idle: 'Robot_Idle', carry_jog: 'Robot_Walking', sit: 'Robot_Sitting' },
       natural: { jog: 5, run: 9, carry_jog: 5 }, hands: ['Palm2L', 'Palm2R'], carryArm: { bones: ['UpperArmL', 'UpperArmR'], axis: [1, 0, 0], ang: 0.8 } } }
 };
 /* الشخصيات: worker و timmy (Mixamo) · hero (3D) · crew (المجسّم الثابت) · rig (الإجرائي) */
-/* robot و mremireh تفتحهما الرتبة (progress-rules.js) */
-const CHAR_IDS = ['worker', 'timmy', 'robot', 'mremireh'];
+/* robot و vanguard تفتحهما الرتبة (progress-rules.js) */
+const CHAR_IDS = ['worker', 'timmy', 'robot', 'vanguard'];
 const CHAR_BASE = {};   // شخصيات مشتقة من مجسّم آخر بزيّ مختلف (لا يوجد حالياً)
 const mixId = id => CHAR_BASE[id] || id;
 const charUnlocked = id => !window.Prog || Prog.charUnlocked(id);
 const CHAR = { id: 'worker' };
 /* ترحيل لمرة واحدة: من بقي على الافتراضي القديم (hero) ينتقل إلى عامل المستودع الافتراضي الجديد */
 try { if(localStorage.getItem('acg_char_v') !== '2'){ const o = localStorage.getItem('acg_char'); if(!o || o === 'hero') localStorage.setItem('acg_char', 'worker'); localStorage.setItem('acg_char_v', '2'); } } catch(e){}
+/* فانغارد حلّ محلّ مريمير: من اختار مريمير ينتقل إليه */
+try { if(localStorage.getItem('acg_char') === 'mremireh') localStorage.setItem('acg_char', 'vanguard'); } catch(e){}
 try { const saved = localStorage.getItem('acg_char'); if(CHAR_IDS.indexOf(saved) >= 0) CHAR.id = saved; } catch(e){}
 try { if(new URLSearchParams(location.search).get('crew') === 'rig') CREW.mode = 'rig'; } catch(e){}
 /* أثناء تنزيل الشخصية المختارة يبقى ظاهراً مجسّم الشخصية السابقة الجاهز بدل أن يختفي اللاعب */
@@ -1153,7 +1155,7 @@ function charStatus(text){
   }
   if(el) el.textContent = text || '';
 }
-const CHAR_NAMES = { worker: ['عامل المستودع', 'warehouse worker'], timmy: ['تيمي المرح', 'Timmy'], robot: ['الروبوت', 'Robot'], mremireh: ['مريمير الغريب', 'Mremireh'], hero: ['شخصية 3D', '3D character'], crew: ['طاقم أرضي', 'ground crew'] };
+const CHAR_NAMES = { worker: ['عامل المستودع', 'warehouse worker'], timmy: ['تيمي المرح', 'Timmy'], robot: ['الروبوت', 'Robot'], vanguard: ['فانغارد المدرّع', 'Vanguard'], hero: ['شخصية 3D', '3D character'], crew: ['طاقم أرضي', 'ground crew'] };
 function loadMixamo(id, attempt){
   const M = MIX[id];
   if(!M || M.loading || M.ready || !window.MixamoWorker) return;

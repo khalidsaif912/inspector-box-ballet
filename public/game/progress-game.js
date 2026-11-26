@@ -129,7 +129,7 @@
     { id: 'worker', ico: '👷', ar: 'عامل المستودع', en: 'Warehouse worker', hintAr: 'الأساسية', hintEn: 'Default' },
     { id: 'timmy', ico: '🧢', ar: 'تيمي المرح', en: 'Timmy', hintAr: 'كرتوني', hintEn: 'Cartoon' },
     { id: 'robot', ico: '🤖', ar: 'الروبوت', en: 'Robot', hintAr: 'آلي', hintEn: 'Mechanical' },
-    { id: 'mremireh', ico: '👾', ar: 'مريمير الغريب', en: 'Mremireh', hintAr: 'غريب الأطوار', hintEn: 'Weirdo' },
+    { id: 'vanguard', ico: '🛡️', ar: 'فانغارد المدرّع', en: 'Vanguard', hintAr: 'جندي مدرّع', hintEn: 'Armored' },
   ];
   const vestOpen = id => WP.isUnlocked('vest', id, xpNow());
   function vestId() {

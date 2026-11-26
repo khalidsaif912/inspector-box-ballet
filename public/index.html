@@ -361,12 +361,12 @@ document.addEventListener('click', (e) => {
 });
 
 /* ===== اختيار الشخصية: الأساسية 3D + الشخصيتان السابقتان ===== */
-/* robot و mremireh تفتحهما الرتبة؛ اللعبة نفسها ترفض المقفلة وتعود للعامل، فلا تُعرض هنا إلا للمزامنة */
+/* robot و vanguard تفتحهما الرتبة؛ اللعبة نفسها ترفض المقفلة وتعود للعامل، فلا تُعرض هنا إلا للمزامنة */
 const CHARS = [
   { id: 'worker', ico: '👷', name: 'عامل المستودع', hint: 'الأساسية' },
   { id: 'timmy', ico: '🧢', name: 'تيمي المرح', hint: 'كرتوني' },
   { id: 'robot', ico: '🤖', name: 'الروبوت', hint: 'رتبة مفتش مساعد', locked: true },
-  { id: 'mremireh', ico: '👾', name: 'مريمير الغريب', hint: 'رتبة مشرف وردية', locked: true }
+  { id: 'vanguard', ico: '🛡️', name: 'فانغارد المدرّع', hint: 'رتبة مشرف وردية', locked: true }
 ];
 const CHAR_KEY = 'acg_char';
 const charOpts = document.getElementById('char-opts');
@@ -375,6 +375,7 @@ const charGo = document.querySelector('#char-picker .cp-title small');
 function charSaved(){
   /* ترحيل لمرة واحدة: من بقي على الافتراضي القديم (hero) ينتقل إلى عامل المستودع الافتراضي الجديد */
   try { if (localStorage.getItem('acg_char_v') !== '2') { const o = localStorage.getItem(CHAR_KEY); if (!o || o === 'hero') localStorage.setItem(CHAR_KEY, 'worker'); localStorage.setItem('acg_char_v', '2'); } } catch(e){}
+  try { if (localStorage.getItem(CHAR_KEY) === 'mremireh') localStorage.setItem(CHAR_KEY, 'vanguard'); } catch(e){}
   try { const v = localStorage.getItem(CHAR_KEY); return CHARS.some((c) => c.id === v) ? v : 'worker'; } catch(e){ return 'worker'; }
 }
 let charNow = charSaved();
