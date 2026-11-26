@@ -153,6 +153,12 @@
     if (b) { const rim = WP.isUnlocked('rim', 'gold', xpNow()) ? 'gold' : WP.isUnlocked('rim', 'neon', xpNow()) ? 'neon' : ''; if (rim) b.dataset.rim = rim; else delete b.dataset.rim; }
   }
   const lockText = u => '🔒 ' + T('تُفتح برتبة ', 'Unlocks at ') + nm(WP.rankOf(u.rank));
+  /* رسالة الشخصية المقفلة: ما الرتبة المطلوبة، وكم نقطة خبرة بقيت، وكيف تُجمع */
+  function charLockMsg(c, u) {
+    const r = WP.rankOf(u.rank), left = Math.max(0, r.xp - xpNow());
+    return '🔒 ' + T(c.ar + ': تُفتح برتبة ' + r.icon + ' ' + r.ar + ' — بقي ' + left + ' نقطة خبرة. اجمعها بفرز الطرود صحيحاً وإنجاز مهام اليوم.',
+      c.en + ': unlocks at ' + r.icon + ' ' + r.en + ' — ' + left + ' XP to go. Earn it by sorting parcels correctly and finishing daily missions.');
+  }
   function buildPickers() {
     const xp = xpNow();
     const row = document.getElementById('skins');
@@ -182,9 +188,10 @@
       CHAR_LIST.forEach(c => {
         const u = WP.unlock('char', c.id), open = WP.isUnlocked('char', c.id, xp);
         const b = el('button', open ? '' : 'lock'); b.type = 'button'; b.dataset.char = c.id; b.setAttribute('role', 'radio');
-        b.innerHTML = '<span class="pk-ico" aria-hidden="true">' + (open ? c.ico : '🔒') + '</span><span class="pk-tx"><b>' + esc(en() ? c.en : c.ar) + '</b><small>' + esc(open ? (en() ? c.hintEn : c.hintAr) : nm(WP.rankOf(u.rank))) + '</small></span>';
-        if (!open) b.title = lockText(u);
-        b.onclick = e => { e.stopPropagation(); if (!open) { toast(lockText(u), '#ffd54a'); return; } window.__setCharacter(c.id); };
+        /* المقفلة تظهر خافتة خلف القفل مع اسمها والرتبة المطلوبة */
+        b.innerHTML = '<span class="pk-ph" aria-hidden="true"><span class="pk-ico">' + c.ico + '</span>' + (open ? '' : '<i class="pk-lock">🔒</i>') + '</span><span class="pk-tx"><b>' + esc(en() ? c.en : c.ar) + '</b><small>' + esc(open ? (en() ? c.hintEn : c.hintAr) : WP.rankOf(u.rank).icon + ' ' + nm(WP.rankOf(u.rank))) + '</small></span>';
+        if (!open) { b.title = lockText(u); b.setAttribute('aria-disabled', 'true'); b.setAttribute('aria-label', (en() ? c.en : c.ar) + ' — ' + lockText(u)); }
+        b.onclick = e => { e.stopPropagation(); if (!open) { const msg = charLockMsg(c, u); try { charStatus(msg); const st = document.getElementById('char-status'); if (st) st.classList.add('char-lock-msg'); } catch (err) {} toast(msg, '#ffd54a', 5000); return; } const st = document.getElementById('char-status'); if (st) st.classList.remove('char-lock-msg'); window.__setCharacter(c.id); };
         chars.appendChild(b);
       });
       /* شبكة 3×2: الخانات الفارغة محجوزة لشخصيات قادمة */

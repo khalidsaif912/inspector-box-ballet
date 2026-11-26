@@ -2229,11 +2229,11 @@ if(window.parent && window.parent !== window){ window.parent.postMessage({ type:
 location.href = 'index.html';
 }
 let tt;
-function toast(t, col){
+function toast(t, col, ms){
 const e = $('toast'); e.textContent = I18N.t(t); e.style.color = col; e.style.opacity = 1;
 e.style.transform = 'translateX(-50%) scale(1.05)';
 clearTimeout(tt);
-tt = setTimeout(() => { e.style.opacity = 0; e.style.transform = 'translateX(-50%) scale(1)'; }, 1300);
+tt = setTimeout(() => { e.style.opacity = 0; e.style.transform = 'translateX(-50%) scale(1)'; }, ms || 1300);
 }
 function spawnFloatTag(txt, col, tier){
 const el = document.createElement('div');
