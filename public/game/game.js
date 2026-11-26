@@ -3494,29 +3494,17 @@ if(!Online.enabled()){ ol.innerHTML = '<li class="gl-empty">سيُفعَّل ق�
 try { await Online.directory(); const t = await Online.top(5); ol.innerHTML = t.length ? t.map((p, i) => `<li><b>${i + 1}</b><span>${Online.nameOf(p.id, I18N.lang, p.name).replace(/[<&]/g, '')}</span><i>${p.best}</i></li>`).join('') : '<li class="gl-empty">كن أول المتصدرين</li>'; } catch(e){ ol.innerHTML = '<li class="gl-empty">تعذّر التحميل</li>'; }
 }
 loginUI();
-/* نوافذ شاشة البداية المنبثقة: المهام، الأرقام القياسية والمتصدرون، الإعدادات */
+/* نوافذ الغلاف في الشاشات الضيقة: تمرير بالسحب/اللمس بين «الدخول والشخصية» و«النتائج والإعدادات» */
 (function(){
-const ov = $('ov'); if(!ov) return;
-let opener = null;
-const close = () => {
-  const open = ov.querySelector('.lob-sheet:not([hidden])'); if(!open) return;
-  open.hidden = true;
-  if(opener && document.contains(opener)) opener.focus({ preventScroll: true });
-  opener = null;
-};
-const openSheet = (id, btn) => {
-  close();
-  const sh = $('sheet-' + id); if(!sh) return;
-  if(id === 'records') try { globalTop(); } catch(e){}
-  sh.hidden = false; opener = btn || null;
-  const x = sh.querySelector('.sheet-x'); if(x) x.focus({ preventScroll: true });
-};
-ov.addEventListener('click', e => {
-  const t = e.target.closest('[data-sheet]');
-  if(t){ e.stopPropagation(); openSheet(t.dataset.sheet, t); return; }
-  if(e.target.closest('.sheet-x') || e.target.classList.contains('lob-sheet')){ e.stopPropagation(); close(); }
-});
-window.addEventListener('keydown', e => { if(e.key === 'Escape' && ov.querySelector('.lob-sheet:not([hidden])')){ e.stopPropagation(); e.preventDefault(); close(); } }, true);
+const p = $('pager'), dots = document.querySelectorAll('#pager-dots .pd'); if(!p) return;
+const page = () => p.children.length > 1 ? (p.children[1].offsetLeft - p.children[0].offsetLeft) : p.clientWidth;
+const go = i => p.scrollTo({ left: i * page(), behavior: 'smooth' });
+dots.forEach(d => d.onclick = () => go(+d.dataset.i));
+p.addEventListener('scroll', () => { const i = Math.round(p.scrollLeft / (page() || 1)); dots.forEach((d, k) => d.classList.toggle('on', k === Math.min(i, dots.length - 1))); }, { passive: true });
+let d = null;
+p.addEventListener('pointerdown', e => { if(e.pointerType !== 'mouse' || e.button !== 0 || e.target.closest('input,button,a,label,canvas')) return; d = { x: e.clientX, s: p.scrollLeft, m: false }; });
+window.addEventListener('pointermove', e => { if(!d) return; const dx = e.clientX - d.x; if(!d.m && Math.abs(dx) < 6) return; if(!d.m){ d.m = true; p.classList.add('drag'); } p.scrollLeft = d.s - dx; });
+window.addEventListener('pointerup', () => { if(!d) return; const m = d.m; d = null; p.classList.remove('drag'); if(m) go(Math.max(0, Math.min(dots.length - 1, Math.round(p.scrollLeft / (page() || 1))))); });
 })();
 let pz = false;
 const openRules = () => {
@@ -3565,7 +3553,7 @@ const starsHTML = Array.from({ length: 5 }, (_, i) => `<svg class="star${i < sta
 const recLine = record ? '<span class="new-record"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2H6v7a6 6 0 0 0 12 0V2ZM4 22h16v-2H4v2Zm7-5.08V20h2v-3.08A8 8 0 0 1 11 16.92Z"/></svg>' + I18N.t('رقم قياسي جديد!') + '</span>' : '';
 const tipTxt = totalProcessed === 0 ? I18N.t('لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!') : acc >= 80 ? I18N.t('أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.') : I18N.t('راجع دليل الفرز السريع ثم عُد لكسر رقمك.');
 const lbRows = topList.length ? topList.slice(0, 4).map((e, i) => `<li class="${e.s === score && score > 0 ? 'me' : ''}"><b class="rank-dot r${i + 1}"></b><span>#${i + 1}</span><em>${e.s}</em></li>`).join('') : `<li class="lb-none">${I18N.t('العب لتسجّل أول نتيجة')}</li>`;
-o.classList.remove('lobby'); o.classList.add('ended');
+o.classList.add('ended');
 o.innerHTML = `<div class="end-panel g-${grade}" role="dialog" aria-labelledby="ep-title">
 <div class="ep-side">
 <header class="ep-hero">
