@@ -1095,10 +1095,10 @@ window.__hero = HERO;
 /* شخصيات Mixamo: مجسّم + حركات مسجّلة حقيقية، يحمّلها مُحمّل واحد مشترك (mixamo-rig.js) */
 const MIX = {
   worker: { grow: 1.15, seat: { z: 0, hips: 2.1, arm: 1.0, fore: -0.5 }, url: 'game/models/mixamo-worker.glb', obj: null, inst: null, ready: false, loading: false, err: null },
-  timmy:  { seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null },
-  vanguard: { seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-vanguard.glb', obj: null, inst: null, ready: false, loading: false, err: null },
+  timmy:  { grow: 1.15, seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-timmy.glb',  obj: null, inst: null, ready: false, loading: false, err: null },
+  vanguard: { grow: 1.15, seat: { z: 0.5, hips: 1.8, arm: 1.45, fore: -0.4 }, url: 'game/models/mixamo-vanguard.glb', obj: null, inst: null, ready: false, loading: false, err: null },
   /* الروبوت (Quaternius، CC0): هيكل غير Mixamo، فنربط مقاطعه بأسماء اللعبة ونرفع ذراعيه عند الحمل */
-  robot: { seat: { z: 0.3, hips: 1.8, arm: 0, fore: 0 }, url: 'game/models/robot.glb', obj: null, inst: null, ready: false, loading: false, err: null,
+  robot: { grow: 1.15, seat: { z: 0.3, hips: 1.8, arm: 0, fore: 0 }, url: 'game/models/robot.glb', obj: null, inst: null, ready: false, loading: false, err: null,
     rig: { clips: { idle: 'Robot_Idle', jog: 'Robot_Walking', run: 'Robot_Running', carry_idle: 'Robot_Idle', carry_jog: 'Robot_Walking', sit: 'Robot_Sitting' },
       natural: { jog: 5, run: 9, carry_jog: 5 }, hands: ['Palm2L', 'Palm2R'], carryArm: { bones: ['UpperArmL', 'UpperArmR'], axis: [1, 0, 0], ang: 0.8 } } }
 };
@@ -1172,7 +1172,7 @@ function loadMixamo(id, attempt){
   }, M.rig).then(o => {
     lt.done();
     M.obj = o.root; M.inst = o; M.ready = true; M.loading = false;
-    if(M.grow && o.setGrow) o.setGrow(M.grow);   // عامل المستودع أكبر قليلاً وهو يمشي
+    if(M.grow && o.setGrow) o.setGrow(M.grow);   // كل الشخصيات بقامة عامل المستودع وهي تمشي
     o.seatZ = M.seat.z; o.seatY = M.seat.hips; Object.assign(o.sitCfg, { arm: M.seat.arm, fore: M.seat.fore });   // وضع الجلوس مضبوط لكل شخصية على مقعد الرافعة ومقودها
     pl.add(o.root); if(mixId(CHAR.id) === id) charStatus(''); applyCrewMode();
     loadSeatCrew();
