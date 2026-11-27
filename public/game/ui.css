@@ -665,7 +665,7 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
 .uld-grid{display:grid;grid-template-columns:repeat(3,var(--u));gap:5px;direction:ltr;padding:6px;border-radius:8px;background:repeating-linear-gradient(90deg,#55606a 0 3px,#3b444c 3px 9px);border:3px solid #9aa7b1;box-shadow:inset 0 0 0 2px #000}
 .uld-cell{all:unset;box-sizing:border-box;cursor:pointer;width:var(--u);height:var(--u);border-radius:6px;border:2px dashed rgba(255,255,255,.28);display:grid;place-items:center;color:rgba(255,255,255,.35);font:800 11px/1 ui-monospace,monospace;position:relative}
 .uld-cell:hover{border-color:#ffd54a}
-.uld-cell.bad{box-shadow:0 0 0 3px #ff4a3d,0 0 14px rgba(255,74,61,.8);animation:cardShake .35s}
+.uld-grid.bad{border-color:#ff4a3d;animation:cardShake .35s}
 .uld-tray{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;min-height:calc(var(--u) + 10px);width:100%;padding:5px;border-radius:8px;background:rgba(0,0,0,.25);border:2px solid rgba(255,255,255,.12);cursor:pointer;box-sizing:border-box}
 .uld-off{border-color:rgba(255,106,61,.55);background:repeating-linear-gradient(-45deg,rgba(255,106,61,.12) 0 8px,rgba(0,0,0,.25) 8px 16px)}
 .uld-pc{all:unset;box-sizing:border-box;cursor:pointer;width:var(--u);height:var(--u);border-radius:6px;background:#f4f1e6;color:#161a1d;border:2px solid #161a1d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;box-shadow:0 3px 6px rgba(0,0,0,.45);position:relative;transition:transform .12s}
@@ -675,13 +675,12 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
 .uld-pc b{font:900 calc(var(--u)*.17)/1 ui-monospace,monospace}
 .uld-pc small{font:800 calc(var(--u)*.12)/1 ui-monospace,monospace;color:#56616a}
 .uld-pc.sel{transform:translateY(-3px) scale(1.04);box-shadow:0 0 0 3px #ffd54a,0 6px 14px rgba(0,0,0,.6)}
-.uld-pc.bad{box-shadow:0 0 0 3px #ff4a3d,0 0 14px rgba(255,74,61,.8)}
 .uld-pc:focus-visible,.uld-cell:focus-visible,.uld-ok:focus-visible{outline:3px solid #ffd54a;outline-offset:2px}
 .uld-actions{display:flex;justify-content:center;margin-top:8px}
 .uld-ok{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 22px;border-radius:8px;background:linear-gradient(180deg,#2fe06d,#17a24a);color:#06240f;font-weight:900;font-size:clamp(12px,2.8vmin,15px);box-shadow:0 4px 0 #0c5f2a}
 .uld-ok:active{transform:translateY(2px);box-shadow:0 2px 0 #0c5f2a}
 @media (max-height:520px){.uld{--u:clamp(36px,10vh,52px)}.uld-rules{display:none}}
-@media (prefers-reduced-motion:reduce){.uld-cell.bad{animation:none}.uld-pc{transition:none}}
+@media (prefers-reduced-motion:reduce){.uld-grid.bad{animation:none}.uld-pc{transition:none}}
 
 /* ===== الدخول بالرقم الوظيفي + المتصدرون عالمياً ===== */
 #ov .login{width:100%;max-width:290px;margin:0 auto 12px;direction:rtl;font-family:inherit}

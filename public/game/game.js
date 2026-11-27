@@ -3016,16 +3016,9 @@ function uldSubmit(){
   uldP.tries++;
   uldP.t -= U.wrongSubmit;
   snd('error'); addShake(.25);
-  const cells = uldEl.grid.children, bad = new Set();
-  r.pairs.forEach(q => { bad.add(q.a); bad.add(q.b); });
-  for(const id of r.caoLoaded) bad.add(uldP.loc[id]);
-  bad.forEach(i => { const c = cells[i]; c.classList.remove('bad'); void c.offsetWidth; c.classList.add('bad'); });
-  for(const id of r.wrongOff){ const e = uldEl.off.querySelector('[data-id="' + id + '"]'); if(e) e.classList.add('bad'); }
-  const parts = [];
-  if(r.pairs.length) parts.push(I18N.T(r.pairs.length + ' تجاور ممنوع', r.pairs.length + ' forbidden neighbour' + (r.pairs.length > 1 ? 's' : '')));
-  if(r.caoLoaded.length) parts.push(I18N.T('شحنة CAO على رحلة ركاب', 'CAO on a passenger flight'));
-  if(r.wrongOff.length) parts.push(I18N.T('نزّلت شحنة مسموحة', 'off-loaded an allowed shipment'));
-  uldEl.info.textContent = '✖ ' + parts.join(' · ') + I18N.T(' — −' + U.wrongSubmit + ' ث', ' — −' + U.wrongSubmit + 's');
+  /* لا نكشف موضع الخطأ ولا نوعه: رسالة عامة فقط */
+  uldEl.grid.classList.remove('bad'); void uldEl.grid.offsetWidth; uldEl.grid.classList.add('bad');
+  uldEl.info.textContent = I18N.T('✖ هناك خطأ في الخطة — −' + U.wrongSubmit + ' ث', '✖ The plan has a mistake — −' + U.wrongSubmit + 's');
 }
 if(uldEl.ok) uldEl.ok.addEventListener('click', uldSubmit);
 function uldHide(){
