@@ -989,6 +989,7 @@ const dz = new THREE.Mesh(new THREE.PlaneGeometry(1.4,1.4), new THREE.MeshStanda
 });
 // ===== غرفة التجميد: غرفة معزولة على يسار المستودع بباب منزلق مقفل (يُفتح بحل اللغز) =====
 const frzP = { active: false, cells: [], moves: 0, solved: false, timer: 0, t: 0, raf: 0, last: 0 };
+const uldP = { active: false, done: false, pieces: [], loc: {}, sel: null, t: 0, raf: 0, last: 0, closing: 0, tries: 0 };
 const cardP = { active: false, deck: [], open: [], matched: new Set(), t: 0, lock: false, mistakes: 0, wild: false, raf: 0, last: 0, closing: 0 };
 const jam = { active: false, siren: 0 };
 const hv = { done: false, failed: false, item: null };
@@ -2047,7 +2048,7 @@ function useBeltSlow(){
 }
 const beltRay = new THREE.Raycaster(), beltNdc = new THREE.Vector2();
 R.domElement.addEventListener('pointerdown', e => {
-  if(!run || fire.active || introHold || caoQ.active || frzP.active || cardP.active) return;
+  if(!run || fire.active || introHold || caoQ.active || frzP.active || cardP.active || uldP.active) return;
   const r = R.domElement.getBoundingClientRect();
   beltNdc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   beltRay.setFromCamera(beltNdc, C);
@@ -2087,7 +2088,7 @@ function evtAllowPatrol(){
   return evt.patrol < 3 && evt.t >= 14 && evt.t - evt.lastInsp >= 40 && !items.some(i => i.data.cao && !i.caoChecked);
 }
 function fireSafe(){
-  return time > 20 && !(window.Prog && Prog.busy()) && !jam.active && !cardP.active && !inspector.active && !caoQ.active && !truckState.active && !STUDY.on && !FD.on && !frzP.active && !FRZ.pending &&
+  return time > 20 && !(window.Prog && Prog.busy()) && !jam.active && !cardP.active && !uldP.active && !inspector.active && !caoQ.active && !truckState.active && !STUDY.on && !FD.on && !frzP.active && !FRZ.pending &&
     !introHold && !liftAnim.active && rushN === 0 && !items.some(i => i.data.cao && !i.caoChecked) && evt.t - evt.lastInsp >= 12;
 }
 function caoSwap(raw){
@@ -2766,18 +2767,19 @@ function updateEvents(dt){
   if(jam.active){
     $('jam-n').textContent = n;
     if(gameRules.belt.cleared(n)) endJam();
-  } else if(gameRules.belt.jammed(n) && !fire.active && !caoQ.active && !frzP.active && !cardP.active && !STUDY.on && !introHold){
+  } else if(gameRules.belt.jammed(n) && !fire.active && !caoQ.active && !frzP.active && !cardP.active && !uldP.active && !STUDY.on && !introHold){
     startJam();
   } else if(n === gameRules.belt.warnAt && !updateEvents.warned){ updateEvents.warned = true; tip('belt-warn', I18N.T('⚖️ الحزام قارب الحد الأقصى — صنّف بسرعة!', '⚖️ The belt is near its limit — sort fast!'), '#ffd54a'); }
   else if(n < gameRules.belt.warnAt) updateEvents.warned = false;
   /* الطرد الثقيل: مرة واحدة بوقت عشوائي، بلا تعارض مع الأحداث الأخرى */
-  if(!hv.done && evt.t >= evt.heavyAt && !jam.active && !fire.active && !caoQ.active && !inspector.active && !frzP.active && !cardP.active && !FD.on && !introHold) spawnHeavy();
+  if(!hv.done && evt.t >= evt.heavyAt && !jam.active && !fire.active && !caoQ.active && !inspector.active && !frzP.active && !cardP.active && !uldP.active && !FD.on && !introHold) spawnHeavy();
 }
 function resetEvents(){
   jam.active = false; clearInterval(jam.siren); jam.siren = 0; $('jam-banner').classList.remove('on');
   hv.done = false; hv.failed = false; hv.item = null; FD.unlocked = false;
   cardP.active = false; cancelAnimationFrame(cardP.raf); clearTimeout(cardP.closing); const c = $('cards'); if(c) c.style.display = 'none';
   FW.parts.length = 0; updateEvents.warned = false;
+  uldReset();
 }
 
 /* --- لغز بطاقات تشغيل الرافعة (9 بطاقات: ملصق + كود + شرارة) --- */
@@ -2899,6 +2901,258 @@ function cardsClose(){
 }
 if(cardsEl.x) cardsEl.x.addEventListener('click', cardsClose);
 if(cardsEl.root) cardsEl.root.addEventListener('pointerdown', e => e.stopPropagation());
+
+/* ===== لغز خطة تحميل ULD — 200 نقطة: رحلة ركاب ومنصة 3×3 =====
+   القواعد والتوليد والتحقق في gameRules.uld؛ هنا الواجهة فقط. المحاكاة تتجمد أثناءه (dt = 0). */
+const uldEl = { root: $('uld'), grid: $('uld-grid'), tray: $('uld-tray'), off: $('uld-off'), fill: $('uld-fill'), time: $('uld-time'), bar: document.querySelector('#uld .cards-bar'), info: $('uld-info'), ok: $('uld-ok'), x: $('uld-x') };
+const ULD_NAMES = { EAT: ['🍓', 'أغذية طازجة', 'Fresh food'], AVI: ['🐕', 'حيوان حي', 'Live animal'] };
+function uldFlight(){ return gameRules.cao.flightFor(Math.floor(evt.t * 7)); }
+function uldText(){
+  const U = gameRules.uld, f = uldP.flight || uldFlight();
+  $('uld-title').textContent = I18N.T('خطة تحميل ULD — رحلة ' + f.id + ' ' + f.from + '→' + f.to + ' (ركاب)', 'ULD load plan — flight ' + f.id + ' ' + f.from + '→' + f.to + ' (passenger)');
+  $('uld-sub').textContent = I18N.T('حمّل المنصة صحيحاً خلال ' + U.seconds + ' ث: +' + U.reward + ' نقطة. فشلها −' + U.failPenalty + '، وتركها −' + U.quitPenalty, 'Load the pallet right within ' + U.seconds + 's: +' + U.reward + ' pts. Failing −' + U.failPenalty + ', abandoning −' + U.quitPenalty);
+  $('uld-rules').innerHTML = [
+    I18N.T('لا تتجاور (جنباً إلى جنب) شحنتان متعارضتان حسب جدول IATA 9.3.A — القطري مسموح.', 'No two incompatible shipments side by side (IATA Table 9.3.A) — diagonal is fine.'),
+    I18N.T('السموم 6.1 والمعدية 6.2 لا تجاور الأغذية ولا الحيوانات الحية.', 'Toxic 6.1 and infectious 6.2 never next to food or live animals.'),
+    I18N.T('الحيوانات الحية لا تجاور الثلج الجاف ولا المواد المشعة.', 'Live animals never next to dry ice or radioactive material.'),
+    I18N.T('الرحلة ركاب: نزّل (Off-load) كل شحنة CAO — لن نخبرك أيها!', 'Passenger flight: off-load every CAO shipment — we won’t tell you which!')
+  ].map(t => '<li>' + t + '</li>').join('');
+  $('uld-deck-cap').textContent = I18N.T('المنصة PMC (عرض علوي)', 'PMC pallet (top view)');
+  $('uld-tray-cap').textContent = I18N.T('شحنات بانتظار التحميل', 'Shipments to load');
+  $('uld-off-cap').textContent = I18N.T('🚫 تنزيل Off-load', '🚫 Off-load');
+  uldEl.ok.textContent = I18N.T('✔ اعتماد الخطة', '✔ Approve plan');
+  uldEl.x.textContent = '✕';
+  uldEl.x.setAttribute('aria-label', I18N.T('إغلاق', 'Close'));
+}
+function uldName(p){
+  if(ULD_NAMES[p.imp]) return I18N.T(ULD_NAMES[p.imp][1], ULD_NAMES[p.imp][2]);
+  const r = HZ.find(h => h[3] === p.imp);
+  return r ? r[2] : p.imp;
+}
+function uldPiece(p){
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'uld-pc' + (uldP.sel === p.id ? ' sel' : ''); b.dataset.id = p.id;
+  const face = ULD_NAMES[p.imp] ? '<span class="em">' + ULD_NAMES[p.imp][0] + '</span>' : '<img alt="" src="' + dgURL(p.div, p.imp) + '">';
+  b.innerHTML = face + '<b>' + p.imp + '</b>' + (p.div ? '<small>' + p.div + '</small>' : '');
+  const nm = uldName(p);
+  b.title = nm; b.setAttribute('aria-label', nm + ' ' + p.imp + (p.div ? ' ' + I18N.T('فئة', 'class') + ' ' + p.div : ''));
+  b.addEventListener('click', e => { e.stopPropagation(); uldPick(p.id); });
+  return b;
+}
+function uldRender(){
+  uldEl.grid.innerHTML = ''; uldEl.tray.innerHTML = ''; uldEl.off.innerHTML = '';
+  const at = {};
+  for(const p of uldP.pieces){ const l = uldP.loc[p.id]; if(typeof l === 'number') at[l] = p; }
+  for(let i = 0; i < gameRules.uld.CELLS; i++){
+    const c = document.createElement('button'); c.type = 'button'; c.className = 'uld-cell'; c.dataset.i = i;
+    c.setAttribute('aria-label', I18N.T('خانة ', 'Slot ') + (i + 1));
+    if(at[i]) c.appendChild(uldPiece(at[i])); else c.textContent = String.fromCharCode(65 + Math.floor(i / 3)) + (i % 3 + 1);
+    c.addEventListener('click', () => uldDrop(i));
+    uldEl.grid.appendChild(c);
+  }
+  for(const p of uldP.pieces){
+    if(uldP.loc[p.id] === 'tray') uldEl.tray.appendChild(uldPiece(p));
+    else if(uldP.loc[p.id] === 'off') uldEl.off.appendChild(uldPiece(p));
+  }
+}
+function uldPick(id){
+  if(!uldP.active || uldP.closing) return;
+  const l = uldP.loc[id];
+  /* قطعة محددة ثم نقر على قطعة في المنصة = تبديل مكانيهما */
+  if(uldP.sel && uldP.sel !== id && typeof l === 'number'){ uldDrop(l); return; }
+  uldP.sel = uldP.sel === id ? null : id;
+  snd('cardflip', 1.1); uldRender();
+}
+function uldDrop(i){
+  if(!uldP.active || uldP.closing) return;
+  const occ = uldP.pieces.find(p => uldP.loc[p.id] === i);
+  if(!uldP.sel){ if(occ){ uldP.sel = occ.id; snd('cardflip', 1.1); uldRender(); } return; }
+  const from = uldP.loc[uldP.sel];
+  if(occ && occ.id !== uldP.sel) uldP.loc[occ.id] = from;   // تبديل: القطعة المزاحة تأخذ مكان القادمة
+  uldP.loc[uldP.sel] = i; uldP.sel = null;
+  snd('cardflip', .9); uldEl.info.textContent = ''; uldRender();
+}
+function uldToArea(area){
+  if(!uldP.active || uldP.closing || !uldP.sel) return;
+  uldP.loc[uldP.sel] = area; uldP.sel = null;
+  snd(area === 'off' ? 'cardfail' : 'cardflip', .9); uldRender();
+}
+if(uldEl.tray) uldEl.tray.addEventListener('click', () => uldToArea('tray'));
+if(uldEl.off) uldEl.off.addEventListener('click', () => uldToArea('off'));
+function uldOpen(){
+  if(uldP.active) return;
+  const U = gameRules.uld, b = U.build(Math.random);
+  uldP.active = true; uldP.closing = 0; uldP.t = U.seconds; uldP.sel = null; uldP.tries = 0;
+  uldP.pieces = b.pieces; uldP.loc = {}; uldP.flight = uldFlight();
+  for(const p of b.pieces) uldP.loc[p.id] = 'tray';
+  for(const k of ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) key[k] = 0;
+  uldText(); uldRender();
+  uldEl.info.textContent = I18N.T('اختر شحنة ثم خانتها — أو منطقة التنزيل', 'Pick a shipment, then its slot — or the off-load area');
+  uldEl.root.style.display = 'flex';
+  snd('horn');
+  uldP.last = performance.now(); uldP.raf = requestAnimationFrame(uldTick);
+}
+function uldTick(now){
+  if(!uldP.active) return;
+  const dt = Math.min(.1, (now - uldP.last) / 1000); uldP.last = now;
+  if(!document.hidden && !uldP.closing) uldP.t -= dt;
+  const f = Math.max(0, uldP.t / gameRules.uld.seconds);
+  uldEl.fill.style.transform = 'scaleX(' + f + ')';
+  uldEl.bar.classList.toggle('low', uldP.t <= 15);
+  uldEl.time.textContent = Math.max(0, Math.ceil(uldP.t)) + I18N.T(' ث', 's');
+  if(uldP.t <= 0 && !uldP.closing){ uldFail(); return; }
+  uldP.raf = requestAnimationFrame(uldTick);
+}
+function uldSubmit(){
+  if(!uldP.active || uldP.closing) return;
+  const U = gameRules.uld, board = new Array(U.CELLS).fill(null), off = [];
+  for(const p of uldP.pieces){ const l = uldP.loc[p.id]; if(typeof l === 'number') board[l] = p.id; else if(l === 'off') off.push(p.id); }
+  const r = U.check(uldP.pieces, board, off);
+  if(r.ok){ uldWin(); return; }
+  if(r.missing.length || r.caoLeft.length){
+    const n = r.missing.length + r.caoLeft.length;
+    uldEl.info.textContent = I18N.T('📦 كل شحنة يجب أن تُحمَّل أو تُنزَّل — بقيت ' + n, '📦 Every shipment must be loaded or off-loaded — ' + n + ' left');
+    snd('cardfail'); return;   // تنبيه بلا عقوبة: الخطة لم تكتمل بعد
+  }
+  uldP.tries++;
+  uldP.t -= U.wrongSubmit;
+  snd('error'); addShake(.25);
+  const cells = uldEl.grid.children, bad = new Set();
+  r.pairs.forEach(q => { bad.add(q.a); bad.add(q.b); });
+  for(const id of r.caoLoaded) bad.add(uldP.loc[id]);
+  bad.forEach(i => { const c = cells[i]; c.classList.remove('bad'); void c.offsetWidth; c.classList.add('bad'); });
+  for(const id of r.wrongOff){ const e = uldEl.off.querySelector('[data-id="' + id + '"]'); if(e) e.classList.add('bad'); }
+  const parts = [];
+  if(r.pairs.length) parts.push(I18N.T(r.pairs.length + ' تجاور ممنوع', r.pairs.length + ' forbidden neighbour' + (r.pairs.length > 1 ? 's' : '')));
+  if(r.caoLoaded.length) parts.push(I18N.T('شحنة CAO على رحلة ركاب', 'CAO on a passenger flight'));
+  if(r.wrongOff.length) parts.push(I18N.T('نزّلت شحنة مسموحة', 'off-loaded an allowed shipment'));
+  uldEl.info.textContent = '✖ ' + parts.join(' · ') + I18N.T(' — −' + U.wrongSubmit + ' ث', ' — −' + U.wrongSubmit + 's');
+}
+if(uldEl.ok) uldEl.ok.addEventListener('click', uldSubmit);
+function uldHide(){
+  uldEl.root.style.display = 'none'; uldP.active = false; uldP.closing = 0; uldP.sel = null; cancelAnimationFrame(uldP.raf);
+}
+function uldWin(){
+  const U = gameRules.uld;
+  uldP.closing = 1;
+  fwShow(7); snd('cardwin');
+  score += U.reward; time += U.timeBonus;
+  uldP.done = true; uldScreenPaint();
+  spawnFloatTag('+' + U.reward + ' 📋', '#ffd54a', 'big');
+  uldEl.info.textContent = I18N.T('✅ خطة سليمة! وقّع المشرف على NOTOC', '✅ Safe plan! The supervisor signed the NOTOC');
+  toast(I18N.T('📋 خطة تحميل ULD معتمدة +' + U.reward + ' و +' + U.timeBonus + ' ث', '📋 ULD load plan approved +' + U.reward + ' and +' + U.timeBonus + 's'), '#69f0ae', 2600);
+  hud();
+  uldP.closing = setTimeout(uldHide, 1700);
+}
+function uldFail(){
+  const U = gameRules.uld, lost = Math.min(score, U.failPenalty);
+  uldP.closing = 1;
+  score -= lost; snd('error'); addShake(.4); penaltyFx(lost, true);
+  spawnFloatTag('−' + U.failPenalty, '#ff5252', 'big');
+  uldEl.info.textContent = I18N.T('⏱ انتهى الوقت — أقلعت الرحلة بدون الشحنة', '⏱ Time is up — the flight left without the cargo');
+  toast(I18N.T('❌ فشلت خطة تحميل ULD −' + U.failPenalty, '❌ ULD load plan failed −' + U.failPenalty), '#ff5252', 2400);
+  hud();
+  uldP.closing = setTimeout(uldHide, 1300);
+}
+function uldClose(){
+  if(!uldP.active || uldP.closing) return;
+  const q = gameRules.uld.quitPenalty, lost = Math.min(score, q);
+  score -= lost; snd('error'); penaltyFx(lost, false);
+  spawnFloatTag('−' + q, '#ff5252', 'big');
+  toast(I18N.T('📋 تركت خطة تحميل ULD −' + q, '📋 ULD load plan abandoned −' + q), '#ff8a5c', 2200);
+  hud(); uldHide();
+}
+function uldReset(){
+  uldP.done = false; uldP.active = false; uldP.sel = null; cancelAnimationFrame(uldP.raf); clearTimeout(uldP.closing); uldP.closing = 0;
+  if(uldEl.root) uldEl.root.style.display = 'none';
+  if(typeof uldScreenPaint === 'function') uldScreenPaint();
+}
+if(uldEl.x) uldEl.x.addEventListener('click', uldClose);
+if(uldEl.root) uldEl.root.addEventListener('pointerdown', e => e.stopPropagation());
+
+/* ===== محطة تجهيز ULD: مكان ثابت يسار المستودع يقصده اللاعب متى شاء ويضغط ✋ لفتح خطة التحميل =====
+   المكافأة مرة واحدة في الوردية؛ الفشل أو الترك له غرامته ويمكن المحاولة مجدداً بلغز جديد. */
+const ULD_ST = { x: -29.0, z: 2.7, reach: 3.0, near: false, g: null, scr: null, sign: null, t: 0 };
+function uldScreenPaint(){
+  const s = ULD_ST.scr; if(!s) return;
+  const g = s.g, ok = uldP.done;
+  g.fillStyle = ok ? '#0d3b22' : '#0b1d2b'; g.fillRect(0, 0, 256, 160);
+  g.strokeStyle = ok ? '#2fe06d' : '#38c6ff'; g.lineWidth = 6; g.strokeRect(5, 5, 246, 150);
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = ok ? '#7dffae' : '#9fe6ff'; g.font = '900 34px ui-monospace,monospace'; g.fillText('ULD PLAN', 128, 44);
+  g.fillStyle = '#fff'; g.font = '900 40px system-ui,sans-serif';
+  g.fillText(ok ? '✓ OK' : '✋ +' + gameRules.uld.reward, 128, 104);
+  s.tex.needsUpdate = true;
+}
+function uldStationBuild(){
+  const g = new THREE.Group(); g.position.set(ULD_ST.x, 0, ULD_ST.z); g.rotation.y = Math.PI / 2;   // الواجهة نحو داخل المستودع (+x)
+  const M = (c, r, m) => new THREE.MeshStandardMaterial({ color: c, roughness: r === undefined ? .6 : r, metalness: m === undefined ? .3 : m });
+  const box = (w, h, d, mat, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  /* منصة PMC ألمنيوم على عربة دولي منخفضة */
+  const rail = M(0x2b333a, .7, .5);
+  [-.95, .25].forEach(z => box(2.5, .1, .14, rail, 0, .05, z - .35));
+  box(2.5, .07, 2.1, M(0xbfc9d1, .32, .88), 0, .135, -.35);
+  [-1.22, 1.22].forEach(x => box(.06, .1, 2.1, M(0x8d99a3, .4, .8), x, .17, -.35));
+  /* شحنات مرصوصة على المنصة (كرتون + شحنة خطرة بشريط برتقالي) */
+  const crt = [M(0xc49a6c, .85, 0), M(0xd4a373, .85, 0), M(0xb5835a, .85, 0)];
+  const spots = [[-.8, -.9, 1], [0, -.9, 2], [.8, -.9, 1], [-.8, -.1, 1], [.75, -.1, 0]];
+  spots.forEach(([x, z, n], k) => { for(let i = 0; i < n + 1 && i < 2; i++){ box(.7, .62, .7, crt[(k + i) % 3], x, .5 + i * .63, z); } });
+  const hz = box(.66, .58, .66, M(0xf4f1e6, .7, 0), -.05, .48, -.1);
+  box(.67, .12, .67, M(0xff7a1a, .6, 0), -.05, .62, -.1); hz.castShadow = true;
+  /* أحزمة صفراء فوق الشحنات */
+  const strap = M(0xf5c400, .6, .1);
+  [-.5, .4].forEach(x => box(.07, .03, 1.6, strap, x, 1.42, -.5));
+  /* طرفية خطة التحميل بشاشة متوهجة */
+  const post = M(0x2c3742, .55, .7);
+  box(.5, .06, .5, M(0x232c34, .78, .4), 1.0, .03, .7);
+  box(.12, 1.15, .12, post, 1.0, .6, .7);
+  const head = box(.78, .52, .1, M(0x161c22, .5, .5), 1.0, 1.36, .7); head.rotation.x = -.35;
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 160;
+  const tex = rawTex(cv);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(.7, .44), new THREE.MeshBasicMaterial({ map: tex }));
+  face.position.set(1.0, 1.36 + Math.sin(.35) * .056, .7 + Math.cos(.35) * .056); face.rotation.x = -.35; g.add(face);
+  ULD_ST.scr = { g: cv.getContext('2d'), tex };
+  /* خطوط أرضية صفراء حول المحطة */
+  const floorMat = new THREE.MeshBasicMaterial({ color: 0xf5c400, transparent: true, opacity: .85 });
+  [[3.0, .1, 0, -1.55], [3.0, .1, 0, 1.25], [.1, 2.9, -1.5, -.15], [.1, 2.9, 1.5, -.15]].forEach(([w, d, x, z]) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), floorMat); m.rotation.x = -Math.PI / 2; m.position.set(x, .012, z); g.add(m);
+  });
+  /* لافتة عائمة تُرى من بعيد */
+  const sc = document.createElement('canvas'); sc.width = 320; sc.height = 120;
+  const c = sc.getContext('2d');
+  c.fillStyle = '#1b2127'; c.fillRect(0, 0, 320, 120);
+  c.strokeStyle = '#f5c400'; c.lineWidth = 8; c.strokeRect(4, 4, 312, 112);
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillStyle = '#f5c400'; c.font = '900 46px system-ui,sans-serif'; c.fillText('📋 ULD', 160, 46);
+  c.fillStyle = '#fff'; c.font = '800 28px system-ui,sans-serif'; c.fillText(I18N.T('خطة التحميل +' + gameRules.uld.reward, 'Load plan +' + gameRules.uld.reward), 160, 92);
+  const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: rawTex(sc), transparent: true, depthTest: false }));
+  sign.scale.set(2.4, .9, 1); sign.position.set(0, 3.1, -.3); sign.renderOrder = 5; g.add(sign);
+  ULD_ST.sign = sign;
+  S.add(g); ULD_ST.g = g;
+  /* جسم المحطة صلب: المنصة (عمق محلي −1.45…+0.9 ⇒ x عالمي) والعرض ±1.3 ⇒ z عالمي */
+  STATIC_OBSTACLES.push({ minX: ULD_ST.x - 1.45, maxX: ULD_ST.x + .95, minZ: ULD_ST.z - 1.3, maxZ: ULD_ST.z + 1.3 });
+  uldScreenPaint();
+}
+uldStationBuild();
+function uldStationNear(){ return Math.hypot(px.x - ULD_ST.x, px.z - ULD_ST.z) < ULD_ST.reach; }
+function uldCanOpen(){
+  return run && !uldP.active && !fire.active && !caoQ.active && !cardP.active && !frzP.active && !STUDY.on && !FD.on && !introHold && !liftAnim.active && !demo.insp && !(window.Prog && Prog.busy());
+}
+function uldStationUse(){
+  if(uldP.done){ toast(I18N.T('✅ خطة تحميل هذه الوردية معتمدة مسبقاً', '✅ This shift’s load plan is already approved'), '#69f0ae', 1800); return; }
+  if(!uldCanOpen()){ snd('error'); toast(I18N.T('⏳ ليس الآن — أنهِ ما بين يديك أولاً', '⏳ Not now — finish what you’re doing first'), '#ffd54a', 1600); return; }
+  uldOpen();
+}
+function uldStationTick(dt){
+  if(!ULD_ST.g) return;
+  ULD_ST.t += dt;
+  if(ULD_ST.sign) ULD_ST.sign.position.y = 3.1 + Math.sin(ULD_ST.t * 2.2) * .08;
+  const nr = run && !FD.on && uldStationNear();
+  if(nr && !ULD_ST.near && !uldP.active){
+    if(uldP.done) toast(I18N.T('✅ خطة ULD معتمدة لهذه الوردية', '✅ ULD plan approved for this shift'), '#69f0ae', 1400);
+    else toast(I18N.T('📋 محطة خطة تحميل ULD — اضغط ✋ للبدء (+' + gameRules.uld.reward + ')', '📋 ULD load-plan station — press ✋ to start (+' + gameRules.uld.reward + ')'), '#ffd54a', 2400);
+  }
+  ULD_ST.near = nr;
+}
 
 /* ===== تجميعات FOD: ٣ خانات أعلى الشاشة ترفع مستوى الاندفاع مع احتفال عند كل جسم ===== */
 const FOD_NAMES = ['١', '٢', '٣', '٤'];
@@ -3370,7 +3624,7 @@ const _drvEl = $('drv');
 if(_drvEl) _drvEl.onclick = () => { if(FD.on) stopDrive(I18N.t('🚜 نزلت من الرافعة')); };
 function act(){
 initAudio();
-if(!run || liftAnim.active || caoQ.active || frzP.active || cardP.active) return;
+if(!run || liftAnim.active || caoQ.active || frzP.active || cardP.active || uldP.active) return;
 if(FD.on){
 if(held) forkUnload();
 else { const it = forkCargo(); if(it) forkLoad(it); else stopDrive(); }
@@ -3379,6 +3633,7 @@ return;
 /* الحيوان الأليف: الإمساك به ووضعه في القفص له الأولوية حين يكون قريباً */
 if(window.Prog && Prog.act()) return;
 if(!held && FD.near && FD.left > 0){ mountDrive(); return; }
+if(!held && uldStationNear()){ uldStationUse(); return; }
 // تشغيل زر إبطاء الحزام بالوقوف بجانبه والضغط على ✋
 if(!held && !near && !beltSlowUsed && Math.hypot(px.x - BELT_BTN_XZ.x, px.z - BELT_BTN_XZ.z) < 2.4){ useBeltSlow(); return; }
 if(!held){
@@ -3456,6 +3711,7 @@ if(caoQ.active){
 }
 if(frzP.active){ frzKey(e); return; }
 if(cardP.active){ e.preventDefault(); if(e.code === 'Escape') cardsClose(); return; }
+if(uldP.active){ if(e.code === 'Escape'){ e.preventDefault(); uldClose(); } else if(e.code === 'Enter'){ e.preventDefault(); uldSubmit(); } return; }
 if(fire.keypad){ handlePadKey(e); return; }
 key[e.code] = 1;
 /* Esc / P = إيقاف مؤقت أو متابعة */
@@ -4713,7 +4969,7 @@ function quizDue(){
   return run && window.InspectorQuiz && evt.quizIdx < evt.quizAt.length && evt.t >= evt.quizAt[evt.quizIdx] && (stage >= 2 || demo.inspDone);
 }
 function quizSafe(){
-  return time > 12 && !caoQ.active && !inspector.active && !fire.active && !jam.active && !cardP.active && !frzP.active && !FRZ.pending &&
+  return time > 12 && !caoQ.active && !inspector.active && !fire.active && !jam.active && !cardP.active && !uldP.active && !frzP.active && !FRZ.pending &&
     !truckState.active && !STUDY.on && !FD.on && !introHold && !liftAnim.active && rushN === 0 && !demo.insp &&
     !(window.Prog && Prog.busy()) && !items.some(i => i.data.cao && !i.caoChecked) && evt.t - evt.lastInsp >= 15;
 }
@@ -4782,7 +5038,7 @@ let dt = document.hidden || rawDt > 1 ? 0 : Math.min(rawDt, .5); last = now;
 for(const L of FOD_PULSE) L.intensity = 0.8 + 0.5 * Math.sin(now / 260);
 /* نافذة قرار CAO تجمّد الوردية كلها حتى يُحسم القبول أو الرفض */
 if(caoQ.active){ dt = 0; updateCaoScene(Math.min(rawDt, .05)); }
-if(frzP.active || cardP.active) dt = 0;
+if(frzP.active || cardP.active || uldP.active) dt = 0;
 /* Hit-stop: تجميد لحظي لكل المحاكاة لإبراز الأثر الكبير */
 if(hitStop > 0){ hitStop = Math.max(0, hitStop - Math.max(rawDt, 0)); dt = 0; }
 /* تباطؤ الزمن لحظة النجاة من الرافعة */
@@ -4893,6 +5149,7 @@ px.x = correctedPos.x; px.z = correctedPos.z;
 }
 if(!FD.on) anim(dt, liftAnim.active ? 0 : animSpd, vx, vz);
 FD.near = !FD.on && FD.left > 0 && Math.hypot(px.x - fk.position.x, px.z - fk.position.z) < 4.2;
+uldStationTick(dt);
 /* المراجعة أمام اللوحة تجمّد ساعة الوردية والأحداث كلها */
 if(!fire.keypad && !STUDY.on && !jam.active){ time -= dt; evt.t += dt; }   // الإنذار لا يجمّد الوقت؛ يتوقف فقط أثناء إدخال الرقم
 if(time <= 20){
@@ -5102,7 +5359,7 @@ C.lookAt(camLook);
 if(!FD.on && !EXIT_GATE.active && !STUDY.on) pl.visible = true;
 }
 // اهتزاز الكاميرا (Trauma): يُطبَّق بعد lookAt حتى يهتز المنظور فعلاً
-const shake = (frzP.active || cardP.active || caoQ.active || STUDY.on) ? 0 : shakeTrauma * shakeTrauma;   // لا اهتزاز للكاميرا والمحاكاة متوقفة (الاهتزاز لا يتلاشى حين يتجمّد الزمن)
+const shake = (frzP.active || cardP.active || uldP.active || caoQ.active || STUDY.on) ? 0 : shakeTrauma * shakeTrauma;   // لا اهتزاز للكاميرا والمحاكاة متوقفة (الاهتزاز لا يتلاشى حين يتجمّد الزمن)
 if(shake > 0.0005){
 C.position.x += (Math.random() - 0.5) * shake * 0.7;
 C.position.y += (Math.random() - 0.5) * shake * 0.5;

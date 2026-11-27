@@ -434,6 +434,193 @@
   };
   rules.segregation = segregation;
 
+  // ===== لغز خطة تحميل ULD (200 نقطة): رحلة ركاب ومنصة 3×3 =====
+  // يُفتح اختيارياً من محطة ULD الثابتة يسار المستودع، والمكافأة مرة واحدة في الوردية.
+  // تسع شحنات: ضع كل شحنة مسموحة في خانة بحيث لا تتجاور (جنباً إلى جنب، لا قطرياً) شحنتان متعارضتان:
+  //   • تعارضات IATA 9.3.A نفسها (rules.conflict).
+  //   • السموم 6.1 والمعدية 6.2 بعيداً عن الأغذية (EAT) والحيوانات الحية (AVI).
+  //   • الحيوانات الحية بعيداً عن الثلج الجاف (RMD) والمشعّ (RRY).
+  // والرحلة ركاب: أي شحنة CAO تُنزَّل (Off-load) ولا تُحمَّل. اللوحة لا تكتب CAO — على اللاعب أن يعرفها من الكود.
+  const uld = (() => {
+    const COLS = 3,
+      ROWS = 3,
+      CELLS = COLS * ROWS;
+    const NEAR_FOOD = new Set(["RPB", "RIS"]);
+    const NEAR_AVI = new Set(["RPB", "RIS", "RMD", "RRY"]);
+    const extra = [
+      { imp: "EAT", div: "", kind: "eat" },
+      { imp: "AVI", div: "", kind: "avi" },
+    ];
+    const neighbors = (i) => {
+      const r = Math.floor(i / COLS),
+        c = i % COLS,
+        out = [];
+      if (r > 0) out.push(i - COLS);
+      if (r < ROWS - 1) out.push(i + COLS);
+      if (c > 0) out.push(i - 1);
+      if (c < COLS - 1) out.push(i + 1);
+      return out;
+    };
+    // سبب تعارض شحنتين متجاورتين، أو "" إن كانتا آمنتين
+    const clash = (a, b) => {
+      if (!a || !b) return "";
+      const ia = a.imp,
+        ib = b.imp;
+      if ((ia === "EAT" && NEAR_FOOD.has(ib)) || (ib === "EAT" && NEAR_FOOD.has(ia))) return "food";
+      if ((ia === "AVI" && NEAR_AVI.has(ib)) || (ib === "AVI" && NEAR_AVI.has(ia))) return "avi";
+      if (a.div && b.div && rules.conflict(a, b)) return "iata";
+      return "";
+    };
+    // عدّ الحلول (حتى cap) بتعبئة الخانات بالترتيب وفحص الجار الأيسر والعلوي
+    const countSolutions = (pieces, cap) => {
+      const lim = cap || 1e9;
+      const k = pieces.length,
+        board = new Array(CELLS).fill(null),
+        used = new Array(k).fill(false);
+      let found = 0;
+      const fits = (i, p) => {
+        const c = i % COLS;
+        if (c > 0 && board[i - 1] && clash(board[i - 1], p)) return false;
+        if (i >= COLS && board[i - COLS] && clash(board[i - COLS], p)) return false;
+        return true;
+      };
+      const go = (i, blanks) => {
+        if (found >= lim) return;
+        if (i === CELLS) {
+          found++;
+          return;
+        }
+        if (blanks > 0) go(i + 1, blanks - 1);
+        for (let j = 0; j < k; j++) {
+          if (used[j] || !fits(i, pieces[j])) continue;
+          // شحنات متطابقة الكود متماثلة: لا نكرر نفس الترتيب
+          let dup = false;
+          for (let q = 0; q < j; q++) if (!used[q] && pieces[q].imp === pieces[j].imp) dup = true;
+          if (dup) continue;
+          used[j] = true;
+          board[i] = pieces[j];
+          go(i + 1, blanks);
+          board[i] = null;
+          used[j] = false;
+        }
+      };
+      go(0, CELLS - k);
+      return found;
+    };
+    const api = {
+      COLS,
+      ROWS,
+      CELLS,
+      neighbors,
+      clash,
+      countSolutions,
+      seconds: 90,
+      reward: 200,
+      timeBonus: 15,
+      failPenalty: 60,
+      quitPenalty: 30,
+      wrongSubmit: 12, // ثوانٍ تُخصم من مهلة اللغز عند تأكيد خطة خاطئة
+      // صعوبة مضمونة: الحلول موجودة دائماً لكنها أقل من 1.2% من كل الترتيبات الممكنة
+      maxRatio: 0.012,
+      minClashes: 8,
+      // كل الترتيبات الممكنة لـ k شحنة في 9 خانات = 9! / (خانات فارغة)!
+      arrangements(k) {
+        let n = 1;
+        for (let i = CELLS; i > CELLS - k; i--) n *= i;
+        return n;
+      },
+      pools() {
+        const caoCodes = rules.cao.codes;
+        const seen = new Set();
+        const allowed = [],
+          cao = [];
+        for (const c of hazardCodes) {
+          if (seen.has(c.imp)) continue;
+          seen.add(c.imp);
+          (caoCodes.indexOf(c.imp) >= 0 ? cao : allowed).push({ imp: c.imp, div: c.cls, kind: "dg" });
+        }
+        return { allowed: allowed.concat(extra), cao };
+      },
+      clashCount(pieces) {
+        let n = 0;
+        for (let i = 0; i < pieces.length; i++)
+          for (let j = i + 1; j < pieces.length; j++) if (clash(pieces[i], pieces[j])) n++;
+        return n;
+      },
+      // يبني 9 شحنات: 1–2 منها CAO والباقي يجب تحميله. يُعاد البناء حتى تكون الخطة صعبة وقابلة للحل.
+      build(rng) {
+        const rnd = typeof rng === "function" ? rng : Math.random;
+        const { allowed, cao } = api.pools();
+        let best = null;
+        for (let tries = 0; tries < 400; tries++) {
+          const nCao = rnd() < 0.5 ? 1 : 2;
+          const bag = allowed.slice(),
+            load = [];
+          // المتفجرات 1.3G والأكّالة 8 ترفعان التعارضات؛ الباقي عشوائي بلا تكرار
+          for (const must of ["RGX", "RCM"]) {
+            const at = bag.findIndex((p) => p.imp === must);
+            if (at >= 0) load.push(bag.splice(at, 1)[0]);
+          }
+          while (load.length < CELLS - nCao && bag.length) load.push(bag.splice(Math.floor(rnd() * bag.length) % bag.length, 1)[0]);
+          const cb = cao.slice(),
+            off = [];
+          while (off.length < nCao && cb.length) off.push(cb.splice(Math.floor(rnd() * cb.length) % cb.length, 1)[0]);
+          if (api.clashCount(load) < api.minClashes) continue;
+          const cap = Math.floor(api.arrangements(load.length) * api.maxRatio);
+          const sols = countSolutions(load, cap + 1);
+          if (sols < 1 || sols > cap) continue;
+          best = { load, off, solutions: sols };
+          break;
+        }
+        if (!best) {
+          // احتياط ثابت مُتحقَّق منه في الاختبارات
+          const by = (imp) => allowed.find((p) => p.imp === imp);
+          const load = ["RGX", "RCM", "RXS", "ROP", "RFL", "RFW", "RSC"].map(by);
+          best = { load, off: [cao[0], cao[1]], solutions: countSolutions(load) };
+        }
+        const all = best.load
+          .map((p) => Object.assign({}, p, { cao: false }))
+          .concat(best.off.map((p) => Object.assign({}, p, { cao: true })));
+        for (let i = all.length - 1; i > 0; i--) {
+          const j = Math.floor(rnd() * (i + 1)) % (i + 1);
+          [all[i], all[j]] = [all[j], all[i]];
+        }
+        all.forEach((p, i) => (p.id = "P" + i));
+        return { pieces: all, solutions: best.solutions };
+      },
+      // board: مصفوفة 9 عناصر (id أو null)، offload: مجموعة/مصفوفة ids المنزّلة
+      check(pieces, board, offload) {
+        const byId = new Map(pieces.map((p) => [p.id, p]));
+        const off = new Set(offload || []);
+        const onBoard = new Set((board || []).filter(Boolean));
+        const pairs = [];
+        for (let i = 0; i < CELLS; i++) {
+          const a = byId.get(board[i]);
+          if (!a) continue;
+          for (const j of neighbors(i)) {
+            if (j < i) continue;
+            const b = byId.get(board[j]);
+            const why = clash(a, b);
+            if (why) pairs.push({ a: i, b: j, why });
+          }
+        }
+        const caoLoaded = [],
+          wrongOff = [],
+          missing = [];
+        for (const p of pieces) {
+          if (p.cao && onBoard.has(p.id)) caoLoaded.push(p.id);
+          if (!p.cao && off.has(p.id)) wrongOff.push(p.id);
+          if (!p.cao && !onBoard.has(p.id) && !off.has(p.id)) missing.push(p.id);
+        }
+        const caoLeft = pieces.filter((p) => p.cao && !off.has(p.id) && !onBoard.has(p.id)).map((p) => p.id);
+        const ok = !pairs.length && !caoLoaded.length && !wrongOff.length && !missing.length && !caoLeft.length;
+        return { ok, pairs, caoLoaded, wrongOff, missing, caoLeft };
+      },
+    };
+    return api;
+  })();
+  rules.uld = uld;
+
   // ===== تقييم نهاية الوردية =====
   const scoreboard = {
     accuracy(sorted, processed) {
