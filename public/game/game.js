@@ -1766,7 +1766,8 @@ const getTop = () => { try { return gameRules.board.top(JSON.parse(localStorage.
 const pushTop = v => { const t = getTop(); t.push({s:v, d:new Date().toLocaleDateString(I18N.lang === 'en' ? 'en' : 'ar')}); t.sort((a,b)=>b.s-a.s); const r = t.slice(0,5); try { localStorage.setItem('acg_top', JSON.stringify(r)); } catch(e){} return r; };
 const topHTML = t => t.length ? t.slice(0,4).map((e,i) => `<span class="score-chip"><i class="rank-dot r${i+1}"></i> ${e.s} ${I18N.t('نقطة')}</span>`).join('') : `<span class="lb-empty">${I18N.t('العب لتسجّل أول نتيجة')}</span>`;
 function syncMenu(){ const tp = $('top5'); const list = getTop(); if(tp){ tp.innerHTML = topHTML(list); tp.style.display = ''; } const el = $('best'); if(!el) return; const b = bestScore(); el.textContent = b ? I18N.T('أفضل نتيجة: ','Best score: ') + b : I18N.t('كن أول الأبطال'); }
-const STAGE_AT=[0,0,150,350,650], STAGE_BELT=[0,1.4,1.8,2.3,2.8];
+/* حدود المراحل من مصدر واحد (game-rules.js) حتى لا تختلف اللعبة عن الاختبارات */
+const STAGE_AT=gameRules.layout.stageThresholds(), STAGE_BELT=[0,1.4,1.8,2.3,2.8];
 /* إيقاع أسنان المنشار: نفس هادئ للتنفس + موجة ذروة كل 25 ثانية */
 const BREATH_SPAWN=[0,5,4.8,4.4,4], RUSH_GAP=[0,2,1.9,1.7,1.5], RUSH_EVERY=25, RUSH_COUNT=3;
 const TUTORIAL_KEY = 'dgr_tutorial_completed';
@@ -3551,8 +3552,11 @@ if(n > 1 && (!demo.inspDone || !demo.truckDone)){ demo.inspDone=true; demo.truck
 hideIntro();
 if(n===2) resetInspector();
 if(n>=3) resetTruck();
-/* إعادة تموضع آمنة + تصفير كل أقفال الحركة حتى لا يعلق اللاعب في المرحلة الجديدة */
-safeSpawnPlayer();
+/* بداية الوردية (silent): نقطة البداية الآمنة مع تصفير أقفال الحركة.
+   الترقّي أثناء اللعب لا يقطع الحركة: يبقى اللاعب حيث هو (غالباً عند منطقة الفرز) بما يحمله،
+   ولا يُزاح إلى أقرب موضع فارغ إلا إن صار موضعه مسدوداً */
+if(silent) safeSpawnPlayer();
+else if(!FD.on && blockedAt(px.x, px.z)){ const spot = findFreeSpot(px.x, px.z); px.set(spot.x, 0, spot.z); }
 if(!silent){
 snd('ship'); time += 10;
 spawnFloatTag(I18N.T('+10 ث ⏱','+10s ⏱'),'#64ffda');

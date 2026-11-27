@@ -403,7 +403,7 @@
     '🤖 شخصية الروبوت + سترة زرقاء': '🤖 Robot character + blue vest',
     '🛡️ شخصية فانغارد + حلقة ذهبية': '🛡️ Vanguard character + gold ring',
     'سترة ذهبية': 'Gold vest',
-    'تتقدم المرحلة عند 150 ثم 350 ثم 650 نقطة. التقدير: S عند 500+ بدقة 90% • A عند 350+ بدقة 80% • B عند 200+.': 'Stages advance at 150, 350 and 650 pts. Grade: S at 500+ with 90% accuracy • A at 350+ with 80% • B at 200+.'
+    'تتقدم المرحلة عند 150 ثم 350 ثم 650 نقطة. التقدير: B عند بلوغ المرحلة ٣ (350+) • A عند بلوغ المرحلة ٤ (650+) بدقة 80% • S عند 1000+ بدقة 90%.': 'Stages advance at 150, 350 and 650 pts. Grade: B on reaching stage 3 (350+) • A on reaching stage 4 (650+) with 80% accuracy • S at 1000+ with 90%.'
   };
 
   var lang = 'ar';

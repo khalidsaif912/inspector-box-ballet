@@ -192,12 +192,23 @@ describe("Shift scoreboard", () => {
   });
 
   it("grades a shift from score and accuracy", () => {
-    expect(rules.scoreboard.grade(520, 92)).toBe("s");
-    expect(rules.scoreboard.grade(520, 88)).toBe("a");
-    expect(rules.scoreboard.grade(360, 81)).toBe("a");
-    expect(rules.scoreboard.grade(360, 70)).toBe("b");
-    expect(rules.scoreboard.grade(210, 10)).toBe("b");
+    expect(rules.scoreboard.grade(1000, 90)).toBe("s");
+    expect(rules.scoreboard.grade(1200, 88)).toBe("a");
+    expect(rules.scoreboard.grade(650, 80)).toBe("a");
+    expect(rules.scoreboard.grade(650, 79)).toBe("b");
+    expect(rules.scoreboard.grade(520, 95)).toBe("b");
+    expect(rules.scoreboard.grade(350, 50)).toBe("b");
+    expect(rules.scoreboard.grade(349, 100)).toBe("c");
+    expect(rules.scoreboard.grade(210, 10)).toBe("c");
     expect(rules.scoreboard.grade(120, 100)).toBe("c");
+  });
+
+  it("ties grades B and A to reaching stages 3 and 4", () => {
+    const at = rules.layout.stageThresholds();
+    expect(rules.scoreboard.grade(at[3], 0)).toBe("b");
+    expect(rules.scoreboard.grade(at[3] - 1, 100)).toBe("c");
+    expect(rules.scoreboard.grade(at[4], 80)).toBe("a");
+    expect(rules.scoreboard.grade(at[4] - 1, 100)).toBe("b");
   });
 
   it("maps stars to hub stars within one to three", () => {

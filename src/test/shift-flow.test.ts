@@ -176,7 +176,7 @@ describe("A full shift, driven only by the shared rules", () => {
   });
 
   it("grades an expert shift with five stars and three hub stars", () => {
-    shift.score = 520;
+    shift.score = 1040;
     shift.sorted = 92;
     shift.processed = 100;
 

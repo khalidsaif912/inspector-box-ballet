@@ -439,10 +439,12 @@
     accuracy(sorted, processed) {
       return processed > 0 ? Math.round((sorted / processed) * 100) : 0;
     },
+    // التقدير مربوط بالمراحل: B = بلوغ المرحلة ٣ · A = بلوغ المرحلة ٤ بدقة 80% · S = التميّز داخلها
+    sAt: 1000,
     grade(score, accuracy) {
-      if (score >= 500 && accuracy >= 90) return "s";
-      if (score >= 350 && accuracy >= 80) return "a";
-      if (score >= 200) return "b";
+      if (score >= scoreboard.sAt && accuracy >= 90) return "s";
+      if (score >= STAGE_AT[4] && accuracy >= 80) return "a";
+      if (score >= STAGE_AT[3]) return "b";
       return "c";
     },
     stars(grade) {

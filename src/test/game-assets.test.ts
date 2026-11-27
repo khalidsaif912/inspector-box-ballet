@@ -129,7 +129,8 @@ describe("Game assets and shared rules", () => {
   });
 
   it("adds a fourth stage limited to dangerous goods with three class containers", () => {
-    expect(game).toMatch(/STAGE_AT=\[0,0,150,350,650\]/);
+    expect(game).toContain("const STAGE_AT=gameRules.layout.stageThresholds()");
+    expect(rules).toMatch(/const STAGE_AT = \[0, 0, 150, 350, 650\];/);
     expect(game).toContain("stage===4 ? HZ");
     expect(game).toContain("k:'hz3'");
     expect(game.match(/k:'hz\d'/g)?.length).toBe(3);
@@ -252,7 +253,9 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain("setStage(gameRules.layout.stageForScore(stage, score))");
     expect(game).toContain("function safeSpawnPlayer()");
     expect(game).toContain("function findFreeSpot(x, z");
-    expect(game).toMatch(/function setStage\(n,silent\)\{[\s\S]{0,500}safeSpawnPlayer\(\)/);
+    // بداية الوردية فقط تعيد اللاعب إلى نقطة البداية؛ الترقّي أثناء اللعب يُبقيه في مكانه
+    expect(game).toMatch(/function setStage\(n,silent\)\{[\s\S]{0,700}if\(silent\) safeSpawnPlayer\(\);/);
+    expect(game).toMatch(/function setStage\(n,silent\)\{[\s\S]{0,900}blockedAt\(px\.x, px\.z\)[\s\S]{0,80}findFreeSpot\(px\.x, px\.z\)/);
   });
 
   it("matches the arcade scoring economy", () => {
