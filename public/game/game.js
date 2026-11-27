@@ -4917,7 +4917,7 @@ toast((it.data.isHz ? I18N.T('⚠️ فاتتك مادة خطرة! ','⚠️ You
 }
 if(it.st === 'held'){
 if(FD.on){
-const targetPos = cargoTarget.set(gameRules.forklift.forkX(fk.position.x, fk.rotation.y), gameRules.forklift.carryY, gameRules.forklift.forkZ(fk.position.z, fk.rotation.y));
+const targetPos = cargoTarget.set(gameRules.forklift.forkX(fk.position.x, fk.rotation.y), gameRules.forklift.carryY + (it.data.isHeavy ? .22 : 0), gameRules.forklift.forkZ(fk.position.z, fk.rotation.y));   // الطرد الثقيل يرتفع بقدر الباليت ليبقى فوق الشوكة
 cargoSmoothPos.lerp(targetPos, Math.min(1, dt * 20));
 it.m.position.copy(cargoSmoothPos);
 it.m.rotation.set(0, fk.rotation.y, 0);
@@ -4950,7 +4950,7 @@ const score_ = d - Math.max(0, facing) * 0.6;
 if(d < 2.6 && score_ < bd){ bd = score_; best = it; }
 if(it.wob){ it.wob *= Math.exp(-dt*6); it.m.rotation.z = Math.sin(performance.now()*0.03)*0.06*it.wob; if(it.wob < 0.02){ it.wob = 0; it.m.rotation.z = 0; } }
 }
-{ const ts = (it.st === 'held' || it.st === 'lifting') ? 0.8 : 1; if(Math.abs(it.m.scale.x - ts) > 0.001) it.m.scale.setScalar(it.m.scale.x + (ts - it.m.scale.x) * Math.min(1, dt * 12)); }
+{ const ts = !FD.on && (it.st === 'held' || it.st === 'lifting') ? 0.8 : 1;   /* يصغر الطرد في اليد فقط؛ على شوكة الرافعة يبقى بحجمه */ if(Math.abs(it.m.scale.x - ts) > 0.001) it.m.scale.setScalar(it.m.scale.x + (ts - it.m.scale.x) * Math.min(1, dt * 12)); }
 if(it.m.material.emissive) it.m.material.emissive.setHex(0);
 if(it.data.isFrz && it.m.material.emissive){ it.m.material.emissive.setHex(0x2a8fb8); it.m.material.emissiveIntensity = 0.1 + Math.sin(now*0.005)*0.07; }
 if(it.data.isMys && it.m.material.emissive){ it.m.material.emissive.setHex(0x4a3000); it.m.material.emissiveIntensity = 0.5 + Math.sin(now*0.006)*0.4; }
