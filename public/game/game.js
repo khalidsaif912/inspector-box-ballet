@@ -4463,6 +4463,17 @@ const dx = gameRules.forklift.forkX(ax, fk.rotation.y) - ax, dz = gameRules.fork
 const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
 return Math.min(Math.hypot(bx, bz), Math.hypot(x - ax - dx * t, z - az - dz * t));
 }
+/* الطرد الثقيل على الأرض جسم صلب أيضاً: نصف عرض الباليت ≈ 0.9، ويكفي المفتشَ هامش جسده INSP_BODY_GAP منه
+   (نُعيدها بمقياس INSP_FK_GAP لتُقارن مع خلوص الرافعة بالعتبة نفسها) */
+function inspClearance(x, z){
+let c = fkClearance(x, z);
+const h = hv.item;
+if(h && h.st === 'floor' && !h.fall){
+  const bx = Math.max(0, Math.abs(x - h.m.position.x) - .9), bz = Math.max(0, Math.abs(z - h.m.position.z) - .9);
+  c = Math.min(c, Math.hypot(bx, bz) - INSP_BODY_GAP + INSP_FK_GAP);
+}
+return c;
+}
 /* نقطة وقوف المفتش للسؤال: على خط الموظف، يميناً أو يساراً، على مسافة CAO_GAP على الأقل،
    بعيدة عن الرافعة بـ INSP_FK_GAP، وطريق اقترابها (7.4م من الخارج) خالٍ من الرافعة أيضاً */
 function caoStand(z0){
@@ -4472,8 +4483,8 @@ for(let d = CAO_GAP; d <= 10; d += .3){
   for(const side of [pref, -pref]){
     const x = px.x + side * d;
     if(x < -24 || x > 22) continue;
-    let clear = fkClearance(x, z0);
-    for(let s = .5; s <= 7.4 && clear >= INSP_FK_GAP; s += .5) clear = Math.min(clear, fkClearance(x + side * s, z0) + .9);
+    let clear = inspClearance(x, z0);
+    for(let s = .5; s <= 7.4 && clear >= INSP_FK_GAP; s += .5) clear = Math.min(clear, inspClearance(x + side * s, z0) + .9);
     const c = { x, dir: -side, clear };
     if(clear >= INSP_FK_GAP) return c;
     if(!best || clear > best.clear) best = c;
