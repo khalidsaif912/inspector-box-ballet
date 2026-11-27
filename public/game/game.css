@@ -163,6 +163,11 @@ canvas{display:block;position:absolute;inset:0}
 .top-btns{flex-direction:column;align-items:center;gap:calc(var(--hh)*.2);padding:calc(var(--hh)*.16);width:calc(var(--hh)*1.9);border-radius:999px;background:rgba(8,20,42,.55);border:1px solid rgba(124,196,255,.35);backdrop-filter:blur(10px);box-shadow:0 6px 16px rgba(0,0,0,.45)}
 .rbtn{width:calc(var(--hh)*1.05);height:calc(var(--hh)*1.05);border:1.5px solid rgba(124,196,255,.8);transition:transform .12s,background .2s}
 .rbtn:active{transform:scale(.88)}
+/* نسبة الصوت المخفّض على زر اللعب (تختفي عند ١٠٠٪ والصامت) */
+#snd,#amb,#mus{position:relative}
+#snd[data-pct]:not([data-pct=""])::after,#amb[data-pct]:not([data-pct=""])::after,#mus[data-pct]:not([data-pct=""])::after{
+  content:attr(data-pct);position:absolute;bottom:-4px;inset-inline-end:-6px;min-width:18px;padding:1px 3px;border-radius:7px;
+  background:#12212e;color:#fff;border:1.5px solid #fff;font:800 9px/1.1 ui-monospace,Consolas,monospace;text-align:center;pointer-events:none}
 #snd.off,#amb.off,#mus.off{background:radial-gradient(circle at 35% 30%,#5a2a2a,#2a0b0b);border-color:#ff7070;color:#ffb3b3}
 .pill{border:1.5px solid rgba(124,196,255,.85);background:linear-gradient(180deg,rgba(32,78,150,.92),rgba(10,26,58,.92));backdrop-filter:blur(8px)}
 .cbadge.hot b{animation:pulse .5s infinite alternate}

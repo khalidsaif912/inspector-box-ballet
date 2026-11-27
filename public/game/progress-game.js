@@ -222,7 +222,7 @@
       const o = actx.createOscillator(), g = actx.createGain(); nodes.push(o, g);
       o.type = type || 'square'; o.frequency.setValueAtTime(f, t0 + at); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + at + d);
       g.gain.setValueAtTime(0, t0 + at); g.gain.linearRampToValueAtTime(v || 0.06, t0 + at + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + d);
-      o.connect(g); g.connect(actx.destination); o.start(t0 + at); o.stop(t0 + at + d + 0.02);
+      o.connect(g); g.connect(sfxOut()); o.start(t0 + at); o.stop(t0 + at + d + 0.02);
       o.onended = () => { o.disconnect(); g.disconnect(); };
     };
     if (kind === 'mission') [[784, 0], [988, 0.09], [1319, 0.18]].forEach(([f, a]) => tone(f, a, 0.16));
@@ -233,7 +233,7 @@
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       n.buffer = buf; bp.type = 'bandpass'; bp.Q.value = 1.4; bp.frequency.setValueAtTime(2600, t0); bp.frequency.exponentialRampToValueAtTime(320, t0 + 0.55);
       g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.58);
-      n.connect(bp); bp.connect(g); g.connect(actx.destination); n.start(t0); n.stop(t0 + 0.6);
+      n.connect(bp); bp.connect(g); g.connect(sfxOut()); n.start(t0); n.stop(t0 + 0.6);
       n.onended = () => { n.disconnect(); bp.disconnect(); g.disconnect(); };
       tone(660, 0.12, 0.22, 'triangle', 0.07, 1320);
     } else if (kind === 'bark') { tone(330, 0, 0.09, 'sawtooth', 0.07, 210); tone(300, 0.16, 0.11, 'sawtooth', 0.07, 190); }

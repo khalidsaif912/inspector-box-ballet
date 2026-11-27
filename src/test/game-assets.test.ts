@@ -62,12 +62,17 @@ describe("Game assets and shared rules", () => {
     expect(game).toContain("gameRules.conflict(");
   });
 
-  it("mutes warehouse ambience and effects with separate controls", () => {
+  it("lowers ambience, effects and music in steps with separate controls", () => {
     expect(html).toContain('id="amb"');
     expect(html).toContain('id="snd"');
+    expect(html).toContain('id="mus"');
     expect(game).toContain("function initAmbience");
-    expect(game).toContain("setAmb(");
-    expect(game).toMatch(/soundEnabled\s*=\s*v/);
+    expect(game).toContain("const VOL_STEPS = [1, .6, .3, 0];");
+    expect(game).toContain("function stepVol(ch)");
+    expect(game).toMatch(/soundEnabled = audioLv\.snd > 0/);
+    // كل المؤثرات تمر عبر ناقل المستوى، ولا يتجاوزه صوت مباشرة إلى المخرج
+    const direct = (game.match(/connect\(actx\.destination\)/g) || []).length;
+    expect(direct).toBe(2); // ناقل المستودع وناقل المؤثرات فقط
   });
 
   it("exposes mute toggles as pressed with Arabic accessible names", () => {

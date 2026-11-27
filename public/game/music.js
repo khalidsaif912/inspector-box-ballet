@@ -8,8 +8,9 @@
   const R = window.WarehouseRules;
   if (!R || !R.music) return;
   const VOL = 0.42;
-  let on = true;
-  try { on = localStorage.getItem('acg_mus') !== '0'; } catch (e) {}
+  /* المستوى من أزرار الصوت المشتركة في game.js (١٠٠٪ / ٦٠٪ / ٣٠٪ / صامت) */
+  const level = () => (typeof audioLevel === 'function' ? audioLevel('mus') : 1);
+  let applied = -1;
   let bus = null, noise = null, playing = false, next = 0, step = 0, wasRun = false;
 
   /* تسلسل أصلي من أربعة مقاطع: Am · F · C · G (ترددات الجذر بالباص) */
@@ -26,7 +27,7 @@
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     noise = buf;
   }
-  function fade(v) { if (bus) bus.gain.setTargetAtTime(v * VOL, actx.currentTime, v ? 0.25 : 0.12); }
+  function fade(v) { if (bus) { bus.gain.setTargetAtTime(v * VOL, actx.currentTime, v ? 0.25 : 0.12); applied = v; } }
   const done = (...ns) => () => ns.forEach(n => { try { n.disconnect(); } catch (e) {} });
 
   function tone(type, f, at, dur, vol) {
@@ -68,12 +69,14 @@
   function loop() {
     if (typeof actx === 'undefined' || !actx) return;
     const live = typeof run !== 'undefined' && run;
-    const want = on && live && !document.hidden && actx.state === 'running';
+    const lv0 = level();
+    const want = lv0 > 0 && live && !document.hidden && actx.state === 'running';
     if (live && !wasRun) step = 0;           // كل وردية تبدأ من أول المقطع
     wasRun = live;
     if (!want) { if (playing) { playing = false; fade(0); } return; }
     ensureBus();
-    if (!playing) { playing = true; next = actx.currentTime + 0.06; fade(1); }
+    if (!playing) { playing = true; next = actx.currentTime + 0.06; fade(lv0); }
+    else if (applied !== lv0) fade(lv0);   // تغيّر المستوى أثناء العزف
     if (next < actx.currentTime) next = actx.currentTime + 0.02;   // بعد توقف الإطارات لا نعزف المتأخر دفعة واحدة
     const lv = R.music.level(typeof combo !== 'undefined' ? combo : 1, typeof feverT !== 'undefined' && feverT > 0);
     const peak = window.Prog && Prog.beltK && Prog.beltK() > 1;
@@ -82,17 +85,5 @@
   }
   setInterval(loop, 25);
 
-  /* زر التشغيل/الإيقاف: في شريط اللعب وفي لوحة الإعدادات */
-  function sync() {
-    document.querySelectorAll('#mus,[data-audio="mus"]').forEach(b => { b.classList.toggle('off', !on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
-  }
-  function set(v) {
-    on = !!v;
-    try { localStorage.setItem('acg_mus', on ? '1' : '0'); } catch (e) {}
-    if (!on && playing) { playing = false; fade(0); }
-    sync();
-  }
-  document.querySelectorAll('#mus,[data-audio="mus"]').forEach(b => b.addEventListener('click', () => { try { initAudio(); } catch (e) {} set(!on); }));
-  sync();
-  window.Music = { set, get on() { return on; } };
+  window.Music = { get level() { return level(); }, get playing() { return playing; } };
 })();

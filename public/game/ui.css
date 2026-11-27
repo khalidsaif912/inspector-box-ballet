@@ -250,6 +250,16 @@
 #ov.start .setting-item.off{color:#9db0c4}
 #ov.start .setting-item.off .toggle{background:rgba(255,255,255,.16);border-color:transparent}
 #ov.start .setting-item.off .toggle::after{transform:translateX(16px);background:#94a3b8;box-shadow:none}
+/* مستوى الصوت: ثلاثة أشرطة متصاعدة، كل ضغطة تطفئ شريطاً */
+#ov.start .vol-bars{display:inline-flex;align-items:flex-end;gap:3px;height:16px;flex:0 0 auto;direction:ltr}
+#ov.start .vol-bars::before{content:attr(data-t);align-self:center;margin-inline-end:6px;font:800 11px/1 ui-monospace,Consolas,monospace;opacity:.75}
+#ov.start .vol-bars b{width:5px;border-radius:1px;background:currentColor;opacity:.22;transition:opacity .15s}
+#ov.start .vol-bars b:nth-child(1){height:6px}
+#ov.start .vol-bars b:nth-child(2){height:11px}
+#ov.start .vol-bars b:nth-child(3){height:16px}
+#ov.start [data-lv="1"] .vol-bars b:nth-child(-n+1),
+#ov.start [data-lv="2"] .vol-bars b:nth-child(-n+2),
+#ov.start [data-lv="3"] .vol-bars b{opacity:1}
 
 /* ---------- دليل سريع (يسار أسفل) ---------- */
 #ov .guide-btn{

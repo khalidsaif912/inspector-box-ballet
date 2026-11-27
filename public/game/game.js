@@ -85,6 +85,28 @@ const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let actx = null, soundEnabled = true, ambEnabled = true, ambNode = null;
 /* مستوى صوت المستودع المحيط: خلفية هادئة تحت المؤثرات والموسيقى */
 const AMB_VOL = .1;
+/* ===== مستويات الصوت: كل ضغطة على زر الصوت تخفضه درجة — ١٠٠٪ ← ٦٠٪ ← ٣٠٪ ← صامت ← ١٠٠٪ =====
+   ثلاث قنوات مستقلة: amb صوت المستودع · snd المؤثرات · mus الموسيقى (music.js يقرأ مستواها) */
+const VOL_STEPS = [1, .6, .3, 0];
+const audioLv = { amb: 1, snd: 1, mus: 1 };
+(() => {
+  const old = { amb: 'acg_amb', snd: 'acg_snd', mus: 'acg_mus' };
+  for(const ch in audioLv){
+    try {
+      const v = localStorage.getItem('acg_lv_' + ch);
+      if(v !== null && VOL_STEPS.indexOf(+v) >= 0) audioLv[ch] = +v;
+      else if(localStorage.getItem(old[ch]) === '0') audioLv[ch] = 0;   // الإعداد القديم (تشغيل/إيقاف)
+    } catch(e){}
+  }
+  soundEnabled = audioLv.snd > 0; ambEnabled = audioLv.amb > 0;
+})();
+const audioLevel = ch => audioLv[ch] || 0;
+/* كل المؤثرات تمر عبر ناقل واحد فيضبط مستواها زر المؤثرات */
+let sfxBus = null;
+function sfxOut(){
+  if(!sfxBus){ sfxBus = actx.createGain(); sfxBus.gain.value = audioLv.snd; sfxBus.connect(actx.destination); }
+  return sfxBus;
+}
 function initAudio(){
 if(!actx && AudioCtx) actx = new AudioCtx();
 if(actx && actx.state === 'suspended' && !document.hidden) actx.resume().catch(() => {});
@@ -119,39 +141,49 @@ const airF = actx.createBiquadFilter(); airF.type = 'bandpass'; airF.frequency.v
 const airG = actx.createGain(); airG.gain.value = .26;
 air.connect(airF); airF.connect(airG); airG.connect(master); air.start(); nodes.push(air);
 ambNode = { master, nodes };
-master.gain.setTargetAtTime(ambEnabled ? AMB_VOL : 0, actx.currentTime, .4);
+master.gain.setTargetAtTime(AMB_VOL * audioLv.amb, actx.currentTime, .4);
 scheduleClank();
 }
 function scheduleClank(){
 setTimeout(() => {
-if(actx && ambEnabled && actx.state === 'running' && !document.hidden){
+if(actx && ambNode && ambEnabled && actx.state === 'running' && !document.hidden){
 const at = actx.currentTime;
 const osc = actx.createOscillator(), g = actx.createGain();
 osc.type = 'triangle'; osc.frequency.setValueAtTime(210 + Math.random() * 260, at);
 osc.frequency.exponentialRampToValueAtTime(90, at + .22);
 g.gain.setValueAtTime(0, at);
-g.gain.linearRampToValueAtTime(.008, at + .01);
+g.gain.linearRampToValueAtTime(.08, at + .01);
 g.gain.exponentialRampToValueAtTime(.0001, at + .35);
-osc.connect(g); g.connect(actx.destination); osc.start(at); osc.stop(at + .4);
+osc.connect(g); g.connect(ambNode.master); osc.start(at); osc.stop(at + .4);
 osc.onended = () => { osc.disconnect(); g.disconnect(); };
 }
 scheduleClank();
 }, 6000 + Math.random() * 9000);
 }
-function setAmb(v){
-ambEnabled = v;
-try { localStorage.setItem('acg_amb', ambEnabled ? '1' : '0'); } catch(e){}
-if(actx && ambNode) ambNode.master.gain.setTargetAtTime(ambEnabled ? AMB_VOL : 0, actx.currentTime, .3);
+const VOL_NAME = { amb: ['صوت المستودع', 'Ambience'], snd: ['المؤثرات', 'Effects'], mus: ['الموسيقى', 'Music'] };
+function setVol(ch, v, announce){
+audioLv[ch] = v;
+soundEnabled = audioLv.snd > 0; ambEnabled = audioLv.amb > 0;
+try { localStorage.setItem('acg_lv_' + ch, String(v)); } catch(e){}
+if(actx){
+  if(ch === 'amb' && ambNode) ambNode.master.gain.setTargetAtTime(AMB_VOL * v, actx.currentTime, .15);
+  if(ch === 'snd' && sfxBus) sfxBus.gain.setTargetAtTime(v, actx.currentTime, .05);
+}
 syncAudioUI();
+if(announce){
+  const n = VOL_NAME[ch], ico = v === 0 ? '🔇' : v < .5 ? '🔈' : v < 1 ? '🔉' : '🔊';
+  try { toast(ico + ' ' + I18N.T(n[0], n[1]) + ': ' + (v ? Math.round(v * 100) + '%' : I18N.T('صامت', 'muted')), '#8fd0ff'); } catch(e){}
+  if(ch === 'snd' && v) snd('pick');   // عيّنة قصيرة بالمستوى الجديد
+}
+}
+/* ضغطة واحدة = درجة أخفض، وبعد الصامت يعود إلى ١٠٠٪ */
+function stepVol(ch){
+const i = VOL_STEPS.indexOf(audioLv[ch]);
+setVol(ch, VOL_STEPS[(i + 1) % VOL_STEPS.length], true);
 }
 // ===== الرسائل التعليمة: تظهر مرة واحدة فقط، ويمكن إظهارها/إخفاؤها =====
 let tipsEnabled = true;
 try { tipsEnabled = localStorage.getItem('acg_tips') !== '0'; } catch(e){}
-function setSnd(v){
-soundEnabled = v;
-try { localStorage.setItem('acg_snd', v ? '1' : '0'); } catch(e){}
-syncAudioUI();
-}
 function setTips(v){
 tipsEnabled = v;
 try { localStorage.setItem('acg_tips', v ? '1' : '0'); } catch(e){}
@@ -199,7 +231,7 @@ for(const [frequency,duration] of retroCues[type]){
 const osc = actx.createOscillator(), gain = actx.createGain();
 osc.type = type === 'bump' || type === 'place' ? 'triangle' : 'square';
 osc.frequency.setValueAtTime(frequency * pitch, at);
-osc.connect(gain); gain.connect(actx.destination);
+osc.connect(gain); gain.connect(sfxOut());
 gain.gain.setValueAtTime(0, at);
 gain.gain.linearRampToValueAtTime(type === 'warn' ? .035 : .065, at + .003);
 gain.gain.setValueAtTime(type === 'warn' ? .035 : .065, at + duration * .65);
@@ -209,30 +241,30 @@ osc.onended = () => { osc.disconnect(); gain.disconnect(); };
 at += duration;
 }
 }
-document.getElementById('snd').onclick = () => { initAudio(); setSnd(!soundEnabled); };
-document.getElementById('amb').onclick = () => { initAudio(); setAmb(!ambEnabled); };
+document.querySelectorAll('#snd,#amb,#mus,[data-audio]').forEach(b => {
+  const ch = b.dataset.audio || b.id;
+  b.onclick = () => { initAudio(); stepVol(ch); };
+});
 const tipsBtn = document.getElementById('tips'); if(tipsBtn) tipsBtn.onclick = () => { setTips(!tipsEnabled); };
 function syncAudioUI(){
-const s = document.getElementById('snd'), a = document.getElementById('amb');
 const pressed = (el, on) => el.setAttribute('aria-pressed', on ? 'true' : 'false');
-if(s) s.classList.toggle('off', !soundEnabled);
-if(a) a.classList.toggle('off', !ambEnabled);
-if(s) pressed(s, soundEnabled);
-if(a) pressed(a, ambEnabled);
-document.querySelectorAll('[data-audio="snd"]').forEach(b => { b.classList.toggle('off', !soundEnabled); pressed(b, soundEnabled); });
-document.querySelectorAll('[data-audio="amb"]').forEach(b => { b.classList.toggle('off', !ambEnabled); pressed(b, ambEnabled); });
+/* المستوى ظاهر على الزر: أشرطة 3/2/1 ونسبة مئوية، والصامت بعلامة X الحمراء */
+document.querySelectorAll('#snd,#amb,#mus,[data-audio]').forEach(b => {
+  const ch = b.dataset.audio || b.id, v = audioLv[ch];
+  if(v === undefined) return;
+  const n = VOL_NAME[ch], pct = v ? Math.round(v * 100) + '%' : I18N.T('صامت', 'muted');
+  b.classList.toggle('off', !v); pressed(b, v > 0);
+  b.dataset.lv = String(VOL_STEPS.length - 1 - VOL_STEPS.indexOf(v));
+  b.dataset.pct = v && v < 1 ? Math.round(v * 100) + '' : '';
+  const bars = b.querySelector('.vol-bars'); if(bars) bars.dataset.t = pct;
+  const lbl = I18N.T(n[0], n[1]) + ' — ' + pct;
+  b.setAttribute('aria-label', lbl); b.title = lbl + I18N.T(' (اضغط للخفض)', ' (press to lower)');
+});
 document.querySelectorAll('[data-tips-toggle]').forEach(b => { b.classList.toggle('off', !tipsEnabled); pressed(b, tipsEnabled); });
 const t = document.getElementById('tips'); if(t) { t.classList.toggle('off', !tipsEnabled); pressed(t, tipsEnabled); }
 }
-document.querySelectorAll('[data-audio="snd"]').forEach(b => b.onclick = () => { initAudio(); setSnd(!soundEnabled); });
-document.querySelectorAll('[data-audio="amb"]').forEach(b => b.onclick = () => { initAudio(); setAmb(!ambEnabled); });
 document.querySelectorAll('[data-tips-toggle]').forEach(b => b.onclick = () => setTips(!tipsEnabled));
 (() => {
-try {
-const s = localStorage.getItem('acg_snd'), a = localStorage.getItem('acg_amb');
-if(s === '0') soundEnabled = false;
-if(a === '0') ambEnabled = false;
-} catch(e){}
 syncAudioUI();
 })();
 const Z = [
@@ -3015,7 +3047,7 @@ function engineSnd(lv){
   /* غلاف: صعود ← ثبات ← خفوت أسي، مع بداية مؤجلة اختيارية */
   const env = (g, peak, at, a, hold, rel) => { g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(peak, t + at + a); g.gain.setValueAtTime(peak, t + at + hold); g.gain.exponentialRampToValueAtTime(.0001, t + at + hold + rel); };
   const chain = (...ns) => { for(let i = 0; i < ns.length - 1; i++) ns[i].connect(ns[i + 1]); };
-  const out = amp(.9); out.connect(actx.destination);
+  const out = amp(.9); out.connect(sfxOut());
   let dur;
   if(lv === 0){
     /* مروحي: سعال المُشغِّل ثم احتراقات مكبس تتسارع (نبض مربع يقطّع منشارياً مفلتراً) */
@@ -3079,7 +3111,7 @@ function spinSnd(lv, dur){
   const mk = n => { nodes.push(n); return n; };
   const base = [90, 140, 180, 60][lv], rate = [18, 26, 32, 14][lv];
   const g = mk(actx.createGain()); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.16, t + .15);
-  g.connect(actx.destination);
+  g.connect(sfxOut());
   /* نبض الشفرات: LFO يقطّع المستوى بإيقاع يتسارع */
   const chop = mk(actx.createGain()); chop.gain.value = .55; chop.connect(g);
   const lfo = mk(actx.createOscillator()); lfo.type = 'triangle'; lfo.frequency.setValueAtTime(rate * .5, t); lfo.frequency.exponentialRampToValueAtTime(rate, t + .3);
@@ -3938,7 +3970,7 @@ function speakFireAlert(){
 if(!soundEnabled || !('speechSynthesis' in window)) return;
 try{
 const u = new SpeechSynthesisUtterance('Attention, attention. A fire has been detected in the warehouse. Please evacuate immediately through the nearest emergency exit');
-u.lang = 'en-US'; u.rate = .95; u.pitch = .9;
+u.lang = 'en-US'; u.rate = .95; u.pitch = .9; u.volume = audioLevel('snd');
 speechSynthesis.cancel(); speechSynthesis.speak(u);
 }catch(e){}
 }
