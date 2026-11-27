@@ -72,6 +72,10 @@
     { id: "peak", icon: "⏩", dur: 25, belt: 1.3, mult: 2, ar: "ذروة الشحن", en: "Peak hour" },
     { id: "vip", icon: "📦", dur: 20, reward: 120, penalty: 30, ar: "شحنة VIP", en: "VIP shipment" },
     { id: "pet", icon: "🐈", dur: 45, reward: 80, ar: "حيوان أليف هارب", en: "Loose pet" },
+    /* طقس: موجة الحر تُسرّع فساد الطرود المبرّدة (chill) وتكافئ فرزها (bonus)،
+       والعاصفة تُبطئ الرافعة على الأرض المبتلة (drive) وتُبطئ المشي قليلاً (walk) */
+    { id: "heat", icon: "🌡️", dur: 30, chill: 1.7, bonus: 40, ar: "موجة حر", en: "Heatwave" },
+    { id: "storm", icon: "⛈️", dur: 30, drive: 0.6, walk: 0.88, ar: "عاصفة", en: "Storm" },
   ];
   const eventById = (id) => SHIFT_EVENTS.find((e) => e.id === id);
   /* صعوبة مطاردة الحيوان الهارب بحسب الثواني منذ ظهوره (سرعة اللاعب 8.2 مشياً و≈11 مع الجري):

@@ -666,6 +666,8 @@
     const d = evDef();
     if (SH.id === 'blackout') { blackoutOn(); showIntro('<b class="t">🌙 ' + T('انقطاع الكهرباء!', 'Power cut!') + '</b>' + T('المستودع مظلم — لا ترى إلا ضوء مصباحك. أكمل الفرز بحذر.', 'The warehouse is dark — only your torch lights the way. Keep sorting carefully.'), 3000, false); }
     else if (SH.id === 'peak') { snd('horn'); cue('powerup'); showIntro('<b class="t">⏩ ' + T('ذروة الشحن!', 'Peak hour!') + '</b>' + T('الحزام أسرع ×' + d.belt + ' ونقاط الفرز مضاعفة ×' + d.mult + ' لمدة ' + d.dur + ' ثانية.', 'Belt ×' + d.belt + ' faster and sort points ×' + d.mult + ' for ' + d.dur + ' seconds.'), 3000, false); document.getElementById('stage').classList.add('peak'); }
+    else if (SH.id === 'heat') { snd('warn'); showIntro('<b class="t">🌡️ ' + T('موجة حر!', 'Heatwave!') + '</b>' + T('الطرود المبرّدة ❄️ تفسد أسرع ×' + d.chill + ' — افرزها أولاً (+' + d.bonus + ' لكل طرد).', 'Chilled ❄️ parcels spoil ×' + d.chill + ' faster — sort them first (+' + d.bonus + ' each).'), 3000, false); document.getElementById('stage').classList.add('heat'); }
+    else if (SH.id === 'storm') { snd('boom'); showIntro('<b class="t">⛈️ ' + T('عاصفة!', 'Storm!') + '</b>' + T('الأرض مبتلة: الرافعة أبطأ والمشي أثقل لمدة ' + d.dur + ' ثانية.', 'Wet floor: the forklift is slower and walking is heavier for ' + d.dur + ' seconds.'), 3000, false); document.getElementById('stage').classList.add('storm'); SH.bolt = 3 + Math.random() * 4; }
     else if (SH.id === 'pet') petOn();
     else if (SH.id === 'vip') { /* تصبح أول شحنة مناسبة قادمة VIP (onSpawn) */ }
   }
@@ -673,12 +675,14 @@
     if (!SH.on) return;
     SH.on = false; SH.done = true;
     if (SH.id === 'blackout') { blackoutOff(); cue('powerup'); toast('💡 ' + T('عادت الكهرباء', 'Power is back'), '#fff'); }
-    if (SH.id === 'peak') { const s = document.getElementById('stage'); if (s) s.classList.remove('peak'); }
+    if (SH.id === 'peak' || SH.id === 'heat' || SH.id === 'storm') { const s = document.getElementById('stage'); if (s) s.classList.remove('peak', 'heat', 'storm', 'bolt'); }
+    if (SH.id === 'heat') toast('🌡️ ' + T('انتهت موجة الحر', 'The heatwave is over'), '#fff');
+    if (SH.id === 'storm') toast('🌤️ ' + T('هدأت العاصفة', 'The storm has passed'), '#fff');
     if (SH.id === 'pet') { if (pet && !pet.caged) toast(PI_() + ' ' + T('هرب ' + PN() + ' من المستودع', PNc() + ' slipped out of the warehouse'), '#ffb020'); petOff(); }
     if (SH.id === 'vip') vipClear();
     chipHide();
   }
-  function cleanupEvent() { if (SH.on) { SH.on = false; } blackoutOff(); petOff(); vipClear(); const s = document.getElementById('stage'); if (s) s.classList.remove('peak', 'blackout'); chipHide(); SH.done = true; }
+  function cleanupEvent() { if (SH.on) { SH.on = false; } blackoutOff(); petOff(); vipClear(); const s = document.getElementById('stage'); if (s) s.classList.remove('peak', 'blackout', 'heat', 'storm', 'bolt'); chipHide(); SH.done = true; }
   function tick(dt) {
     if (!run) return;
     if (!SH.on && !SH.done && evt.t >= SH.at && !sceneBusy() && !truckState.active) beginEvent();
@@ -688,6 +692,17 @@
     const d = evDef(), s = Math.max(0, Math.ceil(SH.left));
     if (SH.id === 'blackout') { blackoutTick(); chipShow('🌙 ' + T('انقطاع', 'Power cut') + ' <b>' + s + T(' ث', 's') + '</b>', 'dark'); }
     else if (SH.id === 'peak') chipShow('⏩ ' + T('ذروة', 'Peak') + ' ×' + d.mult + ' <b>' + s + T(' ث', 's') + '</b>', 'peak');
+    else if (SH.id === 'heat') chipShow('🌡️ ' + T('حر', 'Heat') + ' ❄️×' + d.chill + ' <b>' + s + T(' ث', 's') + '</b>', 'heat');
+    else if (SH.id === 'storm') {
+      chipShow('⛈️ ' + T('عاصفة', 'Storm') + ' 🏗️×' + d.drive + ' <b>' + s + T(' ث', 's') + '</b>', 'storm');
+      SH.bolt -= dt;
+      if (SH.bolt <= 0) {   // برق بين حين وآخر: وميض قصير ورعد
+        SH.bolt = 5 + Math.random() * 5;
+        const st_ = document.getElementById('stage');
+        if (st_) { st_.classList.remove('bolt'); void st_.offsetWidth; st_.classList.add('bolt'); setTimeout(() => st_.classList.remove('bolt'), 600); }
+        setTimeout(() => snd('boom', 0.7), 250);
+      }
+    }
     else if (SH.id === 'pet') {
       petTick(dt);
       if (pet && pet.caged) { chipShow(PI_() + ' ' + T('في القفص', 'Caged') + ' <b>✓</b>', 'gold'); SH.cagedT -= dt; if (SH.cagedT <= 0) { endEvent(); return; } }
@@ -697,6 +712,10 @@
   }
   const beltK = () => (SH.on && SH.id === 'peak' ? evDef().belt : 1);
   const scoreK = () => (SH.on && SH.id === 'peak' ? evDef().mult : 1);
+  const chillK = () => (SH.on && SH.id === 'heat' ? evDef().chill : 1);
+  const heatBonus = () => (SH.on && SH.id === 'heat' ? evDef().bonus : 0);
+  const driveK = () => (SH.on && SH.id === 'storm' ? evDef().drive : 1);
+  const walkK = () => (SH.on && SH.id === 'storm' ? evDef().walk : 1);
 
   /* ================= بداية الوردية ونهايتها ================= */
   function roundStart() {
@@ -732,7 +751,7 @@
 
   /* ================= الواجهة العامة لـ game.js ================= */
   window.Prog = {
-    emit, tick, act, onSpawn, onSorted, truckTick, timeScale, beltK, scoreK, roundStart, roundEnd, fined, applyOutfit,
+    emit, tick, act, onSpawn, onSorted, truckTick, timeScale, beltK, scoreK, chillK, heatBonus, driveK, walkK, roundStart, roundEnd, fined, applyOutfit,
     busy: () => SH.on, petHeld,
     charUnlocked: id => charOpen(id, xpNow()),
     isAllCharsCode: v => WP.isAllCharsCode(v), unlockAllChars,

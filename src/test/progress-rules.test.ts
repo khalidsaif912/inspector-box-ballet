@@ -275,8 +275,33 @@ describe("Near miss", () => {
 });
 
 describe("Shift events", () => {
-  it("offers the blackout, peak hour, VIP and pet events", () => {
-    expect(P.SHIFT_EVENTS.map((e) => e.id)).toEqual(["blackout", "peak", "vip", "pet"]);
+  it("offers the blackout, peak hour, VIP, pet and weather events", () => {
+    expect(P.SHIFT_EVENTS.map((e) => e.id)).toEqual([
+      "blackout",
+      "peak",
+      "vip",
+      "pet",
+      "heat",
+      "storm",
+    ]);
+  });
+  it("makes the heatwave speed up spoiling and the storm slow the forklift", () => {
+    const heat = P.SHIFT_EVENTS.find((e) => e.id === "heat") as unknown as {
+      chill: number;
+      bonus: number;
+      dur: number;
+    };
+    const storm = P.SHIFT_EVENTS.find((e) => e.id === "storm") as unknown as {
+      drive: number;
+      walk: number;
+      dur: number;
+    };
+    expect(heat.chill).toBeGreaterThan(1);
+    expect(heat.bonus).toBeGreaterThan(0);
+    expect(storm.drive).toBeGreaterThan(0);
+    expect(storm.drive).toBeLessThan(1);
+    expect(storm.walk).toBeLessThan(1);
+    expect(storm.walk).toBeGreaterThan(storm.drive);
   });
   it("favours an event that an unfinished daily mission needs", () => {
     const s = withMissions(["pet", "fever2", "sort30"]);
@@ -292,7 +317,7 @@ describe("Shift events", () => {
     let seed = 7;
     const rng = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
     for (let i = 0; i < 200; i++) seen.add(P.pickShiftEvent(rng, s));
-    expect(seen.size).toBe(4);
+    expect(seen.size).toBe(P.SHIFT_EVENTS.length);
   });
 });
 

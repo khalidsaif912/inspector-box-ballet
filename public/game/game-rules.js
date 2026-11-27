@@ -638,5 +638,102 @@
   };
   rules.ballet = ballet;
 
+  // ===== تقرير أخطاء الوردية: سبب قصير لكل خطأ، مجمّعة ومرتبة بالنقاط المفقودة =====
+  // السجل: [{ k, a?, b?, pts, txt? }] — k نوع الخطأ، a الطرد، b الطرد المتعارض معه.
+  const LESSON = {
+    explosive: { ar: "المتفجرات (1) تُعزل عن معظم المواد الخطرة.", en: "Explosives (1) are segregated from most dangerous goods." },
+    s14: { ar: "1.4S لا تُعزل إلا عن متفجرات أخرى.", en: "1.4S is only segregated from other explosives." },
+    oxidizer: { ar: "المؤكسد 5.1 يزيد اشتعال المواد القابلة للاشتعال.", en: "Oxidizer 5.1 feeds the fire of flammables." },
+    corrosive: { ar: "الأكّالة 8 تتفاعل معها وقد تُتلف العبوة.", en: "Corrosives (8) react with it and can breach the package." },
+    lithium: { ar: "بطاريات الليثيوم RLI قد تسخن وتُشعل ما حولها.", en: "Lithium batteries (RLI) can overheat and ignite nearby cargo." },
+    table: { ar: "زوج ممنوع في جدول IATA 9.3.A.", en: "A forbidden pair in IATA Table 9.3.A." },
+    "hz-general": { ar: "المادة الخطرة مكانها قفص DGR فقط.", en: "Dangerous goods go in a DGR cage only." },
+    "hz-only": { ar: "أقفاص DGR للمواد الخطرة فقط.", en: "DGR cages are for dangerous goods only." },
+    zone: { ar: "طابِق رمز الملصق مع لافتة المنطقة.", en: "Match the label code to the zone sign." },
+    cao: { ar: "CAO = طائرة شحن فقط؛ ارفضه على رحلة ركاب.", en: "CAO = cargo aircraft only; refuse it on a passenger flight." },
+    quiz: { ar: "الإجابة الصحيحة: ", en: "Correct answer: " },
+    chill: { ar: "افرز طرود ❄️ قبل نفاد مؤقتها.", en: "Sort ❄️ parcels before their timer runs out." },
+    missed: { ar: "لا تترك الطرود تسقط من نهاية الحزام.", en: "Don't let parcels fall off the belt's end." },
+    "missed-hz": { ar: "المادة الخطرة الفائتة خطر على السلامة — أولويتها أعلى.", en: "A missed dangerous good is a safety risk — sort it first." },
+    fine: { ar: "لا تترك الطرد خارج منطقته؛ المفتش يغرّمك.", en: "Never leave a parcel outside its zone; the inspector fines it." },
+  };
+  const oxidizerPairs = new Set(["3+5.1", "4.1+5.1", "4.2+5.1"]);
+  const corrosivePairs = new Set(["3+8", "4.3+8", "5.1+8"]);
+  const debrief = {
+    LESSON,
+    maxRows: 3,
+    // سبب تعارض زوج من المواد الخطرة (مفتاح في LESSON)
+    why(a, b) {
+      const da = (a && a.div) || "",
+        db = (b && b.div) || "";
+      if (is1_4S(da) || is1_4S(db)) return "s14";
+      if (isExplosive(da) || isExplosive(db)) return "explosive";
+      if ((da === "9" && isLithium(a)) || (db === "9" && isLithium(b))) return "lithium";
+      const key = da < db ? da + "+" + db : db + "+" + da;
+      if (oxidizerPairs.has(key)) return "oxidizer";
+      if (corrosivePairs.has(key)) return "corrosive";
+      return "table";
+    },
+    // مفتاح التجميع: نفس الخطأ يتكرر ⇒ سطر واحد مع العدد
+    key(e) {
+      if (!e) return "";
+      if (e.k === "iata") {
+        const p = [e.a && e.a.imp, e.b && e.b.imp].sort();
+        return "iata:" + p.join("+");
+      }
+      if (e.k === "hz-general") return "hz-general:" + (e.a && e.a.imp);
+      if (e.k === "zone") return "zone:" + (e.a && e.a.t) + ">" + (e.zone || "");
+      if (e.k === "quiz") return "quiz:" + (e.txt || "");
+      if (e.k === "missed") return e.a && e.a.isHz ? "missed-hz" : "missed";
+      return e.k;
+    },
+    lesson(e) {
+      if (!e) return "table";
+      if (e.k === "iata") return debrief.why(e.a, e.b);
+      if (e.k === "missed") return e.a && e.a.isHz ? "missed-hz" : "missed";
+      return LESSON[e.k] ? e.k : "table";
+    },
+    // يعيد { rows: أهم maxRows أخطاء, more: عدد الأنواع الباقية, total, lost }
+    summarize(log, maxRows) {
+      const lim = maxRows || debrief.maxRows;
+      const groups = new Map();
+      let total = 0,
+        lost = 0;
+      for (const e of log || []) {
+        if (!e || !e.k) continue;
+        total++;
+        lost += Math.max(0, +e.pts || 0);
+        const k = debrief.key(e);
+        const g = groups.get(k);
+        if (g) {
+          g.n++;
+          g.pts += Math.max(0, +e.pts || 0);
+        } else groups.set(k, { key: k, k: e.k, n: 1, pts: Math.max(0, +e.pts || 0), lesson: debrief.lesson(e), first: e });
+      }
+      // الأهم أولاً: النقاط المفقودة ثم التكرار، والخطر قبل غيره عند التعادل
+      const sev = (g) => (g.k === "iata" || g.k === "cao" || g.lesson === "missed-hz" || g.k === "hz-general" ? 1 : 0);
+      const all = [...groups.values()].sort((x, y) => y.pts - x.pts || y.n - x.n || sev(y) - sev(x));
+      return { rows: all.slice(0, lim), more: Math.max(0, all.length - lim), total, lost };
+    },
+  };
+  rules.debrief = debrief;
+
+  // ===== موسيقى الإيقاع: تتسارع وتكثف طبقاتها مع الكومبو والحمى =====
+  // layers: 0 إيقاع وباص · 1 + صنج · 2 + لحن · 3 + طبل ثانٍ وصنج سريع
+  const music = {
+    bpm: [104, 104, 112, 120, 124, 128],
+    feverBpm: 136,
+    level(combo, fever) {
+      const c = Math.max(1, Math.min(COMBO_MAX, Math.floor(+combo || 1)));
+      if (fever) return { bpm: music.feverBpm, layers: 3, fever: true };
+      const layers = c >= 5 ? 3 : c >= 3 ? 2 : c >= 2 ? 1 : 0;
+      return { bpm: music.bpm[c], layers, fever: false };
+    },
+    stepSeconds(bpm) {
+      return 60 / Math.max(40, +bpm || 104) / 4;
+    },
+  };
+  rules.music = music;
+
   root.WarehouseRules = rules;
 })(globalThis);

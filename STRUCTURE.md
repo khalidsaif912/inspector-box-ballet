@@ -10,6 +10,8 @@ inspector-box-ballet/
 │   │   ├── game.js         منطق اللعب والمشهد ثلاثي الأبعاد والصوت
 │   │   ├── game.css        تنسيقات الواجهة العربية RTL
 │   │   ├── game-rules.js   قواعد IATA والرافعة والطوارئ (مشتركة مع الاختبارات)
+│   │   ├── shift-report.js مراجعة أخطاء الوردية وبطاقة مشاركة النتيجة
+│   │   ├── music.js        موسيقى Web Audio تتسارع مع الكومبو
 │   │   └── images/         خلفية شاشة البداية
 │   ├── vendor/
 │   │   └── three.min.js    Three.js r128 محلي — لا CDN

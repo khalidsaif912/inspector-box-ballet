@@ -1676,6 +1676,9 @@ hd.rotation.y = isMoving ? sw * 0.06 : Math.sin(performance.now()*0.0015) * 0.12
 pl.position.set(0, 0, 3);
 let items=[], run=false, score=0, combo=1, time=100, spawnT=0, held=null, near=null, stage=1;
 let streak=0, streakT=0, maxStreak=0, rushT=25, rushN=0, rushDelay=0;
+/* سجل أخطاء الوردية لتقرير النهاية (gameRules.debrief) */
+let shiftLog = [];
+const logMistake = e => { if(shiftLog.length < 200) shiftLog.push(e); };
 /* أحداث اللعب للمهام اليومية والخبرة وشهادة DGR (progress-game.js) */
 const progEmit = (e, p) => { if(window.Prog) Prog.emit(e, p); };
 /* ===== إثارة: اندفاع + اهتزاز كاميرا + وضع الحمى ===== */
@@ -2170,6 +2173,7 @@ const lost = Math.min(score, CRIT_PENALTY);
 score = Math.max(0, score - CRIT_PENALTY);
 streak = 0; streakT = 0; combo = 1;
 totalProcessed++;
+logMistake({ k: 'chill', a: it.data, pts: CRIT_PENALTY });
 addShake(.6); snd('error');
 hitStopNow(.05); screenFlash('red');
 penaltyFx(lost, true);
@@ -3170,7 +3174,7 @@ totalProcessed++;
 const verdict = gameRules.placement.decide(z, d, z.items);
 let ok = verdict.ok;
 let conflict = verdict.conflict;
-let conflictReason = '';
+let conflictReason = '', conflictWith = null;
 if(verdict.reason === 'cao-pax'){
 conflictReason = I18N.T('طرد CAO — طائرة شحن فقط! لا يُحمّل على رحلة ركاب: ارفضه عند الفحص.','CAO parcel — cargo aircraft only! Never load it on a passenger flight: refuse it at the check.');
 } else if(verdict.reason === 'hazardous-only'){
@@ -3179,7 +3183,7 @@ conflictReason = I18N.t('هذه الحاوية مخصصة فقط للمواد ا
 let hasConflict = false;
 for(const placed of z.items){
 if(gameRules.conflict(d, placed.data)){
-hasConflict = true;
+hasConflict = true; conflictWith = placed.data;
 conflictReason = I18N.T('تعارض IATA: لا يُخلط [','IATA conflict: never stow [') + `${d.imp} . ${d.div}] ` + I18N.T('مع [','with [') + `${placed.data.imp} . ${placed.data.div}` + I18N.T('] في حاوية واحدة!','] in one container!');
 break;
 }
@@ -3205,6 +3209,8 @@ let critMsg = '';
 if(it.crit){
 /* Large tier: hit-stop + ضربة اهتزاز + وميض ذهبي + رقم كبير بارتداد */
 score += gameRules.economy.critBonus; time += 5;
+const heatB = window.Prog ? Prog.heatBonus() : 0;
+if(heatB){ score += heatB; setTimeout(() => spawnFloatTag('+' + heatB + ' 🌡️', '#ffb74d'), 260); }
 snd('fever');
 hitStopNow(.05); addShake(.6); screenFlash('gold');
 spawnFloatTag('+' + gameRules.economy.critBonus + ' ❄️ +5 ث', '#69f0ae', 'big');
@@ -3238,6 +3244,10 @@ const pen = gameRules.economy.penalty(conflict);
 const lost = Math.min(score, pen);
 score = Math.max(0, score - pen);
 combo = 1; streak = 0; streakT = 0;
+{
+const mk = verdict.reason === 'cao-pax' ? 'cao' : verdict.reason === 'hazardous-only' ? 'hz-only' : conflictWith ? 'iata' : d.isHz ? 'hz-general' : 'zone';
+logMistake({ k: mk, a: d, b: conflictWith, zone: z.k, pts: pen });
+}
 progEmit('sort', { ok: false }); if(d.isHz || conflict) progEmit('dgr', { ok: false });
 if(window.Prog) Prog.onSorted(it, false);
 snd('error');
@@ -3537,7 +3547,7 @@ $('streak').classList.remove('on');
 dashT = 0; dashCD = 0; feverT = 0; shakeTrauma = 0; FODQ.n = 0; fodRender();
 $('dash-fx').classList.remove('on'); $('stage').classList.remove('fever'); setDashButton();
 demo = {insp:false,truck:false,inspDone:td,truckDone:td,truckIn:0}; inspector.demo = false; hideIntro();
-sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false;
+sortedCount = 0; totalProcessed = 0; warnTicker = 0; pz = false; shiftLog = [];
 /* كل وردية جديدة تبدأ بحصة ٣ أسئلة للمفتش وشحنة ملصق واحدة */
 resetCaoRun(); evtReset();
 if(window.Prog) Prog.roundStart();
@@ -3630,7 +3640,8 @@ try { if(window.GameHub) hub = GameHub.saveGameScore('game1', score, hubStars); 
 const totalScore = hub ? hub.totalScore : score;
 const starPath = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
 const starsHTML = Array.from({ length: 5 }, (_, i) => `<svg class="star${i < stars ? ' lit' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="${starPath}"/></svg>`).join('');
-const tipTxt = totalProcessed === 0 ? I18N.t('لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!') : acc >= 80 ? I18N.t('أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.') : I18N.t('راجع دليل الفرز السريع ثم عُد لكسر رقمك.');
+const lessonTip = window.ShiftReport ? ShiftReport.tip(shiftLog) : '';
+const tipTxt = lessonTip ? lessonTip : totalProcessed === 0 ? I18N.t('لم تُصنّف أي طرد هذه الوردية — جرّب مرة أخرى!') : acc >= 80 ? I18N.t('أداء قوي — حافظ على الدقة مع السرعة في الوردية القادمة.') : I18N.t('راجع دليل الفرز السريع ثم عُد لكسر رقمك.');
 /* تقرير الوردية على هيئة بوليصة شحن جوي: رقم الوردية والتاريخ والباركود مشتقة من النتيجة */
 const now = new Date();
 const shiftNo = 'SH-' + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(score % 10000).padStart(4, '0');
@@ -3665,9 +3676,11 @@ ${record ? `<em class="ep-new">${I18N.t('رقم قياسي جديد!')}</em>` : 
 <button id="go" class="ep-btn ep-replay" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg><span>${I18N.T('إعادة المحاولة','Replay level')}</span></button>
 <button id="rb2" class="ep-btn" type="button"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg><span>${I18N.t('الدليل')}</span></button>
 <button id="ex2" class="ep-btn" type="button"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>${I18N.t('الغلاف')}</span></button>
+${window.ShiftReport ? `<button id="sh2" class="ep-btn ep-share" type="button" aria-label="${I18N.T('مشاركة النتيجة','Share score')}" title="${I18N.T('مشاركة النتيجة','Share score')}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button>` : ''}
 </div>
 <div class="ep-code" aria-hidden="true"><span class="ep-bars">${bars}</span><span class="ep-code-t">${shiftNo}</span></div>
 </section>
+${window.ShiftReport ? ShiftReport.panel(shiftLog, totalProcessed) : ''}
 <aside class="ep-side" aria-labelledby="ep-side-t">
 <h2 class="panel-t" id="ep-side-t"><span aria-hidden="true">🧰</span> ${I18N.T('سجل الموظف','Employee record')}</h2>
 ${career}
@@ -3681,6 +3694,12 @@ ${career}
 </div>`;
 if(dock) o.appendChild(dock);
 $('go').onclick = () => start();
+const shareBtn = $('sh2');
+if(shareBtn) shareBtn.onclick = () => {
+  let cert = false, rank = '';
+  try { const ps = window.Prog && Prog.state(); cert = !!(ps && ps.dgr && ps.dgr.cert); if(ps && window.WarehouseProgress) rank = WarehouseProgress.rankTitle(ps.xp, I18N.lang); } catch(e){}
+  ShiftReport.share({ score, grade, title: titles[grade], acc, sorted: sortedCount, streak: maxStreak, shiftNo, cert, rank }, shareBtn);
+};
 $('rb2').onclick = openRules;
 $('ex2').onclick = exitToShell;
 }
@@ -4263,6 +4282,7 @@ if(I_.state === 'inspect'){
     score = Math.max(0, score - 15);
     combo = 1;
     time = Math.max(0, time - 4);
+    logMistake({ k: 'fine', a: it.data, pts: 15 });
     snd('whistle');
     spawnFloatTag('−15 🦺 مخالفة', '#ff5252');
     tip('fine', '📋 المفتش: طرد متروك خارج المنطقة المخصصة! (-15 و -4 ث)', '#ffb020');
@@ -4591,6 +4611,7 @@ const lost = Math.min(score, gameRules.cao.penalty);
 score = Math.max(0, score - gameRules.cao.penalty);
 time = Math.max(0, time - 4);
 streak = 0; streakT = 0; combo = 1;
+logMistake({ k: 'cao', a: it && it.data, pts: gameRules.cao.penalty });
 snd('error'); penaltyFx(lost, true);
 balletReset();
 spawnFloatTag('−' + gameRules.cao.penalty + ' −4 ث', '#ff5252');
@@ -4697,6 +4718,7 @@ function quizAnswer(i){
     const lost = Math.min(score, IQ.penalty);
     score = Math.max(0, score - IQ.penalty);
     streak = 0; streakT = 0; combo = 1;
+    logMistake({ k: 'quiz', txt: right, pts: IQ.penalty });
     snd('error'); penaltyFx(lost, true);
     spawnFloatTag('−' + IQ.penalty, '#ff5252');
     caoSay(I18N.T('إجابة خاطئة. الإجابة الصحيحة: «', 'Wrong answer. The correct one is: “') + right + I18N.T('». −', '”. −') + IQ.penalty + I18N.T(' نقطة.', ' pts.'), false);
@@ -4794,13 +4816,13 @@ if(run && !fire.keypad){
 if(!fire.active && !STUDY.on && !jam.active && (stage>=3 || demo.truck)) updateTruck(dt);
 const sprintOn = !held && !!(key.ShiftLeft || key.ShiftRight);
 const sprintK = (dashT > 0 ? dashCfg().k : 1) * (feverT > 0 ? FEVER_BOOST : 1) * (sprintOn ? 1.35 : 1);
-const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultiplier(fearT) * sprintK;
+const spd = liftAnim.active ? 0 : (held ? 6.2 : 8.2) * gameRules.movementMultiplier(fearT) * sprintK * (window.Prog ? Prog.walkK() : 1);
 // Small collision steps preserve full travel time even when rendering slows down.
 const steps = Math.max(1, Math.ceil(dt / (1/60))), stepDt = dt / steps;
 if(FD.on){
 FD.left = Math.max(0, FD.left - dt);
 /* الاندفاع يسرّع الرافعة أيضاً */
-const dSpd = gameRules.forklift.driveSpeed * sprintK;
+const dSpd = gameRules.forklift.driveSpeed * sprintK * (window.Prog ? Prog.driveK() : 1);   /* العاصفة: أرض مبتلة */
 if(l > .001) fk.rotation.y = Math.atan2(vx, vz);
 /* جسم الرافعة = دائرتان على محورها الطويل بنصف قطر halfZ بدل نصف قطر اللاعب، فلا تخترق الجدران */
 const fkR = FK_HZ, fkOff = FK_HX - FK_HZ, fy = fk.rotation.y, ohx = Math.sin(fy) * fkOff, ohz = Math.cos(fy) * fkOff;
@@ -4915,6 +4937,7 @@ if(it.m.position.x > 23.5){
 if(it.data.isMys){ rm(it); continue; }
 const miss = it.data.isFrz ? gameRules.freezer.penalty : 10;
 totalProcessed++;
+logMistake({ k: 'missed', a: it.data, pts: miss });
 rm(it);
 const lost = Math.min(score, miss);
 score = Math.max(0, score - miss);
@@ -4967,7 +4990,7 @@ if(it.data.isFrz && it.m.material.emissive){ it.m.material.emissive.setHex(0x2a8
 if(it.data.isMys && it.m.material.emissive){ it.m.material.emissive.setHex(0x4a3000); it.m.material.emissiveIntensity = 0.5 + Math.sin(now*0.006)*0.4; }
 if(it.crit){
 if(it.st === 'belt' || it.st === 'floor' || it.st === 'held'){
-if(!STUDY.on && !jam.active) it.crit.t -= dt;
+if(!STUDY.on && !jam.active) it.crit.t -= dt * (window.Prog ? Prog.chillK() : 1);   /* موجة الحر تُسرّع الفساد */
 if(Math.round(Math.max(0, it.crit.t) * 8) !== it.crit.tag.sec) drawCritTag(it.crit.tag, it.crit.t);
 const pl = 1 + Math.sin(now * 0.012) * 0.16;
 it.crit.halo.scale.set(2.3 * pl, 2.3 * pl, 1);
