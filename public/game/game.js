@@ -83,6 +83,8 @@ return { phase, finish, frameReady, track, get value(){ return value; } };
 })();
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let actx = null, soundEnabled = true, ambEnabled = true, ambNode = null;
+/* مستوى صوت المستودع المحيط: خلفية هادئة تحت المؤثرات والموسيقى */
+const AMB_VOL = .1;
 function initAudio(){
 if(!actx && AudioCtx) actx = new AudioCtx();
 if(actx && actx.state === 'suspended' && !document.hidden) actx.resume().catch(() => {});
@@ -117,7 +119,7 @@ const airF = actx.createBiquadFilter(); airF.type = 'bandpass'; airF.frequency.v
 const airG = actx.createGain(); airG.gain.value = .26;
 air.connect(airF); airF.connect(airG); airG.connect(master); air.start(); nodes.push(air);
 ambNode = { master, nodes };
-master.gain.setTargetAtTime(ambEnabled ? .22 : 0, actx.currentTime, .4);
+master.gain.setTargetAtTime(ambEnabled ? AMB_VOL : 0, actx.currentTime, .4);
 scheduleClank();
 }
 function scheduleClank(){
@@ -128,7 +130,7 @@ const osc = actx.createOscillator(), g = actx.createGain();
 osc.type = 'triangle'; osc.frequency.setValueAtTime(210 + Math.random() * 260, at);
 osc.frequency.exponentialRampToValueAtTime(90, at + .22);
 g.gain.setValueAtTime(0, at);
-g.gain.linearRampToValueAtTime(.016, at + .01);
+g.gain.linearRampToValueAtTime(.008, at + .01);
 g.gain.exponentialRampToValueAtTime(.0001, at + .35);
 osc.connect(g); g.connect(actx.destination); osc.start(at); osc.stop(at + .4);
 osc.onended = () => { osc.disconnect(); g.disconnect(); };
@@ -139,7 +141,7 @@ scheduleClank();
 function setAmb(v){
 ambEnabled = v;
 try { localStorage.setItem('acg_amb', ambEnabled ? '1' : '0'); } catch(e){}
-if(actx && ambNode) ambNode.master.gain.setTargetAtTime(ambEnabled ? .22 : 0, actx.currentTime, .3);
+if(actx && ambNode) ambNode.master.gain.setTargetAtTime(ambEnabled ? AMB_VOL : 0, actx.currentTime, .3);
 syncAudioUI();
 }
 // ===== الرسائل التعليمة: تظهر مرة واحدة فقط، ويمكن إظهارها/إخفاؤها =====
