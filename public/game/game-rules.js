@@ -438,19 +438,48 @@
   // يُفتح اختيارياً من محطة ULD الثابتة يسار المستودع، والمكافأة مرة واحدة في الوردية.
   // تسع شحنات: ضع كل شحنة مسموحة في خانة بحيث لا تتجاور (جنباً إلى جنب، لا قطرياً) شحنتان متعارضتان:
   //   • تعارضات IATA 9.3.A نفسها (rules.conflict).
-  //   • السموم 6.1 والمعدية 6.2 بعيداً عن الأغذية (EAT) والحيوانات الحية (AVI).
-  //   • الحيوانات الحية بعيداً عن الثلج الجاف (RMD) والمشعّ (RRY).
+  //   • جدول الشحنات الخاصة (SEP أدناه): الأغذية EAT/PEM/PEP/PES، الحيوانات AVI، البيض المخصب HEG،
+  //     الرفات البشري HUM، الأفلام FIL، الأعضاء LHO، الثلج الجاف ICE، والسوائل المبرّدة RCL.
   // والرحلة ركاب: أي شحنة CAO تُنزَّل (Off-load) ولا تُحمَّل. اللوحة لا تكتب CAO — على اللاعب أن يعرفها من الكود.
   const uld = (() => {
     const COLS = 3,
       ROWS = 3,
       CELLS = COLS * ROWS;
-    const NEAR_FOOD = new Set(["RPB", "RIS"]);
-    const NEAR_AVI = new Set(["RPB", "RIS", "RMD", "RRY"]);
-    const extra = [
-      { imp: "EAT", div: "", kind: "eat" },
-      { imp: "AVI", div: "", kind: "avi" },
+    // شحنات خاصة (IATA Special Handling Codes) تظهر عشوائياً بجانب البضائع الخطرة.
+    // sp يميّز أنواع الحيوانات الحية (كلها AVI) لأن بعضها لا يجاور بعضاً.
+    const special = [
+      { imp: "HUM", div: "", kind: "hum" }, // رفات بشري في تابوت
+      { imp: "EAT", div: "", kind: "food" }, // أغذية للاستهلاك البشري
+      { imp: "PEM", div: "", kind: "food" }, // لحوم
+      { imp: "PEP", div: "", kind: "food" }, // فواكه وخضروات
+      { imp: "PES", div: "", kind: "food" }, // أسماك ومأكولات بحرية
+      { imp: "AVI", div: "", kind: "avi", sp: "dog" },
+      { imp: "AVI", div: "", kind: "avi", sp: "cat" },
+      { imp: "AVI", div: "", kind: "avi", sp: "bird" },
+      { imp: "AVI", div: "", kind: "avi", sp: "fish" },
+      { imp: "AVI", div: "", kind: "avi", sp: "lab" }, // حيوانات مختبر
+      { imp: "HEG", div: "", kind: "heg" }, // بيض مُخصَّب للتفقيس
+      { imp: "FIL", div: "", kind: "fil" }, // أفلام غير مُحمَّضة
+      { imp: "LHO", div: "", kind: "lho" }, // أعضاء بشرية حية / دم
+      { imp: "ICE", div: "9", kind: "dg" }, // ثلج جاف UN1845
+      { imp: "RCL", div: "2.2", kind: "dg" }, // سوائل مبرّدة (Cryogenic)
+      { imp: "PEF", div: "", kind: "per" }, // زهور
+      { imp: "PIL", div: "", kind: "per" }, // أدوية
+      { imp: "VAL", div: "", kind: "val" }, // بضائع ثمينة
     ];
+    // جدول تخزين البضائع الخطرة والشحنات الخاصة المعتمد على IATA DGR 9.3 و AHM:
+    // كل زوج هنا يجب ألا يتجاور على المنصة (أي علامة في الجدول: ● مسافة 1 م، ✖ ULD مختلف، ✖✖ عنبر مختلف).
+    const FOOD = new Set(["EAT", "PEM", "PEP", "PES"]);
+    const group = (imp) => (FOOD.has(imp) ? "EAT" : imp);
+    const SEP = {
+      RPB: ["EAT", "AVI", "HEG"], // 6.1 سامّة — DGR 9.3.11 و 9.3.12
+      RIS: ["EAT", "AVI", "HEG"], // 6.2 معدية
+      RRY: ["AVI", "HEG", "FIL", "LHO"], // 7 مشعّة (الفئة الصفراء)
+      ICE: ["AVI", "HEG"], // ثلج جاف — DGR 9.3.10
+      RCL: ["AVI", "HEG"], // سوائل مبرّدة
+      HUM: ["EAT", "AVI"], // رفات بشري
+    };
+    const sepReason = { RPB: "toxic", RIS: "toxic", RRY: "rry", ICE: "ice", RCL: "rcl", HUM: "hum" };
     const neighbors = (i) => {
       const r = Math.floor(i / COLS),
         c = i % COLS,
@@ -464,13 +493,24 @@
     // سبب تعارض شحنتين متجاورتين، أو "" إن كانتا آمنتين
     const clash = (a, b) => {
       if (!a || !b) return "";
-      const ia = a.imp,
-        ib = b.imp;
-      if ((ia === "EAT" && NEAR_FOOD.has(ib)) || (ib === "EAT" && NEAR_FOOD.has(ia))) return "food";
-      if ((ia === "AVI" && NEAR_AVI.has(ib)) || (ib === "AVI" && NEAR_AVI.has(ia))) return "avi";
+      const ga = group(a.imp),
+        gb = group(b.imp);
+      for (const [x, y] of [
+        [a.imp, gb],
+        [b.imp, ga],
+      ])
+        if (SEP[x] && SEP[x].indexOf(y) >= 0) return sepReason[x];
+      // الحيوانات الحية والأغذية: مسافة متر على الأقل
+      if ((ga === "AVI" && gb === "EAT") || (gb === "AVI" && ga === "EAT")) return "avi-food";
+      if (ga === "AVI" && gb === "AVI") {
+        // حيوانات المختبر منفصلة عن غيرها، والقطط والكلاب بعيدة عن نظر بعضها (IATA LAR)
+        if ((a.sp === "lab") !== (b.sp === "lab")) return "avi-lab";
+        if ((a.sp === "cat" && b.sp === "dog") || (a.sp === "dog" && b.sp === "cat")) return "avi-pets";
+      }
       if (a.div && b.div && rules.conflict(a, b)) return "iata";
       return "";
     };
+    const same = (a, b) => a.imp === b.imp && (a.sp || "") === (b.sp || "");
     // عدّ الحلول (حتى cap) بتعبئة الخانات بالترتيب وفحص الجار الأيسر والعلوي
     const countSolutions = (pieces, cap) => {
       const lim = cap || 1e9;
@@ -495,7 +535,7 @@
           if (used[j] || !fits(i, pieces[j])) continue;
           // شحنات متطابقة الكود متماثلة: لا نكرر نفس الترتيب
           let dup = false;
-          for (let q = 0; q < j; q++) if (!used[q] && pieces[q].imp === pieces[j].imp) dup = true;
+          for (let q = 0; q < j; q++) if (!used[q] && same(pieces[q], pieces[j])) dup = true;
           if (dup) continue;
           used[j] = true;
           board[i] = pieces[j];
@@ -539,7 +579,7 @@
           seen.add(c.imp);
           (caoCodes.indexOf(c.imp) >= 0 ? cao : allowed).push({ imp: c.imp, div: c.cls, kind: "dg" });
         }
-        return { allowed: allowed.concat(extra), cao };
+        return { allowed, special: special.map((p) => Object.assign({}, p)), cao };
       },
       clashCount(pieces) {
         let n = 0;
@@ -550,21 +590,22 @@
       // يبني 9 شحنات: 1–2 منها CAO والباقي يجب تحميله. يُعاد البناء حتى تكون الخطة صعبة وقابلة للحل.
       build(rng) {
         const rnd = typeof rng === "function" ? rng : Math.random;
-        const { allowed, cao } = api.pools();
+        const { allowed, special, cao } = api.pools();
+        const pick = (bag) => bag.splice(Math.floor(rnd() * bag.length) % bag.length, 1)[0];
         let best = null;
-        for (let tries = 0; tries < 400; tries++) {
+        for (let tries = 0; tries < 600; tries++) {
           const nCao = rnd() < 0.5 ? 1 : 2;
-          const bag = allowed.slice(),
+          const nLoad = CELLS - nCao;
+          // 3–5 شحنات خاصة عشوائية (جثث، أغذية، حيوانات، بيض...) والباقي بضائع خطرة
+          const nSpecial = 3 + (Math.floor(rnd() * 3) % 3);
+          const sb = special.slice(),
+            db = allowed.slice(),
             load = [];
-          // المتفجرات 1.3G والأكّالة 8 ترفعان التعارضات؛ الباقي عشوائي بلا تكرار
-          for (const must of ["RGX", "RCM"]) {
-            const at = bag.findIndex((p) => p.imp === must);
-            if (at >= 0) load.push(bag.splice(at, 1)[0]);
-          }
-          while (load.length < CELLS - nCao && bag.length) load.push(bag.splice(Math.floor(rnd() * bag.length) % bag.length, 1)[0]);
+          while (load.length < nSpecial && sb.length) load.push(pick(sb));
+          while (load.length < nLoad && db.length) load.push(pick(db));
           const cb = cao.slice(),
             off = [];
-          while (off.length < nCao && cb.length) off.push(cb.splice(Math.floor(rnd() * cb.length) % cb.length, 1)[0]);
+          while (off.length < nCao && cb.length) off.push(pick(cb));
           if (api.clashCount(load) < api.minClashes) continue;
           const cap = Math.floor(api.arrangements(load.length) * api.maxRatio);
           const sols = countSolutions(load, cap + 1);
@@ -574,9 +615,9 @@
         }
         if (!best) {
           // احتياط ثابت مُتحقَّق منه في الاختبارات
-          const by = (imp) => allowed.find((p) => p.imp === imp);
-          const load = ["RGX", "RCM", "RXS", "ROP", "RFL", "RFW", "RSC"].map(by);
-          best = { load, off: [cao[0], cao[1]], solutions: countSolutions(load) };
+          const by = (imp, sp) => allowed.concat(special).find((p) => p.imp === imp && (p.sp || "") === (sp || ""));
+          const load = [["RGX"], ["RCM"], ["RFL"], ["HUM"], ["PEM"], ["AVI", "dog"], ["AVI", "cat"], ["RPB"]].map((x) => by(x[0], x[1]));
+          best = { load, off: [cao[0]], solutions: countSolutions(load) };
         }
         const all = best.load
           .map((p) => Object.assign({}, p, { cao: false }))

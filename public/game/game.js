@@ -2905,16 +2905,39 @@ if(cardsEl.root) cardsEl.root.addEventListener('pointerdown', e => e.stopPropaga
 /* ===== لغز خطة تحميل ULD — 200 نقطة: رحلة ركاب ومنصة 3×3 =====
    القواعد والتوليد والتحقق في gameRules.uld؛ هنا الواجهة فقط. المحاكاة تتجمد أثناءه (dt = 0). */
 const uldEl = { root: $('uld'), grid: $('uld-grid'), tray: $('uld-tray'), off: $('uld-off'), fill: $('uld-fill'), time: $('uld-time'), bar: document.querySelector('#uld .cards-bar'), info: $('uld-info'), ok: $('uld-ok'), x: $('uld-x'), detail: $('uld-detail'), count: $('uld-count'), undo: $('uld-undo'), reset: $('uld-reset') };
-const ULD_NAMES = { EAT: ['🍓', 'أغذية طازجة', 'Fresh food'], AVI: ['🐕', 'حيوان حي', 'Live animal'] };
+/* أسماء الشحنات الخاصة (رموز IATA للمناولة). الأيقونة null تعني ملصق الخطر الرسمي بدل الرمز. */
+const ULD_NAMES = {
+  HUM: ['⚰️', 'رفات بشري (تابوت)', 'Human remains (coffin)'],
+  EAT: ['🥫', 'أغذية للاستهلاك البشري', 'Foodstuffs'],
+  PEM: ['🥩', 'لحوم', 'Meat'],
+  PEP: ['🍎', 'فواكه وخضروات', 'Fruit & vegetables'],
+  PES: ['🦐', 'أسماك ومأكولات بحرية', 'Fish & seafood'],
+  'AVI:dog': ['🐕', 'حيوان حي — كلب', 'Live animal — dog'],
+  'AVI:cat': ['🐈', 'حيوان حي — قطة', 'Live animal — cat'],
+  'AVI:bird': ['🦜', 'حيوان حي — طيور', 'Live animal — birds'],
+  'AVI:fish': ['🐠', 'حيوان حي — أسماك زينة', 'Live animal — tropical fish'],
+  'AVI:lab': ['🐁', 'حيوانات مختبر', 'Laboratory animals'],
+  AVI: ['🐾', 'حيوان حي', 'Live animal'],
+  HEG: ['🥚', 'بيض مُخصّب للتفقيس', 'Hatching eggs'],
+  FIL: ['🎞️', 'أفلام غير مُحمّضة', 'Undeveloped film'],
+  LHO: ['🩸', 'أعضاء بشرية حية / دم', 'Living human organs / blood'],
+  PEF: ['💐', 'زهور', 'Flowers'],
+  PIL: ['💊', 'أدوية', 'Pharmaceuticals'],
+  VAL: ['💎', 'بضائع ثمينة', 'Valuable cargo'],
+  ICE: [null, 'ثلج جاف UN1845', 'Dry ice UN1845'],
+  RCL: [null, 'سوائل مبرّدة (Cryogenic)', 'Cryogenic liquid']
+};
+const uldKey = p => p.sp ? p.imp + ':' + p.sp : p.imp;
 function uldFlight(){ return gameRules.cao.flightFor(Math.floor(evt.t * 7)); }
 function uldText(){
   const U = gameRules.uld, f = uldP.flight || uldFlight();
   $('uld-title').textContent = I18N.T('تحميل ULD — ' + f.id + ' ' + f.from + '→' + f.to + ' (ركاب)', 'ULD load — ' + f.id + ' ' + f.from + '→' + f.to + ' (pax)');
   $('uld-sub').textContent = I18N.T(U.seconds + ' ث · +' + U.reward + ' · فشل −' + U.failPenalty + ' · ترك −' + U.quitPenalty, U.seconds + 's · +' + U.reward + ' · fail −' + U.failPenalty + ' · quit −' + U.quitPenalty);
   $('uld-rules').innerHTML = [
-    I18N.T('لا تجاور شحنتين متعارضتين (IATA 9.3.A) — القطري مسموح', 'No incompatible neighbours (IATA 9.3.A) — diagonal OK'),
-    I18N.T('6.1 و6.2 بعيداً عن الأغذية والحيوانات', '6.1/6.2 away from food & animals'),
-    I18N.T('الحيوانات بعيداً عن الثلج الجاف والمشع', 'Animals away from dry ice & radioactive'),
+    I18N.T('لا تجاور متعارضين (IATA 9.3.A والشحنات الخاصة) — القطري مسموح', 'No incompatible neighbours (IATA 9.3.A + special cargo) — diagonal OK'),
+    I18N.T('6.1 و6.2 بعيداً عن الأغذية والحيوانات والبيض HEG', '6.1/6.2 away from food, animals & HEG'),
+    I18N.T('HUM بعيداً عن الأغذية والحيوانات · الحيوانات بعيداً عن الأغذية', 'HUM away from food & animals · animals away from food'),
+    I18N.T('ICE وRCL بعيداً عن الحيوانات والبيض · القطط ≠ الكلاب · المختبر وحده', 'ICE & RCL away from animals & eggs · cats ≠ dogs · lab animals alone'),
     I18N.T('رحلة ركاب: نزّل كل CAO', 'Pax flight: off-load all CAO')
   ].map(t => '<li>' + t + '</li>').join('');
   $('uld-deck-cap').textContent = I18N.T('منصة PMC', 'PMC pallet');
@@ -2927,13 +2950,15 @@ function uldText(){
   uldEl.x.setAttribute('aria-label', I18N.T('إغلاق', 'Close'));
 }
 function uldName(p){
-  if(ULD_NAMES[p.imp]) return I18N.T(ULD_NAMES[p.imp][1], ULD_NAMES[p.imp][2]);
+  const n = ULD_NAMES[uldKey(p)] || ULD_NAMES[p.imp];
+  if(n) return I18N.T(n[1], n[2]);
   const r = HZ.find(h => h[3] === p.imp);
   return r ? r[2] : p.imp;
 }
 function uldPiece(p){
   const b = document.createElement('button'); b.type = 'button'; b.className = 'uld-pc' + (uldP.sel === p.id ? ' sel' : '') + (uldP.pop === p.id ? ' pop' : ''); b.dataset.id = p.id;
-  const face = ULD_NAMES[p.imp] ? '<span class="em">' + ULD_NAMES[p.imp][0] + '</span>' : '<img alt="" src="' + dgURL(p.div, p.imp) + '">';
+  const n = ULD_NAMES[uldKey(p)] || ULD_NAMES[p.imp];
+  const face = n && n[0] ? '<span class="em">' + n[0] + '</span>' : '<img alt="" src="' + dgURL(p.div, p.imp) + '">';
   b.innerHTML = face + '<span class="lb"><b>' + p.imp + '</b>' + (p.div ? '<small>' + p.div + '</small>' : '') + '</span>';
   const nm = uldName(p);
   b.title = nm; b.setAttribute('aria-label', nm + ' ' + p.imp + (p.div ? ' ' + I18N.T('فئة', 'class') + ' ' + p.div : ''));

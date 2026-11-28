@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 
-type Piece = { id: string; imp: string; div: string; kind: string; cao: boolean };
+type Piece = { id: string; imp: string; div: string; kind: string; cao: boolean; sp?: string };
 type Check = {
   ok: boolean;
   pairs: { a: number; b: number; why: string }[];
@@ -22,6 +22,7 @@ type Uld = {
   arrangements(k: number): number;
   clashCount(pieces: Partial<Piece>[]): number;
   build(rng?: () => number): { pieces: Piece[]; solutions: number };
+  pools(): { allowed: Piece[]; special: Piece[]; cao: Piece[] };
   check(pieces: Piece[], board: (string | null)[], offload: string[]): Check;
 };
 
@@ -74,14 +75,54 @@ describe("ULD load-plan puzzle (200 points)", () => {
   it("applies IATA, food and live-animal separation", () => {
     expect(u.clash({ imp: "RFL", div: "3" }, { imp: "RCM", div: "8" })).toBe("iata");
     expect(u.clash({ imp: "RGX", div: "1.3G" }, { imp: "RFG", div: "2.1" })).toBe("iata");
-    expect(u.clash({ imp: "EAT", div: "" }, { imp: "RPB", div: "6.1" })).toBe("food");
-    expect(u.clash({ imp: "AVI", div: "" }, { imp: "RMD", div: "9" })).toBe("avi");
-    expect(u.clash({ imp: "AVI", div: "" }, { imp: "EAT", div: "" })).toBe("");
+    expect(u.clash({ imp: "EAT", div: "" }, { imp: "RPB", div: "6.1" })).toBe("toxic");
+    expect(u.clash({ imp: "AVI", div: "" }, { imp: "ICE", div: "9" })).toBe("ice");
+    expect(u.clash({ imp: "AVI", div: "" }, { imp: "RMD", div: "9" })).toBe("");
     expect(u.clash({ imp: "RGX", div: "1.3G" }, { imp: "RPB", div: "6.1" })).toBe("");
   });
 
+  it("follows the special-cargo stowage table (HUM, food, animals, eggs, film)", () => {
+    const c = (a: string, b: string, sa?: string, sb?: string) =>
+      u.clash({ imp: a, div: "", sp: sa }, { imp: b, div: "", sp: sb });
+    // الرفات البشري بعيداً عن الأغذية بكل أنواعها وعن الحيوانات الحية
+    for (const f of ["EAT", "PEM", "PEP", "PES"]) {
+      expect(c("HUM", f)).toBe("hum");
+      expect(u.clash({ imp: f, div: "" }, { imp: "RIS", div: "6.2" })).toBe("toxic");
+    }
+    expect(c("HUM", "AVI", undefined, "dog")).toBe("hum");
+    // الحيوانات الحية: متر عن الأغذية، القطط والكلاب لا يرى بعضها بعضاً، وحيوانات المختبر وحدها
+    expect(c("AVI", "PEP", "bird")).toBe("avi-food");
+    expect(c("AVI", "AVI", "cat", "dog")).toBe("avi-pets");
+    expect(c("AVI", "AVI", "lab", "fish")).toBe("avi-lab");
+    expect(c("AVI", "AVI", "bird", "fish")).toBe("");
+    // البيض المخصب: بعيداً عن السموم والمشع والثلج الجاف والسوائل المبرّدة
+    expect(u.clash({ imp: "HEG", div: "" }, { imp: "RPB", div: "6.1" })).toBe("toxic");
+    expect(u.clash({ imp: "HEG", div: "" }, { imp: "RCL", div: "2.2" })).toBe("rcl");
+    expect(u.clash({ imp: "HEG", div: "" }, { imp: "ICE", div: "9" })).toBe("ice");
+    // الأفلام غير المحمضة والأعضاء البشرية بعيداً عن المشع
+    expect(u.clash({ imp: "FIL", div: "" }, { imp: "RRY", div: "7" })).toBe("rry");
+    expect(u.clash({ imp: "LHO", div: "" }, { imp: "RRY", div: "7" })).toBe("rry");
+    // البضائع الخاصة غير الخطرة لا تتعارض مع المتفجرات، أما السوائل المبرّدة 2.2 فتتعارض
+    expect(c("VAL", "RGX")).toBe("");
+    expect(u.clash({ imp: "RCL", div: "2.2" }, { imp: "RGX", div: "1.3G" })).toBe("iata");
+  });
+
+  it("mixes random special cargo into every plan", () => {
+    const codes = u.pools().special.map((p) => p.imp);
+    for (const imp of ["HUM", "EAT", "PEP", "PES", "PEM", "AVI", "HEG", "FIL", "ICE"])
+      expect(codes).toContain(imp);
+    const seenSp = new Set<string>();
+    for (let seed = 1; seed <= 40; seed++) {
+      const load = u.build(seeded(seed)).pieces.filter((p) => !p.cao);
+      const specials = load.filter((p) => codes.includes(p.imp));
+      expect(specials.length).toBeGreaterThanOrEqual(3);
+      load.filter((p) => p.sp).forEach((p) => seenSp.add(p.sp!));
+    }
+    expect(seenSp.size).toBeGreaterThanOrEqual(4);
+  });
+
   it("always builds 9 shipments with 1–2 CAO, solvable but hard", () => {
-    for (let seed = 1; seed <= 25; seed++) {
+    for (let seed = 1; seed <= 60; seed++) {
       const { pieces, solutions } = u.build(seeded(seed));
       expect(pieces).toHaveLength(9);
       const cao = pieces.filter((p) => p.cao);
