@@ -3077,7 +3077,7 @@ document.addEventListener('pointermove', e => {
     uldDrag.on = true;
     const r = uldDrag.el.getBoundingClientRect(), g = uldDrag.el.cloneNode(true);
     g.className = 'uld-pc uld-ghost'; g.style.width = r.width + 'px'; g.style.height = r.height + 'px'; g.removeAttribute('title');
-    uldDrag.w = r.width; uldDrag.h = r.height; uldDrag.ghost = g;
+    g.style.setProperty('--u', r.width + 'px'); uldDrag.w = r.width; uldDrag.h = r.height; uldDrag.ghost = g;
     uldEl.root.appendChild(g); uldDrag.el.classList.add('drag-src');
     uldDetail(uldP.pieces.find(q => q.id === uldDrag.id)); snd('cardflip', 1.1);
   }
