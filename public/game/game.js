@@ -2904,7 +2904,7 @@ if(cardsEl.root) cardsEl.root.addEventListener('pointerdown', e => e.stopPropaga
 
 /* ===== لغز خطة تحميل ULD — 200 نقطة: رحلة ركاب ومنصة 3×3 =====
    القواعد والتوليد والتحقق في gameRules.uld؛ هنا الواجهة فقط. المحاكاة تتجمد أثناءه (dt = 0). */
-const uldEl = { root: $('uld'), grid: $('uld-grid'), tray: $('uld-tray'), off: $('uld-off'), fill: $('uld-fill'), time: $('uld-time'), bar: document.querySelector('#uld .cards-bar'), info: $('uld-info'), ok: $('uld-ok'), x: $('uld-x') };
+const uldEl = { root: $('uld'), grid: $('uld-grid'), tray: $('uld-tray'), off: $('uld-off'), fill: $('uld-fill'), time: $('uld-time'), bar: document.querySelector('#uld .cards-bar'), info: $('uld-info'), ok: $('uld-ok'), x: $('uld-x'), detail: $('uld-detail'), count: $('uld-count'), undo: $('uld-undo'), reset: $('uld-reset') };
 const ULD_NAMES = { EAT: ['🍓', 'أغذية طازجة', 'Fresh food'], AVI: ['🐕', 'حيوان حي', 'Live animal'] };
 function uldFlight(){ return gameRules.cao.flightFor(Math.floor(evt.t * 7)); }
 function uldText(){
@@ -2922,6 +2922,8 @@ function uldText(){
   $('uld-off-cap').textContent = I18N.T('🚫 تنزيل Off-load', '🚫 Off-load');
   uldEl.ok.textContent = I18N.T('✔ اعتماد الخطة', '✔ Approve plan');
   uldEl.x.textContent = '✕';
+  uldEl.undo.textContent = I18N.T('↩ تراجع', '↩ Undo'); uldEl.undo.title = I18N.T('تراجع عن آخر نقلة (Z)', 'Undo the last move (Z)');
+  uldEl.reset.textContent = I18N.T('⟲ إعادة الكل', '⟲ Clear all'); uldEl.reset.title = I18N.T('أعد كل الشحنات إلى القائمة', 'Return every shipment to the waiting list');
   uldEl.x.setAttribute('aria-label', I18N.T('إغلاق', 'Close'));
 }
 function uldName(p){
@@ -2930,12 +2932,19 @@ function uldName(p){
   return r ? r[2] : p.imp;
 }
 function uldPiece(p){
-  const b = document.createElement('button'); b.type = 'button'; b.className = 'uld-pc' + (uldP.sel === p.id ? ' sel' : ''); b.dataset.id = p.id;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'uld-pc' + (uldP.sel === p.id ? ' sel' : '') + (uldP.pop === p.id ? ' pop' : ''); b.dataset.id = p.id;
   const face = ULD_NAMES[p.imp] ? '<span class="em">' + ULD_NAMES[p.imp][0] + '</span>' : '<img alt="" src="' + dgURL(p.div, p.imp) + '">';
   b.innerHTML = face + '<b>' + p.imp + '</b>' + (p.div ? '<small>' + p.div + '</small>' : '');
   const nm = uldName(p);
   b.title = nm; b.setAttribute('aria-label', nm + ' ' + p.imp + (p.div ? ' ' + I18N.T('فئة', 'class') + ' ' + p.div : ''));
   b.addEventListener('click', e => { e.stopPropagation(); uldPick(p.id); });
+  /* سحب وإفلات بالفأرة أو اللمس؛ النقرة القصيرة تبقى للتحديد */
+  b.addEventListener('pointerdown', e => {
+    if(!uldP.active || uldP.closing || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    uldDrag.id = p.id; uldDrag.el = b; uldDrag.pid = e.pointerId; uldDrag.sx = e.clientX; uldDrag.sy = e.clientY; uldDrag.on = false;
+  });
+  b.addEventListener('pointerenter', () => { if(!uldDrag.on) uldDetail(p); });
+  b.addEventListener('pointerleave', () => { if(!uldDrag.on) uldDetail(uldP.pieces.find(q => q.id === uldP.sel)); });
   return b;
 }
 function uldRender(){
@@ -2953,6 +2962,7 @@ function uldRender(){
     if(uldP.loc[p.id] === 'tray') uldEl.tray.appendChild(uldPiece(p));
     else if(uldP.loc[p.id] === 'off') uldEl.off.appendChild(uldPiece(p));
   }
+  uldStatus();
 }
 function uldPick(id){
   if(!uldP.active || uldP.closing) return;
@@ -2966,27 +2976,114 @@ function uldDrop(i){
   if(!uldP.active || uldP.closing) return;
   const occ = uldP.pieces.find(p => uldP.loc[p.id] === i);
   if(!uldP.sel){ if(occ){ uldP.sel = occ.id; snd('cardflip', 1.1); uldRender(); } return; }
+  if(occ && occ.id === uldP.sel){ uldP.sel = null; uldRender(); return; }
+  uldPush();
   const from = uldP.loc[uldP.sel];
   if(occ && occ.id !== uldP.sel) uldP.loc[occ.id] = from;   // تبديل: القطعة المزاحة تأخذ مكان القادمة
-  uldP.loc[uldP.sel] = i; uldP.sel = null;
+  uldP.loc[uldP.sel] = i; uldP.pop = uldP.sel; uldP.sel = null;
   snd('cardflip', .9); uldEl.info.textContent = ''; uldRender();
 }
 function uldToArea(area){
   if(!uldP.active || uldP.closing || !uldP.sel) return;
-  uldP.loc[uldP.sel] = area; uldP.sel = null;
+  if(uldP.loc[uldP.sel] === area){ uldP.sel = null; uldRender(); return; }
+  uldPush();
+  uldP.loc[uldP.sel] = area; uldP.pop = uldP.sel; uldP.sel = null;
   snd(area === 'off' ? 'cardfail' : 'cardflip', .9); uldRender();
 }
 if(uldEl.tray) uldEl.tray.addEventListener('click', () => uldToArea('tray'));
 if(uldEl.off) uldEl.off.addEventListener('click', () => uldToArea('off'));
+/* --- تحسينات التفاعل: تراجع، إعادة الكل، سحب وإفلات، اختصارات، شريط الحالة --- */
+function uldPush(){ (uldP.hist = uldP.hist || []).push(Object.assign({}, uldP.loc)); if(uldP.hist.length > 40) uldP.hist.shift(); }
+function uldUndo(){
+  if(!uldP.active || uldP.closing || !uldP.hist || !uldP.hist.length) return;
+  uldP.loc = uldP.hist.pop(); uldP.sel = null; uldP.pop = null; snd('cardflip', .8); uldRender();
+}
+function uldClear(){
+  if(!uldP.active || uldP.closing || uldP.pieces.every(p => uldP.loc[p.id] === 'tray')) return;
+  uldPush(); for(const p of uldP.pieces) uldP.loc[p.id] = 'tray';
+  uldP.sel = null; uldP.pop = null; snd('cardflip', .7); uldRender();
+}
+function uldDetail(p){
+  if(!uldEl.detail) return;
+  uldEl.detail.textContent = p
+    ? p.imp + (p.div ? ' · ' + I18N.T('فئة ', 'Class ') + p.div : '') + ' — ' + uldName(p)
+    : I18N.T('مرّر فوق شحنة أو حدّدها لقراءة تفاصيلها', 'Hover or select a shipment to read its details');
+}
+function uldStatus(){
+  if(!uldEl.count) return;
+  let on = 0, off = 0, left = 0;
+  for(const p of uldP.pieces){ const l = uldP.loc[p.id]; if(typeof l === 'number') on++; else if(l === 'off') off++; else left++; }
+  uldEl.count.innerHTML = '📦 ' + I18N.T('محمّل', 'Loaded') + ' <b>' + on + '</b> · 🚫 ' + I18N.T('منزَّل', 'Off') + ' <b>' + off + '</b> · ⏳ ' + I18N.T('متبقٍ', 'Left') + ' <b>' + left + '</b>';
+  uldEl.undo.disabled = !(uldP.hist && uldP.hist.length);
+  uldEl.reset.disabled = left === uldP.pieces.length;
+  uldEl.root.classList.toggle('armed', !!uldP.sel);
+  uldDetail(uldP.pieces.find(p => p.id === uldP.sel));
+}
+const uldDrag = { id: null, el: null, ghost: null, pid: 0, sx: 0, sy: 0, w: 0, h: 0, on: false, over: null, suppress: false };
+function uldTarget(x, y){
+  const e = document.elementFromPoint(x, y); if(!e || !e.closest) return null;
+  const cell = e.closest('.uld-cell');
+  if(cell && uldEl.grid.contains(cell)) return cell;
+  const area = e.closest('.uld-tray');
+  return area && uldEl.root.contains(area) ? area : null;
+}
+function uldDragCancel(){
+  if(uldDrag.ghost) uldDrag.ghost.remove();
+  if(uldDrag.el) uldDrag.el.classList.remove('drag-src');
+  if(uldDrag.over) uldDrag.over.classList.remove('over');
+  uldDrag.id = null; uldDrag.el = null; uldDrag.ghost = null; uldDrag.over = null; uldDrag.on = false;
+}
+document.addEventListener('pointermove', e => {
+  if(!uldDrag.id || e.pointerId !== uldDrag.pid) return;
+  if(!uldP.active || uldP.closing){ uldDragCancel(); return; }
+  if(!uldDrag.on){
+    if(Math.hypot(e.clientX - uldDrag.sx, e.clientY - uldDrag.sy) < 8) return;
+    uldDrag.on = true;
+    const r = uldDrag.el.getBoundingClientRect(), g = uldDrag.el.cloneNode(true);
+    g.className = 'uld-pc uld-ghost'; g.style.width = r.width + 'px'; g.style.height = r.height + 'px'; g.removeAttribute('title');
+    uldDrag.w = r.width; uldDrag.h = r.height; uldDrag.ghost = g;
+    uldEl.root.appendChild(g); uldDrag.el.classList.add('drag-src');
+    uldDetail(uldP.pieces.find(q => q.id === uldDrag.id)); snd('cardflip', 1.1);
+  }
+  const rr = uldEl.root.getBoundingClientRect();
+  uldDrag.ghost.style.left = (e.clientX - rr.left - uldDrag.w / 2) + 'px';
+  uldDrag.ghost.style.top = (e.clientY - rr.top - uldDrag.h / 2) + 'px';
+  const t = uldTarget(e.clientX, e.clientY);
+  if(t !== uldDrag.over){ if(uldDrag.over) uldDrag.over.classList.remove('over'); uldDrag.over = t; if(t) t.classList.add('over'); }
+  e.preventDefault();
+});
+document.addEventListener('pointerup', e => {
+  if(!uldDrag.id || e.pointerId !== uldDrag.pid) return;
+  const was = uldDrag.on, id = uldDrag.id, t = was ? uldTarget(e.clientX, e.clientY) : null;
+  uldDragCancel();
+  if(!was) return;   // نقرة عادية: يعالجها حدث click
+  uldDrag.suppress = true; setTimeout(() => { uldDrag.suppress = false; }, 80);
+  if(!t || !uldP.active || uldP.closing){ uldRender(); return; }
+  uldP.sel = id;
+  if(t.classList.contains('uld-cell')) uldDrop(+t.dataset.i);
+  else uldToArea(t.id === 'uld-off' ? 'off' : 'tray');
+});
+document.addEventListener('pointercancel', uldDragCancel);
+if(uldEl.root) uldEl.root.addEventListener('dragstart', e => e.preventDefault());
+if(uldEl.root) uldEl.root.addEventListener('click', e => { if(uldDrag.suppress){ e.stopPropagation(); e.preventDefault(); } }, true);
+document.addEventListener('keydown', e => {
+  if(!uldP.active || uldP.closing || e.ctrlKey || e.metaKey || e.altKey) return;
+  if((e.key === 'Backspace' || e.key === 'Delete') && uldP.sel){ e.preventDefault(); uldToArea('tray'); }
+  else if((e.key === 'o' || e.key === 'O') && uldP.sel){ e.preventDefault(); uldToArea('off'); }
+  else if(e.key === 'z' || e.key === 'Z'){ e.preventDefault(); uldUndo(); }
+});
+if(uldEl.undo) uldEl.undo.addEventListener('click', uldUndo);
+if(uldEl.reset) uldEl.reset.addEventListener('click', uldClear);
 function uldOpen(){
   if(uldP.active) return;
   const U = gameRules.uld, b = U.build(Math.random);
   uldP.active = true; uldP.closing = 0; uldP.t = U.seconds; uldP.sel = null; uldP.tries = 0;
   uldP.pieces = b.pieces; uldP.loc = {}; uldP.flight = uldFlight();
   for(const p of b.pieces) uldP.loc[p.id] = 'tray';
+  uldP.hist = []; uldP.pop = null; uldDragCancel(); uldEl.grid.classList.remove('ok'); uldEl.root.classList.remove('armed');
   for(const k of ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) key[k] = 0;
   uldText(); uldRender();
-  uldEl.info.textContent = I18N.T('اختر شحنة ثم خانتها — أو منطقة التنزيل', 'Pick a shipment, then its slot — or the off-load area');
+  uldEl.info.textContent = I18N.T('اسحب الشحنة (أو اختر ثم انقر) إلى خانتها — أو منطقة التنزيل', 'Pick a shipment, then its slot — or the off-load area');
   uldEl.root.style.display = 'flex';
   snd('horn');
   uldP.last = performance.now(); uldP.raf = requestAnimationFrame(uldTick);
@@ -3022,12 +3119,13 @@ function uldSubmit(){
 }
 if(uldEl.ok) uldEl.ok.addEventListener('click', uldSubmit);
 function uldHide(){
-  uldEl.root.style.display = 'none'; uldP.active = false; uldP.closing = 0; uldP.sel = null; cancelAnimationFrame(uldP.raf);
+  uldEl.root.style.display = 'none'; uldP.active = false; uldP.closing = 0; uldP.sel = null; cancelAnimationFrame(uldP.raf); uldDragCancel();
 }
 function uldWin(){
   const U = gameRules.uld;
   uldP.closing = 1;
   fwShow(7); snd('cardwin');
+  uldEl.grid.dataset.stamp = I18N.T('معتمدة ✔', 'APPROVED ✔'); uldEl.grid.classList.add('ok'); uldP.sel = null; uldRender();
   score += U.reward; time += U.timeBonus;
   uldP.done = true; uldScreenPaint();
   spawnFloatTag('+' + U.reward + ' 📋', '#ffd54a', 'big');
