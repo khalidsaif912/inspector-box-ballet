@@ -2934,7 +2934,7 @@ function uldName(p){
 function uldPiece(p){
   const b = document.createElement('button'); b.type = 'button'; b.className = 'uld-pc' + (uldP.sel === p.id ? ' sel' : '') + (uldP.pop === p.id ? ' pop' : ''); b.dataset.id = p.id;
   const face = ULD_NAMES[p.imp] ? '<span class="em">' + ULD_NAMES[p.imp][0] + '</span>' : '<img alt="" src="' + dgURL(p.div, p.imp) + '">';
-  b.innerHTML = face + '<b>' + p.imp + '</b>' + (p.div ? '<small>' + p.div + '</small>' : '');
+  b.innerHTML = face + '<span class="lb"><b>' + p.imp + '</b>' + (p.div ? '<small>' + p.div + '</small>' : '') + '</span>';
   const nm = uldName(p);
   b.title = nm; b.setAttribute('aria-label', nm + ' ' + p.imp + (p.div ? ' ' + I18N.T('فئة', 'class') + ' ' + p.div : ''));
   b.addEventListener('click', e => { e.stopPropagation(); uldPick(p.id); });

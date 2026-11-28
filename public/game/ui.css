@@ -653,8 +653,8 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
 @media (max-height:440px){.cards{padding:4px;--c:clamp(44px,15vh,64px)}.cards-panel{padding:6px 10px}.cards-bar{margin:5px 0}.cards-foot{margin-top:4px}}
 @media (prefers-reduced-motion:reduce){.card9{transition:none}.card9.bad{animation:none}}
 /* ===== لغز خطة تحميل ULD (200 نقطة) ===== */
-.uld{--u:clamp(46px,min(11vh,13vw),74px)}
-.uld-panel{max-width:min(100%,640px)}
+.uld{--u:clamp(60px,min(13vh,15vw),96px)}
+.uld-panel{max-width:min(100%,780px)}
 .uld-rules{margin:0 0 8px;padding:0 18px 0 0;font-size:clamp(10.5px,2.4vmin,12.5px);line-height:1.5;color:#dfe6eb;font-weight:700;text-align:start}
 .uld-rules li::marker{color:#f5c400}
 .uld-body{display:flex;gap:12px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
@@ -679,7 +679,7 @@ box-shadow:inset 0 2px 0 rgba(255,255,255,.4),inset 0 -4px 0 rgba(120,70,20,.38)
 .uld-actions{display:flex;justify-content:center;margin-top:8px}
 .uld-ok{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 22px;border-radius:8px;background:linear-gradient(180deg,#2fe06d,#17a24a);color:#06240f;font-weight:900;font-size:clamp(12px,2.8vmin,15px);box-shadow:0 4px 0 #0c5f2a}
 .uld-ok:active{transform:translateY(2px);box-shadow:0 2px 0 #0c5f2a}
-@media (max-height:520px){.uld{--u:clamp(36px,10vh,52px)}.uld-rules{display:none}}
+@media (max-height:520px){.uld{--u:clamp(40px,11vh,56px)}.uld-rules{display:none}}
 @media (prefers-reduced-motion:reduce){.uld-grid.bad{animation:none}.uld-pc{transition:none}}
 
 /* ===== الدخول بالرقم الوظيفي + المتصدرون عالمياً ===== */
@@ -1507,3 +1507,13 @@ html[lang="en"] #ov.start .pager>*{direction:ltr}
 @keyframes uldStamp{from{transform:rotate(-12deg) scale(2.4);opacity:0}to{transform:rotate(-12deg) scale(1);opacity:1}}
 @media (max-height:520px){.uld-status{margin-top:4px;padding:3px 8px}.uld-sec{padding:5px 10px}}
 @media (prefers-reduced-motion:reduce){.uld-pc.pop,.uld-grid.ok::after{animation:none}.uld-cell,.uld-tray{transition:none}}
+/* --- ملصقات أكبر وأوضح: الملصق يملأ أعلى البطاقة، والكود والفئة في شريط داكن أسفلها --- */
+.uld-pc{justify-content:flex-start;gap:0;padding:calc(var(--u)*.04) 0 0;overflow:hidden}
+.uld-pc img{width:auto;height:68%;aspect-ratio:1;max-width:96%}
+.uld-pc .em{height:68%;display:grid;place-items:center;font-size:calc(var(--u)*.52)}
+.uld-pc .lb{margin-top:auto;width:100%;display:flex;justify-content:center;align-items:baseline;gap:calc(var(--u)*.06);padding:calc(var(--u)*.03) 0;background:#161a1d}
+.uld-pc .lb b{font:900 calc(var(--u)*.2)/1.15 ui-monospace,monospace;color:#fff;letter-spacing:.02em}
+.uld-pc .lb small{font:800 calc(var(--u)*.15)/1.15 ui-monospace,monospace;color:#ffd54a}
+/* شاشات ضيقة وطويلة: لا يُقصّ اللغز، وإن لم يتسع يُمرَّر داخل اللوحة */
+.uld-panel{max-height:100%;overflow-y:auto;overscroll-behavior:contain}
+@media (max-aspect-ratio:3/4){.uld{--u:clamp(50px,15vw,64px)}.uld-rules{font-size:11px;line-height:1.4}}
