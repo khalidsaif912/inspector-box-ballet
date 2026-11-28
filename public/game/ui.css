@@ -1519,7 +1519,7 @@ html[lang="en"] #ov.start .pager>*{direction:ltr}
 @media (max-aspect-ratio:3/4){.uld{--u:clamp(50px,15vw,64px)}.uld-rules{font-size:11px;line-height:1.4}}
 /* --- لغز ULD: المنصة في الأعلى والشحنات أسفلها، ملصقات أكبر، شريط وقت أنحف ونصوص أقل --- */
 .uld{--u:clamp(56px,min(calc((100vh - 230px)/4.3),calc((100vw - 110px)/11.6)),124px)}
-.uld .uld-panel{max-width:min(100%,1500px);padding:8px 12px;position:relative}
+.uld .uld-panel{max-width:min(100%,1500px);padding:8px 12px}
 .uld .cards-ic{font-size:20px}
 .uld .cards-ttl b{font-size:clamp(13px,3vmin,16px)}
 .uld .cards-ttl small{font-size:clamp(10px,2.2vmin,12px)}
@@ -1529,7 +1529,12 @@ html[lang="en"] #ov.start .pager>*{direction:ltr}
 .uld-rules{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:2px 14px;margin:0 0 6px;padding:0;font-size:clamp(10px,2.1vmin,12px);line-height:1.35}
 .uld-rules li::before{content:'• ';color:#f5c400}
 .uld-body{flex-direction:column;align-items:stretch;gap:8px}
-.uld-deck{align-self:center}
+.uld-top{display:flex;align-items:center;justify-content:center;gap:10px 16px;flex-wrap:wrap}
+.uld-help{background:#3d3550;border-color:rgba(255,213,74,.35);color:#ffe08a}
+.uld-help b{font-family:ui-monospace,monospace;color:#ff9f8a;font-weight:900}
+.uld-pc.hint{animation:uldHint 1s ease-in-out 3}
+@keyframes uldHint{50%{box-shadow:0 0 0 4px #ffd54a,0 0 22px #ffd54a}}
+.uld-grid.solved::after{content:attr(data-stamp);position:absolute;left:0;right:0;bottom:40%;margin:auto;width:max-content;padding:4px 14px;font:900 clamp(13px,3.4vmin,20px)/1.2 'Cairo',system-ui,sans-serif;color:#ffd54a;border:3px solid #ffd54a;border-radius:8px;background:rgba(40,30,0,.55);transform:rotate(-10deg);pointer-events:none;z-index:5}
 .uld-side{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto 1fr;grid-auto-flow:column;gap:3px 10px;min-width:0;width:100%;align-items:stretch}
 .uld-side .uld-cap{justify-self:center}
 .uld-tray{min-height:calc(var(--u) + 12px);align-content:flex-start}
@@ -1537,7 +1542,9 @@ html[lang="en"] #ov.start .pager>*{direction:ltr}
 .uld-cap{font-size:10.5px}
 .uld-cap.off{margin-top:0}
 .uld-status{margin-top:6px;padding:4px 10px}
-.uld-actions{position:absolute;left:16px;top:96px;flex-direction:column;align-items:stretch;margin:0}
+.uld-actions{flex-direction:column;align-items:stretch;margin:0;gap:6px}
 .uld .cards-foot{margin-top:4px;min-height:16px}
-@media (max-aspect-ratio:3/4){.uld{--u:clamp(48px,min(18vw,calc((100vh - 300px)/7)),84px)}.uld-side{grid-template-columns:1fr;grid-auto-flow:row}.uld-off{max-width:none;min-width:0}.uld-actions{position:static;flex-direction:row;margin-top:6px}}
-@media (max-height:520px){.uld{--u:clamp(42px,min(calc((100vh - 140px)/4.4),calc((100vw - 80px)/11.5)),84px)}.uld .uld-panel{padding:5px 10px}.uld .cards-ttl small,.uld .cards-ic,.uld-rules,.uld-deck .uld-cap,.uld-status{display:none}.uld .cards-bar{margin:3px 0 4px}.uld-body{gap:4px}.uld-side{gap:1px 8px}.uld-tray{padding:3px;gap:4px;min-height:calc(var(--u) + 8px)}.uld-actions{left:14px;top:56px}.uld-ok,.uld-sec{padding:5px 14px}.uld .cards-foot{margin-top:2px;min-height:0}}
+@media (max-aspect-ratio:3/4){.uld{--u:clamp(48px,min(18vw,calc((100vh - 300px)/7)),84px)}.uld-side{grid-template-columns:1fr;grid-auto-flow:row}.uld-off{max-width:none;min-width:0}.uld-actions{flex-direction:row;flex-wrap:wrap;justify-content:center}}
+@media (max-height:520px){.uld{--u:clamp(42px,min(calc((100vh - 140px)/4.4),calc((100vw - 80px)/11.5)),84px)}.uld .uld-panel{padding:5px 10px}.uld .cards-ttl small,.uld .cards-ic,.uld-rules,.uld-deck .uld-cap,.uld-status{display:none}.uld .cards-bar{margin:3px 0 4px}.uld-body{gap:4px}.uld-side{gap:1px 8px}.uld-tray{padding:3px;gap:4px;min-height:calc(var(--u) + 8px)}.uld-actions{gap:4px}.uld-ok,.uld-sec{padding:5px 14px}.uld .cards-foot{margin-top:2px;min-height:0}}
+@media (max-width:600px){.uld-actions{flex-direction:row;flex-wrap:wrap;justify-content:center}}
+@media (prefers-reduced-motion:reduce){.uld-pc.hint{animation:none;box-shadow:0 0 0 4px #ffd54a}}

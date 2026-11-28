@@ -2904,7 +2904,7 @@ if(cardsEl.root) cardsEl.root.addEventListener('pointerdown', e => e.stopPropaga
 
 /* ===== لغز خطة تحميل ULD — 200 نقطة: رحلة ركاب ومنصة 3×3 =====
    القواعد والتوليد والتحقق في gameRules.uld؛ هنا الواجهة فقط. المحاكاة تتجمد أثناءه (dt = 0). */
-const uldEl = { root: $('uld'), grid: $('uld-grid'), tray: $('uld-tray'), off: $('uld-off'), fill: $('uld-fill'), time: $('uld-time'), bar: document.querySelector('#uld .cards-bar'), info: $('uld-info'), ok: $('uld-ok'), x: $('uld-x'), detail: $('uld-detail'), count: $('uld-count'), undo: $('uld-undo'), reset: $('uld-reset') };
+const uldEl = { root: $('uld'), grid: $('uld-grid'), tray: $('uld-tray'), off: $('uld-off'), fill: $('uld-fill'), time: $('uld-time'), bar: document.querySelector('#uld .cards-bar'), info: $('uld-info'), ok: $('uld-ok'), x: $('uld-x'), detail: $('uld-detail'), count: $('uld-count'), undo: $('uld-undo'), reset: $('uld-reset'), hint: $('uld-hint'), solve: $('uld-solve') };
 /* أسماء الشحنات الخاصة (رموز IATA للمناولة). الأيقونة null تعني ملصق الخطر الرسمي بدل الرمز. */
 const ULD_NAMES = {
   HUM: ['⚰️', 'رفات بشري (تابوت)', 'Human remains (coffin)'],
@@ -2948,6 +2948,14 @@ function uldText(){
   uldEl.undo.textContent = I18N.T('↩ تراجع', '↩ Undo'); uldEl.undo.title = I18N.T('تراجع عن آخر نقلة (Z)', 'Undo the last move (Z)');
   uldEl.reset.textContent = I18N.T('⟲ إعادة', '⟲ Clear'); uldEl.reset.title = I18N.T('أعد كل الشحنات إلى القائمة', 'Return every shipment to the waiting list');
   uldEl.x.setAttribute('aria-label', I18N.T('إغلاق', 'Close'));
+  uldHelpText();
+}
+function uldHelpText(){
+  const U = gameRules.uld, left = U.maxHints - (uldP.hints || 0);
+  uldEl.hint.innerHTML = I18N.T('💡 تلميح ', '💡 Hint ') + '<b>−' + U.hintCost + '</b> (' + left + ')';
+  uldEl.hint.title = I18N.T('يكشف خطأً في الخطة أو يضع شحنة في مكانها الصحيح — يخصم ' + U.hintCost + ' نقطة', 'Shows a mistake or places one shipment correctly — costs ' + U.hintCost + ' points');
+  uldEl.solve.innerHTML = I18N.T('🧩 الحل ', '🧩 Solve ') + '<b>−' + U.solveCost + '</b>';
+  uldEl.solve.title = I18N.T('يعرض الخطة الصحيحة كاملة بدون مكافأة — يخصم ' + U.solveCost + ' نقطة', 'Shows the full correct plan, no reward — costs ' + U.solveCost + ' points');
 }
 function uldName(p){
   const n = ULD_NAMES[uldKey(p)] || ULD_NAMES[p.imp];
@@ -2956,7 +2964,7 @@ function uldName(p){
   return r ? r[2] : p.imp;
 }
 function uldPiece(p){
-  const b = document.createElement('button'); b.type = 'button'; b.className = 'uld-pc' + (uldP.sel === p.id ? ' sel' : '') + (uldP.pop === p.id ? ' pop' : ''); b.dataset.id = p.id;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'uld-pc' + (uldP.sel === p.id ? ' sel' : '') + (uldP.pop === p.id ? ' pop' : '') + (uldP.hintId === p.id ? ' hint' : ''); b.dataset.id = p.id;
   const n = ULD_NAMES[uldKey(p)] || ULD_NAMES[p.imp];
   const face = n && n[0] ? '<span class="em">' + n[0] + '</span>' : '<img alt="" src="' + dgURL(p.div, p.imp) + '">';
   b.innerHTML = face + '<span class="lb"><b>' + p.imp + '</b>' + (p.div ? '<small>' + p.div + '</small>' : '') + '</span>';
@@ -3041,6 +3049,9 @@ function uldStatus(){
   uldEl.count.innerHTML = '📦 ' + I18N.T('محمّل', 'Loaded') + ' <b>' + on + '</b> · 🚫 ' + I18N.T('منزَّل', 'Off') + ' <b>' + off + '</b> · ⏳ ' + I18N.T('متبقٍ', 'Left') + ' <b>' + left + '</b>';
   uldEl.undo.disabled = !(uldP.hist && uldP.hist.length);
   uldEl.reset.disabled = left === uldP.pieces.length;
+  uldHelpText();
+  uldEl.hint.disabled = (uldP.hints || 0) >= gameRules.uld.maxHints || !!uldP.closing;
+  uldEl.solve.disabled = !!uldP.closing;
   uldEl.root.classList.toggle('armed', !!uldP.sel);
   uldDetail(uldP.pieces.find(p => p.id === uldP.sel));
 }
@@ -3103,7 +3114,8 @@ function uldOpen(){
   if(uldP.active) return;
   const U = gameRules.uld, b = U.build(Math.random);
   uldP.active = true; uldP.closing = 0; uldP.t = U.seconds; uldP.sel = null; uldP.tries = 0;
-  uldP.pieces = b.pieces; uldP.loc = {}; uldP.flight = uldFlight();
+  uldP.pieces = b.pieces; uldP.loc = {}; uldP.flight = uldFlight(); uldP.hints = 0; uldP.hintId = null;
+  uldEl.grid.classList.remove('solved');
   for(const p of b.pieces) uldP.loc[p.id] = 'tray';
   uldP.hist = []; uldP.pop = null; uldDragCancel(); uldEl.grid.classList.remove('ok'); uldEl.root.classList.remove('armed');
   for(const k of ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) key[k] = 0;
@@ -3143,6 +3155,72 @@ function uldSubmit(){
   uldEl.info.textContent = I18N.T('✖ هناك خطأ في الخطة — −' + U.wrongSubmit + ' ث', '✖ The plan has a mistake — −' + U.wrongSubmit + 's');
 }
 if(uldEl.ok) uldEl.ok.addEventListener('click', uldSubmit);
+/* --- تلميحات (3 × −50) وزر الحل (−100). الخصم كامل حتى لو صار الرصيد سالباً --- */
+const ULD_WHY = {
+  toxic: ['السموم 6.1 والمعدية 6.2 لا تجاور الأغذية ولا الحيوانات ولا البيض المخصب', 'Toxic 6.1 / infectious 6.2 never next to food, animals or hatching eggs'],
+  hum: ['الرفات البشري HUM لا يجاور الأغذية ولا الحيوانات الحية', 'Human remains (HUM) never next to food or live animals'],
+  'avi-food': ['الحيوانات الحية تبعد متراً على الأقل عن الأغذية', 'Live animals stay at least 1 m from food'],
+  'avi-lab': ['حيوانات المختبر تُفصل عن باقي الحيوانات', 'Laboratory animals are kept apart from other animals'],
+  'avi-pets': ['القطط والكلاب لا يرى بعضها بعضاً', 'Cats and dogs must be out of sight of each other'],
+  ice: ['الثلج الجاف ICE يطرد CO₂: بعيداً عن الحيوانات والبيض المخصب', 'Dry ice (ICE) gives off CO₂: keep it from animals and hatching eggs'],
+  rcl: ['السوائل المبرّدة RCL بعيداً عن الحيوانات والبيض المخصب', 'Cryogenic liquid (RCL) away from animals and hatching eggs'],
+  rry: ['المواد المشعة بعيداً عن الحيوانات والبيض والأفلام والأعضاء', 'Radioactive material away from animals, eggs, film and organs'],
+  iata: ['فئتان متعارضتان في جدول IATA 9.3.A', 'Incompatible classes in IATA Table 9.3.A']
+};
+function uldCharge(cost, tag){
+  score -= cost; snd('error'); penaltyFx(cost, false);
+  spawnFloatTag('−' + cost + ' ' + tag, '#ff8a5c', 'big'); hud();
+}
+function uldBoard(){
+  const board = new Array(gameRules.uld.CELLS).fill(null), off = [];
+  for(const p of uldP.pieces){ const l = uldP.loc[p.id]; if(typeof l === 'number') board[l] = p.id; else if(l === 'off') off.push(p.id); }
+  return { board, off };
+}
+function uldLbl(id){ const p = uldP.pieces.find(q => q.id === id); return p ? p.imp + (p.div ? ' ' + p.div : '') + ' (' + uldName(p) + ')' : ''; }
+function uldHint(){
+  const U = gameRules.uld;
+  if(!uldP.active || uldP.closing || (uldP.hints || 0) >= U.maxHints) return;
+  const { board, off } = uldBoard(), h = U.hint(uldP.pieces, board, off);
+  if(!h){ uldEl.info.textContent = I18N.T('👍 الخطة تبدو سليمة — اضغط اعتماد', '👍 The plan looks right — press Approve'); return; }
+  uldP.hints = (uldP.hints || 0) + 1;
+  uldCharge(U.hintCost, '💡');
+  uldPush();
+  if(typeof h.to === 'number'){
+    for(const p of uldP.pieces) if(uldP.loc[p.id] === h.to) uldP.loc[p.id] = 'tray';
+  }
+  uldP.loc[h.id] = h.to; uldP.sel = null; uldP.pop = h.id; uldP.hintId = h.id;
+  const a = uldLbl(h.id), cell = typeof h.to === 'number' ? String.fromCharCode(65 + Math.floor(h.to / 3)) + (h.to % 3 + 1) : '';
+  const msg = {
+    'cao-loaded': ['🚫 ' + a + ' شحنة CAO — لا تُحمَّل على رحلة ركاب، نُقلت إلى التنزيل', '🚫 ' + a + ' is CAO — not on a passenger flight, moved to off-load'],
+    'cao-left': ['🚫 ' + a + ' شحنة CAO — نُقلت إلى التنزيل', '🚫 ' + a + ' is CAO — moved to off-load'],
+    'wrong-off': ['📦 ' + a + ' ليست CAO — يجب تحميلها، أُعيدت إلى القائمة', '📦 ' + a + ' is not CAO — it must be loaded, returned to the list'],
+    clash: ['⚠️ ' + a + ' بجانب ' + uldLbl(h.other) + ': ' + (ULD_WHY[h.why] || ULD_WHY.iata)[0] + ' — أُعيدت إلى القائمة', '⚠️ ' + a + ' next to ' + uldLbl(h.other) + ': ' + (ULD_WHY[h.why] || ULD_WHY.iata)[1] + ' — returned to the list'],
+    place: ['📍 ' + a + ' مكانها الصحيح ' + cell, '📍 ' + a + ' belongs in ' + cell]
+  }[h.kind];
+  uldEl.info.textContent = I18N.T('💡 ' + msg[0], '💡 ' + msg[1]);
+  snd('cardflip', 1.2); uldRender();
+  clearTimeout(uldP.hintT); uldP.hintT = setTimeout(() => { uldP.hintId = null; }, 3200);
+}
+function uldSolve(){
+  const U = gameRules.uld;
+  if(!uldP.active || uldP.closing) return;
+  const { board } = uldBoard(), keep = {};
+  board.forEach((id, i) => { if(id) keep[id] = i; });
+  const sol = U.solve(uldP.pieces, keep) || U.solve(uldP.pieces);
+  if(!sol) return;
+  uldP.closing = 1;
+  uldCharge(U.solveCost, '🧩');
+  for(const p of uldP.pieces) uldP.loc[p.id] = p.cao ? 'off' : 'tray';
+  sol.forEach((id, i) => { if(id) uldP.loc[id] = i; });
+  uldP.sel = null; uldP.pop = null; uldP.hintId = null;
+  uldEl.grid.dataset.stamp = I18N.T('الحل الصحيح', 'CORRECT PLAN'); uldEl.grid.classList.add('solved');
+  uldRender();
+  uldEl.info.textContent = I18N.T('🧩 هذه خطة صحيحة — بدون مكافأة (−' + U.solveCost + '). جرّب لغزاً جديداً من المحطة', '🧩 This is a correct plan — no reward (−' + U.solveCost + '). Try a new puzzle at the station');
+  toast(I18N.T('🧩 عرض حل ULD −' + U.solveCost, '🧩 ULD solution shown −' + U.solveCost), '#ff8a5c', 2400);
+  uldP.closing = setTimeout(uldHide, 5000);
+}
+if(uldEl.hint) uldEl.hint.addEventListener('click', uldHint);
+if(uldEl.solve) uldEl.solve.addEventListener('click', uldSolve);
 function uldHide(){
   uldEl.root.style.display = 'none'; uldP.active = false; uldP.closing = 0; uldP.sel = null; cancelAnimationFrame(uldP.raf); uldDragCancel();
 }

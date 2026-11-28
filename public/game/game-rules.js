@@ -629,6 +629,66 @@
         all.forEach((p, i) => (p.id = "P" + i));
         return { pieces: all, solutions: best.solutions };
       },
+      hintCost: 50,
+      maxHints: 3,
+      solveCost: 100,
+      // يجد خطة صحيحة: board (9 ids أو null) مع إبقاء الشحنات المثبّتة في keep {id: خانة} إن أمكن.
+      solve(pieces, keep) {
+        const load = pieces.filter((p) => !p.cao);
+        const fixed = keep || {};
+        const board = new Array(CELLS).fill(null),
+          used = new Set();
+        for (const p of load) {
+          const at = fixed[p.id];
+          if (typeof at !== "number" || board[at]) continue;
+          board[at] = p;
+          used.add(p.id);
+        }
+        const free = load.filter((p) => !used.has(p.id));
+        const ok = (i, p) => neighbors(i).every((j) => !board[j] || !clash(board[j], p));
+        for (let i = 0; i < CELLS; i++)
+          for (const j of neighbors(i)) if (board[i] && board[j] && clash(board[i], board[j])) return null;
+        const go = (k) => {
+          if (k === free.length) return true;
+          const p = free[k];
+          for (let i = 0; i < CELLS; i++) {
+            if (board[i] || !ok(i, p)) continue;
+            board[i] = p;
+            if (go(k + 1)) return true;
+            board[i] = null;
+          }
+          return false;
+        };
+        return go(0) ? board.map((p) => (p ? p.id : null)) : null;
+      },
+      // تلميح واحد للخطة الحالية: أول خطأ مع سببه، وإلا وضع شحنة واحدة في مكانها من حل صحيح.
+      // يعيد {kind, id, to, why, other}: to رقم خانة أو "off" أو "tray".
+      hint(pieces, board, offload) {
+        const byId = new Map(pieces.map((p) => [p.id, p]));
+        const off = new Set(offload || []);
+        const cell = {};
+        (board || []).forEach((id, i) => id && (cell[id] = i));
+        for (const p of pieces) if (p.cao && typeof cell[p.id] === "number") return { kind: "cao-loaded", id: p.id, to: "off" };
+        for (const p of pieces) if (!p.cao && off.has(p.id)) return { kind: "wrong-off", id: p.id, to: "tray" };
+        for (let i = 0; i < CELLS; i++) {
+          const a = byId.get(board[i]);
+          if (!a) continue;
+          for (const j of neighbors(i)) {
+            if (j < i) continue;
+            const b = byId.get(board[j]);
+            const why = clash(a, b);
+            if (why) return { kind: "clash", id: b.id, other: a.id, why, to: "tray" };
+          }
+        }
+        for (const p of pieces) if (p.cao && !off.has(p.id)) return { kind: "cao-left", id: p.id, to: "off" };
+        const sol = api.solve(pieces, cell) || api.solve(pieces);
+        if (!sol) return null;
+        for (let i = 0; i < CELLS; i++) {
+          const id = sol[i];
+          if (id && cell[id] !== i) return { kind: "place", id, to: i, other: board[i] || null };
+        }
+        return null;
+      },
       // board: مصفوفة 9 عناصر (id أو null)، offload: مجموعة/مصفوفة ids المنزّلة
       check(pieces, board, offload) {
         const byId = new Map(pieces.map((p) => [p.id, p]));

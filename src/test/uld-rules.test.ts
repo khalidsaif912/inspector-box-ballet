@@ -24,6 +24,15 @@ type Uld = {
   build(rng?: () => number): { pieces: Piece[]; solutions: number };
   pools(): { allowed: Piece[]; special: Piece[]; cao: Piece[] };
   check(pieces: Piece[], board: (string | null)[], offload: string[]): Check;
+  hintCost: number;
+  maxHints: number;
+  solveCost: number;
+  solve(pieces: Piece[], keep?: Record<string, number>): (string | null)[] | null;
+  hint(
+    pieces: Piece[],
+    board: (string | null)[],
+    offload: string[],
+  ): { kind: string; id: string; to: number | string; why?: string; other?: string | null } | null;
 };
 
 const context: Record<string, unknown> = {};
@@ -174,5 +183,59 @@ describe("ULD load-plan puzzle (200 points)", () => {
     expect(side.pairs).toEqual([{ a: 0, b: 1, why: "iata" }]);
     const diagonal = u.check(pieces, ["A", null, null, null, "B", null, null, null, null], []);
     expect(diagonal.ok).toBe(true);
+  });
+
+  it("costs 50 per hint (3 hints) and 100 for the full solution", () => {
+    expect(u.hintCost).toBe(50);
+    expect(u.maxHints).toBe(3);
+    expect(u.solveCost).toBe(100);
+  });
+
+  it("solve() always returns a plan that check() accepts", () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const { pieces } = u.build(seeded(seed));
+      const board = u.solve(pieces)!;
+      expect(board).not.toBeNull();
+      const off = pieces.filter((p) => p.cao).map((p) => p.id);
+      expect(u.check(pieces, board, off).ok).toBe(true);
+    }
+  });
+
+  it("hints point at the first real mistake, then build the plan step by step", () => {
+    const { pieces } = u.build(seeded(11));
+    const cao = pieces.find((p) => p.cao)!;
+    const load = pieces.filter((p) => !p.cao);
+    const empty: (string | null)[] = new Array(9).fill(null);
+
+    const b1 = empty.slice();
+    b1[0] = cao.id;
+    expect(u.hint(pieces, b1, [])).toMatchObject({ kind: "cao-loaded", id: cao.id, to: "off" });
+    expect(u.hint(pieces, empty, [load[0].id])).toMatchObject({
+      kind: "wrong-off",
+      id: load[0].id,
+      to: "tray",
+    });
+
+    // تطبيق التلميحات واحداً تلو الآخر يصل دائماً إلى خطة مقبولة
+    let board = empty.slice();
+    const off = new Set<string>();
+    for (let step = 0; step < 30; step++) {
+      const h = u.hint(pieces, board, [...off]);
+      if (!h) break;
+      board = board.map((id) => (id === h.id ? null : id));
+      off.delete(h.id);
+      if (h.to === "off") off.add(h.id);
+      else if (typeof h.to === "number") board[h.to] = h.id;
+    }
+    expect(u.check(pieces, board, [...off]).ok).toBe(true);
+  });
+
+  it("explains an adjacent clash", () => {
+    const pieces: Piece[] = [
+      { id: "A", imp: "AVI", div: "", kind: "avi", sp: "cat", cao: false },
+      { id: "B", imp: "ICE", div: "9", kind: "dg", cao: false },
+    ];
+    const h = u.hint(pieces, ["A", "B", null, null, null, null, null, null, null], []);
+    expect(h).toMatchObject({ kind: "clash", id: "B", other: "A", why: "ice", to: "tray" });
   });
 });
