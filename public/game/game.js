@@ -2943,19 +2943,21 @@ function uldText(){
   $('uld-deck-cap').textContent = I18N.T('منصة PMC', 'PMC pallet');
   $('uld-tray-cap').textContent = I18N.T('بانتظار التحميل', 'To load');
   $('uld-off-cap').textContent = I18N.T('🚫 تنزيل Off-load', '🚫 Off-load');
-  uldEl.ok.textContent = I18N.T('✔ اعتماد', '✔ Approve');
+  uldEl.ok.textContent = '✔'; uldEl.ok.title = I18N.T('اعتماد الخطة (Enter)', 'Approve the plan (Enter)'); uldEl.ok.setAttribute('aria-label', uldEl.ok.title);
   uldEl.x.textContent = '✕';
-  uldEl.undo.textContent = I18N.T('↩ تراجع', '↩ Undo'); uldEl.undo.title = I18N.T('تراجع عن آخر نقلة (Z)', 'Undo the last move (Z)');
-  uldEl.reset.textContent = I18N.T('⟲ إعادة', '⟲ Clear'); uldEl.reset.title = I18N.T('أعد كل الشحنات إلى القائمة', 'Return every shipment to the waiting list');
+  uldEl.undo.textContent = '↩'; uldEl.undo.title = I18N.T('تراجع عن آخر نقلة (Z)', 'Undo the last move (Z)'); uldEl.undo.setAttribute('aria-label', uldEl.undo.title);
+  uldEl.reset.textContent = '⟲'; uldEl.reset.title = I18N.T('أعد كل الشحنات إلى القائمة', 'Return every shipment to the waiting list'); uldEl.reset.setAttribute('aria-label', uldEl.reset.title);
   uldEl.x.setAttribute('aria-label', I18N.T('إغلاق', 'Close'));
   uldHelpText();
 }
 function uldHelpText(){
   const U = gameRules.uld, left = U.maxHints - (uldP.hints || 0);
-  uldEl.hint.innerHTML = I18N.T('💡 تلميح ', '💡 Hint ') + '<b>−' + U.hintCost + '</b> (' + left + ')';
-  uldEl.hint.title = I18N.T('يكشف خطأً في الخطة أو يضع شحنة في مكانها الصحيح — يخصم ' + U.hintCost + ' نقطة', 'Shows a mistake or places one shipment correctly — costs ' + U.hintCost + ' points');
-  uldEl.solve.innerHTML = I18N.T('🧩 الحل ', '🧩 Solve ') + '<b>−' + U.solveCost + '</b>';
+  uldEl.hint.innerHTML = '💡<sup>' + left + '</sup>';
+  uldEl.hint.title = I18N.T('يكشف خطأً في الخطة أو يضع شحنة في مكانها الصحيح — يخصم ' + U.hintCost + ' نقطة', 'Shows a mistake or places one shipment correctly — costs ' + U.hintCost + ' points') + ' (' + left + '/' + U.maxHints + ')';
+  uldEl.hint.setAttribute('aria-label', uldEl.hint.title);
+  uldEl.solve.textContent = '🧩';
   uldEl.solve.title = I18N.T('يعرض الخطة الصحيحة كاملة بدون مكافأة — يخصم ' + U.solveCost + ' نقطة', 'Shows the full correct plan, no reward — costs ' + U.solveCost + ' points');
+  uldEl.solve.setAttribute('aria-label', uldEl.solve.title);
 }
 function uldName(p){
   const n = ULD_NAMES[uldKey(p)] || ULD_NAMES[p.imp];
