@@ -1542,7 +1542,10 @@ html[lang="en"] #ov.start .pager>*{direction:ltr}
 .uld-off{min-width:calc(var(--u)*2 + 17px);max-width:calc(var(--u)*3 + 22px)}
 .uld-cap{font-size:10.5px}
 .uld-cap.off{margin-top:0}
-.uld-status{margin-top:6px;padding:4px 10px}
+.uld-status{margin-top:4px;padding:3px 10px}
+.uld-deck .uld-cap{display:none}
+.uld .cards-head{gap:8px}
+.uld-rules{margin-bottom:4px}
 .uld-actions{flex-direction:column;align-items:stretch;margin:0;gap:6px}
 .uld-actions .uld-ok,.uld-actions .uld-sec{padding:6px 14px;font-size:clamp(11px,2.3vmin,14px);box-shadow:0 3px 0 #1c252c}
 .uld-actions .uld-ok{box-shadow:0 3px 0 #0c5f2a}
