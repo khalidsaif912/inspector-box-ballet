@@ -2909,21 +2909,21 @@ const ULD_NAMES = { EAT: ['🍓', 'أغذية طازجة', 'Fresh food'], AVI: [
 function uldFlight(){ return gameRules.cao.flightFor(Math.floor(evt.t * 7)); }
 function uldText(){
   const U = gameRules.uld, f = uldP.flight || uldFlight();
-  $('uld-title').textContent = I18N.T('خطة تحميل ULD — رحلة ' + f.id + ' ' + f.from + '→' + f.to + ' (ركاب)', 'ULD load plan — flight ' + f.id + ' ' + f.from + '→' + f.to + ' (passenger)');
-  $('uld-sub').textContent = I18N.T('حمّل المنصة صحيحاً خلال ' + U.seconds + ' ث: +' + U.reward + ' نقطة. فشلها −' + U.failPenalty + '، وتركها −' + U.quitPenalty, 'Load the pallet right within ' + U.seconds + 's: +' + U.reward + ' pts. Failing −' + U.failPenalty + ', abandoning −' + U.quitPenalty);
+  $('uld-title').textContent = I18N.T('تحميل ULD — ' + f.id + ' ' + f.from + '→' + f.to + ' (ركاب)', 'ULD load — ' + f.id + ' ' + f.from + '→' + f.to + ' (pax)');
+  $('uld-sub').textContent = I18N.T(U.seconds + ' ث · +' + U.reward + ' · فشل −' + U.failPenalty + ' · ترك −' + U.quitPenalty, U.seconds + 's · +' + U.reward + ' · fail −' + U.failPenalty + ' · quit −' + U.quitPenalty);
   $('uld-rules').innerHTML = [
-    I18N.T('لا تتجاور (جنباً إلى جنب) شحنتان متعارضتان حسب جدول IATA 9.3.A — القطري مسموح.', 'No two incompatible shipments side by side (IATA Table 9.3.A) — diagonal is fine.'),
-    I18N.T('السموم 6.1 والمعدية 6.2 لا تجاور الأغذية ولا الحيوانات الحية.', 'Toxic 6.1 and infectious 6.2 never next to food or live animals.'),
-    I18N.T('الحيوانات الحية لا تجاور الثلج الجاف ولا المواد المشعة.', 'Live animals never next to dry ice or radioactive material.'),
-    I18N.T('الرحلة ركاب: نزّل (Off-load) كل شحنة CAO — لن نخبرك أيها!', 'Passenger flight: off-load every CAO shipment — we won’t tell you which!')
+    I18N.T('لا تجاور شحنتين متعارضتين (IATA 9.3.A) — القطري مسموح', 'No incompatible neighbours (IATA 9.3.A) — diagonal OK'),
+    I18N.T('6.1 و6.2 بعيداً عن الأغذية والحيوانات', '6.1/6.2 away from food & animals'),
+    I18N.T('الحيوانات بعيداً عن الثلج الجاف والمشع', 'Animals away from dry ice & radioactive'),
+    I18N.T('رحلة ركاب: نزّل كل CAO', 'Pax flight: off-load all CAO')
   ].map(t => '<li>' + t + '</li>').join('');
-  $('uld-deck-cap').textContent = I18N.T('المنصة PMC (عرض علوي)', 'PMC pallet (top view)');
-  $('uld-tray-cap').textContent = I18N.T('شحنات بانتظار التحميل', 'Shipments to load');
+  $('uld-deck-cap').textContent = I18N.T('منصة PMC', 'PMC pallet');
+  $('uld-tray-cap').textContent = I18N.T('بانتظار التحميل', 'To load');
   $('uld-off-cap').textContent = I18N.T('🚫 تنزيل Off-load', '🚫 Off-load');
-  uldEl.ok.textContent = I18N.T('✔ اعتماد الخطة', '✔ Approve plan');
+  uldEl.ok.textContent = I18N.T('✔ اعتماد', '✔ Approve');
   uldEl.x.textContent = '✕';
   uldEl.undo.textContent = I18N.T('↩ تراجع', '↩ Undo'); uldEl.undo.title = I18N.T('تراجع عن آخر نقلة (Z)', 'Undo the last move (Z)');
-  uldEl.reset.textContent = I18N.T('⟲ إعادة الكل', '⟲ Clear all'); uldEl.reset.title = I18N.T('أعد كل الشحنات إلى القائمة', 'Return every shipment to the waiting list');
+  uldEl.reset.textContent = I18N.T('⟲ إعادة', '⟲ Clear'); uldEl.reset.title = I18N.T('أعد كل الشحنات إلى القائمة', 'Return every shipment to the waiting list');
   uldEl.x.setAttribute('aria-label', I18N.T('إغلاق', 'Close'));
 }
 function uldName(p){

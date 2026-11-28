@@ -1517,3 +1517,27 @@ html[lang="en"] #ov.start .pager>*{direction:ltr}
 /* شاشات ضيقة وطويلة: لا يُقصّ اللغز، وإن لم يتسع يُمرَّر داخل اللوحة */
 .uld-panel{max-height:100%;overflow-y:auto;overscroll-behavior:contain}
 @media (max-aspect-ratio:3/4){.uld{--u:clamp(50px,15vw,64px)}.uld-rules{font-size:11px;line-height:1.4}}
+/* --- لغز ULD: المنصة في الأعلى والشحنات أسفلها، ملصقات أكبر، شريط وقت أنحف ونصوص أقل --- */
+.uld{--u:clamp(56px,min(calc((100vh - 230px)/5.4),calc((100vw - 90px)/8.6)),124px)}
+.uld .uld-panel{max-width:min(100%,1040px);padding:8px 12px}
+.uld .cards-ic{font-size:20px}
+.uld .cards-ttl b{font-size:clamp(13px,3vmin,16px)}
+.uld .cards-ttl small{font-size:clamp(10px,2.2vmin,12px)}
+.uld .cards-x{width:28px;height:28px}
+.uld .cards-bar{height:10px;margin:4px 0 6px;border-radius:3px}
+.uld .cards-bar span{font-size:8.5px}
+.uld-rules{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:2px 14px;margin:0 0 6px;padding:0;font-size:clamp(10px,2.1vmin,12px);line-height:1.35}
+.uld-rules li::before{content:'• ';color:#f5c400}
+.uld-body{flex-direction:column;align-items:stretch;gap:8px}
+.uld-deck{align-self:center}
+.uld-side{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto 1fr;grid-auto-flow:column;gap:3px 10px;min-width:0;width:100%;align-items:stretch}
+.uld-side .uld-cap{justify-self:center}
+.uld-tray{min-height:calc(var(--u) + 12px);align-content:flex-start}
+.uld-off{min-width:calc(var(--u)*2 + 17px);max-width:calc(var(--u)*3 + 22px)}
+.uld-cap{font-size:10.5px}
+.uld-cap.off{margin-top:0}
+.uld-status{margin-top:6px;padding:4px 10px}
+.uld-actions{margin-top:6px}
+.uld .cards-foot{margin-top:4px;min-height:16px}
+@media (max-aspect-ratio:3/4){.uld{--u:clamp(48px,min(18vw,calc((100vh - 300px)/7)),84px)}.uld-side{grid-template-columns:1fr;grid-auto-flow:row}.uld-off{max-width:none;min-width:0}}
+@media (max-height:520px){.uld{--u:clamp(40px,min(15vh,9vw),64px)}.uld-body{flex-direction:row;align-items:flex-start}.uld-side{flex:1}.uld-rules{display:none}}
